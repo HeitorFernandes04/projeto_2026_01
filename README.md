@@ -120,6 +120,11 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 - **Figma** — Prototipagem e design de interfaces
 
 ---
+# 📋 User Stories — Documentação do Projeto
+
+[Clique aqui para ir ao documento de planejamento e entregas](./Planejamento%20e%20Entregas.md)
+
+---
 
 ## 📁 Estrutura do Repositório
 
@@ -160,12 +165,13 @@ lava-me/
 
 | Nome | Papel | Contato |
 |---|---|---|
-| Lucas José | — | — |
-| Heitor Fernandes | — | — |
-| Letícia Mello | — | — |
-| Maurício Monteiro | — | — |
+| Lucas José | Desenvolvedor | [@yamatosz](https://github.com/yamatosz) |
+| Heitor Fernandes | Desenvolvedor | [@HeitorFernandes04](https://github.com/HeitorFernandes04) |
+| Letícia | Desenvolvedora | [@LeticiaGLopes-151](https://github.com/LeticiaGLopes-151) |
+| Wanderson Mello | Desenvolvedor | [@WandersonAMello](https://github.com/WandersonAMello)|
+| Maurício Monteiro | Desenvolvedor | [@MontDeP](https://github.com/MontDeP) |
 
-> 📌 Papéis a serem definidos na reunião de kick-off da equipe.
+<!-- > 📌 Papéis a serem definidos na reunião de kick-off da equipe. -->
 
 ---
 
@@ -248,5 +254,5 @@ Este projeto está sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE) par
 
 <div align="center">
   <p>Desenvolvido com 💧 pela equipe <strong>Lava-Me</strong></p>
-  <p>Universidade Federal do Tocantins — Ciência da Computação — 2025.1</p>
+  <p>Universidade Federal do Tocantins — Ciência da Computação — 2026.1</p>
 </div>
