@@ -18,6 +18,7 @@
 - [Funcionalidades](#-funcionalidades)
 - [Arquitetura](#-arquitetura)
 - [Stack Tecnológica](#-stack-tecnológica)
+- [User Stories](#-user-stories--documentação-do-projeto)
 - [Estrutura do Repositório](#-estrutura-do-repositório)
 - [Equipe](#-equipe)
 - [Metodologia](#-metodologia)
@@ -120,7 +121,7 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 - **Figma** — Prototipagem e design de interfaces
 
 ---
-# 📋 User Stories — Documentação do Projeto
+## 📋 User Stories — Documentação do Projeto
 
 [Clique aqui para ir ao documento de planejamento e entregas](./Planejamento%20e%20Entregas.md)
 
