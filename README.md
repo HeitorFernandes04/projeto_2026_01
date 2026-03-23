@@ -171,6 +171,7 @@ lava-me/
 | Letícia | Desenvolvedora | [@LeticiaGLopes-151](https://github.com/LeticiaGLopes-151) |
 | Wanderson Mello | Desenvolvedor | [@WandersonAMello](https://github.com/WandersonAMello)|
 | Maurício Monteiro | Desenvolvedor | [@MontDeP](https://github.com/MontDeP) |
+| Marcos Barbosa | Desenvolvedor | [@eziors](https://github.com/eziors)
 
 <!-- > 📌 Papéis a serem definidos na reunião de kick-off da equipe. -->
 
