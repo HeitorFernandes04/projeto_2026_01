@@ -84,7 +84,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ## Sprint 1 — Autenticação, Cadastro e Estrutura Base
 
-> **Objetivo:** Implementar o fluxo de autenticação, cadastro de estabelecimentos e clientes, e a estrutura base da aplicação.
+> **Objetivo:** Implementar o fluxo de autenticação, cadastro de estabelecimentos, funcionários e clientes, e a estrutura base da aplicação.
 
 ---
 
@@ -105,7 +105,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ### RF-06 · Login de Usuário
 
-**Como** usuário cadastrado (estabelecimento ou cliente),  
+**Como** usuário cadastrado (estabelecimento, cliente ou funcionário),  
 **quero** fazer login com e-mail e senha,  
 **para que** eu possa acessar minha conta com segurança.
 
@@ -118,25 +118,10 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-07 · Recuperação de Senha
+### RF-07 · Cadastro de Funcionário
 
-**Como** usuário,  
-**quero** recuperar minha senha via e-mail,  
-**para que** eu não perca acesso à minha conta caso esqueça minhas credenciais.
-
-**Critérios de Aceitação:**
-- [ ] Link de redefinição enviado por e-mail
-- [ ] Link expira em 1 hora
-- [ ] Nova senha deve atender requisitos mínimos de segurança
-
-Responsáveis: <!-- @membro1 @membro2 -->
-
----
-
-### RF-08 · Cadastro de Cliente
-
-**Como** cliente,  
-**quero** me cadastrar no app informando nome, e-mail e telefone,  
+**Como** dono do estabelecimento,  
+**quero** cadastrar um funcionário no app informando nome, e-mail e telefone,  
 **para que** eu possa agendar serviços.
 
 **Critérios de Aceitação:**
@@ -148,7 +133,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-09 · Estrutura Base da API
+### RF-08 · Estrutura Base da API
 
 **Como** desenvolvedor,  
 **quero** ter a estrutura base do projeto (rotas, middlewares e modelos) configurada,  
@@ -163,15 +148,24 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 2 — Módulo de Agendamento (Backend + Web)
+### RF-09 · Agenda de Serviços
 
-> **Objetivo:** Desenvolver o módulo de agendamento completo, incluindo cadastro de serviços, agenda do estabelecimento e controle de status.
+**Como** dono de estabelecimento ou funcionário,  
+**quero** visualizar todos os agendamentos do dia e da semana em uma agenda,  
+**para que** eu possa organizar a operação do negócio.
+
+**Critérios de Aceitação:**
+- [ ] Visualizações diária e semanal disponíveis
+- [ ] Agendamentos exibem serviço, cliente e horário
+- [ ] Interface atualiza em tempo real
+
+Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
 ### RF-10 · Cadastro de Serviços
 
-**Como** dono de estabelecimento,  
+**Como** dono de estabelecimento ou funcionário,  
 **quero** cadastrar os serviços que ofereço (nome, descrição, duração e valor),  
 **para que** os clientes possam visualizá-los e agendá-los.
 
@@ -184,22 +178,28 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-11 · Agenda de Serviços
+### RF-11 · Alterar estado dos serviços
 
-**Como** dono de estabelecimento,  
-**quero** visualizar todos os agendamentos do dia e da semana em uma agenda,  
-**para que** eu possa organizar a operação do meu negócio.
+**Como** funcionário,  
+**quero** alterar o estado dos serviços,  
+**para que** consiga iniciar e finalizar o serviço no sistema.
 
-**Critérios de Aceitação:**
-- [ ] Visualizações diária e semanal disponíveis
-- [ ] Agendamentos exibem serviço, cliente e horário
-- [ ] Interface atualiza em tempo real
+**Critérios de Aceitação:**  
+- [ ] O serviço pode ser iniciado
+- [ ] O serviço pode ser finalizado
+- [ ] Deve constar em registro quem inciou e finalizou o serviço
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-12 · Configuração de Disponibilidade
+## Sprint 2 — Módulo de Agendamento (Backend + Web)
+
+> **Objetivo:** Desenvolver o módulo de agendamento completo, incluindo cadastro de serviços, agenda do estabelecimento e controle de status.
+
+---
+
+### RF-11 · Configuração de Disponibilidade
 
 **Como** dono de estabelecimento,  
 **quero** definir meus horários de funcionamento e disponibilidade,  
@@ -214,7 +214,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-13 · Seleção de Horários pelo Cliente
+### RF-12 · Seleção de Horários pelo Cliente
 
 **Como** cliente,  
 **quero** visualizar os horários disponíveis de um estabelecimento para um serviço específico,  
@@ -229,7 +229,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-14 · Controle de Status do Agendamento
+### RF-13 · Controle de Status do Agendamento
 
 **Como** dono de estabelecimento,  
 **quero** atualizar o status de um agendamento (Aguardando / Em andamento / Finalizado),  
@@ -244,13 +244,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 3 — Dashboard Financeiro e Painel de Gestão
-
-> **Objetivo:** Construir o painel de gestão com métricas financeiras, histórico de clientes e visualizações gerenciais.
-
----
-
-### RF-15 · Dashboard Financeiro
+### RF-14 · Dashboard Financeiro
 
 **Como** dono de estabelecimento,  
 **quero** visualizar o faturamento diário, semanal e mensal em gráficos,  
@@ -265,7 +259,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-16 · Gestão de Clientes
+### RF-15 · Gestão de Clientes
 
 **Como** dono de estabelecimento,  
 **quero** visualizar o histórico de atendimentos de cada cliente, incluindo veículos e serviços realizados,  
@@ -280,7 +274,14 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-17 · Painel de Gestão (Visão Geral)
+## Sprint 3 — Dashboard Financeiro e Painel de Gestão
+
+> **Objetivo:** Construir o painel de gestão com métricas financeiras, histórico de clientes e visualizações gerenciais.
+
+
+---
+
+### RF-16 · Painel de Gestão (Visão Geral)
 
 **Como** dono de estabelecimento,  
 **quero** ver um painel com métricas principais (total de agendamentos, receita do dia, avaliação média),  
@@ -295,7 +296,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-18 · Exportação de Relatórios
+### RF-17 · Exportação de Relatórios
 
 **Como** dono de estabelecimento,  
 **quero** exportar relatórios financeiros em PDF ou Excel,  
@@ -310,13 +311,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 4 — App Mobile: Mapa e Busca de Estabelecimentos
-
-> **Objetivo:** Desenvolver as funcionalidades de mapa interativo, busca e visualização de perfis de estabelecimentos no app.
-
----
-
-### RF-19 · Mapa Interativo
+### RF-18 · Mapa Interativo
 
 **Como** cliente,  
 **quero** visualizar no mapa os estabelecimentos próximos à minha localização,  
@@ -331,7 +326,13 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-20 · Busca de Estabelecimentos
+## Sprint 4 — App Mobile: Mapa e Busca de Estabelecimentos
+
+> **Objetivo:** Desenvolver as funcionalidades de mapa interativo, busca e visualização de perfis de estabelecimentos no app.
+
+---
+
+### RF-19 · Busca de Estabelecimentos
 
 **Como** cliente,  
 **quero** buscar estabelecimentos por nome, tipo de serviço ou localização,  
@@ -346,7 +347,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-21 · Perfil do Estabelecimento
+### RF-20 · Perfil do Estabelecimento
 
 **Como** cliente,  
 **quero** acessar o perfil de um estabelecimento com fotos, serviços, avaliações e horários de funcionamento,  
@@ -361,7 +362,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-22 · Favoritar Estabelecimentos
+### RF-21 · Favoritar Estabelecimentos
 
 **Como** cliente,  
 **quero** salvar estabelecimentos favoritos,  
@@ -382,7 +383,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-23 · Agendamento Online
+### RF-22 · Agendamento Online
 
 **Como** cliente,  
 **quero** selecionar um serviço, data e horário disponível para agendar um atendimento diretamente pelo app,  
@@ -397,7 +398,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-24 · Cancelamento de Agendamento
+### RF-23 · Cancelamento de Agendamento
 
 **Como** cliente,  
 **quero** cancelar um agendamento pelo app,  
@@ -412,7 +413,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-25 · Histórico de Serviços
+### RF-24 · Histórico de Serviços
 
 **Como** cliente,  
 **quero** visualizar o histórico de todos os meus agendamentos anteriores,  
@@ -427,7 +428,7 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-26 · Acompanhamento de Status em Tempo Real
+### RF-25 · Acompanhamento de Status em Tempo Real
 
 **Como** cliente,  
 **quero** acompanhar o status do meu agendamento em tempo real,  
@@ -437,6 +438,21 @@ Responsáveis: <!-- @membro1 @membro2 -->
 - [ ] Status sincronizado com o painel do estabelecimento
 - [ ] Atualização sem necessidade de recarregar a tela
 - [ ] Histórico de mudanças de status visível
+
+Responsáveis: <!-- @membro1 @membro2 -->
+
+---
+
+### RF-26 · Recuperação de Senha
+
+**Como** usuário,  
+**quero** recuperar minha senha via e-mail,  
+**para que** eu não perca acesso à minha conta caso esqueça minhas credenciais.
+
+**Critérios de Aceitação:**
+- [ ] Link de redefinição enviado por e-mail
+- [ ] Link expira em 1 hora
+- [ ] Nova senha deve atender requisitos mínimos de segurança
 
 Responsáveis: <!-- @membro1 @membro2 -->
 

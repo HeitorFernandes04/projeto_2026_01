@@ -168,10 +168,10 @@ lava-me/
 |---|---|---|
 | Lucas José | Desenvolvedor | [@yamatosz](https://github.com/yamatosz) |
 | Heitor Fernandes | Desenvolvedor | [@HeitorFernandes04](https://github.com/HeitorFernandes04) |
-| Letícia | Desenvolvedora | [@LeticiaGLopes-151](https://github.com/LeticiaGLopes-151) |
+| Letícia Lopes | Desenvolvedora | [@LeticiaGLopes-151](https://github.com/LeticiaGLopes-151) |
 | Wanderson Mello | Desenvolvedor | [@WandersonAMello](https://github.com/WandersonAMello)|
 | Maurício Monteiro | Desenvolvedor | [@MontDeP](https://github.com/MontDeP) |
-| Marcos Barbosa | Desenvolvedor | [@eziors](https://github.com/eziors)
+| Marcos Barbosa | Desenvolvedor | [@eziors](https://github.com/eziors) |
 
 <!-- > 📌 Papéis a serem definidos na reunião de kick-off da equipe. -->
 
