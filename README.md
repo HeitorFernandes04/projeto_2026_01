@@ -117,7 +117,7 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 ### DevOps & Ferramentas
 - **GitHub** — Controle de versão e gestão do projeto
 - **GitFlow** — Estratégia de branching
-- **GitHub Projects** — Gestão de tarefas e sprints
+- **Trello** — Gestão de tarefas e sprints
 - **Figma** — Prototipagem e design de interfaces
 
 ---

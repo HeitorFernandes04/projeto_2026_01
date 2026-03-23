@@ -4,6 +4,10 @@
 
 ---
 
+> A organização por sprints pode ser alterada de acordo com a necessidade de entregas atual do projeto.
+
+---
+
 ## Índice
 
 - [Sprint 0 — Configuração e Definição de Requisitos](#sprint-0--configuração-e-definição-de-requisitos)
