@@ -22,8 +22,9 @@
 - [Estrutura do Repositório](#-estrutura-do-repositório)
 - [Equipe](#-equipe)
 - [Metodologia](#-metodologia)
-- [Como Executar](#-como-executar)
+- [Como Rodar](#️-como-rodar)
 - [Roadmap](#-roadmap)
+- [Protótipos](#️-protótipos---figma)
 - [Licença](#-licença)
 
 ---
@@ -201,7 +202,7 @@ release/*     ← preparação para nova versão
 
 ---
 
-## ▶️ Como Executar
+## ▶️ Como Rodar
 
 > ⚠️ Instruções completas serão adicionadas conforme o ambiente de desenvolvimento for configurado.
 
@@ -210,7 +211,9 @@ release/*     ← preparação para nova versão
 - Node.js 18+
 - PostgreSQL 15+
 
-### Backend
+[Clique aqui para ir ao documento de como rodar o projeto](Como%20rodar.md)
+
+<!-- ### Backend
 ```bash
 cd backend
 python -m venv venv
@@ -232,7 +235,7 @@ npm start
 cd mobile
 npm install
 ionic serve
-```
+``` -->
 
 ---
 
@@ -245,6 +248,9 @@ ionic serve
 - [ ] **Evento Final** — Apresentação pública do produto
 
 ---
+
+## 🖼️ Protótipos - Figma
+[Clique aqui para ir para os protótipos no Figma](https://www.figma.com/make/vrqBsa4Glt9ktaAUHxxnya/Execute-request-in-file?fullscreen=1&t=286qd5DPhIsmrM3y-1)
 
 ## 📄 Licença
 
