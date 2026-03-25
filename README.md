@@ -104,6 +104,7 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 - **Django REST Framework** — Construção da API REST
 - **PostgreSQL** — Banco de dados relacional
 - **JWT (SimpleJWT)** — Autenticação
+ - **SQlite3** - Bando de dados relacional (desenvolvimento)
 
 ### Frontend Web
 - **React 18** — Interface do painel de gestão
