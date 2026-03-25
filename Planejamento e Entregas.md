@@ -10,533 +10,497 @@
 
 ## Índice
 
-- [Sprint 0 — Configuração e Definição de Requisitos](#sprint-0--configuração-e-definição-de-requisitos)
-- [Sprint 1 — Autenticação, Cadastro e Estrutura Base](#sprint-1--autenticação-cadastro-e-estrutura-base)
-- [Sprint 2 — Módulo de Agendamento (Backend + Web)](#sprint-2--módulo-de-agendamento-backend--web)
-- [Sprint 3 — Dashboard Financeiro e Painel de Gestão](#sprint-3--dashboard-financeiro-e-painel-de-gestão)
-- [Sprint 4 — App Mobile: Mapa e Busca de Estabelecimentos](#sprint-4--app-mobile-mapa-e-busca-de-estabelecimentos)
-- [Sprint 5 — App Mobile: Agendamento e Histórico](#sprint-5--app-mobile-agendamento-e-histórico)
-- [Sprint 6 — Avaliações, Notificações e Ajustes Finais](#sprint-6--avaliações-notificações-e-ajustes-finais)
+* [Sprint 1 — Experiência do Funcionário](#sprint-1--experiência-do-funcionário)
+* [Sprint 2 — Gestão e Controle Operacional](#sprint-2--gestão-e-controle-operacional)
+* [Sprint 3 — Experiência do Cliente](#sprint-3--experiência-do-cliente)
+* [Sprint 4 — Comunicação, Relatórios e Recursos Avançados](#sprint-4--comunicação-relatórios-e-recursos-avançados)
 
 ---
 
-## Sprint 0 — Configuração e Definição de Requisitos
+## Sprint 1 — Experiência do Funcionário
 
-> **Objetivo:** Preparar o ambiente de desenvolvimento, repositório e documentar os requisitos do projeto.
+> **Objetivo:** Permitir que o funcionário gerencie atendimentos de forma prática e eficiente no dia a dia.
 
 ---
 
-### RF-01 · Configuração do Repositório
+### RF-01 · Cadastro de Usuário
 
-**Como** desenvolvedor,  
-**quero** configurar o repositório Git com branches e políticas de contribuição,  
-**para que** a equipe colabore de forma organizada.
+**Como** usuário,
+**quero** me cadastrar no sistema,
+**para** acessar as funcionalidades disponíveis.
 
 **Critérios de Aceitação:**
-- [ ] Repositório criado e acessível a todos os membros
-- [ ] Branches `main`, `develop` e padrão de nomenclatura definidos
-- [ ] README com instruções de setup
+
+* [ ] Cadastro com nome, email e senha
+* [ ] Validação de dados obrigatórios
+* [ ] Usuário salvo no sistema
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-02 · Configuração de Ambientes
+### RF-02 · Login de Usuário
 
-**Como** desenvolvedor,  
-**quero** configurar os ambientes de desenvolvimento (local, staging e produção),  
-**para que** o código possa ser executado de forma consistente em qualquer máquina.
+**Como** usuário,
+**quero** fazer login no sistema,
+**para** acessar minha conta.
 
 **Critérios de Aceitação:**
-- [ ] Arquivo `.env.example` documentado
-- [ ] Docker Compose funcional (opcional)
-- [ ] Passos de instalação documentados no README
+
+* [ ] Login com email e senha
+* [ ] Validação de credenciais
+* [ ] Redirecionamento após login
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-03 · Documentação de Requisitos
+### RF-03 · Visualizar Atendimentos do Dia
 
-**Como** gerente de projeto,  
-**quero** ter os requisitos funcionais e não funcionais documentados,  
-**para que** a equipe tenha uma referência clara durante o desenvolvimento.
+**Como** funcionário,
+**quero** visualizar os atendimentos agendados para o dia,
+**para que** eu possa me organizar melhor.
 
 **Critérios de Aceitação:**
-- [ ] Documento de requisitos criado
-- [ ] Casos de RFo principais identificados
-- [ ] Critérios de aceite definidos por funcionalidade
+
+* [ ] Lista de atendimentos exibida por data atual
+* [ ] Informações do veículo e serviço visíveis
+* [ ] Ordenação por horário
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-04 · Definição de Arquitetura
+### RF-04 · Iniciar Atendimento
 
-**Como** desenvolvedor,  
-**quero** definir a arquitetura do sistema (banco de dados, APIs e estrutura de pastas),  
-**para que** o projeto tenha uma base sólida e escalável.
+**Como** funcionário,
+**quero** iniciar um atendimento,
+**para que** o sistema registre o início do serviço.
 
 **Critérios de Aceitação:**
-- [ ] Diagrama de arquitetura elaborado
-- [ ] Banco de dados modelado (entidades e relacionamentos)
-- [ ] Stack tecnológico definido e documentado
+
+* [ ] Botão de iniciar atendimento disponível
+* [ ] Registro de horário de início salvo
+* [ ] Status do atendimento atualizado
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 1 — Autenticação, Cadastro e Estrutura Base
+### RF-05 · Registrar Fotos Antes do Atendimento
 
-> **Objetivo:** Implementar o fluxo de autenticação, cadastro de estabelecimentos, funcionários e clientes, e a estrutura base da aplicação.
-
----
-
-### RF-05 · Cadastro de Estabelecimento
-
-**Como** dono de estabelecimento,  
-**quero** me cadastrar na plataforma informando nome, CNPJ, endereço e contato,  
-**para que** meu negócio seja encontrado pelos clientes.
+**Como** funcionário,
+**quero** tirar fotos do veículo antes do serviço,
+**para** registrar o estado inicial.
 
 **Critérios de Aceitação:**
-- [ ] Formulário com validação de CNPJ
-- [ ] E-mail de confirmação enviado após o cadastro
-- [ ] Dados persistidos no banco de dados
+
+* [ ] Upload de múltiplas fotos permitido
+* [ ] Fotos vinculadas ao atendimento
+* [ ] Pré-visualização disponível
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-06 · Login de Usuário
+### RF-06 · Registrar Fotos Após o Atendimento
 
-**Como** usuário cadastrado (estabelecimento, cliente ou funcionário),  
-**quero** fazer login com e-mail e senha,  
-**para que** eu possa acessar minha conta com segurança.
+**Como** funcionário,
+**quero** tirar fotos depois do serviço,
+**para** demonstrar o resultado final.
 
 **Critérios de Aceitação:**
-- [ ] Autenticação via JWT
-- [ ] Mensagem de erro em credenciais inválidas
-- [ ] Token com expiração configurada
+
+* [ ] Upload de fotos após finalização
+* [ ] Fotos organizadas como “depois”
+* [ ] Associação automática ao atendimento
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-07 · Cadastro de Funcionário
+### RF-07 · Adicionar Comentários no Atendimento
 
-**Como** dono do estabelecimento,  
-**quero** cadastrar um funcionário no app informando nome, e-mail e telefone,  
-**para que** eu possa agendar serviços.
+**Como** funcionário,
+**quero** adicionar comentários,
+**para** registrar ocorrências durante o serviço.
 
 **Critérios de Aceitação:**
-- [ ] Cadastro com validação de e-mail único
-- [ ] Confirmação de conta por e-mail
-- [ ] Perfil editável após criação
+
+* [ ] Campo de texto disponível
+* [ ] Comentários salvos no atendimento
+* [ ] Histórico visível
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-08 · Estrutura Base da API
+### RF-08 · Criar Atendimento Manual
 
-**Como** desenvolvedor,  
-**quero** ter a estrutura base do projeto (rotas, middlewares e modelos) configurada,  
-**para que** as funcionalidades possam ser implementadas com agilidade.
+**Como** funcionário,
+**quero** cadastrar um atendimento na hora,
+**para** atender clientes sem agendamento.
 
 **Critérios de Aceitação:**
-- [ ] API REST estruturada
-- [ ] Middleware de autenticação implementado
-- [ ] Estrutura de pastas padronizada e documentada
+
+* [ ] Formulário com dados do veículo
+* [ ] Seleção de serviço disponível
+* [ ] Salvamento imediato
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-09 · Agenda de Serviços
+### RF-09 · Agendar Atendimento em Horário Vago
 
-**Como** dono de estabelecimento ou funcionário,  
-**quero** visualizar todos os agendamentos do dia e da semana em uma agenda,  
-**para que** eu possa organizar a operação do negócio.
+**Como** funcionário,
+**quero** agendar um atendimento,
+**para** organizar horários disponíveis.
 
 **Critérios de Aceitação:**
-- [ ] Visualizações diária e semanal disponíveis
-- [ ] Agendamentos exibem serviço, cliente e horário
-- [ ] Interface atualiza em tempo real
+
+* [ ] Visualização de horários livres
+* [ ] Bloqueio de conflitos
+* [ ] Confirmação de agendamento
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-10 · Cadastro de Serviços
+### RF-10 · Visualizar Histórico de Atendimentos
 
-**Como** dono de estabelecimento ou funcionário,  
-**quero** cadastrar os serviços que ofereço (nome, descrição, duração e valor),  
-**para que** os clientes possam visualizá-los e agendá-los.
+**Como** funcionário,
+**quero** ver meus atendimentos realizados,
+**para** acompanhar meu desempenho.
 
 **Critérios de Aceitação:**
-- [ ] CRUD completo de serviços
-- [ ] Duração configurada em minutos e valor monetário
-- [ ] Serviço pode ser ativado ou desativado
+
+* [ ] Filtro por período
+* [ ] Lista com atendimentos realizados
+* [ ] Informações resumidas
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-11 · Alterar estado dos serviços
+## Sprint 2 — Gestão e Controle Operacional
 
-**Como** funcionário,  
-**quero** alterar o estado dos serviços,  
-**para que** consiga iniciar e finalizar o serviço no sistema.
-
-**Critérios de Aceitação:**  
-- [ ] O serviço pode ser iniciado
-- [ ] O serviço pode ser finalizado
-- [ ] Deve constar em registro quem inciou e finalizou o serviço
-
-Responsáveis: <!-- @membro1 @membro2 -->
+> **Objetivo:** Permitir ao gestor administrar funcionários, serviços e acompanhar o desempenho do negócio.
 
 ---
 
-## Sprint 2 — Módulo de Agendamento (Backend + Web)
+### RF-11 · Gerenciar Funcionários
 
-> **Objetivo:** Desenvolver o módulo de agendamento completo, incluindo cadastro de serviços, agenda do estabelecimento e controle de status.
-
----
-
-### RF-11 · Configuração de Disponibilidade
-
-**Como** dono de estabelecimento,  
-**quero** definir meus horários de funcionamento e disponibilidade,  
-**para que** os clientes só consigam agendar em horários válidos.
+**Como** gestor,
+**quero** gerenciar funcionários,
+**para** manter a equipe organizada.
 
 **Critérios de Aceitação:**
-- [ ] Configuração por dia da semana
-- [ ] Intervalos de horário editáveis
-- [ ] Feriados e exceções podem ser cadastrados
+
+* [ ] Criar, editar e remover funcionários
+* [ ] Listagem com dados básicos
+* [ ] Status ativo/inativo
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-12 · Seleção de Horários pelo Cliente
+### RF-12 · Gerenciar Serviços
 
-**Como** cliente,  
-**quero** visualizar os horários disponíveis de um estabelecimento para um serviço específico,  
-**para que** eu possa escolher o melhor horário.
+**Como** gestor,
+**quero** gerenciar os serviços oferecidos,
+**para** manter o catálogo atualizado.
 
 **Critérios de Aceitação:**
-- [ ] Horários indisponíveis não são exibidos
-- [ ] Calendário com seleção de data intuitiva
-- [ ] Atualização em tempo real ao selecionar a data
+
+* [ ] Criar, editar e excluir serviços
+* [ ] Definir preço e descrição
+* [ ] Listagem disponível
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-13 · Controle de Status do Agendamento
+### RF-13 · Visualizar Dashboard
 
-**Como** dono de estabelecimento,  
-**quero** atualizar o status de um agendamento (Aguardando / Em andamento / Finalizado),  
-**para que** eu e o cliente possamos acompanhar o progresso do serviço.
+**Como** gestor,
+**quero** visualizar indicadores do negócio,
+**para** tomar decisões estratégicas.
 
 **Critérios de Aceitação:**
-- [ ] Troca de status com um clique
-- [ ] Histórico de mudanças de status registrado
-- [ ] Cliente notificado a cada mudança de status
+
+* [ ] Exibição de métricas principais
+* [ ] Atualização em tempo real ou sob demanda
+* [ ] Interface clara
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-14 · Dashboard Financeiro
+### RF-14 · Filtrar Dados no Dashboard
 
-**Como** dono de estabelecimento,  
-**quero** visualizar o faturamento diário, semanal e mensal em gráficos,  
-**para que** eu possa acompanhar a saúde financeira do meu negócio.
+**Como** gestor,
+**quero** aplicar filtros,
+**para** analisar dados específicos.
 
 **Critérios de Aceitação:**
-- [ ] Gráficos de linha/barra por período
-- [ ] Filtro por data customizável
-- [ ] Exibição de receita total e por tipo de serviço
+
+* [ ] Filtro por data
+* [ ] Filtro por funcionário
+* [ ] Filtro por serviço
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-15 · Gestão de Clientes
+### RF-15 · Gerar Relatórios
 
-**Como** dono de estabelecimento,  
-**quero** visualizar o histórico de atendimentos de cada cliente, incluindo veículos e serviços realizados,  
-**para que** eu possa personalizar o atendimento.
+**Como** gestor,
+**quero** gerar relatórios,
+**para** acompanhar o desempenho.
 
 **Critérios de Aceitação:**
-- [ ] Busca de cliente por nome ou telefone
-- [ ] Histórico ordenado por data
-- [ ] Dados do veículo associados ao cliente
+
+* [ ] Relatórios por período
+* [ ] Exportação (PDF ou CSV)
+* [ ] Dados consolidados
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 3 — Dashboard Financeiro e Painel de Gestão
+### RF-16 · Relatórios por Funcionário
 
-> **Objetivo:** Construir o painel de gestão com métricas financeiras, histórico de clientes e visualizações gerenciais.
-
-
----
-
-### RF-16 · Painel de Gestão (Visão Geral)
-
-**Como** dono de estabelecimento,  
-**quero** ver um painel com métricas principais (total de agendamentos, receita do dia, avaliação média),  
-**para que** eu tenha uma visão geral rápida do negócio.
+**Como** gestor,
+**quero** ver relatórios por funcionário,
+**para** avaliar produtividade.
 
 **Critérios de Aceitação:**
-- [ ] Dashboard carrega em menos de 3 segundos
-- [ ] Métricas do dia atual exibidas por padrão
-- [ ] Atalhos para ações frequentes disponíveis
+
+* [ ] Dados individuais
+* [ ] Quantidade de atendimentos
+* [ ] Receita gerada
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-17 · Exportação de Relatórios
+### RF-17 · Relatórios por Cliente
 
-**Como** dono de estabelecimento,  
-**quero** exportar relatórios financeiros em PDF ou Excel,  
-**para que** eu possa utilizá-los em prestação de contas ou análises externas.
+**Como** gestor,
+**quero** visualizar relatórios por cliente,
+**para** entender comportamento de consumo.
 
 **Critérios de Aceitação:**
-- [ ] Exportação em PDF e XLSX disponível
-- [ ] Relatório inclui período, serviços e totais
-- [ ] Nome do arquivo gerado automaticamente com a data
+
+* [ ] Histórico de serviços
+* [ ] Frequência de uso
+* [ ] Ticket médio
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-18 · Mapa Interativo
+## Sprint 3 — Experiência do Cliente
 
-**Como** cliente,  
-**quero** visualizar no mapa os estabelecimentos próximos à minha localização,  
-**para que** eu possa encontrar facilmente uma opção conveniente.
+> **Objetivo:** Permitir que o cliente interaja com o sistema de forma simples e autônoma.
+
+---
+
+### RF-18 · Agendamento de Serviço
+
+**Como** cliente,
+**quero** agendar um serviço,
+**para** garantir atendimento.
 
 **Critérios de Aceitação:**
-- [ ] Permissão de geolocalização solicitada ao abrir o mapa
-- [ ] Pins no mapa para cada estabelecimento cadastrado
-- [ ] Raio de busca ajustável (ex.: 5, 10, 20 km)
+
+* [ ] Escolha de data e horário
+* [ ] Seleção de serviço
+* [ ] Confirmação do agendamento
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 4 — App Mobile: Mapa e Busca de Estabelecimentos
+### RF-19 · Autoagendamento via Link
 
-> **Objetivo:** Desenvolver as funcionalidades de mapa interativo, busca e visualização de perfis de estabelecimentos no app.
-
----
-
-### RF-19 · Busca de Estabelecimentos
-
-**Como** cliente,  
-**quero** buscar estabelecimentos por nome, tipo de serviço ou localização,  
-**para que** eu encontre rapidamente o que preciso.
+**Como** cliente,
+**quero** agendar por link,
+**para** facilitar o acesso.
 
 **Critérios de Aceitação:**
-- [ ] Campo de busca com autocomplete
-- [ ] Filtros por serviço e distância disponíveis
-- [ ] Resultados ordenados por relevância e proximidade
+
+* [ ] Link funcional
+* [ ] Interface simples
+* [ ] Confirmação automática
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-20 · Perfil do Estabelecimento
+### RF-20 · Cadastro de Veículo
 
-**Como** cliente,  
-**quero** acessar o perfil de um estabelecimento com fotos, serviços, avaliações e horários de funcionamento,  
-**para que** eu possa decidir se quero agendar um serviço.
+**Como** cliente,
+**quero** cadastrar meu veículo,
+**para** agilizar futuros agendamentos.
 
 **Critérios de Aceitação:**
-- [ ] Galeria de fotos do estabelecimento
-- [ ] Lista de serviços com preço e duração estimada
-- [ ] Avaliação média e comentários visíveis
+
+* [ ] Cadastro com placa e modelo
+* [ ] Salvamento persistente
+* [ ] Seleção em novos agendamentos
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-21 · Favoritar Estabelecimentos
+### RF-21 · Enviar Fotos no Agendamento
 
-**Como** cliente,  
-**quero** salvar estabelecimentos favoritos,  
-**para que** eu possa acessá-los rapidamente nas próximas visitas ao app.
+**Como** cliente,
+**quero** enviar fotos do veículo,
+**para** informar o estado antes do serviço.
 
 **Critérios de Aceitação:**
-- [ ] Ícone de favorito na tela do estabelecimento
-- [ ] Lista de favoritos acessível no perfil do usuário
-- [ ] Favoritos sincronizados entre dispositivos
+
+* [ ] Upload de imagens
+* [ ] Associação ao agendamento
+* [ ] Visualização prévia
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 5 — App Mobile: Agendamento e Histórico
+### RF-22 · Visualizar Histórico de Serviços
 
-> **Objetivo:** Implementar o fluxo de agendamento online pelo app, cancelamento e visualização do histórico de serviços.
-
----
-
-### RF-22 · Agendamento Online
-
-**Como** cliente,  
-**quero** selecionar um serviço, data e horário disponível para agendar um atendimento diretamente pelo app,  
-**para que** eu não precise ligar ou ir pessoalmente ao estabelecimento.
+**Como** cliente,
+**quero** ver meu histórico,
+**para** acompanhar serviços realizados.
 
 **Critérios de Aceitação:**
-- [ ] Fluxo de agendamento em no máximo 3 passos
-- [ ] Confirmação exibida ao final do processo
-- [ ] Agendamento aparece imediatamente na agenda do estabelecimento
+
+* [ ] Lista de serviços
+* [ ] Filtro por período
+* [ ] Informações detalhadas
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-23 · Cancelamento de Agendamento
+### RF-23 · Visualizar Fotos do Atendimento
 
-**Como** cliente,  
-**quero** cancelar um agendamento pelo app,  
-**para que** eu possa desmarcar quando necessário sem precisar contatar o estabelecimento.
+**Como** cliente,
+**quero** ver fotos do antes e depois,
+**para** validar o serviço.
 
 **Critérios de Aceitação:**
-- [ ] Cancelamento disponível até X horas antes do horário (configurável)
-- [ ] Estabelecimento notificado do cancelamento
-- [ ] Horário liberado automaticamente na agenda
+
+* [ ] Exibição de fotos
+* [ ] Separação antes/depois
+* [ ] Disponível por até 60 dias
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-24 · Histórico de Serviços
+## Sprint 4 — Comunicação, Relatórios e Recursos Avançados
 
-**Como** cliente,  
-**quero** visualizar o histórico de todos os meus agendamentos anteriores,  
-**para que** eu possa acompanhar meu histórico de serviços e reagendar facilmente.
+> **Objetivo:** Melhorar comunicação com o cliente e oferecer recursos avançados de busca e controle.
+
+---
+
+### RF-24 · Notificação de Confirmação
+
+**Como** sistema,
+**quero** notificar o cliente,
+**para** confirmar o agendamento.
 
 **Critérios de Aceitação:**
-- [ ] Lista separada por status (concluído, cancelado, pendente)
-- [ ] Detalhes de cada atendimento acessíveis
-- [ ] Opção de reagendar serviço anterior com 1 clique
+
+* [ ] Notificação via app
+* [ ] Mensagem via WhatsApp
+* [ ] Confirmação registrada
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-25 · Acompanhamento de Status em Tempo Real
+### RF-25 · Lembrete de Atendimento
 
-**Como** cliente,  
-**quero** acompanhar o status do meu agendamento em tempo real,  
-**para que** eu saiba quando meu veículo está sendo atendido ou está pronto.
+**Como** sistema,
+**quero** enviar lembretes,
+**para** reduzir faltas.
 
 **Critérios de Aceitação:**
-- [ ] Status sincronizado com o painel do estabelecimento
-- [ ] Atualização sem necessidade de recarregar a tela
-- [ ] Histórico de mudanças de status visível
+
+* [ ] Envio automático
+* [ ] Configuração de horário
+* [ ] Registro de envio
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-26 · Recuperação de Senha
+### RF-26 · Busca de Atendimentos por Veículo
 
-**Como** usuário,  
-**quero** recuperar minha senha via e-mail,  
-**para que** eu não perca acesso à minha conta caso esqueça minhas credenciais.
+**Como** gestor,
+**quero** buscar atendimentos por veículo,
+**para** localizar registros rapidamente.
 
 **Critérios de Aceitação:**
-- [ ] Link de redefinição enviado por e-mail
-- [ ] Link expira em 1 hora
-- [ ] Nova senha deve atender requisitos mínimos de segurança
+
+* [ ] Busca por placa
+* [ ] Resultados filtrados
+* [ ] Exibição clara
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-## Sprint 6 — Avaliações, Notificações e Ajustes Finais
+### RF-27 · Busca por Serviço
 
-> **Objetivo:** Finalizar as funcionalidades de avaliação, notificações push e realizar os ajustes finais antes da apresentação.
-
----
-
-### RF-27 · Avaliação Pós-Serviço
-
-**Como** cliente,  
-**quero** avaliar o serviço recebido com nota e comentário após a conclusão do atendimento,  
-**para que** outros clientes possam tomar decisões informadas.
+**Como** gestor,
+**quero** buscar por serviço,
+**para** analisar execução.
 
 **Critérios de Aceitação:**
-- [ ] Avaliação de 1 a 5 estrelas
-- [ ] Comentário opcional com limite de 500 caracteres
-- [ ] Avaliação só disponível após status "Finalizado"
+
+* [ ] Filtro por tipo de serviço
+* [ ] Resultados organizados
+* [ ] Dados relevantes exibidos
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-28 · Resposta às Avaliações
+### RF-28 · Busca por Data
 
-**Como** dono de estabelecimento,  
-**quero** visualizar e responder às avaliações dos clientes,  
-**para que** eu possa demonstrar atenção ao feedback recebido.
+**Como** gestor,
+**quero** buscar atendimentos por data,
+**para** análises temporais.
 
 **Critérios de Aceitação:**
-- [ ] Lista de avaliações ordenada por data
-- [ ] Campo de resposta disponível por avaliação
-- [ ] Resposta visível para todos os clientes
+
+* [ ] Filtro por período
+* [ ] Resultados corretos
+* [ ] Performance adequada
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
 
-### RF-29 · Notificações Push (Cliente)
+### RF-29 · Acesso a Fotos por Período
 
-**Como** cliente,  
-**quero** receber notificações push de confirmação e lembrete de agendamento,  
-**para que** eu não esqueça dos serviços marcados.
+**Como** gestor,
+**quero** acessar fotos de atendimentos,
+**para** auditoria e controle de qualidade.
 
 **Critérios de Aceitação:**
-- [ ] Notificação de confirmação imediata após agendar
-- [ ] Lembrete enviado 24h e 1h antes do horário
-- [ ] Possível desativar nas configurações do app
+
+* [ ] Disponível por 60 dias
+* [ ] Associação correta com atendimento
+* [ ] Visualização organizada
 
 Responsáveis: <!-- @membro1 @membro2 -->
 
 ---
-
-### RF-30 · Notificações de Novos Agendamentos (Estabelecimento)
-
-**Como** dono de estabelecimento,  
-**quero** receber notificações de novos agendamentos e cancelamentos,  
-**para que** eu possa reagir rapidamente a qualquer mudança na agenda.
-
-**Critérios de Aceitação:**
-- [ ] Alerta em tempo real no painel web
-- [ ] Notificação por e-mail como backup
-- [ ] Preferências de notificação configuráveis
-
-Responsáveis: <!-- @membro1 @membro2 -->
-
----
-
-### RF-31 · Testes e Ajustes Finais
-
-**Como** equipe de desenvolvimento,  
-**quero** realizar testes de usabilidade e corrigir os ajustes finais apontados,  
-**para que** o produto esteja polido para a apresentação.
-
-**Critérios de Aceitação:**
-- [ ] Testes realizados com ao menos 3 usuários reais
-- [ ] Lista de bugs críticos zerada
-- [ ] Melhorias de UX documentadas e implementadas
-
-Responsáveis: <!-- @membro1 @membro2 -->

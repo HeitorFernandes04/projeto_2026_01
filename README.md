@@ -237,13 +237,10 @@ ionic serve
 
 ## 🗺️ Roadmap
 
-- [ ] **Sprint 0** — Configuração do ambiente, repositório e definição de requisitos
-- [ ] **Sprint 1** — Autenticação, cadastro de estabelecimentos e estrutura base
-- [ ] **Sprint 2** — Módulo de agendamento (backend + web)
-- [ ] **Sprint 3** — Dashboard financeiro e painel de gestão
-- [ ] **Sprint 4** — App mobile: mapa e busca de estabelecimentos
-- [ ] **Sprint 5** — App mobile: agendamento e histórico
-- [ ] **Sprint 6** — Avaliações, notificações e ajustes finais
+- [ ] **Sprint 1** — Experiência do Funcionário
+- [ ] **Sprint 2** — Gestão e Controle Operacional
+- [ ] **Sprint 3** — Experiência do Cliente
+- [ ] **Sprint 4** — Comunicação, Relatórios e Recursos Avançados
 - [ ] **Evento Final** — Apresentação pública do produto
 
 ---
