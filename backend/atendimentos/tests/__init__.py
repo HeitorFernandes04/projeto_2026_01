@@ -1,0 +1,1 @@
+# atendimentos tests package
