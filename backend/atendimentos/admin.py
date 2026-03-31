@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from .models import Servico, Veiculo, Atendimento
+from .models import Servico, Veiculo, Atendimento, MidiaAtendimento
 
 
 class AtendimentoAdminForm(forms.ModelForm):
@@ -15,9 +15,23 @@ class AtendimentoAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
+class MidiaAtendimentoInline(admin.TabularInline):
+    model = MidiaAtendimento
+    extra = 0
+    readonly_fields = ('enviado_em',)
+
+
 @admin.register(Atendimento)
 class AtendimentoAdmin(admin.ModelAdmin):
     form = AtendimentoAdminForm
+    inlines = [MidiaAtendimentoInline]
+
+
+@admin.register(MidiaAtendimento)
+class MidiaAtendimentoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'atendimento', 'momento', 'enviado_em')
+    list_filter = ('momento',)
+    readonly_fields = ('enviado_em',)
 
 
 admin.site.register(Servico)
