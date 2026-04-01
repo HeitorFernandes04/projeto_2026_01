@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -27,7 +28,8 @@ class AtendimentosHojeView(APIView):
         hoje = timezone.localdate()
 
         atendimentos = Atendimento.objects.filter(
-            data_hora__date=hoje
+            Q(funcionario__isnull=True) | Q(funcionario=request.user),
+            data_hora__date=hoje,
         ).order_by('data_hora')
 
         serializer = AtendimentoSerializer(atendimentos, many=True)
@@ -47,11 +49,11 @@ class AtendimentoDetailView(APIView):
     """GET /api/atendimentos/{id}/ — detalhe completo de um atendimento."""
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
 
     def get(self, request, pk):
-        atendimento = get_object_or_404(Atendimento, pk=pk)
-        serializer = AtendimentoSerializer(atendimento)
+        # Atendimento já carregado e autorizado pela permission
+        serializer = AtendimentoSerializer(request.atendimento)
         return Response(serializer.data)
 
 
@@ -102,17 +104,36 @@ class IniciarAtendimentoView(APIView):
     """
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
 
     def patch(self, request, pk):
-        atendimento = get_object_or_404(Atendimento, pk=pk)
+        # Atendimento já carregado e autorizado pela permission
+        atendimento = request.atendimento
 
         if atendimento.status != 'agendado':
             return Response(
                 {'detail': f'Não é possível iniciar um atendimento com status "{atendimento.status}".'},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_409_CONFLICT,
             )
 
+        # Trava: o funcionário já está ocupado com outro atendimento?
+        if Atendimento.objects.filter(funcionario=request.user, status='em_andamento').exists():
+            return Response(
+                {'detail': 'Termine o atendimento atual antes de iniciar outro.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        # Concorrência: outro funcionário assumiu este atendimento no intervalo entre
+        # a checagem de permissão e esta execução? Relê o DB para garantir estado fresco.
+        atendimento.refresh_from_db()
+        if atendimento.funcionario is not None and atendimento.funcionario != request.user:
+            return Response(
+                {'detail': 'Este serviço acabou de ser assumido por outro funcionário.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        # Claim: assume a fila e inicia
+        atendimento.funcionario = request.user
         atendimento.status = 'em_andamento'
         atendimento.horario_inicio = timezone.now()
         atendimento.save()

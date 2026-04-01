@@ -28,4 +28,6 @@ class IsFuncionarioDoAtendimento(BasePermission):
         # Armazena no request para evitar query duplicada na view
         request.atendimento = atendimento
 
-        return atendimento.funcionario == request.user
+        # Permite acesso quando o atendimento ainda não tem dono (fila livre)
+        # ou quando o usuário logado já é o funcionário vinculado.
+        return atendimento.funcionario is None or atendimento.funcionario == request.user
