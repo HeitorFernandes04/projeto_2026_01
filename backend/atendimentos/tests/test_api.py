@@ -2,9 +2,11 @@
 Testes de integração para a API REST.
 RF-04: Iniciar atendimento (concorrência, fila, restrições de negócio).
 RF-05: Upload de fotos antes do atendimento.
+RF-06: Upload de fotos após o atendimento.
 Testa o contrato HTTP: status codes, permissões, formato de resposta.
 """
 import tempfile
+from io import BytesIO
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
@@ -257,3 +259,90 @@ class TestFotoUploadAPI(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data[0]['arquivo'].startswith('http'))
+
+    # -------------------------------------------------------------------
+    # RF-05/06 — Limite de 5 fotos via API
+    # -------------------------------------------------------------------
+
+    def test_upload_excedendo_limite_5_retorna_400(self):
+        """Enviar 6 fotos de uma vez → 400."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        response = self.client.post(
+            self.url,
+            data={
+                'momento': 'ANTES',
+                'arquivos': [criar_imagem_fake_buffer(f'f{i}.jpg') for i in range(6)],
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_upload_complementar_excedendo_limite_retorna_400(self):
+        """Já existe 4 fotos ANTES; enviar mais 2 → 400 (total seria 6)."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        # Envia 4 primeiras
+        self.client.post(
+            self.url,
+            data={
+                'momento': 'ANTES',
+                'arquivos': [criar_imagem_fake_buffer(f'f{i}.jpg') for i in range(4)],
+            },
+            format='multipart',
+        )
+
+        # Tenta enviar mais 2 (total = 6)
+        response = self.client.post(
+            self.url,
+            data={
+                'momento': 'ANTES',
+                'arquivos': [criar_imagem_fake_buffer('f5.jpg'), criar_imagem_fake_buffer('f6.jpg')],
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # -------------------------------------------------------------------
+    # RF-06 — Upload de fotos DEPOIS
+    # -------------------------------------------------------------------
+
+    def test_upload_fotos_depois_funciona_em_andamento(self):
+        """Upload de fotos DEPOIS em atendimento EM_ANDAMENTO → 201."""
+        self.atendimento.status = 'em_andamento'
+        self.atendimento.save()
+
+        self.client.force_authenticate(user=self.funcionario)
+
+        response = self.client.post(
+            self.url,
+            data={
+                'momento': 'DEPOIS',
+                'arquivos': [criar_imagem_fake_buffer('depois1.jpg')],
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data[0]['momento'], 'DEPOIS')
+
+    # -------------------------------------------------------------------
+    # Segurança — Extensão de arquivo inválida
+    # -------------------------------------------------------------------
+
+    def test_upload_arquivo_nao_imagem_retorna_400(self):
+        """Enviar arquivo .txt disfarçado → 400."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        arquivo_txt = BytesIO(b'isto nao e uma imagem')
+        arquivo_txt.name = 'malicioso.txt'
+
+        response = self.client.post(
+            self.url,
+            data={'momento': 'ANTES', 'arquivos': [arquivo_txt]},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

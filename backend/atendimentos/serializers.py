@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Atendimento, MidiaAtendimento, Servico, Veiculo
-
+import os
 
 class ServicoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,17 +41,32 @@ class CriarAtendimentoSerializer(serializers.Serializer):
 
 
 # ---------------------------------------------------------------------------
-#  RF-05 — Upload de fotos
+#  RF-05/06 — Upload de fotos (antes e depois)
 # ---------------------------------------------------------------------------
+
+EXTENSOES_PERMITIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
+
+
+def validar_extensao_imagem(arquivo):
+    """Valida que o arquivo possui uma extensão de imagem permitida."""
+
+    ext = os.path.splitext(arquivo.name)[1].lower()
+    if ext not in EXTENSOES_PERMITIDAS:
+        raise serializers.ValidationError(
+            f'Extensão "{ext}" não permitida. '
+            f'Extensões aceitas: {", ".join(sorted(EXTENSOES_PERMITIDAS))}.'
+        )
+
 
 class MidiaAtendimentoUploadSerializer(serializers.Serializer):
     """Serializer de ENTRADA para upload de múltiplas fotos."""
 
     momento = serializers.ChoiceField(choices=['ANTES', 'DEPOIS'])
     arquivos = serializers.ListField(
-        child=serializers.ImageField(),
+        child=serializers.ImageField(validators=[validar_extensao_imagem]),
         allow_empty=False,
-        help_text='Lista de imagens para upload.',
+        max_length=5,
+        help_text='Lista de imagens para upload (máximo 5).',
     )
 
 

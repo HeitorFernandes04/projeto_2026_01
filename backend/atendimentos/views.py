@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .models import Atendimento, Servico, Veiculo
+from .models import Atendimento, Servico
 from .permissions import IsFuncionarioDoAtendimento
 from .serializers import (
     AtendimentoSerializer,
@@ -16,8 +17,7 @@ from .serializers import (
     MidiaAtendimentoUploadSerializer,
     ServicoSerializer,
 )
-from .services import MidiaAtendimentoService
-from django.shortcuts import get_object_or_404
+from .services import AtendimentoService, MidiaAtendimentoService
 
 
 class AtendimentosHojeView(APIView):
@@ -30,7 +30,7 @@ class AtendimentosHojeView(APIView):
         atendimentos = Atendimento.objects.filter(
             Q(funcionario__isnull=True) | Q(funcionario=request.user),
             data_hora__date=hoje,
-        ).order_by('data_hora')
+        ).select_related('veiculo', 'servico').order_by('data_hora')
 
         serializer = AtendimentoSerializer(atendimentos, many=True)
         return Response(serializer.data)
@@ -69,27 +69,10 @@ class CriarAtendimentoView(APIView):
     def post(self, request):
         serializer = CriarAtendimentoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        dados = serializer.validated_data
 
-        servico = get_object_or_404(Servico, pk=dados['servico_id'])
-
-        veiculo, _ = Veiculo.objects.update_or_create(
-            placa=dados['placa'],
-            defaults={
-                'modelo':      dados['modelo'],
-                'marca':       dados['marca'],
-                'cor':         dados['cor'],
-                'nome_dono':   dados['nome_dono'],
-                'celular_dono': dados['celular_dono'],
-            }
-        )
-
-        atendimento = Atendimento.objects.create(
-            veiculo=veiculo,
-            servico=servico,
+        atendimento = AtendimentoService.criar_com_veiculo(
+            dados=serializer.validated_data,
             funcionario=request.user,
-            data_hora=dados['data_hora'],
-            observacoes=dados['observacoes'],
         )
 
         return Response(AtendimentoSerializer(atendimento).data, status=status.HTTP_201_CREATED)
