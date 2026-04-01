@@ -49,6 +49,7 @@ class Atendimento(models.Model):
         related_name='atendimentos',
     )
     data_hora = models.DateTimeField()
+    horario_inicio = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='agendado')
     observacoes = models.TextField(blank=True, default='')
 

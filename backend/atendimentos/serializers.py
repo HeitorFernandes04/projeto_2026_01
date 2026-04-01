@@ -20,7 +20,24 @@ class AtendimentoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Atendimento
-        fields = ['id', 'veiculo', 'servico', 'data_hora', 'status', 'observacoes']
+        fields = ['id', 'veiculo', 'servico', 'data_hora', 'horario_inicio', 'status', 'observacoes']
+
+
+# ---------------------------------------------------------------------------
+#  RF-04 — Criar atendimento
+# ---------------------------------------------------------------------------
+
+class CriarAtendimentoSerializer(serializers.Serializer):
+    """Serializer de ENTRADA para criar um atendimento com veículo embutido."""
+    nome_dono   = serializers.CharField()
+    celular_dono = serializers.CharField(required=False, allow_blank=True, default='')
+    placa       = serializers.CharField()
+    modelo      = serializers.CharField()
+    marca       = serializers.CharField()
+    cor         = serializers.CharField(required=False, allow_blank=True, default='')
+    servico_id  = serializers.IntegerField()
+    data_hora   = serializers.DateTimeField()
+    observacoes = serializers.CharField(required=False, allow_blank=True, default='')
 
 
 # ---------------------------------------------------------------------------
