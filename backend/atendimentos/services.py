@@ -160,3 +160,23 @@ class AtendimentoService:
             data_hora=dados['data_hora'],
             observacoes=dados['observacoes'],
         )
+
+    @staticmethod
+    def finalizar(atendimento):
+        """
+        RF-06: Finaliza um atendimento em andamento verificando restrições de negócio.
+        
+        Raises:
+            ValidationError se o atendimento não estiver em andamento ou 
+            não possuir fotos do momento DEPOIS.
+        """
+        if atendimento.status != 'em_andamento':
+            raise ValidationError('Apenas atendimentos em andamento podem ser finalizados.')
+
+        if not atendimento.midias.filter(momento='DEPOIS').exists():
+            raise ValidationError('Não é possível finalizar sem enviar as fotos do DEPOIS.')
+
+        atendimento.status = 'finalizado'
+        # Salva para ativar possíveis signals do Django
+        atendimento.save()
+        return atendimento

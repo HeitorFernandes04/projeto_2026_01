@@ -1,7 +1,8 @@
-import { IonContent, IonPage, IonSpinner } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonAlert } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { getAtendimento, iniciarAtendimento } from '../../services/api';
+import { getAtendimento, iniciarAtendimento, finalizarAtendimento } from '../../services/api';
+import GaleriaFotos from '../../components/GaleriaFotos';
 import '../../theme/lava-me.css';
 
 interface Veiculo {
@@ -15,6 +16,7 @@ interface Atendimento {
   id: number; veiculo: Veiculo; servico: Servico;
   data_hora: string; horario_inicio: string | null;
   status: string; observacoes: string;
+  midias: { id: number; arquivo: string; momento: 'ANTES' | 'DEPOIS' }[];
 }
 
 const STATUS_MAP: Record<string, { label: string; classe: string }> = {
@@ -41,12 +43,20 @@ const DetalhesAtendimento: React.FC = () => {
   const [iniciando, setIniciando] = useState(false);
   const [erro, setErro] = useState('');
 
-  useEffect(() => {
+  const [finalizando, setFinalizando] = useState(false);
+
+  const carregarDetalhes = () => {
     getAtendimento(Number(id))
       .then(setAtendimento)
       .catch(() => setErro('Não foi possível carregar o atendimento.'))
       .finally(() => setCarregando(false));
+  };
+
+  useEffect(() => {
+    carregarDetalhes();
   }, [id]);
+
+  const [presentAlert] = useIonAlert();
 
   const handleIniciar = async () => {
     if (!atendimento) return;
@@ -60,6 +70,31 @@ const DetalhesAtendimento: React.FC = () => {
     } finally {
       setIniciando(false);
     }
+  };
+
+  const handleFinalizar = async () => {
+    if (!atendimento) return;
+    setFinalizando(true);
+    try {
+      const atualizado = await finalizarAtendimento(atendimento.id);
+      setAtendimento(atualizado);
+    } catch (e: any) {
+      console.error('Erro ao finalizar atendimento:', e);
+      alert(e.message || 'Não foi possível finalizar o atendimento.');
+    } finally {
+      setFinalizando(false);
+    }
+  };
+
+  const confirmarFinalizar = () => {
+    presentAlert({
+      header: 'Finalizar Atendimento',
+      message: 'Tem certeza que deseja encerrar o serviço? Você não poderá adicionar/remover fotos depois.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Sim, finalizar', role: 'confirm', handler: () => handleFinalizar() },
+      ],
+    });
   };
 
   if (carregando) return (
@@ -177,16 +212,37 @@ const DetalhesAtendimento: React.FC = () => {
             </div>
           </div>
 
-          {/* Seção Fotos */}
+          {/* Seção Fotos ANTES */}
           <div style={styles.secao}>
             <div style={styles.secaoTitulo}>
               <span style={styles.secaoIcon}>📷</span>
-              <span>Fotos do Veículo</span>
+              <span>Fotos Antes do Serviço</span>
             </div>
-            <div style={styles.fotosArea}>
-              <p style={styles.fotosVazio}>Nenhuma foto registrada ainda.</p>
-            </div>
+            <GaleriaFotos 
+              atendimentoId={atendimento.id}
+              momento="ANTES"
+              fotosIniciais={atendimento.midias || []}
+              onUploadSuccess={carregarDetalhes}
+              somenteLeitura={atendimento.status !== 'agendado'}
+            />
           </div>
+
+          {/* Seção Fotos DEPOIS */}
+          {['em_andamento', 'finalizado'].includes(atendimento.status) && (
+            <div style={styles.secao}>
+              <div style={styles.secaoTitulo}>
+                <span style={styles.secaoIcon}>✨</span>
+                <span>Fotos Depois do Serviço</span>
+              </div>
+              <GaleriaFotos 
+                atendimentoId={atendimento.id}
+                momento="DEPOIS"
+                fotosIniciais={atendimento.midias || []}
+                onUploadSuccess={carregarDetalhes}
+                somenteLeitura={atendimento.status !== 'em_andamento'}
+              />
+            </div>
+          )}
 
           {atendimento.observacoes && (
             <div style={styles.secao}>
@@ -208,6 +264,19 @@ const DetalhesAtendimento: React.FC = () => {
               {iniciando
                 ? <IonSpinner name="crescent" style={{ width: 22, height: 22 }} />
                 : '▶  Iniciar Atendimento'}
+            </button>
+          )}
+
+          {/* Botão Finalizar — só aparece se em andamento */}
+          {atendimento.status === 'em_andamento' && (
+            <button
+              style={{ ...styles.btnFinalizar, opacity: finalizando || !(atendimento.midias || []).some((m) => m.momento === 'DEPOIS') ? 0.6 : 1 }}
+              disabled={finalizando || !(atendimento.midias || []).some((m) => m.momento === 'DEPOIS')}
+              onClick={confirmarFinalizar}
+            >
+              {finalizando
+                ? <IonSpinner name="crescent" style={{ width: 22, height: 22 }} />
+                : '✔  Finalizar Atendimento'}
             </button>
           )}
 
@@ -270,6 +339,14 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'linear-gradient(90deg, #f59e0b, #d97706)',
     color: '#fff', fontSize: 16, fontWeight: 700,
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
+  btnFinalizar: {
+    width: '100%', padding: '18px 0', borderRadius: 28,
+    border: 'none', marginTop: 8,
+    background: 'linear-gradient(90deg, #22c55e, #16a34a)',
+    color: '#fff', fontSize: 16, fontWeight: 700,
+    cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
   },
 };

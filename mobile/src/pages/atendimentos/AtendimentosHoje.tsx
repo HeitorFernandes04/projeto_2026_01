@@ -37,7 +37,7 @@ const AtendimentosHoje: React.FC = () => {
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
-  const [filtro, setFiltro] = useState('Todos');
+  const [filtro, setFiltro] = useState('Aguardando');
 
   useIonViewDidEnter(() => {
     setCarregando(true);

@@ -30,9 +30,9 @@ class AtendimentosHojeView(APIView):
         atendimentos = Atendimento.objects.filter(
             Q(funcionario__isnull=True) | Q(funcionario=request.user),
             data_hora__date=hoje,
-        ).select_related('veiculo', 'servico').order_by('data_hora')
+        ).select_related('veiculo', 'servico').prefetch_related('midias').order_by('data_hora')
 
-        serializer = AtendimentoSerializer(atendimentos, many=True)
+        serializer = AtendimentoSerializer(atendimentos, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -53,7 +53,7 @@ class AtendimentoDetailView(APIView):
 
     def get(self, request, pk):
         # Atendimento já carregado e autorizado pela permission
-        serializer = AtendimentoSerializer(request.atendimento)
+        serializer = AtendimentoSerializer(request.atendimento, context={'request': request})
         return Response(serializer.data)
 
 
@@ -75,7 +75,7 @@ class CriarAtendimentoView(APIView):
             funcionario=request.user,
         )
 
-        return Response(AtendimentoSerializer(atendimento).data, status=status.HTTP_201_CREATED)
+        return Response(AtendimentoSerializer(atendimento, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
 class IniciarAtendimentoView(APIView):
@@ -121,7 +121,27 @@ class IniciarAtendimentoView(APIView):
         atendimento.horario_inicio = timezone.now()
         atendimento.save()
 
-        serializer = AtendimentoSerializer(atendimento)
+        serializer = AtendimentoSerializer(atendimento, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FinalizarAtendimentoView(APIView):
+    """
+    PATCH /api/atendimentos/{id}/finalizar/
+    Finaliza um atendimento em andamento. Requer que as fotos do DEPOIS tenham sido enviadas.
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+
+    def patch(self, request, pk):
+        try:
+            AtendimentoService.finalizar(request.atendimento)
+        except ValidationError as e:
+            # Retorna a mensagem de erro formatada extraída da ValidationError
+            return Response({'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = AtendimentoSerializer(request.atendimento, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

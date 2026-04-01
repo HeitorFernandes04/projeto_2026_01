@@ -346,3 +346,55 @@ class TestFotoUploadAPI(TestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+class TestFinalizarAtendimentoAPI(TestCase):
+    """Testes para o endpoint PATCH /api/atendimentos/{id}/finalizar/"""
+
+    def setUp(self):
+        self.funcionario = UserFactory()
+        self.outro_funcionario = UserFactory()
+        self.atendimento = AtendimentoFactory(funcionario=self.funcionario, status='em_andamento')
+        self.client = APIClient()
+        self.url = reverse('atendimento-finalizar', kwargs={'pk': self.atendimento.pk})
+        
+        # Cria foto de ANTES por padrao para simular cenario real inicial
+        from atendimentos.models import MidiaAtendimento
+        MidiaAtendimento.objects.create(atendimento=self.atendimento, arquivo='fake.jpg', momento='ANTES')
+
+    def test_finalizar_atendimento_sucesso(self):
+        """Finalizar atendimento com sucesso -> 200 OK (com foto DEPOIS)"""
+        self.client.force_authenticate(user=self.funcionario)
+        from atendimentos.models import MidiaAtendimento
+        MidiaAtendimento.objects.create(atendimento=self.atendimento, arquivo='fake.jpg', momento='DEPOIS')
+
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'finalizado')
+
+    def test_finalizar_sem_foto_depois_falha(self):
+        """Tentativa de finalizar sem foto DEPOIS -> 400 Bad Request"""
+        self.client.force_authenticate(user=self.funcionario)
+        
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Não é possível finalizar sem enviar as fotos do DEPOIS.')
+
+    def test_finalizar_status_invalido_falha(self):
+        """Atendimento que não está em_andamento não pode ser finalizado -> 400 Bad request"""
+        self.atendimento.status = 'agendado'
+        self.atendimento.save()
+        self.client.force_authenticate(user=self.funcionario)
+        
+        # mesmo com foto depois
+        from atendimentos.models import MidiaAtendimento
+        MidiaAtendimento.objects.create(atendimento=self.atendimento, arquivo='fake.jpg', momento='DEPOIS')
+
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Apenas atendimentos em andamento podem ser finalizados.')
+
+    def test_funcionario_alheio_falha_403(self):
+        """Outro funcionario não pode finalizar -> 403 Forbidden"""
+        self.client.force_authenticate(user=self.outro_funcionario)
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

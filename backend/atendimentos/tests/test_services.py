@@ -252,3 +252,46 @@ class TestAtendimentoService(TestCase):
                 dados=dados, funcionario=self.funcionario,
             )
 
+    # -------------------------------------------------------------------
+    # RF-06 — Finalizar Serviço
+    # -------------------------------------------------------------------
+
+    def test_finalizar_status_invalido(self):
+        """Não pode finalizar se não estiver em andamento."""
+        from atendimentos.services import AtendimentoService
+        from django.core.exceptions import ValidationError
+        from atendimentos.tests.factories import AtendimentoFactory
+
+        atendimento = AtendimentoFactory(funcionario=self.funcionario, status='agendado')
+
+        with self.assertRaisesMessage(ValidationError, 'Apenas atendimentos em andamento podem ser finalizados.'):
+            AtendimentoService.finalizar(atendimento)
+
+    def test_finalizar_sem_foto_depois(self):
+        """Não pode finalizar se estiver em andamento mas não tiver foto do DEPOIS."""
+        from atendimentos.services import AtendimentoService
+        from django.core.exceptions import ValidationError
+        from atendimentos.models import MidiaAtendimento
+        from atendimentos.tests.factories import AtendimentoFactory
+
+        atendimento = AtendimentoFactory(funcionario=self.funcionario, status='em_andamento')
+
+        # Tem foto do ANTES apenas
+        MidiaAtendimento.objects.create(atendimento=atendimento, arquivo='fake.jpg', momento='ANTES')
+        
+        with self.assertRaisesMessage(ValidationError, 'Não é possível finalizar sem enviar as fotos do DEPOIS.'):
+            AtendimentoService.finalizar(atendimento)
+
+    def test_finalizar_com_foto_depois_sucesso(self):
+        """Finaliza com sucesso se tiver foto do DEPOIS."""
+        from atendimentos.services import AtendimentoService
+        from atendimentos.models import MidiaAtendimento
+        from atendimentos.tests.factories import AtendimentoFactory
+
+        atendimento = AtendimentoFactory(funcionario=self.funcionario, status='em_andamento')
+
+        MidiaAtendimento.objects.create(atendimento=atendimento, arquivo='fake.jpg', momento='DEPOIS')
+        
+        atualizado = AtendimentoService.finalizar(atendimento)
+        self.assertEqual(atualizado.status, 'finalizado')
+

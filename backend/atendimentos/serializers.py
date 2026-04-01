@@ -17,10 +17,19 @@ class VeiculoSerializer(serializers.ModelSerializer):
 class AtendimentoSerializer(serializers.ModelSerializer):
     veiculo = VeiculoSerializer(read_only=True)
     servico = ServicoSerializer(read_only=True)
+    midias = serializers.SerializerMethodField()
 
     class Meta:
         model = Atendimento
-        fields = ['id', 'veiculo', 'servico', 'data_hora', 'horario_inicio', 'status', 'observacoes']
+        fields = ['id', 'veiculo', 'servico', 'data_hora', 'horario_inicio', 'status', 'observacoes', 'midias']
+
+    def get_midias(self, obj):
+        # Importação local para contornar dependência circular de declaração.
+        from .serializers import MidiaAtendimentoSerializer
+        
+        request = self.context.get('request')
+        midias = obj.midias.all()
+        return MidiaAtendimentoSerializer(midias, many=True, context={'request': request}).data
 
 
 # ---------------------------------------------------------------------------
