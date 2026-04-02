@@ -70,3 +70,11 @@ def criar_imagem_fake_buffer(nome='foto.jpg'):
     buffer.seek(0)
     buffer.name = nome
     return buffer
+
+
+def criar_imagem_fake_grande(nome='grande.jpg', largura=4000, altura=3000):
+    """Gera um SimpleUploadedFile com uma imagem JPEG grande para testar compressão."""
+    buffer = BytesIO()
+    Image.new('RGB', (largura, altura), color='green').save(buffer, format='JPEG')
+    buffer.seek(0)
+    return SimpleUploadedFile(nome, buffer.read(), content_type='image/jpeg')

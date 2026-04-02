@@ -2,9 +2,11 @@
 Testes de integração para a API REST.
 RF-04: Iniciar atendimento (concorrência, fila, restrições de negócio).
 RF-05: Upload de fotos antes do atendimento.
+RF-06: Upload de fotos após o atendimento.
 Testa o contrato HTTP: status codes, permissões, formato de resposta.
 """
 import tempfile
+from io import BytesIO
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
@@ -257,3 +259,142 @@ class TestFotoUploadAPI(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data[0]['arquivo'].startswith('http'))
+
+    # -------------------------------------------------------------------
+    # RF-05/06 — Limite de 5 fotos via API
+    # -------------------------------------------------------------------
+
+    def test_upload_excedendo_limite_5_retorna_400(self):
+        """Enviar 6 fotos de uma vez → 400."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        response = self.client.post(
+            self.url,
+            data={
+                'momento': 'ANTES',
+                'arquivos': [criar_imagem_fake_buffer(f'f{i}.jpg') for i in range(6)],
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_upload_complementar_excedendo_limite_retorna_400(self):
+        """Já existe 4 fotos ANTES; enviar mais 2 → 400 (total seria 6)."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        # Envia 4 primeiras
+        self.client.post(
+            self.url,
+            data={
+                'momento': 'ANTES',
+                'arquivos': [criar_imagem_fake_buffer(f'f{i}.jpg') for i in range(4)],
+            },
+            format='multipart',
+        )
+
+        # Tenta enviar mais 2 (total = 6)
+        response = self.client.post(
+            self.url,
+            data={
+                'momento': 'ANTES',
+                'arquivos': [criar_imagem_fake_buffer('f5.jpg'), criar_imagem_fake_buffer('f6.jpg')],
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # -------------------------------------------------------------------
+    # RF-06 — Upload de fotos DEPOIS
+    # -------------------------------------------------------------------
+
+    def test_upload_fotos_depois_funciona_em_andamento(self):
+        """Upload de fotos DEPOIS em atendimento EM_ANDAMENTO → 201."""
+        self.atendimento.status = 'em_andamento'
+        self.atendimento.save()
+
+        self.client.force_authenticate(user=self.funcionario)
+
+        response = self.client.post(
+            self.url,
+            data={
+                'momento': 'DEPOIS',
+                'arquivos': [criar_imagem_fake_buffer('depois1.jpg')],
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data[0]['momento'], 'DEPOIS')
+
+    # -------------------------------------------------------------------
+    # Segurança — Extensão de arquivo inválida
+    # -------------------------------------------------------------------
+
+    def test_upload_arquivo_nao_imagem_retorna_400(self):
+        """Enviar arquivo .txt disfarçado → 400."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        arquivo_txt = BytesIO(b'isto nao e uma imagem')
+        arquivo_txt.name = 'malicioso.txt'
+
+        response = self.client.post(
+            self.url,
+            data={'momento': 'ANTES', 'arquivos': [arquivo_txt]},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+class TestFinalizarAtendimentoAPI(TestCase):
+    """Testes para o endpoint PATCH /api/atendimentos/{id}/finalizar/"""
+
+    def setUp(self):
+        self.funcionario = UserFactory()
+        self.outro_funcionario = UserFactory()
+        self.atendimento = AtendimentoFactory(funcionario=self.funcionario, status='em_andamento')
+        self.client = APIClient()
+        self.url = reverse('atendimento-finalizar', kwargs={'pk': self.atendimento.pk})
+        
+        # Cria foto de ANTES por padrao para simular cenario real inicial
+        from atendimentos.models import MidiaAtendimento
+        MidiaAtendimento.objects.create(atendimento=self.atendimento, arquivo='fake.jpg', momento='ANTES')
+
+    def test_finalizar_atendimento_sucesso(self):
+        """Finalizar atendimento com sucesso -> 200 OK (com foto DEPOIS)"""
+        self.client.force_authenticate(user=self.funcionario)
+        from atendimentos.models import MidiaAtendimento
+        MidiaAtendimento.objects.create(atendimento=self.atendimento, arquivo='fake.jpg', momento='DEPOIS')
+
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'finalizado')
+
+    def test_finalizar_sem_foto_depois_falha(self):
+        """Tentativa de finalizar sem foto DEPOIS -> 400 Bad Request"""
+        self.client.force_authenticate(user=self.funcionario)
+        
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Não é possível finalizar sem enviar as fotos do DEPOIS.')
+
+    def test_finalizar_status_invalido_falha(self):
+        """Atendimento que não está em_andamento não pode ser finalizado -> 400 Bad request"""
+        self.atendimento.status = 'agendado'
+        self.atendimento.save()
+        self.client.force_authenticate(user=self.funcionario)
+        
+        # mesmo com foto depois
+        from atendimentos.models import MidiaAtendimento
+        MidiaAtendimento.objects.create(atendimento=self.atendimento, arquivo='fake.jpg', momento='DEPOIS')
+
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Apenas atendimentos em andamento podem ser finalizados.')
+
+    def test_funcionario_alheio_falha_403(self):
+        """Outro funcionario não pode finalizar -> 403 Forbidden"""
+        self.client.force_authenticate(user=self.outro_funcionario)
+        response = self.client.patch(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
