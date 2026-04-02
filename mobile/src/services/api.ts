@@ -39,6 +39,18 @@ export async function getAtendimentosHoje() {
   return request('/api/atendimentos/hoje/');
 }
 
+// RF-10 — Lista histórico de atendimentos por período
+export async function getHistoricoAtendimentos(dataInicial: string, dataFinal: string) {
+  const params = new URLSearchParams({
+    data_inicial: dataInicial,
+    data_final: dataFinal,
+  });
+
+  return request(`/api/atendimentos/historico/?${params.toString()}`, {
+    cache: 'no-store',
+  });
+}
+
 // RF-03/04 — Detalhe de um atendimento
 export async function getAtendimento(id: number) {
   return request(`/api/atendimentos/${id}/`);

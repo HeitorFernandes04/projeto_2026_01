@@ -6,6 +6,7 @@ RF-06: Upload de fotos após o atendimento.
 """
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.utils import timezone
 from PIL import Image
 
 from atendimentos.models import MidiaAtendimento
@@ -342,4 +343,79 @@ class TestAtendimentoService(TestCase):
         novo_atendimento = AtendimentoService.criar_com_veiculo(dados=dados_novo, funcionario=self.funcionario)
         
         self.assertEqual(novo_atendimento.veiculo.placa, 'XYZ0000')
+
+    def test_listar_historico_por_periodo_retorna_apenas_finalizados_do_funcionario_no_intervalo(self):
+        """Deve retornar apenas atendimentos finalizados do funcionÃ¡rio dentro do perÃ­odo informado."""
+        from atendimentos.services import AtendimentoService
+        from atendimentos.tests.factories import UserFactory
+        import datetime
+
+        outro_funcionario = UserFactory()
+
+        dentro_periodo = AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 10, 9, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='agendado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 11, 9, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=outro_funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 12, 9, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 15, 9, 0)),
+        )
+
+        historico = AtendimentoService.listar_historico_por_periodo(
+            funcionario=self.funcionario,
+            data_inicial=datetime.date(2026, 4, 10),
+            data_final=datetime.date(2026, 4, 12),
+        )
+
+        self.assertEqual(list(historico), [dentro_periodo])
+
+    def test_listar_historico_por_periodo_inclui_datas_limite_e_ordena_do_mais_recente(self):
+        """O perÃ­odo deve ser inclusivo e o histÃ³rico deve vir do mais recente para o mais antigo."""
+        from atendimentos.services import AtendimentoService
+        import datetime
+
+        mais_antigo = AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 1, 8, 0)),
+        )
+        mais_recente = AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 30, 18, 0)),
+        )
+
+        historico = list(
+            AtendimentoService.listar_historico_por_periodo(
+                funcionario=self.funcionario,
+                data_inicial=datetime.date(2026, 4, 1),
+                data_final=datetime.date(2026, 4, 30),
+            )
+        )
+
+        self.assertEqual(historico, [mais_recente, mais_antigo])
+
+    def test_listar_historico_por_periodo_rejeita_intervalo_invalido(self):
+        """Data inicial maior que data final deve levantar ValidationError."""
+        from atendimentos.services import AtendimentoService
+        import datetime
+
+        with self.assertRaisesMessage(ValidationError, 'A data inicial nÃ£o pode ser maior que a data final.'):
+            AtendimentoService.listar_historico_por_periodo(
+                funcionario=self.funcionario,
+                data_inicial=datetime.date(2026, 4, 20),
+                data_final=datetime.date(2026, 4, 10),
+            )
 

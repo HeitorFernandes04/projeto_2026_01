@@ -6,6 +6,7 @@ RF-06: Upload de fotos após o atendimento.
 Testa o contrato HTTP: status codes, permissões, formato de resposta.
 """
 import tempfile
+from datetime import datetime
 from io import BytesIO
 from unittest.mock import patch
 
@@ -155,6 +156,80 @@ class TestAtendimentosHojeAPI(TestCase):
     def test_listagem_nao_autenticado_retorna_401(self):
         """Requisição sem token → 401."""
         response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class TestHistoricoAtendimentosAPI(TestCase):
+    """Testes de integraÃ§Ã£o para GET /api/atendimentos/historico/."""
+
+    def setUp(self):
+        self.funcionario = UserFactory()
+        self.outro_funcionario = UserFactory()
+        self.client = APIClient()
+        self.url = reverse('atendimentos-historico')
+
+    def test_historico_filtra_por_periodo_e_retorna_apenas_proprios_finalizados(self):
+        """Deve retornar apenas atendimentos finalizados do usuÃ¡rio logado dentro do perÃ­odo."""
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime(2026, 4, 10, 8, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime(2026, 4, 12, 17, 30)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='agendado',
+            data_hora=timezone.make_aware(datetime(2026, 4, 11, 10, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.outro_funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime(2026, 4, 11, 9, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime(2026, 4, 13, 9, 0)),
+        )
+
+        self.client.force_authenticate(user=self.funcionario)
+        response = self.client.get(self.url, {'data_inicial': '2026-04-10', 'data_final': '2026-04-12'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertTrue(all(item['status'] == 'finalizado' for item in response.data))
+        self.assertEqual(
+            [item['data_hora'][:10] for item in response.data],
+            ['2026-04-12', '2026-04-10'],
+        )
+
+    def test_historico_periodo_invalido_retorna_400(self):
+        """Data inicial maior que data final deve retornar 400."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        response = self.client.get(self.url, {'data_inicial': '2026-04-20', 'data_final': '2026-04-10'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'A data inicial nÃ£o pode ser maior que a data final.')
+
+    def test_historico_sem_parametros_obrigatorios_retorna_400(self):
+        """Os parÃ¢metros data_inicial e data_final sÃ£o obrigatÃ³rios."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('data_inicial', response.data)
+        self.assertIn('data_final', response.data)
+
+    def test_historico_nao_autenticado_retorna_401(self):
+        """RequisiÃ§Ã£o sem autenticaÃ§Ã£o deve retornar 401."""
+        response = self.client.get(self.url, {'data_inicial': '2026-04-10', 'data_final': '2026-04-12'})
+
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 

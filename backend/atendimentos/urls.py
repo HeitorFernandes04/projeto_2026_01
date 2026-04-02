@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     AtendimentoDetailView,
+    HistoricoAtendimentosView,
     AtendimentosHojeView,
     CriarAtendimentoView,
     FotoUploadView,
@@ -12,6 +13,7 @@ from .views import (
 
 urlpatterns = [
     path('',              CriarAtendimentoView.as_view(),  name='atendimento-criar'),
+    path('historico/',    HistoricoAtendimentosView.as_view(), name='atendimentos-historico'),
     path('hoje/',         AtendimentosHojeView.as_view(),  name='atendimentos-hoje'),
     path('horarios-livres/', HorariosLivresView.as_view(), name='horarios-livres'),
     path('servicos/',     ServicoListView.as_view(),        name='servico-list'),
