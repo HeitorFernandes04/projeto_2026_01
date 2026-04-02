@@ -47,6 +47,7 @@ class CriarAtendimentoSerializer(serializers.Serializer):
     servico_id  = serializers.IntegerField()
     data_hora   = serializers.DateTimeField()
     observacoes = serializers.CharField(required=False, allow_blank=True, default='')
+    iniciar_agora = serializers.BooleanField(required=False, default=False)
 
 
 # ---------------------------------------------------------------------------

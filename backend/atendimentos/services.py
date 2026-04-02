@@ -4,13 +4,14 @@ Camada de serviço — atendimentos.
 Toda lógica de negócio do app fica isolada aqui.
 Views delegam para estes métodos; nunca implementam regras diretamente.
 """
+import datetime
 from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from PIL import Image
-
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from PIL import Image
 
 from atendimentos.models import Atendimento, MidiaAtendimento, Servico, Veiculo
 
@@ -18,6 +19,10 @@ from atendimentos.models import Atendimento, MidiaAtendimento, Servico, Veiculo
 MAX_FOTOS_POR_MOMENTO = 5
 MAX_DIMENSAO_PX = 1920
 QUALIDADE_JPEG = 85
+
+HORARIO_ABERTURA = datetime.time(8, 0)
+HORARIO_FECHAMENTO = datetime.time(18, 0)
+SLOT_MINUTOS = 30
 
 
 class MidiaAtendimentoService:
@@ -126,6 +131,74 @@ class AtendimentoService:
     """Serviço responsável pelas operações de criação de atendimentos."""
 
     @staticmethod
+    def verificar_conflito(data_hora, duracao):
+        """Verifica se o novo horário entra em conflito com algum atendimento ativo (agendado/em andamento)."""
+        fim = data_hora + duracao
+        
+        conflitos = Atendimento.objects.filter(
+            data_hora__date=data_hora.date(),
+            status__in=['agendado', 'em_andamento']
+        ).select_related('servico')
+
+        for a in conflitos:
+            a_inicio = timezone.localtime(a.data_hora)
+            a_fim = a_inicio + datetime.timedelta(minutes=a.servico.duracao_estimada_min)
+            
+            # (StartA < EndB) and (StartB < EndA) logic
+            if data_hora < a_fim and a_inicio < fim:
+                raise ValidationError(
+                    f'O horário selecionado entra em conflito com outro atendimento já agendado '
+                    f'(das {a_inicio.strftime("%H:%M")} às {a_fim.strftime("%H:%M")}).'
+                )
+
+    @staticmethod
+    def get_horarios_livres(data_str, servico_id):
+        """Gera a lista de slots de horários vagos no dia."""
+        servico = get_object_or_404(Servico, pk=servico_id)
+        duracao = datetime.timedelta(minutes=servico.duracao_estimada_min)
+
+        from django.utils.dateparse import parse_date
+        data = parse_date(data_str)
+        if not data:
+            raise ValidationError('Data inválida.')
+
+        atendimentos_ativos = Atendimento.objects.filter(
+            data_hora__date=data,
+            status__in=['agendado', 'em_andamento']
+        ).select_related('servico')
+
+        ocupados = []
+        for a in atendimentos_ativos:
+            inicio = timezone.localtime(a.data_hora)
+            fim = inicio + datetime.timedelta(minutes=a.servico.duracao_estimada_min)
+            ocupados.append((inicio, fim))
+
+        horarios_livres = []
+        current_time = timezone.make_aware(datetime.datetime.combine(data, HORARIO_ABERTURA))
+        fim_expediente = timezone.make_aware(datetime.datetime.combine(data, HORARIO_FECHAMENTO))
+
+        while current_time + duracao <= fim_expediente:
+            slot_inicio = current_time
+            slot_fim = current_time + duracao
+
+            if slot_inicio < timezone.localtime():
+                current_time += datetime.timedelta(minutes=SLOT_MINUTOS)
+                continue
+
+            conflito = False
+            for oc_inicio, oc_fim in ocupados:
+                if slot_inicio < oc_fim and oc_inicio < slot_fim:
+                    conflito = True
+                    break
+            
+            if not conflito:
+                horarios_livres.append(slot_inicio.strftime('%H:%M'))
+            
+            current_time += datetime.timedelta(minutes=SLOT_MINUTOS)
+
+        return horarios_livres
+
+    @staticmethod
     def criar_com_veiculo(dados, funcionario):
         """
         Cria (ou reutiliza) um veículo pela placa e registra um novo atendimento.
@@ -139,8 +212,14 @@ class AtendimentoService:
 
         Raises:
             Http404: se o servico_id não corresponder a nenhum Servico.
+            ValidationError: se houver conflito de horário.
         """
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
+
+        AtendimentoService.verificar_conflito(
+            data_hora=dados['data_hora'],
+            duracao=datetime.timedelta(minutes=servico.duracao_estimada_min)
+        )
 
         veiculo, _ = Veiculo.objects.update_or_create(
             placa=dados['placa'],
@@ -153,12 +232,16 @@ class AtendimentoService:
             },
         )
 
+        iniciar_agora = dados.get('iniciar_agora', False)
+
         return Atendimento.objects.create(
             veiculo=veiculo,
             servico=servico,
             funcionario=funcionario,
             data_hora=dados['data_hora'],
-            observacoes=dados['observacoes'],
+            horario_inicio=timezone.now() if iniciar_agora else None,
+            status='em_andamento' if iniciar_agora else 'agendado',
+            observacoes=dados.get('observacoes', ''),
         )
 
     @staticmethod

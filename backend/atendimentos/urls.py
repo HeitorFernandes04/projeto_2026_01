@@ -6,12 +6,14 @@ from .views import (
     FotoUploadView,
     IniciarAtendimentoView,
     FinalizarAtendimentoView,
+    HorariosLivresView,
     ServicoListView,
 )
 
 urlpatterns = [
     path('',              CriarAtendimentoView.as_view(),  name='atendimento-criar'),
     path('hoje/',         AtendimentosHojeView.as_view(),  name='atendimentos-hoje'),
+    path('horarios-livres/', HorariosLivresView.as_view(), name='horarios-livres'),
     path('servicos/',     ServicoListView.as_view(),        name='servico-list'),
     path('<int:pk>/',     AtendimentoDetailView.as_view(), name='atendimento-detail'),
     path('<int:pk>/iniciar/', IniciarAtendimentoView.as_view(), name='atendimento-iniciar'),

@@ -1,7 +1,7 @@
 import { IonContent, IonPage, IonSpinner, useIonViewDidEnter } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { criarAtendimento, getServicos } from '../../services/api';
+import { criarAtendimento, getHorariosLivres, getServicos } from '../../services/api';
 import '../../theme/lava-me.css';
 
 const PLACA_REGEX = /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/;
@@ -9,7 +9,7 @@ const PLACA_REGEX = /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/;
 const FORM_INICIAL = {
   nome_dono: '', celular_dono: '',
   placa: '', modelo: '', marca: '', cor: '',
-  servico_id: '', data_hora: '', observacoes: '',
+  servico_id: '', observacoes: '',
 };
 
 interface Servico { id: number; nome: string; preco: string; duracao_estimada_min: number; }
@@ -23,13 +23,37 @@ const NovoAtendimento: React.FC = () => {
   const [erro, setErro] = useState('');
 
   const [form, setForm] = useState(FORM_INICIAL);
+  const [modo, setModo] = useState<'agora' | 'agendar'>('agora');
+  const [dataEscolhida, setDataEscolhida] = useState('');
+  const [horariosLivres, setHorariosLivres] = useState<string[]>([]);
+  const [horarioSelecionado, setHorarioSelecionado] = useState('');
+  const [carregandoHorarios, setCarregandoHorarios] = useState(false);
 
   useEffect(() => {
     getServicos().then(setServicos).catch((e) => console.error('Erro ao carregar serviços:', e));
   }, []);
 
+  useEffect(() => {
+    if (dataEscolhida && form.servico_id) {
+      setCarregandoHorarios(true);
+      setHorarioSelecionado('');
+      getHorariosLivres(dataEscolhida, Number(form.servico_id))
+        .then((res) => {
+          setHorariosLivres(res.horarios || []);
+        })
+        .catch((e) => console.error('Erro ao listar horários:', e))
+        .finally(() => setCarregandoHorarios(false));
+    } else {
+      setHorariosLivres([]);
+      setHorarioSelecionado('');
+    }
+  }, [dataEscolhida, form.servico_id]);
+
   useIonViewDidEnter(() => {
     setForm(FORM_INICIAL);
+    setDataEscolhida('');
+    setHorarioSelecionado('');
+    setHorariosLivres([]);
     setErro('');
   });
 
@@ -37,24 +61,40 @@ const NovoAtendimento: React.FC = () => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
 
   const handleSalvar = async () => {
-    const { nome_dono, placa, modelo, marca, servico_id, data_hora } = form;
-    if (!nome_dono || !placa || !modelo || !marca || !servico_id || !data_hora) {
-      setErro('Preencha todos os campos obrigatórios.');
+    const { nome_dono, placa, modelo, marca, servico_id } = form;
+    if (!nome_dono || !placa || !modelo || !marca || !servico_id) {
+      setErro('Preencha os campos obrigatórios.');
+      return;
+    }
+    if (modo === 'agendar' && (!dataEscolhida || !horarioSelecionado)) {
+      setErro('Preencha o dia e escolha um horário na agenda.');
       return;
     }
     if (!PLACA_REGEX.test(placa)) {
       setErro('Placa inválida. Use o formato ABC1234 ou ABC1D23.');
       return;
     }
-    // Converte datetime-local (sem fuso) para ISO com offset de Brasília (-03:00)
-    const dataHoraComFuso = data_hora.length === 16 ? `${data_hora}:00-03:00` : data_hora;
+    
+    let dataHoraFinal = '';
+    if (modo === 'agora') {
+      const gmtTime = new Date();
+      // Envia a data atual local ISO (ajustada para o fuso local do dispositivo ou server expected)
+      // Ajuste simplificado pra compensar o timezoneOffset no navegador web:
+      const tzOffset = gmtTime.getTimezoneOffset() * 60000;
+      dataHoraFinal = (new Date(gmtTime.getTime() - tzOffset)).toISOString().slice(0, -1) + '-03:00';
+    } else {
+      // Constrói a data combinada formato ISO 8601 com o offset do backend (-03:00 para America/Sao_Paulo)
+      dataHoraFinal = `${dataEscolhida}T${horarioSelecionado}:00-03:00`;
+    }
+    
     setErro('');
     setSalvando(true);
     try {
       await criarAtendimento({
         ...form,
-        data_hora: dataHoraComFuso,
+        data_hora: dataHoraFinal,
         servico_id: Number(form.servico_id),
+        iniciar_agora: modo === 'agora',
       });
       history.push('/atendimentos/hoje');
     } catch (e) {
@@ -125,13 +165,72 @@ const NovoAtendimento: React.FC = () => {
             </select>
           </div>
 
-          {/* Seção Data e Hora */}
+          {/* Seção Momento */}
           <div style={styles.secao}>
             <div style={styles.secaoTitulo}>
-              <span>🕐</span><span>Data e Hora *</span>
+              <span>⚡</span><span>Momento do Atendimento</span>
             </div>
-            <input style={styles.input} type="datetime-local"
-              value={form.data_hora} onChange={(e) => set('data_hora', e.target.value)} />
+            <div style={{ display: 'flex', gap: 10, marginBottom: modo === 'agendar' ? 14 : 0 }}>
+              <button
+                style={{ ...styles.btnModo, ...(modo === 'agora' ? styles.btnModoAtivo : {}) }}
+                onClick={() => setModo('agora')}
+              >
+                Na Hora
+              </button>
+              <button
+                style={{ ...styles.btnModo, ...(modo === 'agendar' ? styles.btnModoAtivo : {}) }}
+                onClick={() => setModo('agendar')}
+              >
+                Agendar (Horários)
+              </button>
+            </div>
+            
+            {modo === 'agendar' && (
+              <div style={{ paddingTop: 10, borderTop: '1px solid #1e2d40' }}>
+                <div style={styles.secaoTitulo}>
+                  <span>📅</span><span>Dia do Atendimento *</span>
+                </div>
+                <input style={styles.input} type="date"
+                  value={dataEscolhida} onChange={(e) => setDataEscolhida(e.target.value)} />
+                
+                {dataEscolhida && !form.servico_id && (
+                  <p style={{ color: '#8899aa', fontSize: 13, marginTop: 4 }}>Selecione um serviço primeiro para ver os horários.</p>
+                )}
+
+                {form.servico_id && dataEscolhida && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={styles.secaoTitulo}>
+                      <span>🕐</span><span>Horário *</span>
+                    </div>
+                    
+                    {carregandoHorarios ? (
+                      <div style={{ textAlign: 'center', padding: 10 }}>
+                        <IonSpinner name="dots" color="primary" />
+                      </div>
+                    ) : horariosLivres.length > 0 ? (
+                      <div style={styles.gridHorarios}>
+                        {horariosLivres.map((horario) => (
+                          <button
+                            key={horario}
+                            style={{
+                              ...styles.btnHorario,
+                              ...(horarioSelecionado === horario ? styles.btnHorarioAtivo : {})
+                            }}
+                            onClick={() => setHorarioSelecionado(horario)}
+                          >
+                            {horario}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ color: '#ef4444', fontSize: 14 }}>
+                        Nenhum horário vago para este dia e serviço.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Observações */}
@@ -206,6 +305,29 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff', fontSize: 16, fontWeight: 700,
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,180,216,0.3)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
+  gridHorarios: {
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))',
+    gap: 8, marginTop: 8,
+  },
+  btnHorario: {
+    background: '#1e2d40', border: '1px solid #2d4059',
+    color: '#8899aa', borderRadius: 8, padding: '10px 0',
+    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  btnHorarioAtivo: {
+    background: 'rgba(0,180,216,0.2)', border: '1px solid #00b4d8',
+    color: '#00b4d8',
+  },
+  btnModo: {
+    flex: 1, padding: '12px 0', border: '1px solid #2d4059',
+    background: '#161b27', borderRadius: 8, color: '#8899aa',
+    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  btnModoAtivo: {
+    background: '#1e2535', border: '1px solid #00b4d8', color: '#00b4d8',
   },
 };
 

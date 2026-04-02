@@ -45,6 +45,36 @@ class ServicoListView(APIView):
         return Response(serializer.data)
 
 
+class HorariosLivresView(APIView):
+    """
+    GET /api/atendimentos/horarios-livres/?data=YYYY-MM-DD&servico_id=X
+    Retorna os slots vagos para um determinado dia e serviço, bloqueando intersecções.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data_str = request.query_params.get('data')
+        servico_id = request.query_params.get('servico_id')
+
+        if not data_str or not servico_id:
+            return Response(
+                {'detail': 'Parâmetros "data" e "servico_id" são obrigatórios.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            horarios = AtendimentoService.get_horarios_livres(data_str, servico_id)
+            return Response({'horarios': horarios}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            from django.http import Http404
+            if isinstance(e, Http404):
+                return Response({'detail': 'Serviço não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class AtendimentoDetailView(APIView):
     """GET /api/atendimentos/{id}/ — detalhe completo de um atendimento."""
 
