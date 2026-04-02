@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Lava-Me</title>
+    <style>
+        body {
+            background: #0f172a;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            margin: 0;
+        }
+
+        .container {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 10px;
+            width: 320px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .link a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Entrar</h2>
+
+    <form id="loginForm">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Senha" required>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <div class="message" id="message"></div>
+
+    <div class="link">
+        Não tem conta? <a href="/api/auth/register-page/">Cadastre-se</a>
+    </div>
+</div>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const message = document.getElementById("message");
+    message.textContent = "";
+
+    const data = {
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value
+    };
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem("access", result.access);
+            localStorage.setItem("refresh", result.refresh);
+            message.textContent = "Login realizado com sucesso!";
+            message.style.color = "#22c55e";
+        } else {
+            message.textContent = "Email ou senha inválidos.";
+            message.style.color = "#ef4444";
+        }
+    } catch (error) {
+        message.textContent = "Erro ao conectar com o servidor.";
+        message.style.color = "#ef4444";
+    }
+});
+</script>
+
+</body>
+</html>
