@@ -178,6 +178,8 @@ class TestAtendimentoService(TestCase):
         self.servico = ServicoFactory()
 
     def _dados_validos(self, **overrides):
+        from django.utils import timezone
+        import datetime
         dados = {
             'nome_dono': 'João Silva',
             'celular_dono': '63999990000',
@@ -186,7 +188,7 @@ class TestAtendimentoService(TestCase):
             'marca': 'Chevrolet',
             'cor': 'Prata',
             'servico_id': self.servico.pk,
-            'data_hora': '2026-04-01T10:00:00Z',
+            'data_hora': timezone.make_aware(datetime.datetime(2026, 4, 1, 10, 0)),
             'observacoes': 'Carro com lama',
         }
         dados.update(overrides)
@@ -220,6 +222,8 @@ class TestAtendimentoService(TestCase):
         """Se já existe veículo com a mesma placa, atualiza os campos e reutiliza."""
         from atendimentos.services import AtendimentoService
         from atendimentos.models import Veiculo
+        from django.utils import timezone
+        import datetime
 
         # Primeiro atendimento cria o veículo
         AtendimentoService.criar_com_veiculo(
@@ -227,9 +231,10 @@ class TestAtendimentoService(TestCase):
             funcionario=self.funcionario,
         )
 
-        # Segundo com mesma placa mas cor diferente
+        # Segundo com mesma placa mas cor diferente (horário diferente para não dar conflito)
+        dt_novo = timezone.make_aware(datetime.datetime(2026, 4, 1, 15, 0))
         AtendimentoService.criar_com_veiculo(
-            dados=self._dados_validos(cor='Preto'),
+            dados=self._dados_validos(cor='Preto', data_hora=dt_novo),
             funcionario=self.funcionario,
         )
 
@@ -294,4 +299,47 @@ class TestAtendimentoService(TestCase):
         
         atualizado = AtendimentoService.finalizar(atendimento)
         self.assertEqual(atualizado.status, 'finalizado')
+
+    # -------------------------------------------------------------------
+    # RF-09 — Conflito de Horário
+    # -------------------------------------------------------------------
+
+    def test_criar_com_conflito_levanta_erro(self):
+        """Bloquear criação se houver colisão de horários considerando a duração (RF-09)."""
+        from atendimentos.services import AtendimentoService
+        from django.core.exceptions import ValidationError
+        from django.utils import timezone
+        import datetime
+
+        dt_inicio = timezone.make_aware(datetime.datetime(2026, 4, 1, 10, 0))
+        dt_conflito = timezone.make_aware(datetime.datetime(2026, 4, 1, 10, 20))
+
+        dados = self._dados_validos(data_hora=dt_inicio)
+        AtendimentoService.criar_com_veiculo(dados=dados, funcionario=self.funcionario)
+
+        dados_conflito = self._dados_validos(data_hora=dt_conflito, placa='XYZ0000')
+
+        with self.assertRaises(ValidationError) as ctx:
+            AtendimentoService.criar_com_veiculo(dados=dados_conflito, funcionario=self.funcionario)
+        
+        self.assertIn('entra em conflito', str(ctx.exception))
+
+    def test_ignora_conflito_em_finalizado(self):
+        """Conflitos não se aplicam se o atendimento prévio já estiver finalizado (liberação antecipada)."""
+        from atendimentos.services import AtendimentoService
+        from django.utils import timezone
+        import datetime
+        
+        dt_inicio = timezone.make_aware(datetime.datetime(2026, 4, 1, 10, 0))
+        dt_novo = timezone.make_aware(datetime.datetime(2026, 4, 1, 10, 20))
+
+        dados = self._dados_validos(data_hora=dt_inicio)
+        atendimento = AtendimentoService.criar_com_veiculo(dados=dados, funcionario=self.funcionario)
+        atendimento.status = 'finalizado'
+        atendimento.save()
+
+        dados_novo = self._dados_validos(data_hora=dt_novo, placa='XYZ0000')
+        novo_atendimento = AtendimentoService.criar_com_veiculo(dados=dados_novo, funcionario=self.funcionario)
+        
+        self.assertEqual(novo_atendimento.veiculo.placa, 'XYZ0000')
 

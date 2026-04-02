@@ -77,6 +77,7 @@ export async function criarAtendimento(dados: {
   servico_id: number;
   data_hora: string;
   observacoes: string;
+  iniciar_agora?: boolean;
 }) {
   return request('/api/atendimentos/', {
     method: 'POST',
@@ -87,4 +88,12 @@ export async function criarAtendimento(dados: {
 // RF-04 — Lista serviços disponíveis (para o dropdown)
 export async function getServicos() {
   return request('/api/atendimentos/servicos/');
+}
+
+// RF-09 — Obtém horários livres para agendamento
+export async function getHorariosLivres(data: string, servicoId: number) {
+  // Passamos cache: 'no-store' para garantir que os slots livres sejam sempre frescos
+  return request(`/api/atendimentos/horarios-livres/?data=${data}&servico_id=${servicoId}`, {
+    cache: 'no-store',
+  });
 }
