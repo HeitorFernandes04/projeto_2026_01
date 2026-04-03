@@ -17,6 +17,7 @@ from .serializers import (
     MidiaAtendimentoSerializer,
     MidiaAtendimentoUploadSerializer,
     ServicoSerializer,
+    AtualizarComentarioSerializer,
 )
 from .services import AtendimentoService, MidiaAtendimentoService
 
@@ -246,3 +247,17 @@ class FotoUploadView(APIView):
         )
 
         return Response(output.data, status=status.HTTP_201_CREATED)
+
+
+
+class AdicionarComentarioView(APIView):
+    """PATCH /api/atendimentos/{id}/comentario/"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+
+    def patch(self, request, pk):
+        atendimento = request.atendimento # Injetado pela permissionIsFuncionarioDoAtendimento
+        serializer = AtualizarComentarioSerializer(atendimento, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        atendimento_atualizado = serializer.save()
+        return Response(AtendimentoSerializer(atendimento_atualizado, context={'request': request}).data)
