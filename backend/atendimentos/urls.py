@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    AdicionarComentarioView,
     AtendimentoDetailView,
     HistoricoAtendimentosView,
     AtendimentosHojeView,
@@ -21,4 +22,5 @@ urlpatterns = [
     path('<int:pk>/iniciar/', IniciarAtendimentoView.as_view(), name='atendimento-iniciar'),
     path('<int:pk>/finalizar/', FinalizarAtendimentoView.as_view(), name='atendimento-finalizar'),
     path('<int:pk>/fotos/',   FotoUploadView.as_view(),    name='atendimento-fotos'),
+    path('<int:pk>/comentario/', AdicionarComentarioView.as_view(), name='atendimento-comentario'),
 ]

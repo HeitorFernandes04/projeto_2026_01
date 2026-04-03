@@ -109,3 +109,10 @@ export async function getHorariosLivres(data: string, servicoId: number) {
     cache: 'no-store',
   });
 }
+
+export async function adicionarComentario(id: number, observacoes: string) {
+  return request(`/api/atendimentos/${id}/comentario/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ observacoes }),
+  });
+}

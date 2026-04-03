@@ -1,7 +1,7 @@
 import { IonContent, IonPage, IonSpinner, useIonAlert } from '@ionic/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { getAtendimento, iniciarAtendimento, finalizarAtendimento } from '../../services/api';
+import { getAtendimento, iniciarAtendimento, finalizarAtendimento, adicionarComentario } from '../../services/api';
 import GaleriaFotos from '../../components/GaleriaFotos';
 import '../../theme/lava-me.css';
 
@@ -42,19 +42,27 @@ const DetalhesAtendimento: React.FC = () => {
   const [carregando, setCarregando] = useState(true);
   const [iniciando, setIniciando] = useState(false);
   const [erro, setErro] = useState('');
-
   const [finalizando, setFinalizando] = useState(false);
 
-  const carregarDetalhes = () => {
-    getAtendimento(Number(id))
-      .then(setAtendimento)
-      .catch(() => setErro('Não foi possível carregar o atendimento.'))
-      .finally(() => setCarregando(false));
-  };
+  // Estados para a RF-07 (Comentários)
+  const [comentario, setComentario] = useState('');
+  const [salvandoComentario, setSalvandoComentario] = useState(false);
 
+  const carregarDetalhes = useCallback(() => {
+  getAtendimento(Number(id))
+    .then((dados) => {
+      setAtendimento(dados);
+      // Sincroniza o texto vindo do banco com o campo de edição
+      setComentario(dados.observacoes || '');
+    })
+    .catch(() => setErro('Não foi possível carregar o atendimento.'))
+    .finally(() => setCarregando(false));
+  }, [id]);
+
+  // Adicione este bloco para disparar a busca de dados
   useEffect(() => {
     carregarDetalhes();
-  }, [id]);
+  }, [carregarDetalhes]);
 
   const [presentAlert] = useIonAlert();
 
@@ -73,19 +81,36 @@ const DetalhesAtendimento: React.FC = () => {
   };
 
   const handleFinalizar = async () => {
-    if (!atendimento) return;
-    setFinalizando(true);
-    try {
-      const atualizado = await finalizarAtendimento(atendimento.id);
-      setAtendimento(atualizado);
-    } catch (e: any) {
-      console.error('Erro ao finalizar atendimento:', e);
-      alert(e.message || 'Não foi possível finalizar o atendimento.');
-    } finally {
-      setFinalizando(false);
-    }
-  };
+  if (!atendimento) return;
+  setFinalizando(true);
+  try {
+    const atualizado = await finalizarAtendimento(atendimento.id);
+    setAtendimento(atualizado);
+  } catch (e: unknown) {
+    console.error('Erro ao finalizar atendimento:', e);
+    const mensagemErro = e instanceof Error ? e.message : 'Não foi possível finalizar o atendimento.';
+    
+    alert(mensagemErro);
+  } finally {
+    setFinalizando(false);
+  }
+};
 
+  // NOVA FUNÇÃO: Gravar comentário (RF-07)
+  const handleSalvarComentario = async () => {
+  if (!atendimento) return;
+  setSalvandoComentario(true);
+  try {
+    const atualizado = await adicionarComentario(atendimento.id, comentario);
+    setAtendimento(atualizado);
+    alert('Comentário salvo com sucesso!');
+  } catch (e) {
+    console.error(e);
+    alert('Erro ao salvar comentário.');
+  } finally {
+    setSalvandoComentario(false);
+  }
+  };
   const confirmarFinalizar = () => {
     presentAlert({
       header: 'Finalizar Atendimento',
@@ -96,6 +121,7 @@ const DetalhesAtendimento: React.FC = () => {
       ],
     });
   };
+
 
   if (carregando) return (
     <IonPage>
@@ -244,22 +270,41 @@ const DetalhesAtendimento: React.FC = () => {
             </div>
           )}
 
-          {atendimento.observacoes && (
-            <div style={styles.secao}>
-              <div style={styles.secaoTitulo}>
-                <span style={styles.secaoIcon}>📝</span>
-                <span>Observações</span>
-              </div>
-              <p style={styles.obs}>{atendimento.observacoes}</p>
-            </div>
-          )}
+          {/* Seção Comentários (RF-07) */}
+{/* Substitua a secção antiga de observações por esta: */}
+<div style={styles.secao}>
+  <div style={styles.secaoTitulo}>
+    <span style={styles.secaoIcon}>📝</span>
+    <span>Comentários / Observações</span>
+  </div>
+  
+  {atendimento.status !== 'finalizado' && atendimento.status !== 'cancelado' ? (
+    <>
+      <textarea
+        style={styles.textarea}
+        value={comentario}
+        onChange={(e) => setComentario(e.target.value)}
+        placeholder="Registre ocorrências durante o serviço..."
+      />
+      <button 
+        style={{ ...styles.btnComentario, opacity: salvandoComentario ? 0.7 : 1 }}
+        onClick={() => { void handleSalvarComentario(); }}
+        disabled={salvandoComentario}
+      >
+        {salvandoComentario ? <IonSpinner name="dots" style={{ width: 20, height: 20 }} /> : 'Salvar Comentário'}
+      </button>
+    </>
+  ) : (
+    <p style={styles.obs}>{atendimento.observacoes || 'Nenhum comentário registrado.'}</p>
+  )}
+</div>
 
           {/* Botão Iniciar — fixo no fundo, só aparece se agendado */}
           {atendimento.status === 'agendado' && (
             <button
               style={{ ...styles.btnIniciar, opacity: iniciando ? 0.7 : 1 }}
               disabled={iniciando}
-              onClick={handleIniciar}
+              onClick={void handleIniciar}
             >
               {iniciando
                 ? <IonSpinner name="crescent" style={{ width: 22, height: 22 }} />
@@ -340,6 +385,36 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff', fontSize: 16, fontWeight: 700,
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
+
+  // ADICIONE ESTES DOIS ABAIXO:
+  textarea: {
+    width: '100%',
+    minHeight: '100px',
+    background: '#1e2535',
+    border: '1px solid #2d4059',
+    borderRadius: '12px',
+    color: '#fff',
+    padding: '12px',
+    fontSize: '14px',
+    marginBottom: '10px',
+    outline: 'none',
+    resize: 'vertical',
+    boxSizing: 'border-box'
+  },
+  btnComentario: {
+    background: '#1e2d40',
+    color: '#00b4d8',
+    border: '1px solid #00b4d8',
+    padding: '8px 16px',
+    borderRadius: '20px',
+    fontSize: '13px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8
   },
   btnFinalizar: {
     width: '100%', padding: '18px 0', borderRadius: 28,

@@ -515,3 +515,51 @@ class TestFinalizarAtendimentoAPI(TestCase):
         self.client.force_authenticate(user=self.outro_funcionario)
         response = self.client.patch(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+class TestAdicionarComentarioAPI(TestCase):
+    """Testes de integração para PATCH /api/atendimentos/{id}/comentario/ — RF-07."""
+
+    def setUp(self):
+        self.funcionario = UserFactory()
+        self.outro_funcionario = UserFactory()
+        self.client = APIClient()
+        # Cria um atendimento vinculado ao funcionário padrão
+        self.atendimento = AtendimentoFactory(funcionario=self.funcionario, status='em_andamento')
+        self.url = reverse('atendimento-comentario', kwargs={'pk': self.atendimento.pk})
+
+    def test_adicionar_comentario_sucesso(self):
+        """Funcionário deve conseguir salvar comentário em seu atendimento ativo."""
+        self.client.force_authenticate(user=self.funcionario)
+        novo_comentario = "Veículo com mancha no banco traseiro."
+        
+        response = self.client.patch(self.url, data={'observacoes': novo_comentario})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.atendimento.refresh_from_db()
+        self.assertEqual(self.atendimento.observacoes, novo_comentario)
+        self.assertEqual(response.data['observacoes'], novo_comentario)
+
+    def test_proibir_outro_funcionario_comentar(self):
+        """Segurança: Um funcionário não pode comentar no atendimento de outro (403)."""
+        self.client.force_authenticate(user=self.outro_funcionario)
+        
+        response = self.client.patch(self.url, data={'observacoes': 'Tentativa de invasão'})
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_comentario_em_atendimento_sem_dono_sucesso(self):
+        """Fila livre: Qualquer funcionário autenticado pode comentar se o atendimento não tiver dono."""
+        atendimento_livre = AtendimentoFactory(funcionario=None, status='agendado')
+        url_livre = reverse('atendimento-comentario', kwargs={'pk': atendimento_livre.pk})
+        
+        self.client.force_authenticate(user=self.funcionario)
+        response = self.client.patch(url_livre, data={'observacoes': 'Observação em fila livre'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        atendimento_livre.refresh_from_db()
+        self.assertEqual(atendimento_livre.observacoes, 'Observação em fila livre')
+
+    def test_adicionar_comentario_nao_autenticado_401(self):
+        """Requisição sem token deve retornar 401."""
+        response = self.client.patch(self.url, data={'observacoes': 'Sem login'})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

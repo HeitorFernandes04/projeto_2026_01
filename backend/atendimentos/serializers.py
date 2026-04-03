@@ -107,3 +107,8 @@ class HistoricoAtendimentoFiltroSerializer(serializers.Serializer):
         default='todos',
     )
 
+class AtualizarComentarioSerializer(serializers.ModelSerializer):
+    """Serializer para a RF-07 — Apenas o campo de observações."""
+    class Meta:
+        model = Atendimento
+        fields = ['observacoes']
