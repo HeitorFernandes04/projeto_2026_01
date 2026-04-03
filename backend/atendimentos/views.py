@@ -52,6 +52,7 @@ class HistoricoAtendimentosView(APIView):
                 funcionario=request.user,
                 data_inicial=filtro_serializer.validated_data['data_inicial'],
                 data_final=filtro_serializer.validated_data['data_final'],
+                status=filtro_serializer.validated_data['status'],
             )
         except ValidationError as e:
             return Response(

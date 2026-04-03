@@ -101,4 +101,9 @@ class HistoricoAtendimentoFiltroSerializer(serializers.Serializer):
 
     data_inicial = serializers.DateField()
     data_final = serializers.DateField()
+    status = serializers.ChoiceField(
+        choices=['todos', *[status for status, _ in Atendimento.STATUS_CHOICES]],
+        required=False,
+        default='todos',
+    )
 

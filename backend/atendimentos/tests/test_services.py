@@ -344,7 +344,7 @@ class TestAtendimentoService(TestCase):
         
         self.assertEqual(novo_atendimento.veiculo.placa, 'XYZ0000')
 
-    def test_listar_historico_por_periodo_retorna_apenas_finalizados_do_funcionario_no_intervalo(self):
+    def test_listar_historico_por_periodo_sem_status_retorna_todos_os_status_do_funcionario_no_intervalo(self):
         """Deve retornar apenas atendimentos finalizados do funcionÃ¡rio dentro do perÃ­odo informado."""
         from atendimentos.services import AtendimentoService
         from atendimentos.tests.factories import UserFactory
@@ -355,31 +355,61 @@ class TestAtendimentoService(TestCase):
         dentro_periodo = AtendimentoFactory(
             funcionario=self.funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 10, 9, 0)),
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 10, 9, 0)),
         )
-        AtendimentoFactory(
+        outro_status_mesmo_periodo = AtendimentoFactory(
             funcionario=self.funcionario,
             status='agendado',
-            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 11, 9, 0)),
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 11, 9, 0)),
         )
         AtendimentoFactory(
             funcionario=outro_funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 12, 9, 0)),
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 12, 9, 0)),
         )
         AtendimentoFactory(
             funcionario=self.funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 15, 9, 0)),
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 15, 9, 0)),
         )
 
         historico = AtendimentoService.listar_historico_por_periodo(
             funcionario=self.funcionario,
-            data_inicial=datetime.date(2026, 4, 10),
-            data_final=datetime.date(2026, 4, 12),
+            data_inicial=datetime.date(2026, 3, 10),
+            data_final=datetime.date(2026, 3, 12),
         )
 
-        self.assertEqual(list(historico), [dentro_periodo])
+        self.assertEqual(list(historico), [outro_status_mesmo_periodo, dentro_periodo])
+
+    def test_listar_historico_por_periodo_filtra_por_status_quando_informado(self):
+        """Com filtro de status, deve retornar somente o status solicitado dentro do período."""
+        from atendimentos.services import AtendimentoService
+        import datetime
+
+        finalizado = AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 10, 9, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='agendado',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 11, 9, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='em_andamento',
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 12, 9, 0)),
+        )
+
+        historico = AtendimentoService.listar_historico_por_periodo(
+            funcionario=self.funcionario,
+            data_inicial=datetime.date(2026, 3, 10),
+            data_final=datetime.date(2026, 3, 12),
+            status='finalizado',
+        )
+
+        self.assertEqual(list(historico), [finalizado])
 
     def test_listar_historico_por_periodo_inclui_datas_limite_e_ordena_do_mais_recente(self):
         """O perÃ­odo deve ser inclusivo e o histÃ³rico deve vir do mais recente para o mais antigo."""
@@ -389,19 +419,19 @@ class TestAtendimentoService(TestCase):
         mais_antigo = AtendimentoFactory(
             funcionario=self.funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 1, 8, 0)),
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 1, 8, 0)),
         )
         mais_recente = AtendimentoFactory(
             funcionario=self.funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime.datetime(2026, 4, 30, 18, 0)),
+            data_hora=timezone.make_aware(datetime.datetime(2026, 3, 30, 18, 0)),
         )
 
         historico = list(
             AtendimentoService.listar_historico_por_periodo(
                 funcionario=self.funcionario,
-                data_inicial=datetime.date(2026, 4, 1),
-                data_final=datetime.date(2026, 4, 30),
+                data_inicial=datetime.date(2026, 3, 1),
+                data_final=datetime.date(2026, 3, 30),
             )
         )
 
@@ -417,5 +447,17 @@ class TestAtendimentoService(TestCase):
                 funcionario=self.funcionario,
                 data_inicial=datetime.date(2026, 4, 20),
                 data_final=datetime.date(2026, 4, 10),
+            )
+
+    def test_listar_historico_por_periodo_rejeita_datas_futuras(self):
+        """Histórico não deve aceitar consulta com datas futuras."""
+        from atendimentos.services import AtendimentoService
+        import datetime
+
+        with self.assertRaisesMessage(ValidationError, 'O periodo do historico nao pode incluir datas futuras.'):
+            AtendimentoService.listar_historico_por_periodo(
+                funcionario=self.funcionario,
+                data_inicial=timezone.localdate(),
+                data_final=timezone.localdate() + datetime.timedelta(days=1),
             )
 

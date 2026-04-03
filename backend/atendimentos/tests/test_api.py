@@ -168,44 +168,72 @@ class TestHistoricoAtendimentosAPI(TestCase):
         self.client = APIClient()
         self.url = reverse('atendimentos-historico')
 
-    def test_historico_filtra_por_periodo_e_retorna_apenas_proprios_finalizados(self):
+    def test_historico_sem_status_retorna_proprios_de_multiplos_status(self):
         """Deve retornar apenas atendimentos finalizados do usuÃ¡rio logado dentro do perÃ­odo."""
         AtendimentoFactory(
             funcionario=self.funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime(2026, 4, 10, 8, 0)),
+            data_hora=timezone.make_aware(datetime(2026, 3, 10, 8, 0)),
         )
         AtendimentoFactory(
             funcionario=self.funcionario,
-            status='finalizado',
-            data_hora=timezone.make_aware(datetime(2026, 4, 12, 17, 30)),
+            status='em_andamento',
+            data_hora=timezone.make_aware(datetime(2026, 3, 12, 17, 30)),
         )
         AtendimentoFactory(
             funcionario=self.funcionario,
             status='agendado',
-            data_hora=timezone.make_aware(datetime(2026, 4, 11, 10, 0)),
+            data_hora=timezone.make_aware(datetime(2026, 3, 11, 10, 0)),
         )
         AtendimentoFactory(
             funcionario=self.outro_funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime(2026, 4, 11, 9, 0)),
+            data_hora=timezone.make_aware(datetime(2026, 3, 11, 9, 0)),
         )
         AtendimentoFactory(
             funcionario=self.funcionario,
             status='finalizado',
-            data_hora=timezone.make_aware(datetime(2026, 4, 13, 9, 0)),
+            data_hora=timezone.make_aware(datetime(2026, 3, 13, 9, 0)),
         )
 
         self.client.force_authenticate(user=self.funcionario)
-        response = self.client.get(self.url, {'data_inicial': '2026-04-10', 'data_final': '2026-04-12'})
+        response = self.client.get(self.url, {'data_inicial': '2026-03-10', 'data_final': '2026-03-12'})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        self.assertTrue(all(item['status'] == 'finalizado' for item in response.data))
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({item['status'] for item in response.data}, {'finalizado', 'em_andamento', 'agendado'})
         self.assertEqual(
             [item['data_hora'][:10] for item in response.data],
-            ['2026-04-12', '2026-04-10'],
+            ['2026-03-12', '2026-03-11', '2026-03-10'],
         )
+
+    def test_historico_filtra_por_status_quando_informado(self):
+        """Quando o status é informado, o endpoint deve devolver somente o status solicitado."""
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='finalizado',
+            data_hora=timezone.make_aware(datetime(2026, 3, 10, 8, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='agendado',
+            data_hora=timezone.make_aware(datetime(2026, 3, 11, 10, 0)),
+        )
+        AtendimentoFactory(
+            funcionario=self.funcionario,
+            status='em_andamento',
+            data_hora=timezone.make_aware(datetime(2026, 3, 12, 17, 30)),
+        )
+
+        self.client.force_authenticate(user=self.funcionario)
+        response = self.client.get(
+            self.url,
+            {'data_inicial': '2026-03-10', 'data_final': '2026-03-12', 'status': 'finalizado'},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['status'], 'finalizado')
 
     def test_historico_periodo_invalido_retorna_400(self):
         """Data inicial maior que data final deve retornar 400."""
@@ -215,6 +243,15 @@ class TestHistoricoAtendimentosAPI(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'A data inicial nÃ£o pode ser maior que a data final.')
+
+    def test_historico_periodo_futuro_retorna_400(self):
+        """Histórico não deve aceitar consulta com datas futuras."""
+        self.client.force_authenticate(user=self.funcionario)
+
+        response = self.client.get(self.url, {'data_inicial': '2026-04-02', 'data_final': '2026-04-03'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'O periodo do historico nao pode incluir datas futuras.')
 
     def test_historico_sem_parametros_obrigatorios_retorna_400(self):
         """Os parÃ¢metros data_inicial e data_final sÃ£o obrigatÃ³rios."""
