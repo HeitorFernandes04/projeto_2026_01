@@ -304,7 +304,7 @@ const DetalhesAtendimento: React.FC = () => {
             <button
               style={{ ...styles.btnIniciar, opacity: iniciando ? 0.7 : 1 }}
               disabled={iniciando}
-              onClick={void handleIniciar}
+              onClick={() => { void handleIniciar(); }}
             >
               {iniciando
                 ? <IonSpinner name="crescent" style={{ width: 22, height: 22 }} />
