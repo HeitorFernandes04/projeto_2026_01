@@ -6,7 +6,7 @@ RF-06: Upload de fotos após o atendimento.
 Testa o contrato HTTP: status codes, permissões, formato de resposta.
 """
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from unittest.mock import patch
 
@@ -248,7 +248,12 @@ class TestHistoricoAtendimentosAPI(TestCase):
         """Histórico não deve aceitar consulta com datas futuras."""
         self.client.force_authenticate(user=self.funcionario)
 
-        response = self.client.get(self.url, {'data_inicial': '2026-04-02', 'data_final': '2026-04-03'})
+        amanha = timezone.localdate() + timedelta(days=1)
+        depois_de_amanha = timezone.localdate() + timedelta(days=2)
+        response = self.client.get(
+            self.url,
+            {'data_inicial': amanha.isoformat(), 'data_final': depois_de_amanha.isoformat()},
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'O periodo do historico nao pode incluir datas futuras.')
