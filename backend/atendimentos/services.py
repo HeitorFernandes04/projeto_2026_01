@@ -131,6 +131,35 @@ class AtendimentoService:
     """Serviço responsável pelas operações de criação de atendimentos."""
 
     @staticmethod
+    def listar_historico_por_periodo(funcionario, data_inicial, data_final, status='todos'):
+        """
+        RF-10: Lista o histÃ³rico de atendimentos finalizados do funcionÃ¡rio por perÃ­odo.
+
+        O intervalo Ã© inclusivo nas duas pontas e sempre restrito ao usuÃ¡rio logado,
+        evitando exposiÃ§Ã£o de dados de outros funcionÃ¡rios.
+        """
+        hoje = timezone.localdate()
+        if data_inicial > data_final:
+            raise ValidationError('A data inicial nÃ£o pode ser maior que a data final.')
+        if data_inicial > hoje or data_final > hoje:
+            raise ValidationError('O periodo do historico nao pode incluir datas futuras.')
+
+        filtros = {
+            'funcionario': funcionario,
+            'data_hora__date__gte': data_inicial,
+            'data_hora__date__lte': data_final,
+        }
+        if status and status != 'todos':
+            filtros['status'] = status
+
+        return (
+            Atendimento.objects.filter(**filtros)
+            .select_related('veiculo', 'servico')
+            .prefetch_related('midias')
+            .order_by('-data_hora')
+        )
+
+    @staticmethod
     def verificar_conflito(data_hora, duracao):
         """Verifica se o novo horário entra em conflito com algum atendimento ativo (agendado/em andamento)."""
         fim = data_hora + duracao

@@ -95,3 +95,15 @@ class MidiaAtendimentoSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.arquivo.url)
         return None
 
+
+class HistoricoAtendimentoFiltroSerializer(serializers.Serializer):
+    """Serializer de entrada para filtro de histÃ³rico por perÃ­odo."""
+
+    data_inicial = serializers.DateField()
+    data_final = serializers.DateField()
+    status = serializers.ChoiceField(
+        choices=['todos', *[status for status, _ in Atendimento.STATUS_CHOICES]],
+        required=False,
+        default='todos',
+    )
+

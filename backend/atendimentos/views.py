@@ -13,6 +13,7 @@ from .permissions import IsFuncionarioDoAtendimento
 from .serializers import (
     AtendimentoSerializer,
     CriarAtendimentoSerializer,
+    HistoricoAtendimentoFiltroSerializer,
     MidiaAtendimentoSerializer,
     MidiaAtendimentoUploadSerializer,
     ServicoSerializer,
@@ -34,6 +35,33 @@ class AtendimentosHojeView(APIView):
 
         serializer = AtendimentoSerializer(atendimentos, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class HistoricoAtendimentosView(APIView):
+    """GET /api/atendimentos/historico/?data_inicial=YYYY-MM-DD&data_final=YYYY-MM-DD."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filtro_serializer = HistoricoAtendimentoFiltroSerializer(data=request.query_params)
+        filtro_serializer.is_valid(raise_exception=True)
+
+        try:
+            atendimentos = AtendimentoService.listar_historico_por_periodo(
+                funcionario=request.user,
+                data_inicial=filtro_serializer.validated_data['data_inicial'],
+                data_final=filtro_serializer.validated_data['data_final'],
+                status=filtro_serializer.validated_data['status'],
+            )
+        except ValidationError as e:
+            return Response(
+                {'detail': e.messages[0] if hasattr(e, 'messages') else str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = AtendimentoSerializer(atendimentos, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ServicoListView(APIView):
