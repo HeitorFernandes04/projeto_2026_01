@@ -259,5 +259,5 @@ class AdicionarComentarioView(APIView):
         atendimento = request.atendimento # Injetado pela permissionIsFuncionarioDoAtendimento
         serializer = AtualizarComentarioSerializer(atendimento, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(AtendimentoSerializer(atendimento, context={'request': request}).data)
+        atendimento_atualizado = serializer.save()
+        return Response(AtendimentoSerializer(atendimento_atualizado, context={'request': request}).data)
