@@ -4,6 +4,8 @@
 
 - [Requisitos](#requisitos)
 - [Backend](#backend-django)
+- [Mobile](#mobile-ionicreact)
+- [Configuração de IA](#-configuração-do-ambiente-de-ia-para-toda-a-equipe)
 - [Git Flow](#git-flow)
 ---
 
@@ -148,7 +150,7 @@ pip freeze > requirements.txt
 ---
 ## Extras - Backend
 ### Shell (terminal) do django
-Útil para consultas e alterações direatmente do terminal do Django
+Útil para consultas e alterações diretamente do terminal do Django
 
 ```shell
 python manage.py shell
@@ -170,6 +172,99 @@ python manage.py shell
 | Rodar servidor | `python manage.py runserver` |
 | Atualizar requirements | `pip freeze > requirements.txt` |
 | Shell Django | `python manage.py shell`|
+
+---
+
+## Mobile (Ionic/React)
+
+Esta parte do projeto consiste na aplicação mobile desenvolvida com Ionic Framework e React.
+
+### 1. Pré-requisitos Específicos
+
+- **Node.js** (v18+)
+- **npm** (incluso com o Node)
+- **Ionic CLI** (recomendado):
+  ```bash
+  npm install -g @ionic/cli
+  ```
+
+---
+
+### 2. Instalar Dependências do Frontend
+
+Navegue até o diretório mobile e instale os pacotes necessários:
+
+```bash
+cd mobile
+npm install
+```
+
+---
+
+### 3. Rodar o App no Browser (Desenvolvimento)
+
+Para visualizar as telas do app no seu navegador em modo de desenvolvimento:
+
+```bash
+# Usando o Ionic CLI (recomendado)
+ionic serve
+
+# OU usando diretamente o Vite
+npm run dev
+```
+
+O app estará disponível em: `http://localhost:8100`
+
+---
+
+### 4. Rodar nos Emuladores/Dispositivos (Capacitor)
+
+Se você desejar testar funcionalidades nativas (como câmera), utilize o Capacitor:
+
+**Android:**
+```bash
+npx cap open android
+```
+
+**iOS:**
+```bash
+npx cap open ios
+```
+
+> Certifique-se de ter o **Android Studio** ou **Xcode** instalado corretamente para rodar estes comandos.
+
+---
+
+
+---
+
+## 🤖 Configuração do Ambiente de IA (Para toda a equipe)
+
+Para garantir que todos os agentes de IA (Antigravity, Cursor, Cline, etc.) compartilham as mesmas regras de negócio e arquitetura, utilizamos um Servidor MCP local conectado à nossa documentação.
+
+**Passo 1: Alimentar o Banco Vetorial Local**
+Sempre que fizer checkout para a branch `develop` ou se alguém atualizar a pasta `/docs`, execute o script de ingestão para atualizar o contexto da IA na sua máquina:
+
+```bash
+cd backend
+source venv/bin/activate # ou o comando equivalente no Windows (ex: venv\Scripts\activate)
+python scripts/ingest_docs.py
+```
+*(Isto irá compilar os arquivos Markdown e guardá-los na pasta oculta `.chroma_db`)*
+
+**Passo 2: Conectar a sua IDE ao Servidor MCP**
+Em vez de deixar o seu agente ler arquivos de forma aleatória e tirar conclusões erradas, adicione o nosso servidor MCP à configuração da sua ferramenta:
+
+* **No Antigravity / Cursor / Cline:**
+    Vá às configurações de MCP (MCP Servers) da IDE e adicione um novo servidor com a seguinte estrutura:
+    * **Type:** `command`
+    * **Command:** `python` (ou o caminho absoluto para o interpretador Python do seu venv, ex: `./backend/venv/bin/python`)
+    * **Args:** `backend/mcp_server.py`
+
+A partir deste momento, o seu agente terá acesso nativo à ferramenta `consultar_documentacao_projeto`. Sempre que for pedir para a IA criar ou refatorar uma funcionalidade, instrua o agente a consultar esta ferramenta primeiro para entender as regras do sistema.
+
+---
+
 
 ## Git Flow
 
