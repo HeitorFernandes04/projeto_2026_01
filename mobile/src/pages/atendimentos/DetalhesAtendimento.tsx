@@ -1,429 +1,150 @@
-import { IonContent, IonPage, IonSpinner, useIonAlert } from '@ionic/react';
-import { useCallback, useEffect, useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
-import { getAtendimento, iniciarAtendimento, finalizarAtendimento, adicionarComentario } from '../../services/api';
-import GaleriaFotos from '../../components/GaleriaFotos';
-import '../../theme/lava-me.css';
+import { IonContent, IonPage, IonSpinner } from '@ionic/react';
+import { 
+  Car, Check, ClipboardCheck, Droplets, Sparkles, Key, ArrowLeft 
+} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useHistory } from 'react-router-dom';
+import { getAtendimento } from '../../services/api';
 
-interface Veiculo {
-  id: number; placa: string; modelo: string;
-  marca: string; cor: string; nome_dono: string; celular_dono: string;
+import EstadoVistoria from '../../components/EstadoVistoria';
+import EstadoLavagem from '../../components/EstadoLavagem';
+import { EstadoAcabamento } from '../../components/EstadoAcabamento';
+import { EstadoLiberacao } from '../../components/EstadoLiberacao';
+
+// Interface para garantir a tipagem correta dos dados do veículo
+interface AtendimentoDados {
+  id: number;
+  veiculo: { placa: string; modelo: string };
+  servico: { nome: string };
+  status: string;
 }
-interface Servico {
-  id: number; nome: string; preco: string; duracao_estimada_min: number;
-}
-interface Atendimento {
-  id: number; veiculo: Veiculo; servico: Servico;
-  data_hora: string; horario_inicio: string | null;
-  status: string; observacoes: string;
-  midias: { id: number; arquivo: string; momento: 'ANTES' | 'DEPOIS' }[];
-}
-
-const STATUS_MAP: Record<string, { label: string; classe: string }> = {
-  agendado:     { label: 'Aguardando',   classe: 'lm-badge-agendado' },
-  em_andamento: { label: 'Em andamento', classe: 'lm-badge-andamento' },
-  finalizado:   { label: 'Finalizado',   classe: 'lm-badge-finalizado' },
-  cancelado:    { label: 'Cancelado',    classe: 'lm-badge-cancelado' },
-};
-
-const formatarHora = (dt: string) =>
-  new Date(dt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-const formatarDataHora = (dt: string) =>
-  new Date(dt).toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
 
 const DetalhesAtendimento: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
-  const [atendimento, setAtendimento] = useState<Atendimento | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [iniciando, setIniciando] = useState(false);
-  const [erro, setErro] = useState('');
-  const [finalizando, setFinalizando] = useState(false);
+  const [atendimento, setAtendimento] = useState<AtendimentoDados | null>(null);
+  const [passo, setPasso] = useState(1);
 
-  // Estados para a RF-07 (Comentários)
-  const [comentario, setComentario] = useState('');
-  const [salvandoComentario, setSalvandoComentario] = useState(false);
-
-  const carregarDetalhes = useCallback(() => {
-  getAtendimento(Number(id))
-    .then((dados) => {
-      setAtendimento(dados);
-      // Sincroniza o texto vindo do banco com o campo de edição
-      setComentario(dados.observacoes || '');
-    })
-    .catch(() => setErro('Não foi possível carregar o atendimento.'))
-    .finally(() => setCarregando(false));
+  useEffect(() => {
+    const idNumerico = Number(id);
+    
+    // Tenta buscar na API, mas usa MOCK se falhar (perfeito para teste de front-only)
+    getAtendimento(idNumerico)
+      .then((dados) => {
+        if (dados) {
+          setAtendimento(dados);
+        } else {
+          throw new Error("Sem dados");
+        }
+      })
+      .catch(() => {
+        // DADOS DE TESTE PARA O FRONT-END (Igual ao protótipo)
+        setAtendimento({
+          id: idNumerico || 2458,
+          veiculo: { placa: 'ABC-1D23', modelo: 'Toyota Corolla' },
+          servico: { nome: 'Lavagem Completa + Cera' },
+          status: 'agendado'
+        });
+      });
   }, [id]);
 
-  // Adicione este bloco para disparar a busca de dados
-  useEffect(() => {
-    carregarDetalhes();
-  }, [carregarDetalhes]);
+  // Enquanto não tem atendimento nem mock, mostra o carregando
+  if (!atendimento) {
+    return (
+      <IonPage>
+        <IonContent style={{ "--background": "#000" }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <IonSpinner color="primary" />
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
-  const [presentAlert] = useIonAlert();
-
-  const handleIniciar = async () => {
-    if (!atendimento) return;
-    setIniciando(true);
-    try {
-      const atualizado = await iniciarAtendimento(atendimento.id);
-      setAtendimento(atualizado);
-    } catch (e) {
-      console.error('Erro ao iniciar atendimento:', e);
-      alert('Não foi possível iniciar o atendimento.');
-    } finally {
-      setIniciando(false);
+  // Lógica de troca de telas baseada no botão "Concluir" de cada etapa
+  const renderPasso = () => {
+    switch(passo) {
+      case 1: return <EstadoVistoria onComplete={() => setPasso(2)} />;
+      case 2: return <EstadoLavagem onComplete={() => setPasso(3)} />;
+      case 3: return <EstadoAcabamento onComplete={() => setPasso(4)} />;
+      case 4: return <EstadoLiberacao onComplete={() => history.push('/atendimentos/hoje')} />;
+      default: return null;
     }
   };
 
-  const handleFinalizar = async () => {
-  if (!atendimento) return;
-  setFinalizando(true);
-  try {
-    const atualizado = await finalizarAtendimento(atendimento.id);
-    setAtendimento(atualizado);
-  } catch (e: unknown) {
-    console.error('Erro ao finalizar atendimento:', e);
-    const mensagemErro = e instanceof Error ? e.message : 'Não foi possível finalizar o atendimento.';
-    
-    alert(mensagemErro);
-  } finally {
-    setFinalizando(false);
-  }
-};
-
-  // NOVA FUNÇÃO: Gravar comentário (RF-07)
-  const handleSalvarComentario = async () => {
-  if (!atendimento) return;
-  setSalvandoComentario(true);
-  try {
-    const atualizado = await adicionarComentario(atendimento.id, comentario);
-    setAtendimento(atualizado);
-    alert('Comentário salvo com sucesso!');
-  } catch (e) {
-    console.error(e);
-    alert('Erro ao salvar comentário.');
-  } finally {
-    setSalvandoComentario(false);
-  }
-  };
-  const confirmarFinalizar = () => {
-    presentAlert({
-      header: 'Finalizar Atendimento',
-      message: 'Tem certeza que deseja encerrar o serviço? Você não poderá adicionar/remover fotos depois.',
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        { text: 'Sim, finalizar', role: 'confirm', handler: () => handleFinalizar() },
-      ],
-    });
-  };
-
-
-  if (carregando) return (
-    <IonPage>
-      <IonContent className="lm-page">
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 80 }}>
-          <IonSpinner style={{ color: '#00b4d8' }} />
-        </div>
-      </IonContent>
-    </IonPage>
-  );
-
-  if (erro || !atendimento) return (
-    <IonPage>
-      <IonContent className="lm-page">
-        <div style={styles.container}>
-          <button style={styles.btnVoltar} onClick={() => history.goBack()}>← Voltar</button>
-          <p style={{ color: '#ef4444', textAlign: 'center', marginTop: 40 }}>{erro}</p>
-        </div>
-      </IonContent>
-    </IonPage>
-  );
-
-  const { veiculo, servico } = atendimento;
-  const statusInfo = STATUS_MAP[atendimento.status] ?? { label: atendimento.status, classe: '' };
-
   return (
     <IonPage>
-      <IonContent className="lm-page">
-        <div style={styles.container}>
-
-          {/* Header */}
-          <div style={styles.header}>
-            <button style={styles.btnVoltar} onClick={() => history.goBack()}>← Voltar</button>
-            <span className={`lm-badge ${statusInfo.classe}`}>{statusInfo.label}</span>
-          </div>
-
-          <h2 style={styles.titulo}>Detalhes do Atendimento</h2>
-
-          {/* Seção Veículo */}
-          <div style={styles.secao}>
-            <div style={styles.secaoTitulo}>
-              <span style={styles.secaoIcon}>🚗</span>
-              <span>Veículo</span>
-            </div>
-            <h3 style={styles.veiculoNome}>
-              {veiculo.marca} {veiculo.modelo}
-            </h3>
-            <div style={styles.infoGrid}>
-              <div style={styles.infoItem}>
-                <span style={styles.infoLabel}>Cor</span>
-                <span style={styles.infoValor}>{veiculo.cor || '—'}</span>
-              </div>
-              <div style={styles.infoItem}>
-                <span style={styles.infoLabel}>Placa</span>
-                <span style={{ ...styles.infoValor, ...styles.placa }}>{veiculo.placa}</span>
+      <IonContent>
+        <div style={{ background: '#000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+          
+          {/* Header Superior (image_e66707.png) */}
+          <header style={{ padding: '24px 20px', background: '#121212', borderBottom: '1px solid #1a1a1a' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <button onClick={() => history.goBack()} style={{ background: 'none', border: 'none', padding: 0 }}>
+                <ArrowLeft color="#fff" size={20} />
+              </button>
+              <div style={{ color: '#444', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
+                OS #{atendimento.id}
               </div>
             </div>
-          </div>
 
-          {/* Seção Cliente */}
-          <div style={styles.secao}>
-            <div style={styles.secaoTitulo}>
-              <span style={styles.secaoIcon}>👤</span>
-              <span>Cliente</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+              <Car color="#0066ff" size={24} />
+              <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 900, margin: 0 }}>
+                {atendimento.veiculo.modelo}
+              </h2>
             </div>
-            <p style={styles.clienteNome}>{veiculo.nome_dono}</p>
-            {veiculo.celular_dono && (
-              <a href={`tel:${veiculo.celular_dono}`} style={styles.telefone}>
-                📞 {veiculo.celular_dono}
-              </a>
-            )}
-          </div>
+            
+            <div style={{ color: '#666', fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>
+              {atendimento.veiculo.placa}
+            </div>
 
-          {/* Seção Serviço */}
-          <div style={styles.secao}>
-            <div style={styles.secaoTitulo}>
-              <span style={styles.secaoIcon}>⚙️</span>
-              <span>Serviço</span>
+            <div style={{ 
+              background: 'rgba(0,102,255,0.05)', border: '1px solid #0066ff30', 
+              padding: '14px 18px', borderRadius: '14px', color: '#0066ff', 
+              fontWeight: 800, fontSize: '14px', display: 'inline-block' 
+            }}>
+              {atendimento.servico.nome}
             </div>
-            <p style={styles.servicoNome}>{servico.nome}</p>
-            <div style={styles.infoGrid}>
-              <div style={styles.infoItem}>
-                <span style={styles.infoLabel}>Duração estimada</span>
-                <span style={styles.infoValor}>{servico.duracao_estimada_min} min</span>
-              </div>
-              <div style={styles.infoItem}>
-                <span style={styles.infoLabel}>Preço</span>
-                <span style={styles.infoValor}>
-                  R$ {parseFloat(servico.preco).toFixed(2)}
+          </header>
+
+          {/* Stepper de Progresso (image_e6673f.png) */}
+          <div style={{ 
+            display: 'flex', justifyContent: 'space-around', alignItems: 'center', 
+            padding: '24px 10px', background: '#0a0a0a', borderBottom: '1px solid #1a1a1a' 
+          }}>
+            {[
+              { id: 1, label: 'Vistoria', icon: ClipboardCheck },
+              { id: 2, label: 'Lavagem', icon: Droplets },
+              { id: 3, label: 'Acabamento', icon: Sparkles },
+              { id: 4, label: 'Liberação', icon: Key }
+            ].map((step) => (
+              <div key={step.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', opacity: passo >= step.id ? 1 : 0.25 }}>
+                <div style={{ 
+                  width: '42px', height: '42px', borderRadius: '50%', 
+                  background: passo > step.id ? '#0066ff' : (passo === step.id ? '#0066ff' : '#1a1a1a'),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: passo === step.id ? '0 0 20px rgba(0,102,255,0.3)' : 'none',
+                  border: passo === step.id ? 'none' : '1px solid #2a2a2a'
+                }}>
+                  {passo > step.id ? <Check size={22} color="white" strokeWidth={4} /> : <step.icon size={20} color={passo === step.id ? 'white' : '#444'} />}
+                </div>
+                <span style={{ fontSize: '9px', fontWeight: 900, color: passo === step.id ? '#fff' : '#333', textTransform: 'uppercase' }}>
+                  {step.label}
                 </span>
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Seção Horários */}
-          <div style={styles.secao}>
-            <div style={styles.secaoTitulo}>
-              <span style={styles.secaoIcon}>🕐</span>
-              <span>Horários</span>
-            </div>
-            <div style={styles.infoGrid}>
-              <div style={styles.infoItem}>
-                <span style={styles.infoLabel}>Agendado para</span>
-                <span style={styles.infoValor}>{formatarDataHora(atendimento.data_hora)}</span>
-              </div>
-              {atendimento.horario_inicio && (
-                <div style={styles.infoItem}>
-                  <span style={styles.infoLabel}>Iniciado às</span>
-                  <span style={{ ...styles.infoValor, color: '#22c55e' }}>
-                    {formatarHora(atendimento.horario_inicio)}
-                  </span>
-                </div>
-              )}
-            </div>
+          {/* Renderização da Etapa Atual */}
+          <div style={{ flex: 1 }}>
+            {renderPasso()}
           </div>
-
-          {/* Seção Fotos ANTES */}
-          <div style={styles.secao}>
-            <div style={styles.secaoTitulo}>
-              <span style={styles.secaoIcon}>📷</span>
-              <span>Fotos Antes do Serviço</span>
-            </div>
-            <GaleriaFotos 
-              atendimentoId={atendimento.id}
-              momento="ANTES"
-              fotosIniciais={atendimento.midias || []}
-              onUploadSuccess={carregarDetalhes}
-              somenteLeitura={atendimento.status !== 'agendado'}
-            />
-          </div>
-
-          {/* Seção Fotos DEPOIS */}
-          {['em_andamento', 'finalizado'].includes(atendimento.status) && (
-            <div style={styles.secao}>
-              <div style={styles.secaoTitulo}>
-                <span style={styles.secaoIcon}>✨</span>
-                <span>Fotos Depois do Serviço</span>
-              </div>
-              <GaleriaFotos 
-                atendimentoId={atendimento.id}
-                momento="DEPOIS"
-                fotosIniciais={atendimento.midias || []}
-                onUploadSuccess={carregarDetalhes}
-                somenteLeitura={atendimento.status !== 'em_andamento'}
-              />
-            </div>
-          )}
-
-          {/* Seção Comentários (RF-07) */}
-{/* Substitua a secção antiga de observações por esta: */}
-<div style={styles.secao}>
-  <div style={styles.secaoTitulo}>
-    <span style={styles.secaoIcon}>📝</span>
-    <span>Comentários / Observações</span>
-  </div>
-  
-  {atendimento.status !== 'finalizado' && atendimento.status !== 'cancelado' ? (
-    <>
-      <textarea
-        style={styles.textarea}
-        value={comentario}
-        onChange={(e) => setComentario(e.target.value)}
-        placeholder="Registre ocorrências durante o serviço..."
-      />
-      <button 
-        style={{ ...styles.btnComentario, opacity: salvandoComentario ? 0.7 : 1 }}
-        onClick={() => { void handleSalvarComentario(); }}
-        disabled={salvandoComentario}
-      >
-        {salvandoComentario ? <IonSpinner name="dots" style={{ width: 20, height: 20 }} /> : 'Salvar Comentário'}
-      </button>
-    </>
-  ) : (
-    <p style={styles.obs}>{atendimento.observacoes || 'Nenhum comentário registrado.'}</p>
-  )}
-</div>
-
-          {/* Botão Iniciar — fixo no fundo, só aparece se agendado */}
-          {atendimento.status === 'agendado' && (
-            <button
-              style={{ ...styles.btnIniciar, opacity: iniciando ? 0.7 : 1 }}
-              disabled={iniciando}
-              onClick={() => { void handleIniciar(); }}
-            >
-              {iniciando
-                ? <IonSpinner name="crescent" style={{ width: 22, height: 22 }} />
-                : '▶  Iniciar Atendimento'}
-            </button>
-          )}
-
-          {/* Botão Finalizar — só aparece se em andamento */}
-          {atendimento.status === 'em_andamento' && (
-            <button
-              style={{ ...styles.btnFinalizar, opacity: finalizando || !(atendimento.midias || []).some((m) => m.momento === 'DEPOIS') ? 0.6 : 1 }}
-              disabled={finalizando || !(atendimento.midias || []).some((m) => m.momento === 'DEPOIS')}
-              onClick={confirmarFinalizar}
-            >
-              {finalizando
-                ? <IonSpinner name="crescent" style={{ width: 22, height: 22 }} />
-                : '✔  Finalizar Atendimento'}
-            </button>
-          )}
 
         </div>
       </IonContent>
     </IonPage>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    background: '#0d1117',
-    padding: '20px 16px 100px',
-  },
-  header: {
-    display: 'flex', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 16,
-  },
-  btnVoltar: {
-    background: 'none', border: 'none',
-    color: '#8899aa', fontSize: 15, cursor: 'pointer', padding: 0,
-  },
-  titulo: { color: '#fff', fontSize: 20, fontWeight: 800, margin: '0 0 24px' },
-  secao: {
-    background: '#161b27', border: '1px solid #1e2d40',
-    borderRadius: 16, padding: '18px 16px', marginBottom: 14,
-  },
-  secaoTitulo: {
-    display: 'flex', alignItems: 'center', gap: 8,
-    color: '#00b4d8', fontWeight: 700, fontSize: 14,
-    marginBottom: 12,
-  },
-  secaoIcon: { fontSize: 18 },
-  veiculoNome: { color: '#fff', fontSize: 18, fontWeight: 700, margin: '0 0 12px' },
-  infoGrid: { display: 'flex', gap: 16, flexWrap: 'wrap' },
-  infoItem: { display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 120 },
-  infoLabel: { color: '#8899aa', fontSize: 12 },
-  infoValor: { color: '#fff', fontSize: 15, fontWeight: 600 },
-  placa: {
-    fontFamily: 'monospace', background: '#1e2535',
-    padding: '4px 10px', borderRadius: 8, width: 'fit-content',
-  },
-  clienteNome: { color: '#fff', fontSize: 16, fontWeight: 600, margin: '0 0 8px' },
-  telefone: {
-    color: '#00b4d8', fontSize: 14, textDecoration: 'none',
-    display: 'flex', alignItems: 'center', gap: 6,
-  },
-  servicoNome: { color: '#fff', fontSize: 16, fontWeight: 600, margin: '0 0 12px' },
-  fotosArea: {
-    minHeight: 80, borderRadius: 12,
-    border: '2px dashed #1e2d40',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-  },
-  fotosVazio: { color: '#8899aa', fontSize: 13, margin: 0 },
-  obs: { color: '#8899aa', fontSize: 14, margin: 0, lineHeight: 1.6 },
-  btnIniciar: {
-    width: '100%', padding: '18px 0', borderRadius: 28,
-    border: 'none', marginTop: 8,
-    background: 'linear-gradient(90deg, #f59e0b, #d97706)',
-    color: '#fff', fontSize: 16, fontWeight: 700,
-    cursor: 'pointer', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-  },
-
-  // ADICIONE ESTES DOIS ABAIXO:
-  textarea: {
-    width: '100%',
-    minHeight: '100px',
-    background: '#1e2535',
-    border: '1px solid #2d4059',
-    borderRadius: '12px',
-    color: '#fff',
-    padding: '12px',
-    fontSize: '14px',
-    marginBottom: '10px',
-    outline: 'none',
-    resize: 'vertical',
-    boxSizing: 'border-box'
-  },
-  btnComentario: {
-    background: '#1e2d40',
-    color: '#00b4d8',
-    border: '1px solid #00b4d8',
-    padding: '8px 16px',
-    borderRadius: '20px',
-    fontSize: '13px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8
-  },
-  btnFinalizar: {
-    width: '100%', padding: '18px 0', borderRadius: 28,
-    border: 'none', marginTop: 8,
-    background: 'linear-gradient(90deg, #22c55e, #16a34a)',
-    color: '#fff', fontSize: 16, fontWeight: 700,
-    cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-  },
 };
 
 export default DetalhesAtendimento;

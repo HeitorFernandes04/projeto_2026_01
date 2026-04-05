@@ -1,89 +1,13 @@
-/* Cores e estilos globais do tema Lava-Me */
-
 :root {
-  --lm-bg:         #0d1117;
-  --lm-card:       #161b27;
-  --lm-card-hover: #1e2535;
-  --lm-border:     #1e2d40;
-  --lm-primary:    #00b4d8;
-  --lm-primary-dark: #0096c7;
-  --lm-text:       #ffffff;
-  --lm-text-muted: #8899aa;
-  --lm-amber:      #f59e0b;
-  --lm-blue:       #3b82f6;
-  --lm-green:      #22c55e;
-  --lm-red:        #ef4444;
+  --ion-background-color: #000000 !important;
 }
 
-.lm-page {
-  --background: var(--lm-bg);
+body {
+  background-color: #000000 !important;
+  margin: 0;
+  padding: 0;
 }
 
-.lm-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+ion-content {
+  --background: #000000 !important;
 }
-
-.lm-logo-icon {
-  font-size: 52px;
-  color: var(--lm-primary);
-}
-
-.lm-logo-text {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--lm-primary);
-  letter-spacing: 1px;
-}
-
-.lm-card {
-  background: var(--lm-card);
-  border: 1px solid var(--lm-border);
-  border-radius: 16px;
-  padding: 20px;
-}
-
-.lm-input {
-  --background: #1e2535;
-  --color: var(--lm-text);
-  --placeholder-color: var(--lm-text-muted);
-  --border-radius: 12px;
-  --padding-start: 16px;
-  --padding-end: 16px;
-  border-radius: 12px;
-  margin-bottom: 14px;
-}
-
-.lm-btn-primary {
-  --background: var(--lm-primary);
-  --background-activated: var(--lm-primary-dark);
-  --color: #fff;
-  --border-radius: 28px;
-  font-weight: 700;
-  font-size: 16px;
-  height: 52px;
-}
-
-.lm-section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--lm-primary);
-  font-weight: 700;
-  font-size: 15px;
-  margin-bottom: 12px;
-}
-
-.lm-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.lm-badge-agendado   { background: rgba(245,158,11,0.15); color: var(--lm-amber); }
-.lm-badge-andamento  { background: rgba(59,130,246,0.15); color: var(--lm-blue); }
-.lm-badge-finalizado { background: rgba(34,197,94,0.15);  color: var(--lm-green); }
-.lm-badge-cancelado  { background: rgba(239,68,68,0.15);  color: var(--lm-red); }
