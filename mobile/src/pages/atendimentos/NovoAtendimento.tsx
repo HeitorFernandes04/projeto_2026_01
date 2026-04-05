@@ -1,13 +1,13 @@
 import { IonContent, IonPage, IonSpinner } from '@ionic/react';
 import { LogOut, Check, LayoutGrid, Calendar, History, Plus } from 'lucide-react';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { getServicos, getHorariosLivres, criarAtendimento } from '../../services/api';
 
 // Importação da Logo Oficial
 import logoLavaMe from '../../assets/LogoLavaMe.jpeg';
 
-// Interface para garantir tipagem correta
+// Interface sincronizada com o backend
 interface Servico {
   id: number;
   nome: string;
@@ -31,7 +31,10 @@ const NovoAtendimento: React.FC = () => {
   const [horariosLivres, setHorariosLivres] = useState<string[]>([]);
   const [loadingHorarios, setLoadingHorarios] = useState(false);
 
-  const horariosFallback = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+  // CORREÇÃO ESLint: horariosFallback movido para dentro de um useMemo para evitar o aviso de dependência no useEffect
+  const horariosFallback = useMemo(() => 
+    ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'], 
+  []);
 
   const servicosModelo = useMemo<Servico[]>(() => [
     { id: 1, nome: 'Lavagem Simples', duracao_estimada_min: 30, preco: '50.00' },
@@ -55,15 +58,18 @@ const NovoAtendimento: React.FC = () => {
       setHorarioSelecionado(null);
       getHorariosLivres(dataSelecionada, servicoSelecionado)
         .then(res => {
-          if (res.horarios && res.horarios.length > 0) setHorariosLivres(res.horarios);
-          else setHorariosLivres(horariosFallback);
+          if (res && res.horarios && res.horarios.length > 0) {
+            setHorariosLivres(res.horarios);
+          } else {
+            setHorariosLivres([]);
+          }
         })
         .catch(() => setHorariosLivres(horariosFallback))
         .finally(() => setLoadingHorarios(false));
     }
-  }, [dataSelecionada, servicoSelecionado, isAgendar]);
+  }, [dataSelecionada, servicoSelecionado, isAgendar, horariosFallback]);
 
-  const handleConfirmar = async () => {
+  const handleConfirmar = useCallback(async () => {
     if (!placa || !modelo || !servicoSelecionado || (isAgendar && !horarioSelecionado)) {
       alert("Por favor, preencha todos os campos e escolha o horário.");
       return;
@@ -75,7 +81,7 @@ const NovoAtendimento: React.FC = () => {
       placa: placa.toUpperCase(),
       modelo: modelo,
       marca: "Não informada",
-      cor: "",
+      cor: "Não informada",
       servico_id: servicoSelecionado,
       data_hora: isAgendar ? `${dataSelecionada}T${horarioSelecionado}:00` : new Date().toISOString(),
       iniciar_agora: !isAgendar,
@@ -86,20 +92,19 @@ const NovoAtendimento: React.FC = () => {
       await criarAtendimento(dadosAtendimento);
       history.push('/atendimentos/hoje');
     } catch (e: unknown) {
-      const erro = e as Error;
-      alert("Erro ao salvar: " + erro.message);
+      // CORREÇÃO ESLint: Substituído 'any' por 'Error' para tipagem segura
+      const msgErro = e instanceof Error ? e.message : "Erro ao salvar atendimento.";
+      alert(msgErro);
     }
-  };
+  }, [placa, modelo, servicoSelecionado, isAgendar, horarioSelecionado, dataSelecionada, history]);
 
   return (
     <IonPage>
       <IonContent>
         <div style={{ background: '#000', minHeight: '100vh', padding: '32px 20px 140px' }}>
           
-          {/* Header Superior Atualizado com a Logo */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* Contêiner da Logo Substituindo o símbolo de '+' */}
               <div style={{ padding: '2px', borderRadius: '12px', border: '1px solid #1a1a1a', background: '#000' }}>
                 <img 
                   src={logoLavaMe} 
@@ -123,8 +128,6 @@ const NovoAtendimento: React.FC = () => {
           <p style={{ color: '#444', fontSize: '15px', fontWeight: 700, marginBottom: '32px' }}>
             {isAgendar ? 'Selecione data e horário' : 'Iniciar atendimento imediato'}
           </p>
-
-          {/* ... restante do formulário (placa, modelo, serviços, horários) ... */}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
             <input 
@@ -166,19 +169,23 @@ const NovoAtendimento: React.FC = () => {
 
               {loadingHorarios ? <div style={{ textAlign: 'center' }}><IonSpinner color="primary" /></div> : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                  {horariosLivres.map(h => (
-                    <div 
-                      key={h} onClick={() => setHorarioSelecionado(h)}
-                      style={{ 
-                        padding: '12px 5px', borderRadius: '10px', textAlign: 'center', fontSize: '12px', fontWeight: 800,
-                        background: horarioSelecionado === h ? '#0066ff' : '#161616',
-                        color: horarioSelecionado === h ? '#fff' : '#444',
-                        border: '1px solid #2a2a2a', cursor: 'pointer'
-                      }}
-                    >
-                      {h}
-                    </div>
-                  ))}
+                  {horariosLivres.length > 0 ? (
+                    horariosLivres.map(h => (
+                      <div 
+                        key={h} onClick={() => setHorarioSelecionado(h)}
+                        style={{ 
+                          padding: '12px 5px', borderRadius: '10px', textAlign: 'center', fontSize: '12px', fontWeight: 800,
+                          background: horarioSelecionado === h ? '#0066ff' : '#161616',
+                          color: horarioSelecionado === h ? '#fff' : '#444',
+                          border: '1px solid #2a2a2a', cursor: 'pointer'
+                        }}
+                      >
+                        {h}
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ color: '#444', gridColumn: 'span 4', textAlign: 'center', fontSize: '12px' }}>Nenhum horário disponível.</p>
+                  )}
                 </div>
               )}
             </div>
@@ -191,7 +198,6 @@ const NovoAtendimento: React.FC = () => {
             {isAgendar ? 'Confirmar Agendamento' : 'Iniciar Atendimento'}
           </button>
 
-          {/* TabBar Inferior Padronizada (Mantida conforme o padrão visual f3192f.png) */}
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: '100px', background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '0 10px 20px', zIndex: 100 }}>
             <div onClick={() => history.push('/atendimentos/hoje')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1, color: '#444', cursor: 'pointer' }}>
               <div style={{ background: '#1a1a1a', padding: '10px', borderRadius: '14px', color: '#444' }}><LayoutGrid size={24} /></div>

@@ -1,22 +1,22 @@
-import { IonContent, IonPage, IonSpinner } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonViewWillEnter } from '@ionic/react';
 import { 
   Car, Check, ClipboardCheck, Droplets, Sparkles, Key, ArrowLeft 
 } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import { getAtendimento } from '../../services/api';
+import { getAtendimento, finalizarAtendimento } from '../../services/api';
 
 import EstadoVistoria from '../../components/EstadoVistoria';
 import EstadoLavagem from '../../components/EstadoLavagem';
 import { EstadoAcabamento } from '../../components/EstadoAcabamento';
-import { EstadoLiberacao } from '../../components/EstadoLiberacao';
-
-// Interface para garantir a tipagem correta dos dados do veículo
+import EstadoLiberacao from "../../components/EstadoLiberacao"; // Sem as chaves {}
+// Interface atualizada para refletir o novo modelo do Django
 interface AtendimentoDados {
   id: number;
   veiculo: { placa: string; modelo: string };
   servico: { nome: string };
-  status: string;
+  status: 'agendado' | 'em_andamento' | 'finalizado' | 'cancelado';
+  etapa_atual: number; // Novo campo persistente vindo do backend
 }
 
 const DetalhesAtendimento: React.FC = () => {
@@ -24,32 +24,43 @@ const DetalhesAtendimento: React.FC = () => {
   const history = useHistory();
   const [atendimento, setAtendimento] = useState<AtendimentoDados | null>(null);
   const [passo, setPasso] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const carregarDados = useCallback(async () => {
+    setLoading(true);
     const idNumerico = Number(id);
-    
-    // Tenta buscar na API, mas usa MOCK se falhar (perfeito para teste de front-only)
-    getAtendimento(idNumerico)
-      .then((dados) => {
-        if (dados) {
-          setAtendimento(dados);
-        } else {
-          throw new Error("Sem dados");
-        }
-      })
-      .catch(() => {
-        // DADOS DE TESTE PARA O FRONT-END (Igual ao protótipo)
-        setAtendimento({
-          id: idNumerico || 2458,
-          veiculo: { placa: 'ABC-1D23', modelo: 'Toyota Corolla' },
-          servico: { nome: 'Lavagem Completa + Cera' },
-          status: 'agendado'
-        });
-      });
+    try {
+      const dados = await getAtendimento(idNumerico);
+      if (dados) {
+        setAtendimento(dados);
+        
+        // ALTERAÇÃO CRUCIAL: Agora o passo inicial é definido pelo 'etapa_atual'
+        // gravado no banco de dados, garantindo persistência ao recarregar a página.
+        setPasso(dados.etapa_atual); 
+      }
+    } catch (err) {
+      console.error("Erro ao carregar atendimento:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  // Enquanto não tem atendimento nem mock, mostra o carregando
-  if (!atendimento) {
+  useIonViewWillEnter(() => {
+    carregarDados();
+  });
+
+  const concluirServicoFinal = async () => {
+    if (!atendimento) return;
+    try {
+      await finalizarAtendimento(atendimento.id);
+      history.push('/atendimentos/hoje');
+    } catch (error: unknown) {
+      const msgErro = error instanceof Error ? error.message : "Erro ao finalizar atendimento. Verifique se enviou as fotos do DEPOIS.";
+      alert(msgErro);
+    }
+  };
+
+  if (loading || !atendimento) {
     return (
       <IonPage>
         <IonContent style={{ "--background": "#000" }}>
@@ -61,14 +72,21 @@ const DetalhesAtendimento: React.FC = () => {
     );
   }
 
-  // Lógica de troca de telas baseada no botão "Concluir" de cada etapa
+  // A função de avanço (onComplete) agora deve atualizar o estado local 'passo'
+  // após as funções de API (como atualizarDadosAtendimento) serem chamadas 
+  // dentro dos componentes filhos, garantindo que o stepper acompanhe o backend.
   const renderPasso = () => {
     switch(passo) {
-      case 1: return <EstadoVistoria onComplete={() => setPasso(2)} />;
-      case 2: return <EstadoLavagem onComplete={() => setPasso(3)} />;
-      case 3: return <EstadoAcabamento onComplete={() => setPasso(4)} />;
-      case 4: return <EstadoLiberacao onComplete={() => history.push('/atendimentos/hoje')} />;
-      default: return null;
+      case 1: 
+        return <EstadoVistoria atendimentoId={atendimento.id} onComplete={() => setPasso(2)} />;
+      case 2: 
+        return <EstadoLavagem atendimentoId={atendimento.id} onComplete={() => setPasso(3)} />;
+      case 3: 
+        return <EstadoAcabamento atendimentoId={atendimento.id} onComplete={() => setPasso(4)} />;
+      case 4: 
+        return <EstadoLiberacao atendimentoId={atendimento.id} onComplete={concluirServicoFinal} />;
+      default: 
+        return null;
     }
   };
 
@@ -77,7 +95,7 @@ const DetalhesAtendimento: React.FC = () => {
       <IonContent>
         <div style={{ background: '#000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           
-          {/* Header Superior (image_e66707.png) */}
+          {/* Header Superior */}
           <header style={{ padding: '24px 20px', background: '#121212', borderBottom: '1px solid #1a1a1a' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
               <button onClick={() => history.goBack()} style={{ background: 'none', border: 'none', padding: 0 }}>
@@ -108,7 +126,7 @@ const DetalhesAtendimento: React.FC = () => {
             </div>
           </header>
 
-          {/* Stepper de Progresso (image_e6673f.png) */}
+          {/* Stepper de Progresso - Atualizado para refletir o passo real */}
           <div style={{ 
             display: 'flex', justifyContent: 'space-around', alignItems: 'center', 
             padding: '24px 10px', background: '#0a0a0a', borderBottom: '1px solid #1a1a1a' 
@@ -136,7 +154,6 @@ const DetalhesAtendimento: React.FC = () => {
             ))}
           </div>
 
-          {/* Renderização da Etapa Atual */}
           <div style={{ flex: 1 }}>
             {renderPasso()}
           </div>
