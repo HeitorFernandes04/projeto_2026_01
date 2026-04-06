@@ -76,7 +76,6 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Documentação oficial da API do projeto Lava-me.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    # Adicione outras configurações conforme necessário
 }
 
 SIMPLE_JWT = {

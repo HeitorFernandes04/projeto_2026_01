@@ -1,54 +1,48 @@
-from mcp.server.fastmcp import FastMCP
+import sys
 import chromadb
 from pathlib import Path
+from mcp.server.fastmcp import FastMCP
 
-# Configuração de caminhos (executando a partir da raiz do backend)
+# 1. Configuração do Caminho para o Banco Vetorial
 BASE_DIR = Path(__file__).resolve().parent
 CHROMA_PATH = BASE_DIR / ".chroma_db"
 
-# Inicializa o servidor MCP
-mcp = FastMCP("Projeto Doc Server")
+# 2. Inicialização do Servidor MCP
+mcp = FastMCP("LavaMe-Context-Server")
 
+# 3. Definição da Ferramenta (Tool) exposta para a IA
 @mcp.tool()
-def consultar_documentacao_projeto(query: str) -> str:
+def consultar_documentacao_projeto(query: str, n_results: int = 3) -> str:
     """
-    Consulta a documentação do projeto (regras, diagramas, etc.) usando busca semântica no ChromaDB.
-    
-    Args:
-        query: A pergunta ou termo de busca relacionado ao projeto.
+    Busca regras de negócio, padrões de arquitetura e contexto do banco de dados do projeto Lava-Me.
+    Obrigatório usar esta ferramenta ANTES de gerar código para garantir o alinhamento com as regras do sistema.
     """
     try:
-        # Inicializa cliente ChromaDB de forma persistente
         client = chromadb.PersistentClient(path=str(CHROMA_PATH))
+        collection = client.get_collection(name="regras_projeto")
         
-        # Obtém a coleção de regras do projeto
-        try:
-            collection = client.get_collection(name="regras_projeto")
-        except Exception:
-            return "Erro: A coleção 'regras_projeto' não foi encontrada. Certifique-se de rodar o script de ingestão primeiro."
-        
-        # Realiza a busca semântica (top 3 resultados)
+        # Executa a busca vetorial por similaridade semântica
         results = collection.query(
             query_texts=[query],
-            n_results=3
+            n_results=n_results
         )
         
-        # Verifica se há resultados
-        if not results["documents"] or not results["documents"][0]:
-            return "Nenhum trecho relevante encontrado na documentação para a consulta informada."
-            
-        # Constrói a resposta formatada
-        response_parts = ["### Trechos Relevantes Encontrados na Documentação:\n"]
+        if not results['documents'] or not results['documents'][0]:
+            return "Nenhuma documentação relevante encontrada para esta query. Tente termos mais específicos."
         
-        for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
-            source = meta.get("source", "Arquivo não identificado")
-            response_parts.append(f"**Fonte: {source}**\n{doc}\n\n---\n")
+        # Formatação determinística para o LLM não alucinar a origem
+        resposta = f"--- RESULTADOS DA BUSCA PARA: '{query}' ---\n\n"
+        
+        for doc, metadata in zip(results['documents'][0], results['metadatas'][0]):
+            fonte = metadata.get('source', 'Fonte Desconhecida')
+            resposta += f"DOCUMENTO FONTE: [{fonte}]\n{doc}\n"
+            resposta += "-" * 40 + "\n\n"
             
-        return "\n".join(response_parts)
+        return resposta
         
     except Exception as e:
-        return f"Ocorreu um erro interno ao processar a consulta: {str(e)}"
+        return f"Erro interno ao consultar o banco vetorial local (ChromaDB): {str(e)}"
 
 if __name__ == "__main__":
-    # Inicia o servidor (utiliza stdio por padrão)
-    mcp.run()
+    # O servidor roda aguardando comandos via Standard Input/Output da IDE
+    mcp.run(transport='stdio')

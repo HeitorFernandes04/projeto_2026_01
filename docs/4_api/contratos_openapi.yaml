@@ -1,0 +1,146 @@
+openapi: 3.0.3
+info:
+  title: Lava-me API
+  version: 1.0.0
+  description: Documentação oficial da API do projeto Lava-me.
+paths:
+  /api/atendimentos/:
+    post:
+      operationId: atendimentos_create
+      description: |-
+        POST /api/atendimentos/
+        Cria um veículo (ou reutiliza pela placa) e registra o atendimento.
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/{id}/:
+    get:
+      operationId: atendimentos_retrieve
+      description: GET /api/atendimentos/{id}/ — detalhe completo de um atendimento.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/{id}/comentario/:
+    patch:
+      operationId: atendimentos_comentario_partial_update
+      description: |-
+        PATCH /api/atendimentos/{id}/comentario/
+        Utilizada por todas as etapas do processo (Vistoria, Lavagem, Acabamento, Liberação)
+        para salvar laudos técnicos e AVANÇAR a etapa na máquina de estados.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/register/:
+    post:
+      operationId: accounts_register_create
+      tags:
+      - accounts
+      security:
+      - basicAuth: []
+      - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+components:
+  schemas:
+    Register:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          title: Usuário
+          description: Obrigatório. 150 caracteres ou menos. Letras, números e @/./+/-/_ apenas.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 6
+      required:
+      - email
+      - id
+      - name
+      - password
+      - username
+    TokenObtainPair:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - email
+      - password
+      - refresh
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
