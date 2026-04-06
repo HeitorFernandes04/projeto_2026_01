@@ -17,7 +17,7 @@ from .serializers import (
     MidiaAtendimentoSerializer,
     MidiaAtendimentoUploadSerializer,
     ServicoSerializer,
-    AtualizarComentarioSerializer,
+    AtualizarProgressoSerializer,  # Atualizado para o novo nome
 )
 from .services import AtendimentoService, MidiaAtendimentoService
 
@@ -197,7 +197,6 @@ class FinalizarAtendimentoView(APIView):
         try:
             AtendimentoService.finalizar(request.atendimento)
         except ValidationError as e:
-            # Retorna a mensagem de erro formatada extraída da ValidationError
             return Response({'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = AtendimentoSerializer(request.atendimento, context={'request': request})
@@ -216,17 +215,14 @@ class FotoUploadView(APIView):
     permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
 
     def post(self, request, pk):
-        # O atendimento já foi carregado pela permission e cacheado em request
         atendimento = request.atendimento
 
-        # Validação de entrada
         serializer = MidiaAtendimentoUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         momento = serializer.validated_data['momento']
         arquivos = serializer.validated_data['arquivos']
 
-        # Delega para a camada de serviço
         try:
             midias = MidiaAtendimentoService.processar_upload_multiplo(
                 atendimento=atendimento,
@@ -234,12 +230,12 @@ class FotoUploadView(APIView):
                 arquivos=arquivos,
             )
         except ValidationError as e:
+            # Corrigido para e.messages[0] para consistência com outras views
             return Response(
-                {'detail': e.message},
+                {'detail': e.messages[0] if hasattr(e, 'messages') else str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Serializa a saída com URLs absolutas
         output = MidiaAtendimentoSerializer(
             midias,
             many=True,
@@ -249,15 +245,32 @@ class FotoUploadView(APIView):
         return Response(output.data, status=status.HTTP_201_CREATED)
 
 
-
 class AdicionarComentarioView(APIView):
-    """PATCH /api/atendimentos/{id}/comentario/"""
+    """
+    PATCH /api/atendimentos/{id}/comentario/
+    Utilizada por todas as etapas do processo (Vistoria, Lavagem, Acabamento, Liberação)
+    para salvar laudos técnicos e AVANÇAR a etapa na máquina de estados.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
 
     def patch(self, request, pk):
-        atendimento = request.atendimento # Injetado pela permissionIsFuncionarioDoAtendimento
-        serializer = AtualizarComentarioSerializer(atendimento, data=request.data, partial=True)
+        # Atendimento injetado pela permission IsFuncionarioDoAtendimento
+        atendimento = request.atendimento 
+        
+        # Valida e salva os dados técnicos enviados pelo Frontend
+        serializer = AtualizarProgressoSerializer(atendimento, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         atendimento_atualizado = serializer.save()
+        
+        # Chama a lógica de serviço para verificar se os requisitos da etapa 
+        # foram cumpridos e avançar o contador 'etapa_atual' no banco.
+        try:
+            AtendimentoService.avancar_etapa(atendimento_atualizado, request.data)
+        except ValidationError as e:
+            return Response(
+                {'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         return Response(AtendimentoSerializer(atendimento_atualizado, context={'request': request}).data)

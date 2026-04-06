@@ -8,3 +8,4 @@ sqlparse==0.5.5
 tzdata==2025.3
 Pillow>=10.0.0
 factory-boy>=3.3.0
+drf-spectacular==0.29.0

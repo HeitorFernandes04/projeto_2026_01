@@ -8,6 +8,7 @@ import Register from './pages/register/Register';
 import AtendimentosHoje from './pages/atendimentos/AtendimentosHoje';
 import DetalhesAtendimento from './pages/atendimentos/DetalhesAtendimento';
 import NovoAtendimento from './pages/atendimentos/NovoAtendimento';
+import HistoricoAtendimentos from './pages/atendimentos/HistoricoAtendimentos';
 
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
@@ -33,6 +34,8 @@ const App: React.FC = () => (
         <Route path="/register" component={Register} exact />
         <Route path="/atendimentos/hoje" component={AtendimentosHoje} exact />
         <Route path="/atendimentos/novo" component={NovoAtendimento} exact />
+        <Route path="/atendimentos/agendar" component={NovoAtendimento} exact />
+        <Route path="/atendimentos/historico" component={HistoricoAtendimentos} exact />
         <Route path="/atendimentos/:id(\d+)" component={DetalhesAtendimento} exact />
         <Route exact path="/">
           <Redirect to="/selecao" />

@@ -44,11 +44,10 @@ export async function getHistoricoAtendimentos(dataInicial: string, dataFinal: s
   const params = new URLSearchParams({
     data_inicial: dataInicial,
     data_final: dataFinal,
+    status: 'finalizado' // Força o filtro apenas para concluídos conforme sugerido
   });
 
-  return request(`/api/atendimentos/historico/?${params.toString()}`, {
-    cache: 'no-store',
-  });
+  return request(`/api/atendimentos/historico/?${params.toString()}`);
 }
 
 // RF-03/04 — Detalhe de um atendimento
@@ -110,9 +109,24 @@ export async function getHorariosLivres(data: string, servicoId: number) {
   });
 }
 
-export async function adicionarComentario(id: number, observacoes: string) {
+/**
+ * RF-07 — Atualiza dados técnicos e laudos do atendimento.
+ * Substitui a antiga função adicionarComentario para suportar o fluxo completo
+ * de Vistoria, Lavagem, Acabamento e Liberação.
+ */
+export async function atualizarDadosAtendimento(id: number, dados: {
+  observacoes?: string;
+  laudo_vistoria?: string;
+  partes_avaria?: string[];
+  laudo_lavagem?: string;
+  laudo_acabamento?: string;
+  vaga_patio?: string;
+  notas_entrega?: string;
+  checklist_lavagem?: string[]; 
+  status?: string;
+}) {
   return request(`/api/atendimentos/${id}/comentario/`, {
     method: 'PATCH',
-    body: JSON.stringify({ observacoes }),
+    body: JSON.stringify(dados),
   });
 }
