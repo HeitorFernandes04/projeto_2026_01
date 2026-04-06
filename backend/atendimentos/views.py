@@ -159,7 +159,12 @@ class IniciarAtendimentoView(APIView):
             )
 
         # Trava: o funcionário já está ocupado com outro atendimento?
-        if Atendimento.objects.filter(funcionario=request.user, status='em_andamento').exists():
+        hoje = timezone.localdate()
+        if Atendimento.objects.filter(
+            funcionario=request.user, 
+            status='em_andamento',
+            data_hora__date=hoje  # Ignora atendimentos de dias anteriores
+        ).exists():
             return Response(
                 {'detail': 'Termine o atendimento atual antes de iniciar outro.'},
                 status=status.HTTP_409_CONFLICT,
