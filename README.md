@@ -241,7 +241,7 @@ ionic serve
 
 ## 🗺️ Roadmap
 
-- [ ] **Sprint 1** — Experiência do Funcionário
+- [x] **Sprint 1** — Experiência do Funcionário
 - [ ] **Sprint 2** — Gestão e Controle Operacional
 - [ ] **Sprint 3** — Experiência do Cliente
 - [ ] **Sprint 4** — Comunicação, Relatórios e Recursos Avançados
