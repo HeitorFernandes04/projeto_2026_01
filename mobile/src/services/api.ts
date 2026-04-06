@@ -27,8 +27,15 @@ async function request(endpoint: string, options: RequestInit = {}) {
   }
 
   if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Erro ${response.status}: ${err || response.statusText}`);
+    const errText = await response.text();
+    let erroDetalhado = '';
+    try {
+      const errJson = JSON.parse(errText);
+      erroDetalhado = errJson.detail || errJson.message || errJson[Object.keys(errJson)[0]][0] || errText;
+    } catch {
+      erroDetalhado = errText || response.statusText;
+    }
+    throw new Error(erroDetalhado);
   }
 
   return response.status === 204 ? null : response.json();

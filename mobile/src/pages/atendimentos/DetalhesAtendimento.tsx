@@ -249,7 +249,7 @@ const DetalhesAtendimento: React.FC = () => {
               momento="ANTES"
               fotosIniciais={atendimento.midias || []}
               onUploadSuccess={carregarDetalhes}
-              somenteLeitura={atendimento.status !== 'agendado'}
+              somenteLeitura={!['agendado', 'em_andamento'].includes(atendimento.status)}
             />
           </div>
 

@@ -86,8 +86,10 @@ class MidiaAtendimentoService:
             for arquivo in arquivos_processados
         ]
 
-        # bulk_create para eficiência (1 query apenas)
-        return MidiaAtendimento.objects.bulk_create(midias)
+        for midia in midias:
+            midia.save()
+
+        return midias
 
     @staticmethod
     def _comprimir_imagem(arquivo):
@@ -262,6 +264,14 @@ class AtendimentoService:
         )
 
         iniciar_agora = dados.get('iniciar_agora', False)
+
+        if iniciar_agora:
+            if Atendimento.objects.filter(
+                funcionario=funcionario, 
+                status='em_andamento',
+                data_hora__date=dados['data_hora'].date()
+            ).exists():
+                raise ValidationError('O funcionário já possui um atendimento em andamento hoje. Termine o atendimento atual antes de iniciar outro.')
 
         return Atendimento.objects.create(
             veiculo=veiculo,

@@ -281,9 +281,14 @@ const AtendimentosHojeComHistorico: React.FC = () => {
               <div style={styles.logoIconWrap}><span style={{ fontSize: 22 }}>L</span></div>
               <span style={styles.logoText}>Lava-Me</span>
             </div>
-            <button style={styles.btnNovo} onClick={() => history.push('/atendimentos/novo')}>
-              + Novo
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button style={styles.btnLogout} onClick={() => { localStorage.removeItem('token'); history.replace('/login'); }}>
+                Sair
+              </button>
+              <button style={styles.btnNovo} onClick={() => history.push('/atendimentos/novo')}>
+                + Novo
+              </button>
+            </div>
           </div>
 
           <div style={styles.modoRow}>
@@ -448,6 +453,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff', border: 'none', borderRadius: 24,
     padding: '10px 20px', fontWeight: 700, fontSize: 14,
     cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,180,216,0.3)',
+  },
+  btnLogout: {
+    background: '#1e2535',
+    color: '#ef4444', border: '1px solid #ef4444', borderRadius: 24,
+    padding: '10px 20px', fontWeight: 700, fontSize: 14,
+    cursor: 'pointer',
   },
   tituloRow: {
     display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24,

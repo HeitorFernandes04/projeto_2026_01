@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonSpinner, useIonViewDidEnter } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonViewDidEnter, useIonAlert } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { criarAtendimento, getHorariosLivres, getServicos } from '../../services/api';
@@ -60,6 +60,31 @@ const NovoAtendimento: React.FC = () => {
   const set = (campo: string, valor: string) =>
     setForm((prev) => ({ ...prev, [campo]: valor }));
 
+  const [presentAlert] = useIonAlert();
+
+  const submeterAtendimento = async (dataHoraFinal: string, iniciarAgora: boolean) => {
+    setErro('');
+    setSalvando(true);
+    try {
+      const res = await criarAtendimento({
+        ...form,
+        data_hora: dataHoraFinal,
+        servico_id: Number(form.servico_id),
+        iniciar_agora: iniciarAgora,
+      });
+      if (iniciarAgora) {
+        history.push(`/atendimentos/${res.id}`);
+      } else {
+        history.push('/atendimentos/hoje');
+      }
+    } catch (e: any) {
+      console.error('Erro ao criar atendimento:', e);
+      setErro(e.message || 'Não foi possível registrar o atendimento. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   const handleSalvar = async () => {
     const { nome_dono, placa, modelo, marca, servico_id } = form;
     if (!nome_dono || !placa || !modelo || !marca || !servico_id) {
@@ -75,34 +100,54 @@ const NovoAtendimento: React.FC = () => {
       return;
     }
     
-    let dataHoraFinal = '';
-    if (modo === 'agora') {
-      const gmtTime = new Date();
-      // Envia a data atual local ISO (ajustada para o fuso local do dispositivo ou server expected)
-      // Ajuste simplificado pra compensar o timezoneOffset no navegador web:
-      const tzOffset = gmtTime.getTimezoneOffset() * 60000;
-      dataHoraFinal = (new Date(gmtTime.getTime() - tzOffset)).toISOString().slice(0, -1) + '-03:00';
-    } else {
-      // Constrói a data combinada formato ISO 8601 com o offset do backend (-03:00 para America/Sao_Paulo)
-      dataHoraFinal = `${dataEscolhida}T${horarioSelecionado}:00-03:00`;
+    if (modo === 'agendar') {
+      const dataHoraFinal = `${dataEscolhida}T${horarioSelecionado}:00-03:00`;
+      submeterAtendimento(dataHoraFinal, false);
+      return;
     }
-    
-    setErro('');
-    setSalvando(true);
-    try {
-      await criarAtendimento({
-        ...form,
-        data_hora: dataHoraFinal,
-        servico_id: Number(form.servico_id),
-        iniciar_agora: modo === 'agora',
-      });
-      history.push('/atendimentos/hoje');
-    } catch (e) {
-      console.error('Erro ao criar atendimento:', e);
-      setErro('Não foi possível registrar o atendimento. Tente novamente.');
-    } finally {
-      setSalvando(false);
-    }
+
+    // modo === 'agora'
+    presentAlert({
+      header: 'Iniciar ou Agendar?',
+      message: 'O cliente quer deixar agendado para o próximo horário livre de hoje ou você já vai iniciar a lavagem neste exato momento?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Próximo Horário',
+          handler: async () => {
+            setSalvando(true);
+            try {
+              const hoje = new Date();
+              const tzOffset = hoje.getTimezoneOffset() * 60000;
+              const hojeLocal = new Date(hoje.getTime() - tzOffset);
+              const dataIso = hojeLocal.toISOString().split('T')[0];
+              
+              const res = await getHorariosLivres(dataIso, Number(servico_id));
+              if (res.horarios && res.horarios.length > 0) {
+                const proxHorario = res.horarios[0];
+                const dataHoraFinal = `${dataIso}T${proxHorario}:00-03:00`;
+                submeterAtendimento(dataHoraFinal, false);
+              } else {
+                setErro('Não há mais horários livres hoje para este serviço.');
+                setSalvando(false);
+              }
+            } catch (e) {
+              setErro('Erro ao buscar horários.');
+              setSalvando(false);
+            }
+          }
+        },
+        {
+          text: 'Iniciar Agora (Fotos)',
+          handler: () => {
+            const gmtTime = new Date();
+            const tzOffset = gmtTime.getTimezoneOffset() * 60000;
+            const dataHoraFinal = (new Date(gmtTime.getTime() - tzOffset)).toISOString().slice(0, -1) + '-03:00';
+            submeterAtendimento(dataHoraFinal, true);
+          }
+        }
+      ]
+    });
   };
 
   return (
