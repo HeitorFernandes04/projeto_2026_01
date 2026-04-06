@@ -129,10 +129,16 @@ class CriarAtendimentoView(APIView):
         serializer = CriarAtendimentoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        atendimento = AtendimentoService.criar_com_veiculo(
-            dados=serializer.validated_data,
-            funcionario=request.user,
-        )
+        try:
+            atendimento = AtendimentoService.criar_com_veiculo(
+                dados=serializer.validated_data,
+                funcionario=request.user,
+            )
+        except ValidationError as e:
+            return Response(
+                {'detail': e.messages[0] if hasattr(e, 'messages') else str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         return Response(AtendimentoSerializer(atendimento, context={'request': request}).data, status=status.HTTP_201_CREATED)
 

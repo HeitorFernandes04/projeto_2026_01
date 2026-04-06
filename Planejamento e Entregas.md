@@ -31,11 +31,11 @@
 
 **Critérios de Aceitação:**
 
-* [ ] Cadastro com nome, email e senha
-* [ ] Validação de dados obrigatórios
-* [ ] Usuário salvo no sistema
+* [x] Cadastro com nome, email e senha
+* [x] Validação de dados obrigatórios
+* [x] Usuário salvo no sistema
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @MontDeP, @HeitorFernandes04
 
 ---
 
@@ -47,11 +47,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Login com email e senha
-* [ ] Validação de credenciais
-* [ ] Redirecionamento após login
+* [x] Login com email e senha
+* [x] Validação de credenciais
+* [x] Redirecionamento após login
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @MontDeP, @HeitorFernandes04
 
 ---
 
@@ -63,11 +63,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Lista de atendimentos exibida por data atual
-* [ ] Informações do veículo e serviço visíveis
-* [ ] Ordenação por horário
+* [x] Lista de atendimentos exibida por data atual
+* [x] Informações do veículo e serviço visíveis
+* [x] Ordenação por horário
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @HeitorFernandes04
 
 ---
 
@@ -79,11 +79,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Botão de iniciar atendimento disponível
-* [ ] Registro de horário de início salvo
-* [ ] Status do atendimento atualizado
+* [x] Botão de iniciar atendimento disponível
+* [x] Registro de horário de início salvo
+* [x] Status do atendimento atualizado
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @HeitorFernandes04, @WandersonAMello
 
 ---
 
@@ -95,11 +95,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Upload de múltiplas fotos permitido
-* [ ] Fotos vinculadas ao atendimento
-* [ ] Pré-visualização disponível
+* [x] Upload de múltiplas fotos permitido
+* [x] Fotos vinculadas ao atendimento
+* [x] Pré-visualização disponível
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @yamatosz, @WandersonAMello
 
 ---
 
@@ -111,11 +111,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Upload de fotos após finalização
-* [ ] Fotos organizadas como “depois”
-* [ ] Associação automática ao atendimento
+* [x] Upload de fotos após finalização
+* [x] Fotos organizadas como “depois”
+* [x] Associação automática ao atendimento
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @yamatosz, @WandersonAMello
 
 ---
 
@@ -127,11 +127,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Campo de texto disponível
-* [ ] Comentários salvos no atendimento
-* [ ] Histórico visível
+* [x] Campo de texto disponível
+* [x] Comentários salvos no atendimento
+* [x] Histórico visível
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @WandersonAMello
 
 ---
 
@@ -143,11 +143,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Formulário com dados do veículo
-* [ ] Seleção de serviço disponível
-* [ ] Salvamento imediato
+* [x] Formulário com dados do veículo
+* [x] Seleção de serviço disponível
+* [x] Salvamento imediato
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @WandersonAMello
 
 ---
 
@@ -159,11 +159,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Visualização de horários livres
-* [ ] Bloqueio de conflitos
-* [ ] Confirmação de agendamento
+* [x] Visualização de horários livres
+* [x] Bloqueio de conflitos
+* [x] Confirmação de agendamento
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @WandersonAMello
 
 ---
 
@@ -175,11 +175,11 @@ Responsáveis: <!-- @membro1 @membro2 -->
 
 **Critérios de Aceitação:**
 
-* [ ] Filtro por período
-* [ ] Lista com atendimentos realizados
-* [ ] Informações resumidas
+* [x] Filtro por período
+* [x] Lista com atendimentos realizados
+* [x] Informações resumidas
 
-Responsáveis: <!-- @membro1 @membro2 -->
+Responsáveis: @WandersonAMello
 
 ---
 
