@@ -1,0 +1,282 @@
+openapi: 3.0.3
+info:
+  title: Lava-me API
+  version: 1.0.0
+  description: Documentação oficial da API do projeto Lava-me.
+paths:
+  /api/atendimentos/:
+    post:
+      operationId: atendimentos_create
+      description: |-
+        POST /api/atendimentos/
+        Cria um veículo (ou reutiliza pela placa) e registra o atendimento.
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/{id}/:
+    get:
+      operationId: atendimentos_retrieve
+      description: GET /api/atendimentos/{id}/ — detalhe completo de um atendimento.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/{id}/comentario/:
+    patch:
+      operationId: atendimentos_comentario_partial_update
+      description: PATCH /api/atendimentos/{id}/comentario/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/{id}/finalizar/:
+    patch:
+      operationId: atendimentos_finalizar_partial_update
+      description: |-
+        PATCH /api/atendimentos/{id}/finalizar/
+        Finaliza um atendimento em andamento. Requer que as fotos do DEPOIS tenham sido enviadas.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/{id}/fotos/:
+    post:
+      operationId: atendimentos_fotos_create
+      description: |-
+        POST /api/atendimentos/{id}/fotos/
+
+        Upload de múltiplas fotos para um atendimento.
+        Toda lógica de negócio é delegada para MidiaAtendimentoService.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/{id}/iniciar/:
+    patch:
+      operationId: atendimentos_iniciar_partial_update
+      description: |-
+        PATCH /api/atendimentos/{id}/iniciar/
+
+        Inicia um atendimento: salva o horário de início e muda o status para em_andamento.
+        Só é possível iniciar um atendimento que esteja com status 'agendado'.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/historico/:
+    get:
+      operationId: atendimentos_historico_retrieve
+      description: GET /api/atendimentos/historico/?data_inicial=YYYY-MM-DD&data_final=YYYY-MM-DD.
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/hoje/:
+    get:
+      operationId: atendimentos_hoje_retrieve
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/horarios-livres/:
+    get:
+      operationId: atendimentos_horarios_livres_retrieve
+      description: |-
+        GET /api/atendimentos/horarios-livres/?data=YYYY-MM-DD&servico_id=X
+        Retorna os slots vagos para um determinado dia e serviço, bloqueando intersecções.
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/atendimentos/servicos/:
+    get:
+      operationId: atendimentos_servicos_retrieve
+      description: GET /api/atendimentos/servicos/ — lista todos os serviços disponíveis.
+      tags:
+      - atendimentos
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+components:
+  schemas:
+    Register:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          title: Usuário
+          description: Obrigatório. 150 caracteres ou menos. Letras, números e @/./+/-/_
+            apenas.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 6
+      required:
+      - email
+      - id
+      - name
+      - password
+      - username
+    TokenObtainPair:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - email
+      - password
+      - refresh
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
