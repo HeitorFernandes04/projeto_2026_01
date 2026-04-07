@@ -39,7 +39,20 @@ Para que a IA tenha acesso às ferramentas de busca, o servidor MCP precisa esta
 
 ---
 
-## ⚠️ 4. Cuidados e Boas Práticas (Precauções)
+## 📝 4. Como Documentar Novas Funcionalidades
+
+Para que a IA entenda perfeitamente uma nova feature, utilize o nosso modelo padrão localizado em:
+`docs/3_regras_negocio/TEMPLATE_FUNCIONALIDADE.md`
+
+**Fluxo sugerido:**
+1.  Copie o conteúdo do template para um novo arquivo em `docs/3_regras_negocio/`.
+2.  Preencha os Requisitos Funcionais (RFs), Critérios de Aceitação e Endpoints.
+3.  **Importante:** Descreva os **Testes Esperados** detalhadamente. A IA usará isso para garantir que o código não tenha comportamentos inesperados.
+4.  Rode o `ingest_docs.py` ou faça um commit para atualizar o RAG.
+
+---
+
+## ⚠️ 5. Cuidados e Boas Práticas (Precauções)
 
 1.  **Não confie 100%:** O RAG ajuda a IA a não errar o contexto, mas a revisão humana (Code Review) continua sendo obrigatória.
 2.  **Mantenha os `docs/` atualizados:** O RAG é tão bom quanto o que está escrito na pasta de documentação. Documento desatualizado = sugestão de código errada.
