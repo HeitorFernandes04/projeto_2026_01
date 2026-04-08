@@ -1,4 +1,6 @@
-const BASE_URL = 'http://127.0.0.1:8000';
+// A URL base é lida do arquivo .env (variável VITE_API_URL).
+// Em dispositivos físicos, ajuste o .env para o IP da máquina na rede local.
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('access');
@@ -39,6 +41,20 @@ async function request(endpoint: string, options: RequestInit = {}) {
   }
 
   return response.status === 204 ? null : response.json();
+}
+
+// Autenticação — Login do usuário
+export async function loginUsuario(email: string, password: string) {
+  const response = await fetch(`${BASE_URL}/api/auth/login/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) {
+    const errJson = await response.json().catch(() => ({}));
+    throw new Error(errJson.detail || 'E-mail ou senha inválidos.');
+  }
+  return response.json();
 }
 
 // RF-03 — Lista atendimentos do dia

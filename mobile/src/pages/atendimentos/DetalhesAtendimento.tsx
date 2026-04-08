@@ -1,5 +1,5 @@
-import { IonContent, IonPage, IonSpinner, useIonAlert } from '@ionic/react';
-import { useCallback, useEffect, useState } from 'react';
+import { IonContent, IonPage, IonSpinner, useIonAlert, useIonViewWillEnter } from '@ionic/react';
+import { useCallback, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { getAtendimento, iniciarAtendimento, finalizarAtendimento, adicionarComentario } from '../../services/api';
 import GaleriaFotos from '../../components/GaleriaFotos';
@@ -59,10 +59,9 @@ const DetalhesAtendimento: React.FC = () => {
     .finally(() => setCarregando(false));
   }, [id]);
 
-  // Adicione este bloco para disparar a busca de dados
-  useEffect(() => {
+  useIonViewWillEnter(() => {
     carregarDetalhes();
-  }, [carregarDetalhes]);
+  });
 
   const [presentAlert] = useIonAlert();
 
@@ -72,44 +71,41 @@ const DetalhesAtendimento: React.FC = () => {
     try {
       const atualizado = await iniciarAtendimento(atendimento.id);
       setAtendimento(atualizado);
-    } catch (e) {
-      console.error('Erro ao iniciar atendimento:', e);
-      alert('Não foi possível iniciar o atendimento.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Não foi possível iniciar o atendimento.';
+      presentAlert({ header: 'Erro', message: msg, buttons: ['OK'] });
     } finally {
       setIniciando(false);
     }
   };
 
   const handleFinalizar = async () => {
-  if (!atendimento) return;
-  setFinalizando(true);
-  try {
-    const atualizado = await finalizarAtendimento(atendimento.id);
-    setAtendimento(atualizado);
-  } catch (e: unknown) {
-    console.error('Erro ao finalizar atendimento:', e);
-    const mensagemErro = e instanceof Error ? e.message : 'Não foi possível finalizar o atendimento.';
-    
-    alert(mensagemErro);
-  } finally {
-    setFinalizando(false);
-  }
-};
+    if (!atendimento) return;
+    setFinalizando(true);
+    try {
+      const atualizado = await finalizarAtendimento(atendimento.id);
+      setAtendimento(atualizado);
+    } catch (e: unknown) {
+      const mensagemErro = e instanceof Error ? e.message : 'Não foi possível finalizar o atendimento.';
+      presentAlert({ header: 'Erro ao Finalizar', message: mensagemErro, buttons: ['OK'] });
+    } finally {
+      setFinalizando(false);
+    }
+  };
 
-  // NOVA FUNÇÃO: Gravar comentário (RF-07)
   const handleSalvarComentario = async () => {
-  if (!atendimento) return;
-  setSalvandoComentario(true);
-  try {
-    const atualizado = await adicionarComentario(atendimento.id, comentario);
-    setAtendimento(atualizado);
-    alert('Comentário salvo com sucesso!');
-  } catch (e) {
-    console.error(e);
-    alert('Erro ao salvar comentário.');
-  } finally {
-    setSalvandoComentario(false);
-  }
+    if (!atendimento) return;
+    setSalvandoComentario(true);
+    try {
+      const atualizado = await adicionarComentario(atendimento.id, comentario);
+      setAtendimento(atualizado);
+      presentAlert({ header: 'Sucesso', message: 'Comentário salvo!', buttons: ['OK'] });
+    } catch (e) {
+      console.error(e);
+      presentAlert({ header: 'Erro', message: 'Erro ao salvar comentário.', buttons: ['OK'] });
+    } finally {
+      setSalvandoComentario(false);
+    }
   };
   const confirmarFinalizar = () => {
     presentAlert({
