@@ -1,6 +1,7 @@
 import { IonContent, IonPage, IonSpinner } from '@ionic/react';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { loginUsuario } from '../../services/api';
 import '../../theme/lava-me.css';
 
 const Login: React.FC = () => {
@@ -18,22 +19,13 @@ const Login: React.FC = () => {
     setErro('');
     setCarregando(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('access', data.access);
-        localStorage.setItem('refresh', data.refresh);
-        history.push('/atendimentos/hoje');
-      } else {
-        setErro('E-mail ou senha inválidos.');
-      }
-    } catch (e) {
-      console.error('Erro ao fazer login:', e);
-      setErro('Não foi possível conectar ao servidor.');
+      const data = await loginUsuario(email, password);
+      localStorage.setItem('access', data.access);
+      localStorage.setItem('refresh', data.refresh);
+      history.push('/atendimentos/hoje');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Não foi possível conectar ao servidor.';
+      setErro(msg);
     } finally {
       setCarregando(false);
     }

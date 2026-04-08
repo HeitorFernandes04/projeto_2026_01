@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonSpinner, useIonViewDidEnter, useIonAlert } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonViewWillEnter, useIonAlert } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { criarAtendimento, getHorariosLivres, getServicos } from '../../services/api';
@@ -49,7 +49,7 @@ const NovoAtendimento: React.FC = () => {
     }
   }, [dataEscolhida, form.servico_id]);
 
-  useIonViewDidEnter(() => {
+  useIonViewWillEnter(() => {
     setForm(FORM_INICIAL);
     setDataEscolhida('');
     setHorarioSelecionado('');

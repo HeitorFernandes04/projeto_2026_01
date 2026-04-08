@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonSpinner, useIonViewDidEnter } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonViewWillEnter } from '@ionic/react';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getAtendimentosHoje, getHistoricoAtendimentos } from '../../services/api';
@@ -91,7 +91,7 @@ const AtendimentosHoje: React.FC = () => {
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState('Aguardando');
 
-  useIonViewDidEnter(() => {
+  useIonViewWillEnter(() => {
     setCarregando(true);
     setErro('');
     getAtendimentosHoje()
@@ -240,7 +240,7 @@ const AtendimentosHojeComHistorico: React.FC = () => {
       .finally(() => setCarregando(false));
   };
 
-  useIonViewDidEnter(() => {
+  useIonViewWillEnter(() => {
     if (modo === 'historico') {
       carregarHistorico();
       return;
