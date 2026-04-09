@@ -1,0 +1,17 @@
+# Privacy protection for AI indexing
+# Directories and files that should NOT be indexed or processed by AI systems
+
+venv/
+mobile/node_modules/
+backend/.chroma_db/
+.env
+backend/db.sqlite3
+backend/logs/
+
+# Additional sensitive files
+.git/
+*.key
+*.pem
+*.p12
+.DS_Store
+Thumbs.db

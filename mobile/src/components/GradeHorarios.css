@@ -1,0 +1,177 @@
+.grade-horarios {
+  background: var(--lm-bg);
+  padding: 16px;
+  color: var(--lm-text);
+}
+
+.grade-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.grade-header h3 {
+  margin: 0;
+  color: var(--lm-text);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.legenda {
+  display: flex;
+  gap: 16px;
+}
+
+.legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--lm-text-muted);
+}
+
+.slot-vago {
+  width: 16px;
+  height: 16px;
+  background: var(--lm-bg);
+  border: 1px solid var(--lm-border);
+  border-radius: 4px;
+}
+
+.slot-ocupado {
+  width: 16px;
+  height: 16px;
+  background: var(--lm-primary);
+  border-radius: 4px;
+}
+
+.grade-container {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 2px;
+  background: var(--lm-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.grade-slot {
+  display: contents;
+}
+
+.grade-slot:nth-child(odd) .slot-hora {
+  background: var(--lm-card);
+}
+
+.grade-slot:nth-child(even) .slot-hora {
+  background: var(--lm-card-hover);
+}
+
+.slot-hora {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--lm-text-muted);
+  text-align: center;
+  border-right: 1px solid var(--lm-border);
+}
+
+.grade-slot.vago .slot-hora + div {
+  background: var(--lm-bg);
+  border-right: 1px solid var(--lm-border);
+}
+
+.grade-slot.ocupado .slot-hora + div {
+  background: var(--lm-card);
+  border-right: 1px solid var(--lm-border);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.grade-slot.ocupado .slot-hora + div:hover {
+  background: var(--lm-card-hover);
+}
+
+.slot-atendimento {
+  padding: 12px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.atendimento-veiculo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--lm-text);
+  font-size: 0.875rem;
+}
+
+.atendimento-veiculo ion-icon {
+  color: var(--lm-primary);
+  font-size: 1rem;
+}
+
+.atendimento-servico {
+  font-size: 0.8rem;
+  color: var(--lm-text);
+  font-weight: 500;
+}
+
+.atendimento-cliente {
+  font-size: 0.75rem;
+  color: var(--lm-text-muted);
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+  .grade-container {
+    grid-template-columns: 60px 1fr;
+  }
+  
+  .slot-hora {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+  
+  .slot-atendimento {
+    padding: 8px;
+    min-height: 50px;
+  }
+  
+  .atendimento-veiculo {
+    font-size: 0.8rem;
+  }
+  
+  .atendimento-servico {
+    font-size: 0.75rem;
+  }
+  
+  .atendimento-cliente {
+    font-size: 0.7rem;
+  }
+}
+
+/* Animação suave para hover */
+.grade-slot.ocupado .slot-hora + div {
+  position: relative;
+}
+
+.grade-slot.ocupado .slot-hora + div::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--lm-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.grade-slot.ocupado .slot-hora + div:hover::after {
+  opacity: 0.1;
+}

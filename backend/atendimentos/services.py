@@ -29,7 +29,7 @@ class MidiaAtendimentoService:
     """Serviço responsável pelo processamento de upload de mídias."""
 
     # Status que permitem receber novas mídias
-    STATUS_PERMITIDOS = {'agendado', 'em_andamento'}
+    STATUS_PERMITIDOS = {'agendado', 'em_andamento', 'aguardando_liberacao', 'finalizado'}
 
     @staticmethod
     def processar_upload_multiplo(atendimento, momento, arquivos):
@@ -88,6 +88,11 @@ class MidiaAtendimentoService:
 
         for midia in midias:
             midia.save()
+
+        if momento == 'ANTES' and not atendimento.horario_inicio:
+            atendimento.horario_inicio = timezone.now()
+            atendimento.status = 'em_andamento'
+            atendimento.save()
 
         return midias
 
@@ -238,50 +243,87 @@ class AtendimentoService:
             dados: dict com os campos validados pelo CriarAtendimentoSerializer.
             funcionario: instância de User (quem está criando o atendimento).
 
-        Returns:
-            Atendimento — instância criada.
-
-        Raises:
-            Http404: se o servico_id não corresponder a nenhum Servico.
-            ValidationError: se houver conflito de horário.
-        """
-        servico = get_object_or_404(Servico, pk=dados['servico_id'])
-
-        AtendimentoService.verificar_conflito(
-            data_hora=dados['data_hora'],
-            duracao=datetime.timedelta(minutes=servico.duracao_estimada_min)
-        )
-
+            Raises:
+                Http404: se o servico_id não corresponder a nenhum Servico.
+                ValidationError: se houver conflito de horário.
+            """
+        servico = dados['servico']
+        AtendimentoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_min))
+        
         veiculo, _ = Veiculo.objects.update_or_create(
-            placa=dados['placa'],
+            placa=dados['placa'], 
             defaults={
-                'modelo':      dados['modelo'],
-                'marca':       dados['marca'],
-                'cor':         dados['cor'],
-                'nome_dono':   dados['nome_dono'],
+                'modelo': dados['modelo'], 
+                'marca': dados['marca'], 
+                'cor': dados['cor'], 
+                'nome_dono': dados['nome_dono'], 
                 'celular_dono': dados['celular_dono'],
-            },
+            }
         )
-
-        iniciar_agora = dados.get('iniciar_agora', False)
-
-        if iniciar_agora:
-            if Atendimento.objects.filter(
-                funcionario=funcionario, 
-                status='em_andamento',
-                data_hora__date=dados['data_hora'].date()
-            ).exists():
-                raise ValidationError('O funcionário já possui um atendimento em andamento hoje. Termine o atendimento atual antes de iniciar outro.')
-
+        
+        iniciar = dados.get('iniciar_agora', False)
         return Atendimento.objects.create(
-            veiculo=veiculo,
-            servico=servico,
-            funcionario=funcionario,
-            data_hora=dados['data_hora'],
-            horario_inicio=timezone.now() if iniciar_agora else None,
-            status='em_andamento' if iniciar_agora else 'agendado',
-            observacoes=dados.get('observacoes', ''),
+            veiculo=veiculo, 
+            servico=servico, 
+            funcionario=funcionario, 
+            data_hora=dados['data_hora'], 
+            horario_inicio=timezone.now() if iniciar else None, 
+            status='em_andamento' if iniciar else 'agendado', 
+            etapa_atual=1, 
+            observacoes=dados.get('observacoes', '')
         )
+
+    @staticmethod
+    def avancar_etapa(atendimento, novos_dados):
+        etapa_atual = atendimento.etapa_atual
+
+        # 1. Transição: Vistoria -> Lavagem
+        if etapa_atual == 1:
+            # Primeiro, atualizamos as partes de avaria com os dados novos
+            if 'partes_avaria' in novos_dados:
+                atendimento.partes_avaria = novos_dados['partes_avaria']
+                atendimento.save()
+
+            # VALIDAÇÃO CRÍTICA: Exige pelo menos 5 fotos de vistoria para avançar
+            qtd_fotos_vistoria = atendimento.midias.filter(momento='ANTES').count()
+            
+            if qtd_fotos_vistoria < 5:
+                raise ValidationError(
+                    f"Impossível avançar para Lavagem: A vistoria exige 5 fotos obrigatórias "
+                    f"(Frente, Trás, Lateral Motorista, Lateral Passageiro, Teto). "
+                    f"Fotos capturadas: {qtd_fotos_vistoria}/5. "
+                    "Por favor, capture todas as fotos obrigatórias antes de continuar."
+                )
+
+            # Se passar na validação ou não houver avarias, permite o avanço
+            atendimento.etapa_atual = 2
+            atendimento.horario_lavagem = timezone.now()
+            
+            if atendimento.status == 'vistoria':
+                atendimento.status = 'em_andamento'
+                atendimento.horario_inicio = timezone.now()
+
+        # 2. Transição: Lavagem -> Acabamento
+        elif etapa_atual == 2:
+            # Salva laudo da lavagem se fornecido
+            if 'laudo_vistoria' in novos_dados:
+                atendimento.laudo_vistoria = novos_dados['laudo_vistoria']
+            
+            atendimento.etapa_atual = 3
+            atendimento.horario_acabamento = timezone.now()
+
+        # 3. Acabamento -> Liberação
+        elif etapa_atual == 3:
+            # Salva laudo do acabamento se fornecido
+            if 'laudo_vistoria' in novos_dados:
+                atendimento.laudo_vistoria = novos_dados['laudo_vistoria']
+            
+            atendimento.etapa_atual = 4
+            atendimento.horario_finalizacao = timezone.now()
+            atendimento.status = 'finalizado'
+
+        atendimento.save()
+        return atendimento
 
     @staticmethod
     def finalizar(atendimento):

@@ -1,18 +1,19 @@
-/* Cores e estilos globais do tema Lava-Me */
+/* Cores e estilos globais do tema Lava-Me - Industrial Dark Mode */
 
 :root {
-  --lm-bg:         #0d1117;
-  --lm-card:       #161b27;
-  --lm-card-hover: #1e2535;
-  --lm-border:     #1e2d40;
+  --lm-bg:         #000000;
+  --lm-card:       #121212;
+  --lm-card-hover: #1a1a1a;
+  --lm-border:     #2a2a2a;
   --lm-primary:    #00b4d8;
   --lm-primary-dark: #0096c7;
   --lm-text:       #ffffff;
-  --lm-text-muted: #8899aa;
+  --lm-text-muted: #a0a0a0;
   --lm-amber:      #f59e0b;
-  --lm-blue:       #3b82f6;
+  --lm-blue:       #00b4d8;
   --lm-green:      #22c55e;
   --lm-red:        #ef4444;
+  --lm-purple:     #8b5cf6;
 }
 
 .lm-page {
@@ -63,7 +64,22 @@
   --border-radius: 28px;
   font-weight: 700;
   font-size: 16px;
-  height: 52px;
+  height: 60px;
+  min-height: 60px;
+  font-family: 'Inter', 'Roboto', sans-serif;
+}
+
+.lm-btn-secondary {
+  --background: var(--lm-card);
+  --background-activated: var(--lm-card-hover);
+  --color: var(--lm-text);
+  --border-radius: 28px;
+  font-weight: 600;
+  font-size: 16px;
+  height: 60px;
+  min-height: 60px;
+  border: 1px solid var(--lm-border);
+  font-family: 'Inter', 'Roboto', sans-serif;
 }
 
 .lm-section-title {
@@ -87,3 +103,102 @@
 .lm-badge-andamento  { background: rgba(59,130,246,0.15); color: var(--lm-blue); }
 .lm-badge-finalizado { background: rgba(34,197,94,0.15);  color: var(--lm-green); }
 .lm-badge-cancelado  { background: rgba(239,68,68,0.15);  color: var(--lm-red); }
+
+/* Tags coloridas por tipo de veículo */
+.lm-tag-moto        { background: rgba(0,180,216,0.2); color: var(--lm-blue); border: 1px solid var(--lm-blue); }
+.lm-tag-carro       { background: rgba(34,197,94,0.2); color: var(--lm-green); border: 1px solid var(--lm-green); }
+.lm-tag-caminhao    { background: rgba(139,92,246,0.2); color: var(--lm-purple); border: 1px solid var(--lm-purple); }
+
+/* Stepper Horizontal */
+.lm-stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+  padding: 0 16px;
+}
+
+.lm-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.lm-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--lm-border);
+  z-index: 0;
+}
+
+.lm-step.active:not(:last-child)::after {
+  background: var(--lm-primary);
+}
+
+.lm-step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--lm-card);
+  border: 2px solid var(--lm-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--lm-text-muted);
+  position: relative;
+  z-index: 1;
+  margin-bottom: 8px;
+}
+
+.lm-step.active .lm-step-circle {
+  background: var(--lm-primary);
+  border-color: var(--lm-primary);
+  color: white;
+}
+
+.lm-step.completed .lm-step-circle {
+  background: var(--lm-green);
+  border-color: var(--lm-green);
+  color: white;
+}
+
+.lm-step-label {
+  font-size: 12px;
+  color: var(--lm-text-muted);
+  text-align: center;
+  font-weight: 600;
+}
+
+.lm-step.active .lm-step-label,
+.lm-step.completed .lm-step-label {
+  color: var(--lm-text);
+}
+
+.item-esteira {
+    background: #121212 !important;
+    margin-bottom: 16px !important;
+    border-radius: 20px !important;
+    border: 1px solid #1a1a1a !important;
+    overflow: hidden;
+}
+
+.header-esteira {
+    --background: transparent !important;
+    --color: #fff !important;
+    --inner-padding-end: 16px;
+    min-height: 90px !important; /* Deixa o campo bem grande */
+}
+
+.label-esteira {
+    font-size: 20px !important; /* Fonte maior */
+    font-weight: 800 !important;
+    letter-spacing: -0.5px;
+}

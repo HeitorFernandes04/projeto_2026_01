@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { uploadFotos } from '../services/api';
-import { IonSpinner } from '@ionic/react';
+import { IonModal, IonSpinner, IonIcon, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent } from '@ionic/react';
+import { closeOutline } from 'ionicons/icons';
 
 interface Foto {
   id?: number;
@@ -23,6 +24,9 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({ atendimentoId, momento, fot
   const [fotos, setFotos] = useState<Foto[]>(
     fotosIniciais.filter((f) => f.momento === momento)
   );
+  
+  // Mantive apenas o estado que você já estava usando para o Modal
+  const [fotoSelecionada, setFotoSelecionada] = useState<string | null>(null);
 
   React.useEffect(() => {
     setFotos(fotosIniciais.filter((f) => f.momento === momento));
@@ -49,13 +53,11 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({ atendimentoId, momento, fot
 
       setFotos((prev) => [...prev, novaFoto]);
 
-      // Conversão para Blob
       const response = await fetch(cameraPhoto.webPath);
       const blob = await response.blob();
 
       try {
         const result = await uploadFotos(atendimentoId, momento, blob);
-        // API devolve array recém-criado
         const fotoSalva = result[0];
         
         setFotos((prev) => 
@@ -70,7 +72,6 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({ atendimentoId, momento, fot
         );
       }
     } catch (e) {
-      // Câmera cancelada ou falha nativa
       console.log('Câmera cancelada ou erro:', e);
     }
   };
@@ -78,7 +79,12 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({ atendimentoId, momento, fot
   return (
     <div style={styles.container}>
       {fotos.map((foto, idx) => (
-        <div key={foto.id || `temp-${idx}`} style={styles.thumbWrapper}>
+        /* ADICIONADO: onClick para definir a foto que será ampliada */
+        <div 
+          key={foto.id || `temp-${idx}`} 
+          style={{ ...styles.thumbWrapper, cursor: 'pointer' }} 
+          onClick={() => setFotoSelecionada(foto.arquivo)}
+        >
           <img src={foto.arquivo} style={{ ...styles.thumb, opacity: foto.enviando ? 0.5 : 1 }} alt="" />
           {foto.enviando && (
             <div style={styles.overlay}>
@@ -93,18 +99,47 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({ atendimentoId, momento, fot
         </div>
       ))}
 
-      {!somenteLeitura && fotos.length < 5 && (
-        <button style={styles.btnAdd} onClick={tirarFoto}>
-          <span style={styles.iconAdd}>+</span>
-        </button>
-      )}
+  {!somenteLeitura && fotos.length < 5 && (
+    <button style={styles.btnAdd} onClick={tirarFoto}>
+      <span style={styles.iconAdd}>+</span>
+    </button>
+  )}
 
-      {fotos.length === 0 && (
-        <p style={{ color: '#8899aa', fontSize: 13, alignSelf: 'center', marginLeft: 8, margin: 0 }}>
-          Nenhuma foto adicionada.
-        </p>
-      )}
-    </div>
+  {fotos.length === 0 && (
+    <p style={{ color: '#8899aa', fontSize: 13, alignSelf: 'center', marginLeft: 8, margin: 0 }}>
+      Nenhuma foto adicionada.
+    </p>
+  )}
+
+  {/* MODAL PARA VISUALIZAÇÃO AMPLIADA - Agora funcional via estado fotoSelecionada */}
+  <IonModal isOpen={!!fotoSelecionada} onDidDismiss={() => setFotoSelecionada(null)}>
+    <IonHeader className="ion-no-border">
+      <IonToolbar style={{ '--background': '#000', '--color': '#fff' }}>
+        <IonTitle>Visualizar Foto</IonTitle>
+        <IonButtons slot="end">
+          <IonButton onClick={() => setFotoSelecionada(null)}>
+            <IonIcon icon={closeOutline} slot="icon-only" />
+          </IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+    <IonContent style={{ '--background': '#000' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        background: '#000'
+      }}>
+        <img 
+          src={fotoSelecionada || ''} 
+          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+          alt="Foto ampliada" 
+        />
+      </div>
+    </IonContent>
+  </IonModal>
+</div>
   );
 };
 
@@ -153,6 +188,28 @@ const styles: Record<string, React.CSSProperties> = {
   iconAdd: {
     fontSize: 32,
     fontWeight: 300,
+  },
+  modalContent: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    background: 'rgba(0,0,0,0.8)',
+    position: 'relative',
+  },
+  fullImage: {
+    maxWidth: '90%',
+    maxHeight: '90%',
+    objectFit: 'contain',
+  },
+  closeIcon: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    fontSize: 32,
+    color: '#fff',
+    cursor: 'pointer',
   },
 };
 

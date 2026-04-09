@@ -1,26 +1,31 @@
-from django.urls import path
+# atendimentos/urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
-    AdicionarComentarioView,
-    AtendimentoDetailView,
-    HistoricoAtendimentosView,
-    AtendimentosHojeView,
-    CriarAtendimentoView,
-    FotoUploadView,
-    IniciarAtendimentoView,
-    FinalizarAtendimentoView,
-    HorariosLivresView,
-    ServicoListView,
+    AtendimentosHojeView, CriarAtendimentoView, HistoricoAtendimentosView,
+    ServicoListView, AtendimentoDetailView, IniciarAtendimentoView,
+    FotoUploadView, AdicionarComentarioView, HorariosLivresView
 )
+from .viewsets import AtendimentoViewSet, OrdemServicoViewSet
+
+router = DefaultRouter()
+router.register(r'ordens-servico', OrdemServicoViewSet, basename='ordem-servico')
+# O prefixo vazio garante que as rotas do ViewSet fiquem em /api/atendimentos/
+router.register(r'', AtendimentoViewSet, basename='atendimento-vset')
 
 urlpatterns = [
-    path('',              CriarAtendimentoView.as_view(),  name='atendimento-criar'),
-    path('historico/',    HistoricoAtendimentosView.as_view(), name='atendimentos-historico'),
-    path('hoje/',         AtendimentosHojeView.as_view(),  name='atendimentos-hoje'),
+    # Rotas fixas primeiro para evitar conflitos
+    path('hoje/', AtendimentosHojeView.as_view(), name='atendimentos-hoje'),
+    path('historico/', HistoricoAtendimentosView.as_view(), name='atendimentos-historico'),
+    path('servicos/', ServicoListView.as_view(), name='servico-list'),
     path('horarios-livres/', HorariosLivresView.as_view(), name='horarios-livres'),
-    path('servicos/',     ServicoListView.as_view(),        name='servico-list'),
-    path('<int:pk>/',     AtendimentoDetailView.as_view(), name='atendimento-detail'),
+    
+    # Rotas com ID
     path('<int:pk>/iniciar/', IniciarAtendimentoView.as_view(), name='atendimento-iniciar'),
-    path('<int:pk>/finalizar/', FinalizarAtendimentoView.as_view(), name='atendimento-finalizar'),
-    path('<int:pk>/fotos/',   FotoUploadView.as_view(),    name='atendimento-fotos'),
+    path('<int:pk>/fotos/', FotoUploadView.as_view(), name='atendimento-fotos'),
     path('<int:pk>/comentario/', AdicionarComentarioView.as_view(), name='atendimento-comentario'),
+    path('<int:pk>/', AtendimentoDetailView.as_view(), name='atendimento-detail'),
+
+    # Router por último
+    path('', include(router.urls)),
 ]
