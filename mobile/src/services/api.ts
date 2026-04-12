@@ -139,3 +139,18 @@ export async function adicionarComentario(id: number, observacoes: string) {
     body: JSON.stringify({ observacoes }),
   });
 }
+
+// RF-XX — Avança etapa de um atendimento
+export async function avancarEtapa(id: number, etapa: string) {
+  return request(`/api/atendimentos/${id}/avancar-etapa/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ etapa }),
+  });
+}
+
+// Adicione esta função ao seu arquivo src/services/api.ts
+export async function getAtendimentosPorData(data: string) {
+  return request(`/api/atendimentos/dia/?data=${data}`, {
+    cache: 'no-store',
+  });
+}

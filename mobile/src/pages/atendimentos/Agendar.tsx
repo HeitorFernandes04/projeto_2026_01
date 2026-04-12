@@ -1,17 +1,14 @@
-import { 
-  IonContent, 
-  IonPage, 
-  IonSpinner 
-} from '@ionic/react';
+import { IonContent, IonPage, IonSpinner } from '@ionic/react';
 import { LogOut, Check } from 'lucide-react'; 
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getServicos, criarAtendimento } from '../../services/api';
 import TabBar from '../../components/TabBar';
+import GradeHorarios from '../../components/GradeHorarios';
 import Toast from '../../components/Toast';
 import logoLavaMe from '../../assets/logo.jpeg';
 
-const NovoAtendimento: React.FC = () => {
+const Agendar: React.FC = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
   const [servicos, setServicos] = useState<Array<{id: number; nome: string; preco: string}>>([]);
@@ -23,21 +20,21 @@ const NovoAtendimento: React.FC = () => {
     nome_dono: '',
     celular_dono: '',
     cor: '',
-    servico_id: 0
+    servico_id: 0,
+    data: new Date().toISOString().split('T')[0],
+    hora: ''
   });
 
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
-    getServicos()
-      .then(setServicos)
-      .catch(() => setToastMsg("Erro ao carregar serviços"));
+    getServicos().then(setServicos).catch(() => setToastMsg("Erro ao carregar serviços"));
   }, []);
 
   const handleConfirmar = async () => {
-    if (!form.placa || !form.modelo || !form.servico_id) {
-      setToastMsg("Preencha os campos obrigatórios (*)");
+    if (!form.placa || !form.modelo || !form.servico_id || !form.hora) {
+      setToastMsg("Preencha todos os campos e selecione um horário");
       setShowToast(true);
       return;
     }
@@ -46,13 +43,13 @@ const NovoAtendimento: React.FC = () => {
     try {
       await criarAtendimento({
         ...form,
-        iniciar_agora: true, // Diferencial desta tela: inicia imediatamente
-        data_hora: new Date().toISOString(),
+        data_hora: `${form.data}T${form.hora}:00`,
+        iniciar_agora: false,
         observacoes: ''
       });
       history.push('/atendimentos/hoje');
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Erro ao iniciar atendimento";
+      const msg = e instanceof Error ? e.message : "Erro ao agendar";
       setToastMsg(msg);
       setShowToast(true);
     } finally {
@@ -65,7 +62,6 @@ const NovoAtendimento: React.FC = () => {
       <IonContent style={{ '--background': 'var(--lm-bg)' }}>
         <div style={{ padding: '32px 20px 140px' }}>
           
-          {/* Header */}
           <div style={styles.headerRow}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img src={logoLavaMe} style={styles.logoImg} alt="Lava-Me" />
@@ -79,48 +75,38 @@ const NovoAtendimento: React.FC = () => {
             </button>
           </div>
 
-          <h2 style={styles.mainTitle}>Novo Atendimento</h2>
-          <p style={styles.mainSubtitle}>Entrada rápida de veículo</p>
+          <h2 style={styles.mainTitle}>Agendar Serviço</h2>
+          <p style={styles.mainSubtitle}>Selecione data e horário</p>
 
-          {/* Grupo de Inputs - Modelo abaixo da Marca */}
           <div style={styles.inputGroup}>
             <input 
               value={form.placa} 
               onChange={e => setForm({...form, placa: e.target.value.toUpperCase()})}
-              style={styles.inputMain} 
-              placeholder="PLACA *" 
+              style={styles.inputMain} placeholder="PLACA *" 
             />
-            
             <input 
               value={form.marca} 
               onChange={e => setForm({...form, marca: e.target.value})}
-              style={styles.input} 
-              placeholder="MARCA" 
+              style={styles.input} placeholder="MARCA" 
             />
-
             <input 
               value={form.modelo} 
               onChange={e => setForm({...form, modelo: e.target.value})}
-              style={styles.input} 
-              placeholder="MODELO *" 
+              style={styles.input} placeholder="MODELO *" 
             />
-
             <input 
               value={form.nome_dono} 
               onChange={e => setForm({...form, nome_dono: e.target.value})}
-              style={styles.input} 
-              placeholder="NOME DO PROPRIETÁRIO" 
+              style={styles.input} placeholder="NOME DO PROPRIETÁRIO *" 
             />
-
             <input 
               value={form.cor} 
               onChange={e => setForm({...form, cor: e.target.value})}
-              style={styles.input} 
-              placeholder="COR DO VEÍCULO *" 
+              style={styles.input} placeholder="COR DO VEÍCULO *" 
             />
           </div>
 
-          <label style={styles.sectionLabel}>SELECIONE O SERVIÇO</label>
+          <label style={styles.sectionLabel}>SERVIÇO</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {servicos.map(s => (
               <div 
@@ -137,17 +123,32 @@ const NovoAtendimento: React.FC = () => {
             ))}
           </div>
 
+          <label style={styles.sectionLabel}>DATA E HORÁRIO</label>
+          <input 
+            type="date" 
+            value={form.data} 
+            onChange={e => setForm({...form, data: e.target.value})}
+            style={styles.inputDate}
+          />
+
+          <div style={{ marginTop: '20px' }}>
+            <GradeHorarios 
+              data={form.data} 
+              onSelectHora={(h) => setForm({...form, hora: h})}
+              horaSelecionada={form.hora}
+            />
+          </div>
+
           <button 
             onClick={handleConfirmar} 
             disabled={loading} 
             style={styles.btnAction}
           >
-            {loading ? <IonSpinner name="crescent" /> : 'INICIAR ATENDIMENTO AGORA'}
+            {loading ? <IonSpinner name="crescent" /> : 'CONFIRMAR AGENDAMENTO'}
           </button>
 
         </div>
-        
-        <TabBar activeTab="iniciar" />
+        <TabBar activeTab="agendar" />
         <Toast isOpen={showToast} message={toastMsg} onDidDismiss={() => setShowToast(false)} />
       </IonContent>
     </IonPage>
@@ -165,9 +166,10 @@ const styles: Record<string, React.CSSProperties> = {
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '16px' },
   inputMain: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '18px', borderRadius: '16px', fontSize: '18px', fontWeight: 900, outline: 'none' },
   input: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '18px', borderRadius: '16px', fontSize: '16px', outline: 'none' },
+  inputDate: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '14px', borderRadius: '12px', width: '100%', colorScheme: 'dark' },
   sectionLabel: { color: '#fff', fontSize: '12px', fontWeight: 900, display: 'block', margin: '32px 0 16px', textTransform: 'uppercase' },
   selectableCard: { background: 'var(--lm-card)', padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' },
   btnAction: { width: '100%', background: 'var(--lm-primary)', color: '#fff', padding: '22px', borderRadius: '22px', fontSize: '18px', fontWeight: 900, marginTop: '40px', border: 'none' }
 };
 
-export default NovoAtendimento;
+export default Agendar;
