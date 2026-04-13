@@ -3,16 +3,18 @@ import { Clock, ChevronRight, Car, LogOut } from 'lucide-react';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getAtendimentosHoje } from '../../services/api';
-import TabBar from '../../components/TabBar'; // Ajustado conforme estrutura de pastas
+import TabBar from '../../components/TabBar'; 
 
 import logoLavaMe from '../../assets/logo.jpeg';
 
+// Interface atualizada para incluir campos necessários da esteira operacional
 interface Atendimento {
   id: number;
   veiculo: { placa: string; modelo: string };
   servico: { nome: string };
   status: 'agendado' | 'em_andamento' | 'finalizado' | 'cancelado';
   data_hora: string;
+  etapa_atual?: number; // Axioma: Controle da máquina de estados
 }
 
 const AtendimentosHoje: React.FC = () => {
@@ -27,20 +29,32 @@ const AtendimentosHoje: React.FC = () => {
     getAtendimentosHoje()
       .then((dados) => {
         if (dados && Array.isArray(dados)) {
+          // Filtra para exibir apenas o que está no pátio agora (não finalizados/cancelados)
           const ativos = dados.filter((a: Atendimento) => 
             a.status !== 'finalizado' && a.status !== 'cancelado'
           );
           setAtendimentos(ativos);
         }
       })
-      .catch((err) => console.error("Erro ao carregar pátio:", err))
+      .catch((err) => {
+        console.error("Erro ao carregar pátio:", err);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('access');
+    localStorage.removeItem('refresh');
+    localStorage.removeItem('nome_usuario');
+    history.replace('/login');
+  };
 
   return (
     <IonPage style={{ background: 'var(--lm-bg)' }}>
       <IonContent style={{ '--background': 'var(--lm-bg)' }}>
         <div style={styles.container}>
+          
+          {/* Header com Logo e Logout */}
           <div style={styles.headerRow}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={styles.logoWrapper}>
@@ -51,7 +65,7 @@ const AtendimentosHoje: React.FC = () => {
                 <p style={styles.headerSubtitle}>Olá, {nomeFuncionario}</p>
               </div>
             </div>
-            <button onClick={() => history.replace('/login')} style={styles.btnLogout}>
+            <button onClick={handleLogout} style={styles.btnLogout}>
               <LogOut size={20} color="#666" />
             </button>
           </div>
@@ -59,6 +73,7 @@ const AtendimentosHoje: React.FC = () => {
           <h2 style={styles.pageTitle}>Pátio</h2>
           <p style={styles.pageSubtitle}>Agendamentos ativos</p>
 
+          {/* Cards de Estatísticas Rápidas */}
           <div style={styles.statsGrid}>
             <div style={styles.cardAgendado}>
               <p style={styles.statsLabelBlue}>AGENDADOS</p>
@@ -74,14 +89,24 @@ const AtendimentosHoje: React.FC = () => {
             </div>
           </div>
 
+          {/* Listagem de Atendimentos */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {loading ? (
               <div style={{ textAlign: 'center', marginTop: '40px' }}>
                 <IonSpinner color="primary" />
               </div>
+            ) : atendimentos.length === 0 ? (
+              <div style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
+                <p>Nenhum veículo no pátio agora.</p>
+              </div>
             ) : (
               atendimentos.map((at) => (
-                <div key={at.id} onClick={() => history.push(`/atendimentos/${at.id}`)} style={styles.atendimentoCard}>
+                <div 
+                  key={at.id} 
+                  // Rota operacional da esteira conforme App.tsx
+                  onClick={() => history.push(`/atendimentos/${at.id}/esteira`)}
+                  style={styles.atendimentoCard}
+                >
                   <div style={styles.cardTop}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                       <div style={styles.iconBox}><Car color="#fff" size={20} /></div>
@@ -92,6 +117,7 @@ const AtendimentosHoje: React.FC = () => {
                     </div>
                     <ChevronRight color="#333" size={20} />
                   </div>
+                  
                   <div style={styles.metaRow}>
                     <div style={styles.timeWrapper}>
                       <Clock size={14} />
@@ -106,12 +132,14 @@ const AtendimentosHoje: React.FC = () => {
                       {at.status.replace('_', ' ')}
                     </div>
                   </div>
+                  
                   <div style={styles.divider} />
                   <div style={styles.servicoNome}>{at.servico.nome}</div>
                 </div>
               ))
             )}
           </div>
+
           <TabBar activeTab="pátio" />
         </div>
       </IonContent>
@@ -126,7 +154,7 @@ const styles: Record<string, React.CSSProperties> = {
   logoImg: { width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover' },
   headerTitle: { color: 'var(--lm-text)', fontSize: '20px', fontWeight: 800, margin: 0 },
   headerSubtitle: { color: 'var(--lm-text-muted)', fontSize: '11px', margin: 0, fontWeight: 700 },
-  btnLogout: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', padding: '12px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  btnLogout: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', padding: '12px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   pageTitle: { color: 'var(--lm-text)', fontSize: '32px', fontWeight: 900, margin: '0 0 4px' },
   pageSubtitle: { color: '#444', fontSize: '15px', fontWeight: 700, marginBottom: '28px' },
   statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' },

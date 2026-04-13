@@ -23,13 +23,22 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
     return `${h}:${m}:${s}`;
   };
 
-  const handleFinalizar = async () => {
+  const handleFinalizar = async (e?: React.MouseEvent) => {
+    // Axioma 11: Impede comportamentos nativos de submit que quebram a fluidez da esteira
+    if (e) e.preventDefault();
+    
+    if (loading) return;
+
     setLoading(true);
     try {
-      // Axioma 1: View delega lógica para o serviço via API
-      await avancarEtapa(atendimentoId, observacoes);
-      onComplete(); // Axioma 13: Refresh orgânico
-    } catch (error) {
+      // Axioma 1: View delega lógica para o serviço via API.
+      // O envio de 'comentario_lavagem' é o gatilho para o backend liberar a Etapa 3.
+      await avancarEtapa(atendimentoId, { comentario_lavagem: observacoes });
+      
+      // Axioma 13: Refresh orgânico disparando a atualização do estado no componente pai
+      onComplete(); 
+    } catch (err: unknown) {
+      console.error('Erro ao avançar etapa:', err);
       alert('Erro ao avançar etapa. Verifique a conexão.');
     } finally {
       setLoading(false);
@@ -56,11 +65,28 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
       </div>
 
       <div style={styles.btnGroup}>
-        <button style={styles.btnSecondary} onClick={() => alert('Em breve')}><AlertTriangle size={20} /> Ocorrência</button>
-        <button style={{ ...styles.btnPause, background: isPausado ? '#0066ff' : '#ff9500' }} onClick={() => setIsPausado(!isPausado)}>
+        <button 
+          type="button" 
+          style={styles.btnSecondary} 
+          onClick={() => alert('Módulo de ocorrências em breve')}
+        >
+          <AlertTriangle size={20} /> Ocorrência
+        </button>
+
+        <button 
+          type="button"
+          style={{ ...styles.btnPause, background: isPausado ? '#0066ff' : '#ff9500' }} 
+          onClick={() => setIsPausado(!isPausado)}
+        >
           <Pause size={20} /> {isPausado ? 'Retomar' : 'Pausar'}
         </button>
-        <button style={styles.btnPrimary} onClick={handleFinalizar} disabled={loading}>
+
+        <button 
+          type="button"
+          style={styles.btnPrimary} 
+          onClick={handleFinalizar} 
+          disabled={loading}
+        >
           {loading ? <IonSpinner name="crescent" /> : <><CheckCircle size={20} /> Finalizar Lavagem</>}
         </button>
       </div>

@@ -17,7 +17,8 @@ from .serializers import (
     MidiaAtendimentoSerializer,
     MidiaAtendimentoUploadSerializer,
     ServicoSerializer,
-    AtualizarComentarioSerializer,
+    ProximaEtapaSerializer,
+    FinalizarIndustrialSerializer,
 )
 from .services import AtendimentoService, MidiaAtendimentoService
 
@@ -28,7 +29,7 @@ class AtendimentosHojeView(APIView):
 
     def get(self, request):
         hoje = timezone.localdate()
-
+        # Filtra atendimentos do dia que não têm funcionário ou são do próprio usuário
         atendimentos = Atendimento.objects.filter(
             Q(funcionario__isnull=True) | Q(funcionario=request.user),
             data_hora__date=hoje,
@@ -39,8 +40,7 @@ class AtendimentosHojeView(APIView):
 
 
 class HistoricoAtendimentosView(APIView):
-    """GET /api/atendimentos/historico/?data_inicial=YYYY-MM-DD&data_final=YYYY-MM-DD."""
-
+    """GET /api/atendimentos/historico/"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -65,63 +65,18 @@ class HistoricoAtendimentosView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class ServicoListView(APIView):
-    """GET /api/atendimentos/servicos/ — lista todos os serviços disponíveis."""
-
-    def get(self, request):
-        servicos = Servico.objects.all()
-        serializer = ServicoSerializer(servicos, many=True)
-        return Response(serializer.data)
-
-
-class HorariosLivresView(APIView):
-    """
-    GET /api/atendimentos/horarios-livres/?data=YYYY-MM-DD&servico_id=X
-    Retorna os slots vagos para um determinado dia e serviço, bloqueando intersecções.
-    """
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        data_str = request.query_params.get('data')
-        servico_id = request.query_params.get('servico_id')
-
-        if not data_str or not servico_id:
-            return Response(
-                {'detail': 'Parâmetros "data" e "servico_id" são obrigatórios.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            horarios = AtendimentoService.get_horarios_livres(data_str, servico_id)
-            return Response({'horarios': horarios}, status=status.HTTP_200_OK)
-        except ValidationError as e:
-            return Response({'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            from django.http import Http404
-            if isinstance(e, Http404):
-                return Response({'detail': 'Serviço não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class AtendimentoDetailView(APIView):
-    """GET /api/atendimentos/{id}/ — detalhe completo de um atendimento."""
-
+    """GET /api/atendimentos/{id}/"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
 
     def get(self, request, pk):
-        # Atendimento já carregado e autorizado pela permission
         serializer = AtendimentoSerializer(request.atendimento, context={'request': request})
         return Response(serializer.data)
 
 
 class CriarAtendimentoView(APIView):
-    """
-    POST /api/atendimentos/
-    Cria um veículo (ou reutiliza pela placa) e registra o atendimento.
-    """
-
+    """POST /api/atendimentos/"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -143,132 +98,85 @@ class CriarAtendimentoView(APIView):
         return Response(AtendimentoSerializer(atendimento, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
-class IniciarAtendimentoView(APIView):
+class AvancarEtapaView(APIView):
     """
-    PATCH /api/atendimentos/{id}/iniciar/
-
-    Inicia um atendimento: salva o horário de início e muda o status para em_andamento.
-    Só é possível iniciar um atendimento que esteja com status 'agendado'.
+    PATCH /api/atendimentos/{id}/avancar/
+    Endpoint unificado para as transições da esteira (Vistoria -> Lavagem -> Acabamento).
     """
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
 
     def patch(self, request, pk):
-        # Atendimento já carregado e autorizado pela permission
-        atendimento = request.atendimento
-
-        if atendimento.status != 'agendado':
-            return Response(
-                {'detail': f'Não é possível iniciar um atendimento com status "{atendimento.status}".'},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Trava: o funcionário já está ocupado com outro atendimento?
-        hoje = timezone.localdate()
-        if Atendimento.objects.filter(
-            funcionario=request.user, 
-            status='em_andamento',
-            data_hora__date=hoje  # Ignora atendimentos de dias anteriores
-        ).exists():
-            return Response(
-                {'detail': 'Termine o atendimento atual antes de iniciar outro.'},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Concorrência: outro funcionário assumiu este atendimento no intervalo entre
-        # a checagem de permissão e esta execução? Relê o DB para garantir estado fresco.
-        atendimento.refresh_from_db()
-        if atendimento.funcionario is not None and atendimento.funcionario != request.user:
-            return Response(
-                {'detail': 'Este serviço acabou de ser assumido por outro funcionário.'},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Claim: assume a fila e inicia
-        atendimento.funcionario = request.user
-        atendimento.status = 'em_andamento'
-        atendimento.horario_inicio = timezone.now()
-        atendimento.save()
-
-        serializer = AtendimentoSerializer(atendimento, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class FinalizarAtendimentoView(APIView):
-    """
-    PATCH /api/atendimentos/{id}/finalizar/
-    Finaliza um atendimento em andamento. Requer que as fotos do DEPOIS tenham sido enviadas.
-    """
-
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
-
-    def patch(self, request, pk):
+        serializer = ProximaEtapaSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        
         try:
-            AtendimentoService.finalizar(request.atendimento)
-        except ValidationError as e:
-            # Retorna a mensagem de erro formatada extraída da ValidationError
-            return Response({'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            # Axioma 1: Delega toda a validação de fotos e lógica de estado ao Service
+            atendimento = AtendimentoService.avancar_etapa(pk, serializer.validated_data)
+            return Response(AtendimentoSerializer(atendimento, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = AtendimentoSerializer(request.atendimento, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class FinalizarIndustrialView(APIView):
+    """
+    PATCH /api/atendimentos/{id}/finalizar-industrial/
+    Finaliza o atendimento na etapa 4 (Liberação) validando fotos DEPOIS e vaga.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+
+    def patch(self, request, pk):
+        serializer = FinalizarIndustrialSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            atendimento = AtendimentoService.finalizar_atendimento_industrial(pk, serializer.validated_data)
+            return Response(AtendimentoSerializer(atendimento, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FotoUploadView(APIView):
-    """
-    POST /api/atendimentos/{id}/fotos/
-
-    Upload de múltiplas fotos para um atendimento.
-    Toda lógica de negócio é delegada para MidiaAtendimentoService.
-    """
-
+    """POST /api/atendimentos/{id}/fotos/"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
 
     def post(self, request, pk):
-        # O atendimento já foi carregado pela permission e cacheado em request
         atendimento = request.atendimento
-
-        # Validação de entrada
         serializer = MidiaAtendimentoUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        momento = serializer.validated_data['momento']
-        arquivos = serializer.validated_data['arquivos']
-
-        # Delega para a camada de serviço
         try:
             midias = MidiaAtendimentoService.processar_upload_multiplo(
                 atendimento=atendimento,
-                momento=momento,
-                arquivos=arquivos,
+                momento=serializer.validated_data['momento'],
+                arquivos=serializer.validated_data['arquivos'],
             )
+            output = MidiaAtendimentoSerializer(midias, many=True, context={'request': request})
+            return Response(output.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response(
-                {'detail': e.message},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Serializa a saída com URLs absolutas
-        output = MidiaAtendimentoSerializer(
-            midias,
-            many=True,
-            context={'request': request},
-        )
-
-        return Response(output.data, status=status.HTTP_201_CREATED)
+            return Response({'detail': e.message}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ServicoListView(APIView):
+    def get(self, request):
+        servicos = Servico.objects.all()
+        return Response(ServicoSerializer(servicos, many=True).data)
 
-class AdicionarComentarioView(APIView):
-    """PATCH /api/atendimentos/{id}/comentario/"""
+
+class HorariosLivresView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+    permission_classes = [IsAuthenticated]
 
-    def patch(self, request, pk):
-        atendimento = request.atendimento # Injetado pela permissionIsFuncionarioDoAtendimento
-        serializer = AtualizarComentarioSerializer(atendimento, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        atendimento_atualizado = serializer.save()
-        return Response(AtendimentoSerializer(atendimento_atualizado, context={'request': request}).data)
+    def get(self, request):
+        data_str = request.query_params.get('data')
+        servico_id = request.query_params.get('servico_id')
+        if not data_str or not servico_id:
+            return Response({'detail': 'Data e serviço são obrigatórios.'}, status=400)
+
+        try:
+            horarios = AtendimentoService.get_horarios_livres(data_str, servico_id)
+            return Response({'horarios': horarios})
+        except Exception as e:
+            return Response({'detail': str(e)}, status=400)

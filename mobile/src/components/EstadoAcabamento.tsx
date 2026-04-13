@@ -27,12 +27,21 @@ const EstadoAcabamento: React.FC<{ atendimentoId: number; onComplete: () => void
     return `${horas}:${minutos}:${segs}`;
   };
 
-  const handleFinalizar = async () => {
+  const handleFinalizar = async (e?: React.MouseEvent) => {
+    // Axioma 11: Impede comportamentos nativos que quebram a fluidez da esteira
+    if (e) e.preventDefault();
+    
+    if (loading) return;
+
     setLoading(true);
     try {
-      // Envia o comentário específico do acabamento para o backend
-      await avancarEtapa(atendimentoId, observacoes);
-      // Axioma 13: Notifica o componente pai (EsteiraProducao) para recarregar os dados
+      // Axioma 1: View delega lógica para o serviço via API
+      // O envio de 'comentario_acabamento' é o gatilho para o backend liberar a Etapa 4
+      await avancarEtapa(atendimentoId, { 
+        comentario_acabamento: observacoes 
+      });
+      
+      // Axioma 13: Notifica o componente pai (EsteiraProducao) para disparar refresh orgânico
       onComplete(); 
     } catch (error) {
       console.error('Erro ao avançar etapa:', error);
@@ -45,7 +54,7 @@ const EstadoAcabamento: React.FC<{ atendimentoId: number; onComplete: () => void
   return (
     <div style={styles.pageContainer}>
       
-      {/* Cronômetro Centralizado com Brilho Laranja (Captura 093643) */}
+      {/* Cronômetro Centralizado com Brilho Laranja */}
       <div style={styles.timerWrapper}>
         <div style={styles.timerDisplay}>
           {formatarTempo(segundos)}
@@ -65,6 +74,7 @@ const EstadoAcabamento: React.FC<{ atendimentoId: number; onComplete: () => void
           value={vagaPatio}
           onChange={(e) => setVagaPatio(e.target.value)}
           style={styles.locationInput}
+          placeholder="Informe a vaga..."
         />
       </div>
 
@@ -83,11 +93,16 @@ const EstadoAcabamento: React.FC<{ atendimentoId: number; onComplete: () => void
 
       {/* Grupo de Ações (Visual Industrial) */}
       <div style={styles.actionGroup}>
-        <button style={styles.btnSecondary} onClick={() => alert('Módulo de ocorrências em breve')}>
+        <button 
+          type="button"
+          style={styles.btnSecondary} 
+          onClick={() => alert('Módulo de ocorrências em breve')}
+        >
           <AlertTriangle size={20} /> REGISTRAR OCORRÊNCIA
         </button>
 
         <button 
+          type="button"
           style={{ ...styles.btnPause, background: isPausado ? 'var(--lm-primary)' : '#ff9500' }} 
           onClick={() => setIsPausado(!isPausado)}
         >
@@ -95,6 +110,7 @@ const EstadoAcabamento: React.FC<{ atendimentoId: number; onComplete: () => void
         </button>
 
         <button 
+          type="button"
           style={styles.btnFinish} 
           onClick={handleFinalizar} 
           disabled={loading}
@@ -108,7 +124,6 @@ const EstadoAcabamento: React.FC<{ atendimentoId: number; onComplete: () => void
   );
 };
 
-// Estilos seguindo o Design System Industrial Dark Mode
 const styles: Record<string, React.CSSProperties> = {
   pageContainer: { background: '#000', display: 'flex', flexDirection: 'column', padding: '20px' },
   timerWrapper: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '40px', padding: '40px 0' },

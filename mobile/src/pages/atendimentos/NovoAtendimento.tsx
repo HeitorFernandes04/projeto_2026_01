@@ -44,13 +44,22 @@ const NovoAtendimento: React.FC = () => {
 
     setLoading(true);
     try {
-      await criarAtendimento({
+      // Diferencial desta tela: inicia imediatamente com iniciar_agora: true
+      const response = await criarAtendimento({
         ...form,
-        iniciar_agora: true, // Diferencial desta tela: inicia imediatamente
+        iniciar_agora: true, 
         data_hora: new Date().toISOString(),
         observacoes: ''
       });
-      history.push('/atendimentos/hoje');
+
+      // REDIRECIONAMENTO CORRIGIDO: 
+      // Agora usa o ID retornado pela API para ir direto para a esteira de produção
+      if (response && response.id) {
+        history.push(`/atendimentos/${response.id}/esteira`);
+      } else {
+        history.push('/atendimentos/hoje');
+      }
+
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Erro ao iniciar atendimento";
       setToastMsg(msg);

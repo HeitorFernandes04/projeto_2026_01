@@ -2,6 +2,13 @@
 // Em dispositivos físicos, ajuste o .env para o IP da máquina na rede local.
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
+// Interface para eliminar erros de 'any' no avanço de etapa
+interface DadosAvancoEtapa {
+  laudo_vistoria?: string;
+  comentario_lavagem?: string;
+  comentario_acabamento?: string;
+}
+
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('access');
   const isFormData = options.body instanceof FormData;
@@ -84,7 +91,7 @@ export async function iniciarAtendimento(id: number) {
   return request(`/api/atendimentos/${id}/iniciar/`, { method: 'PATCH' });
 }
 
-// RF-06 — Finaliza um atendimento
+// RF-06 — Finaliza um atendimento (Geral)
 export async function finalizarAtendimento(id: number) {
   return request(`/api/atendimentos/${id}/finalizar/`, { method: 'PATCH' });
 }
@@ -127,7 +134,6 @@ export async function getServicos() {
 
 // RF-09 — Obtém horários livres para agendamento
 export async function getHorariosLivres(data: string, servicoId: number) {
-  // Passamos cache: 'no-store' para garantir que os slots livres sejam sempre frescos
   return request(`/api/atendimentos/horarios-livres/?data=${data}&servico_id=${servicoId}`, {
     cache: 'no-store',
   });
@@ -140,17 +146,32 @@ export async function adicionarComentario(id: number, observacoes: string) {
   });
 }
 
-// RF-XX — Avança etapa de um atendimento
-export async function avancarEtapa(id: number, etapa: string) {
+// RF-XX — Avança etapa de um atendimento (Esteira Industrial)
+export async function avancarEtapa(id: number, dados: DadosAvancoEtapa) {
+  // Ajustado para coincidir com a URL e os dados exigidos pelo Backend
   return request(`/api/atendimentos/${id}/avancar-etapa/`, {
     method: 'PATCH',
-    body: JSON.stringify({ etapa }),
+    body: JSON.stringify(dados), 
   });
 }
 
-// Adicione esta função ao seu arquivo src/services/api.ts
+// Obtém atendimentos de uma data específica
 export async function getAtendimentosPorData(data: string) {
   return request(`/api/atendimentos/dia/?data=${data}`, {
     cache: 'no-store',
+  });
+}
+
+// src/services/api.ts
+
+// RF-07 — Finaliza atendimento na etapa 4 (Liberação)
+export async function finalizarAtendimentoEtapa4(id: number, dados: {
+  vaga_patio: string;
+  observacoes?: string;
+}) {
+  // ADICIONE O SUFIXO -industrial/ para bater com o urls.py do Django
+  return request(`/api/atendimentos/${id}/finalizar-industrial/`, {
+    method: 'PATCH',
+    body: JSON.stringify(dados),
   });
 }

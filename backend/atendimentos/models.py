@@ -48,18 +48,31 @@ class Atendimento(models.Model):
         blank=True,
         related_name='atendimentos',
     )
-    data_hora = models.DateTimeField()
-    horario_inicio = models.DateTimeField(null=True, blank=True)
+    
+    # Campo base para agendamento e ordenação
+    data_hora = models.DateTimeField() 
+    
+    # Controle de status e observações gerais
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='agendado')
     observacoes = models.TextField(blank=True, default='')
-
-    def __str__(self):
-        return f'{self.veiculo} - {self.servico} - {self.data_hora:%d/%m/%Y %H:%M}'
+    
+    # Campos de suporte à Esteira Industrial (Gatilhos de transição para o Front-end)
+    laudo_vistoria = models.TextField(blank=True, null=True)
+    comentario_lavagem = models.TextField(blank=True, null=True)
+    comentario_acabamento = models.TextField(blank=True, null=True)
+    vaga_patio = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Auditoria de tempo real por fase (Essencial para métricas de produtividade)
+    horario_inicio = models.DateTimeField(null=True, blank=True)
+    horario_lavagem = models.DateTimeField(null=True, blank=True)
+    horario_acabamento = models.DateTimeField(null=True, blank=True)
+    horario_finalizacao = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = 'Atendimento'
-        verbose_name_plural = 'Atendimentos'
-        ordering = ['data_hora']
+        ordering = ['-data_hora']
+
+    def __str__(self):
+        return f"{self.veiculo.placa if self.veiculo else 'S/P'} - {self.status}"
 
 
 class MidiaAtendimento(models.Model):
