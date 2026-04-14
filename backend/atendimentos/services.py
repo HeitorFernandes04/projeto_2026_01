@@ -85,7 +85,10 @@ class AtendimentoService:
 
     @staticmethod
     def listar_historico_por_periodo(funcionario, data_inicial, data_final, status='todos'):
-        """RF-10: Lista histórico restrito ao funcionário (Segurança)."""
+        """RF-10: Lista histórico restrito ao funcionário com validação de datas."""
+        if data_inicial > data_final:
+            raise ValidationError("A data inicial não pode ser maior que a data final.")
+        
         filtros = {
             'funcionario': funcionario,
             'data_hora__date__gte': data_inicial,
@@ -142,8 +145,17 @@ class AtendimentoService:
         status_atual = atendimento.status
         agora = timezone.now()
 
-        # ETAPA 1: Vistoria -> Lavagem
+        # RN-09: Validação de evidências obrigatórias para avançar (Vistoria -> Lavagem)
+        # Verifica se é a transição da etapa 1 para a 2
         if status_atual == 'agendado' or (status_atual == 'em_andamento' and not atendimento.horario_lavagem):
+            contagem_fotos = MidiaAtendimento.objects.filter(
+                atendimento=atendimento, 
+                momento='VISTORIA_GERAL'
+            ).count()
+
+            if contagem_fotos < 5:
+                raise ValueError(f"Ação negada: mínimo de 5 fotos de vistoria exigidas. (Atual: {contagem_fotos})")
+
             atendimento.status = 'em_andamento'
             atendimento.laudo_vistoria = dados.get('laudo_vistoria', '')
             atendimento.horario_lavagem = agora
