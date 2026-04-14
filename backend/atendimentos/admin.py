@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from .models import Servico, Veiculo, Atendimento, MidiaAtendimento
+from .models import IncidenteOS, Servico, Veiculo, Atendimento, MidiaAtendimento, TagPeca
 
 
 class AtendimentoAdminForm(forms.ModelForm):
@@ -32,6 +32,17 @@ class MidiaAtendimentoAdmin(admin.ModelAdmin):
     list_display = ('id', 'atendimento', 'momento', 'enviado_em')
     list_filter = ('momento',)
     readonly_fields = ('enviado_em',)
+
+@admin.register(TagPeca)
+class TagPecaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'categoria')
+    list_filter = ('categoria',)
+    search_fields = ('nome',)
+
+@admin.register(IncidenteOS)
+class IncidenteOSAdmin(admin.ModelAdmin):
+    list_display = ('atendimento', 'tag_peca', 'resolvido', 'data_registro')
+    list_filter = ('resolvido', 'data_registro')
 
 
 admin.site.register(Servico)

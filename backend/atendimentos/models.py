@@ -32,11 +32,13 @@ class Veiculo(models.Model):
 
 
 class Atendimento(models.Model):
+    # Expansão dos estados conforme Documentação Técnica [cite: 50]
     STATUS_CHOICES = [
         ('agendado', 'Agendado'),
         ('em_andamento', 'Em Andamento'),
         ('finalizado', 'Finalizado'),
         ('cancelado', 'Cancelado'),
+        ('incidente', 'Incidente/Bloqueado'), # Novo estado para travar a esteira [cite: 50, 63]
     ]
 
     veiculo = models.ForeignKey(Veiculo, on_delete=models.PROTECT, related_name='atendimentos')
@@ -49,20 +51,15 @@ class Atendimento(models.Model):
         related_name='atendimentos',
     )
     
-    # Campo base para agendamento e ordenação
     data_hora = models.DateTimeField() 
-    
-    # Controle de status e observações gerais
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='agendado')
     observacoes = models.TextField(blank=True, default='')
     
-    # Campos de suporte à Esteira Industrial (Gatilhos de transição para o Front-end)
     laudo_vistoria = models.TextField(blank=True, null=True)
     comentario_lavagem = models.TextField(blank=True, null=True)
     comentario_acabamento = models.TextField(blank=True, null=True)
     vaga_patio = models.CharField(max_length=50, blank=True, null=True)
     
-    # Auditoria de tempo real por fase (Essencial para métricas de produtividade)
     horario_inicio = models.DateTimeField(null=True, blank=True)
     horario_lavagem = models.DateTimeField(null=True, blank=True)
     horario_acabamento = models.DateTimeField(null=True, blank=True)
@@ -75,10 +72,52 @@ class Atendimento(models.Model):
         return f"{self.veiculo.placa if self.veiculo else 'S/P'} - {self.status}"
 
 
+class TagPeca(models.Model):
+    """Entidade para popular o grid de seleção rápida no front-end[cite: 60]."""
+    CATEGORIA_CHOICES = [
+        ('frente', 'Frente'),
+        ('lateral_esq', 'Lateral Esquerda'),
+        ('lateral_dir', 'Lateral Direita'),
+        ('traseira', 'Traseira'),
+        ('interior', 'Interior'),
+    ]
+    nome = models.CharField(max_length=100, help_text="Ex: Capô, Porta Dianteira Esq [cite: 60]")
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
+
+    def __str__(self):
+        return f"{self.nome} ({self.get_categoria_display()})"
+
+
+class IncidenteOS(models.Model):
+    """Isola o fluxo de erros e danos causados pela equipa[cite: 63]."""
+    atendimento = models.ForeignKey(
+        Atendimento, 
+        on_delete=models.CASCADE, 
+        related_name='incidentes'
+    )
+    tag_peca = models.ForeignKey(
+        TagPeca, 
+        on_delete=models.PROTECT, 
+        related_name='incidentes',
+        null=True, 
+        blank=True
+    )
+    descricao = models.TextField(help_text="Relato detalhado do operador [cite: 63]")
+    foto_url = models.ImageField(upload_to='incidentes/%Y/%m/%d/', help_text="Evidência do dano causado [cite: 63]")
+    resolvido = models.BooleanField(default=False, help_text="Controle para liberação pelo Gestor [cite: 63]")
+    data_registro = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Incidente OS #{self.atendimento_id} - {self.tag_peca}"
+
+
 class MidiaAtendimento(models.Model):
+    # Categorização expandida conforme Documentação Técnica [cite: 57, 58]
     MOMENTO_CHOICES = [
-        ('ANTES', 'Antes'),
-        ('DEPOIS', 'Depois'),
+        ('VISTORIA_GERAL', 'Vistoria Geral'),
+        ('AVARIA_PREVIA', 'Avaria Prévia'),
+        ('EXECUCAO', 'Execução'),
+        ('FINALIZADO', 'Finalizado'),
     ]
 
     atendimento = models.ForeignKey(
@@ -87,7 +126,7 @@ class MidiaAtendimento(models.Model):
         related_name='midias',
     )
     arquivo = models.ImageField(upload_to='atendimentos/%Y/%m/%d/')
-    momento = models.CharField(max_length=10, choices=MOMENTO_CHOICES)
+    momento = models.CharField(max_length=20, choices=MOMENTO_CHOICES)
     enviado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Atendimento, MidiaAtendimento, Servico, Veiculo
+from .models import Atendimento, IncidenteOS, MidiaAtendimento, Servico, TagPeca, Veiculo
 import os
 
 class ServicoSerializer(serializers.ModelSerializer):
@@ -135,3 +135,13 @@ class FinalizarIndustrialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Atendimento
         fields = ['vaga_patio', 'observacoes']
+
+class TagPecaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TagPeca
+        fields = '__all__'
+
+class IncidenteOSSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IncidenteOS
+        fields = ['atendimento', 'tag_peca', 'descricao', 'foto_url']

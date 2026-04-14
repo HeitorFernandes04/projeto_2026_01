@@ -7,6 +7,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from .models import TagPeca, IncidenteOS
+from .serializers import TagPecaSerializer, IncidenteOSSerializer
+from .services import IncidenteService
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Atendimento, Servico
 from .permissions import IsFuncionarioDoAtendimento
@@ -180,3 +186,23 @@ class HorariosLivresView(APIView):
             return Response({'horarios': horarios})
         except Exception as e:
             return Response({'detail': str(e)}, status=400)
+        
+
+
+class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TagPeca.objects.all()
+    serializer_class = TagPecaSerializer
+
+@api_view(['POST'])
+def registrar_incidente(request, pk):
+    """Endpoint para o operador relatar um dano e travar a OS."""
+    try:
+        # Chama o serviço que criamos anteriormente para processar foto e status
+        incidente = IncidenteService.registrar_incidente(
+            atendimento_id=pk,
+            dados=request.data,
+            arquivo_foto=request.FILES.get('foto_url')
+        )
+        return Response({'status': 'OS bloqueada por incidente'}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

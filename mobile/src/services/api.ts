@@ -1,13 +1,31 @@
 // A URL base é lida do arquivo .env (variável VITE_API_URL).
-// Em dispositivos físicos, ajuste o .env para o IP da máquina na rede local.
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
-// Interface para eliminar erros de 'any' no avanço de etapa
+// --- INTERFACES DE TIPAGEM ---
+
 interface DadosAvancoEtapa {
   laudo_vistoria?: string;
   comentario_lavagem?: string;
   comentario_acabamento?: string;
 }
+
+interface DadosIncidente {
+  descricao: string;
+  tag_peca_id: number;
+  foto: File | null;
+}
+
+// Interface atualizada conforme nova estrutura de Ordem de Serviço
+interface DadosNovaOS {
+  veiculo_id: number; // Agora usa FK para Veiculo
+  servico_id: number;
+  data_hora: string;
+  observacoes: string;
+  origem: 'AGENDADO' | 'AVULSO'; // Novo campo conforme diretriz 
+  iniciar_agora?: boolean;
+}
+
+// --- FUNÇÃO BASE DE REQUISIÇÃO ---
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('access');
@@ -18,7 +36,6 @@ async function request(endpoint: string, options: RequestInit = {}) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  // Mescla headers customizados com segurança
   if (options.headers) {
     Object.assign(headers, options.headers);
   }
@@ -50,7 +67,8 @@ async function request(endpoint: string, options: RequestInit = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-// Autenticação — Login do usuário
+// --- AUTENTICAÇÃO ---
+
 export async function loginUsuario(email: string, password: string) {
   const response = await fetch(`${BASE_URL}/api/auth/login/`, {
     method: 'POST',
@@ -64,40 +82,38 @@ export async function loginUsuario(email: string, password: string) {
   return response.json();
 }
 
+// --- ORDENS DE SERVIÇO (ANTIGOS ATENDIMENTOS) ---
+
 // RF-03 — Lista atendimentos do dia
 export async function getAtendimentosHoje() {
   return request('/api/atendimentos/hoje/');
 }
 
-// RF-10 — Lista histórico de atendimentos por período
+// RF-10 — Lista histórico por período
 export async function getHistoricoAtendimentos(dataInicial: string, dataFinal: string) {
   const params = new URLSearchParams({
     data_inicial: dataInicial,
     data_final: dataFinal,
   });
-
   return request(`/api/atendimentos/historico/?${params.toString()}`, {
     cache: 'no-store',
   });
 }
 
-// RF-03/04 — Detalhe de um atendimento
 export async function getAtendimento(id: number) {
   return request(`/api/atendimentos/${id}/`);
 }
 
-// RF-04 — Inicia um atendimento
 export async function iniciarAtendimento(id: number) {
   return request(`/api/atendimentos/${id}/iniciar/`, { method: 'PATCH' });
 }
 
-// RF-06 — Finaliza um atendimento (Geral)
 export async function finalizarAtendimento(id: number) {
   return request(`/api/atendimentos/${id}/finalizar/`, { method: 'PATCH' });
 }
 
-// RF-05/06 — Envia fotos de um atendimento
-export async function uploadFotos(id: number, momento: 'ANTES' | 'DEPOIS', fotoBlob: Blob) {
+// RF-05/06 — Envia fotos (Categorias atualizadas conforme diretriz) 
+export async function uploadFotos(id: number, momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO', fotoBlob: Blob) {
   const formData = new FormData();
   formData.append('momento', momento);
   formData.append('arquivos', fotoBlob, 'foto.jpg');
@@ -108,70 +124,71 @@ export async function uploadFotos(id: number, momento: 'ANTES' | 'DEPOIS', fotoB
   });
 }
 
-// RF-04 — Cria um novo atendimento
-export async function criarAtendimento(dados: {
-  nome_dono: string;
-  celular_dono: string;
-  placa: string;
-  modelo: string;
-  marca: string;
-  cor: string;
-  servico_id: number;
-  data_hora: string;
-  observacoes: string;
-  iniciar_agora?: boolean;
-}) {
-  return request('/api/atendimentos/', {
+/**
+ * RF-04 — Cria uma nova Ordem de Serviço
+ * CORREÇÃO DO ERRO 405: Verifique se sua rota no Django não mudou para /api/ordens-servico/
+ */
+export async function criarAtendimento(dados: DadosNovaOS) {
+  return request('/api/atendimentos/novo/', {
     method: 'POST',
     body: JSON.stringify(dados),
   });
 }
 
-// RF-04 — Lista serviços disponíveis (para o dropdown)
 export async function getServicos() {
   return request('/api/atendimentos/servicos/');
 }
 
-// RF-09 — Obtém horários livres para agendamento
 export async function getHorariosLivres(data: string, servicoId: number) {
   return request(`/api/atendimentos/horarios-livres/?data=${data}&servico_id=${servicoId}`, {
     cache: 'no-store',
   });
 }
 
-export async function adicionarComentario(id: number, observacoes: string) {
-  return request(`/api/atendimentos/${id}/comentario/`, {
-    method: 'PATCH',
-    body: JSON.stringify({ observacoes }),
-  });
-}
+// --- ESTEIRA INDUSTRIAL ---
 
-// RF-XX — Avança etapa de um atendimento (Esteira Industrial)
 export async function avancarEtapa(id: number, dados: DadosAvancoEtapa) {
-  // Ajustado para coincidir com a URL e os dados exigidos pelo Backend
   return request(`/api/atendimentos/${id}/avancar-etapa/`, {
     method: 'PATCH',
     body: JSON.stringify(dados), 
   });
 }
 
-// Obtém atendimentos de uma data específica
-export async function getAtendimentosPorData(data: string) {
-  return request(`/api/atendimentos/dia/?data=${data}`, {
-    cache: 'no-store',
-  });
-}
-
-// src/services/api.ts
-
-// RF-07 — Finaliza atendimento na etapa 4 (Liberação)
 export async function finalizarAtendimentoEtapa4(id: number, dados: {
   vaga_patio: string;
   observacoes?: string;
 }) {
-  // ADICIONE O SUFIXO -industrial/ para bater com o urls.py do Django
   return request(`/api/atendimentos/${id}/finalizar-industrial/`, {
     method: 'PATCH',
     body: JSON.stringify(dados),
+  });
+}
+
+// --- INCIDENTES E OCORRÊNCIAS ---
+
+export async function getTagsPeca() {
+  return request('/api/atendimentos/tags-peca/');
+}
+
+export async function registrarIncidente(id: number, dados: DadosIncidente) {
+  const formData = new FormData();
+  formData.append('descricao', dados.descricao);
+  formData.append('tag_peca_id', dados.tag_peca_id.toString());
+  
+  if (dados.foto) {
+    formData.append('foto_url', dados.foto);
+  }
+  
+  return request(`/api/atendimentos/${id}/incidente/`, {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+// --- UTILITÁRIOS ---
+
+export async function getAtendimentosPorData(data: string) {
+  return request(`/api/atendimentos/dia/?data=${data}`, {
+    cache: 'no-store',
   });
 }

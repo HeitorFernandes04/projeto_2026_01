@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 
-from atendimentos.models import Atendimento, MidiaAtendimento, Servico, Veiculo
+from atendimentos.models import Atendimento, MidiaAtendimento, Servico, Veiculo, TagPeca, IncidenteOS
 
 # Constantes de negócio (Axioma 4)
 MAX_FOTOS_POR_MOMENTO = 5
@@ -22,11 +22,12 @@ SLOT_MINUTOS = 30
 class MidiaAtendimentoService:
     """Serviço responsável pelo processamento de upload de mídias."""
 
-    STATUS_PERMITIDOS = {'agendado', 'em_andamento'}
+    # Status permitidos expandidos para suportar incidentes
+    STATUS_PERMITIDOS = {'agendado', 'em_andamento', 'incidente'}
 
     @staticmethod
     def processar_upload_multiplo(atendimento, momento, arquivos):
-        """RF-05/RF-06: Processa upload validando limite de 5 fotos por momento."""
+        """RF-05/RF-06: Processa upload validando limites e novas categorias de momento."""
         if atendimento.status not in MidiaAtendimentoService.STATUS_PERMITIDOS:
             raise ValidationError(
                 f'Não é possível enviar mídias para um atendimento com status "{atendimento.get_status_display()}".'
@@ -112,7 +113,7 @@ class AtendimentoService:
 
     @staticmethod
     def criar_com_veiculo(dados, funcionario):
-        """Cria atendimento e garante RN-05 (Apenas um atendimento ativo por vez)."""
+        """Cria atendimento/OS garantindo apenas um ativo por vez."""
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
         AtendimentoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_min))
 
@@ -134,7 +135,6 @@ class AtendimentoService:
             observacoes=dados.get('observacoes', ''),
         )
 
-    # ESTE MÉTODO PRECISA ESTAR IDENTADO DENTRO DA CLASSE
     @staticmethod
     def avancar_etapa(atendimento_id: int, dados: dict) -> Atendimento:
         """Máquina de Estados Industrial: Gere transições e horários."""
@@ -146,13 +146,13 @@ class AtendimentoService:
         if status_atual == 'agendado' or (status_atual == 'em_andamento' and not atendimento.horario_lavagem):
             atendimento.status = 'em_andamento'
             atendimento.laudo_vistoria = dados.get('laudo_vistoria', '')
-            atendimento.horario_lavagem = agora  # Inicia cronômetro da lavagem
+            atendimento.horario_lavagem = agora
             atendimento.save()
 
         # ETAPA 2: Lavagem -> Acabamento
         elif atendimento.horario_lavagem and not atendimento.horario_acabamento:
             atendimento.comentario_lavagem = dados.get('comentario_lavagem', '')
-            atendimento.horario_acabamento = agora  # Finaliza lavagem / Inicia acabamento
+            atendimento.horario_acabamento = agora
             atendimento.save()
 
         # ETAPA 3: Acabamento -> Liberação
@@ -164,10 +164,11 @@ class AtendimentoService:
     
     @staticmethod
     def finalizar_atendimento_industrial(atendimento_id: int, dados: dict) -> Atendimento:
-        """Etapa 4: Finalização com validação de fotos de entrega (RN-13) e Vaga."""
+        """Etapa 4: Finalização com validação de fotos de entrega e Vaga."""
         atendimento = get_object_or_404(Atendimento, id=atendimento_id)
         
-        if MidiaAtendimento.objects.filter(atendimento=atendimento, momento='DEPOIS').count() < 5:
+        # Validação conforme RN-13 (Momento FINALIZADO na nova estrutura)
+        if MidiaAtendimento.objects.filter(atendimento=atendimento, momento='FINALIZADO').count() < 5:
             raise ValueError("5 fotos de entrega exigidas.")
         
         if not dados.get('vaga_patio'):
@@ -179,3 +180,32 @@ class AtendimentoService:
         atendimento.save()
         
         return atendimento
+
+
+class IncidenteService:
+    """Serviço para isolar o fluxo de erros e incidentes operacionais."""
+
+    @staticmethod
+    def registrar_incidente(atendimento_id, dados, arquivo_foto):
+        """
+        Registra o incidente, vincula a peça afetada e bloqueia a OS.
+        """
+        atendimento = get_object_or_404(Atendimento, id=atendimento_id)
+        tag_peca = get_object_or_404(TagPeca, id=dados.get('tag_peca_id'))
+
+        # Processa a foto da evidência usando a mesma lógica de compressão
+        foto_processada = MidiaAtendimentoService._comprimir_imagem(arquivo_foto)
+
+        incidente = IncidenteOS.objects.create(
+            atendimento=atendimento,
+            tag_peca=tag_peca,
+            descricao=dados.get('descricao'),
+            foto_url=foto_processada,
+            resolvido=False
+        )
+
+        # Atualiza status da OS para bloquear o operador (Fluxo de Exceção)
+        atendimento.status = 'incidente'
+        atendimento.save()
+
+        return incidente
