@@ -1,4 +1,8 @@
-import { IonContent, IonPage, IonSpinner } from '@ionic/react';
+import { 
+  IonContent, 
+  IonPage, 
+  IonSpinner 
+} from '@ionic/react';
 import { LogOut, Check } from 'lucide-react'; 
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -13,6 +17,9 @@ const Agendar: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [servicos, setServicos] = useState<Array<{id: number; nome: string; preco: string}>>([]);
   
+  // Captura a data de hoje para o limite do calendário
+  const hojeStr = new Date().toISOString().split('T')[0];
+
   const [form, setForm] = useState({
     placa: '',
     modelo: '',
@@ -21,7 +28,7 @@ const Agendar: React.FC = () => {
     celular_dono: '',
     cor: '',
     servico_id: 0,
-    data: new Date().toISOString().split('T')[0],
+    data: hojeStr,
     hora: ''
   });
 
@@ -33,23 +40,43 @@ const Agendar: React.FC = () => {
   }, []);
 
   const handleConfirmar = async () => {
-    if (!form.placa || !form.modelo || !form.servico_id || !form.hora) {
-      setToastMsg("Preencha todos os campos e selecione um horário");
+    // Validação de campos obrigatórios incluindo o horário selecionado
+    if (!form.placa || !form.modelo || !form.servico_id || !form.data || !form.hora) {
+      setToastMsg("Preencha todos os campos e selecione um horário.");
       setShowToast(true);
       return;
     }
 
     setLoading(true);
     try {
+      // CONSTRUÇÃO DA DATA/HORA CORRETA PARA AGENDAMENTO
+      // Combina a data do input com a hora da GradeHorarios (Formato: YYYY-MM-DDTHH:mm:00)
+      const dataHoraAgendamento = `${form.data}T${form.hora}:00`;
+      
       await criarAtendimento({
-        ...form,
-        data_hora: `${form.data}T${form.hora}:00`,
-        iniciar_agora: false,
+        placa: form.placa.toUpperCase(),
+        modelo: form.modelo,
+        marca: form.marca,
+        cor: form.cor,
+        nome_dono: form.nome_dono,
+        celular_dono: form.celular_dono || '',
+        servico_id: form.servico_id,
+        iniciar_agora: false, // Importante: não ativa cronômetro agora
+        data_hora: dataHoraAgendamento,
+        origem: 'AGENDADO',
         observacoes: ''
       });
-      history.push('/atendimentos/hoje');
+
+      setToastMsg("Agendamento realizado com sucesso!");
+      setShowToast(true);
+      
+      // Pequeno delay para o usuário ler o toast e depois volta ao pátio
+      setTimeout(() => {
+        history.push('/atendimentos/hoje');
+      }, 1500);
+
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Erro ao agendar";
+      const msg = e instanceof Error ? e.message : "Erro ao realizar agendamento";
       setToastMsg(msg);
       setShowToast(true);
     } finally {
@@ -126,8 +153,9 @@ const Agendar: React.FC = () => {
           <label style={styles.sectionLabel}>DATA E HORÁRIO</label>
           <input 
             type="date" 
+            min={hojeStr} // Bloqueia datas passadas
             value={form.data} 
-            onChange={e => setForm({...form, data: e.target.value})}
+            onChange={e => setForm({...form, data: e.target.value, hora: ''})} // Reseta hora ao mudar data
             style={styles.inputDate}
           />
 
@@ -166,7 +194,7 @@ const styles: Record<string, React.CSSProperties> = {
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '16px' },
   inputMain: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '18px', borderRadius: '16px', fontSize: '18px', fontWeight: 900, outline: 'none' },
   input: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '18px', borderRadius: '16px', fontSize: '16px', outline: 'none' },
-  inputDate: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '14px', borderRadius: '12px', width: '100%', colorScheme: 'dark' },
+  inputDate: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '14px', borderRadius: '12px', width: '100%', colorScheme: 'dark', outline: 'none' },
   sectionLabel: { color: '#fff', fontSize: '12px', fontWeight: 900, display: 'block', margin: '32px 0 16px', textTransform: 'uppercase' },
   selectableCard: { background: 'var(--lm-card)', padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' },
   btnAction: { width: '100%', background: 'var(--lm-primary)', color: '#fff', padding: '22px', borderRadius: '22px', fontSize: '18px', fontWeight: 900, marginTop: '40px', border: 'none' }

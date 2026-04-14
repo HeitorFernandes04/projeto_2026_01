@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Atendimento, IncidenteOS, MidiaAtendimento, Servico, TagPeca, Veiculo
+from django.utils import timezone
 import os
 
 class ServicoSerializer(serializers.ModelSerializer):
@@ -53,25 +54,17 @@ class AtendimentoSerializer(serializers.ModelSerializer):
         ]
 
     def get_etapa_atual(self, obj):
-        """
-        Lógica de Redirecionamento Cronológica Estrita.
-        """
-        # 4. Liberação: Se já finalizou OU se o acabamento já tem comentário/vaga
+        """Lógica de Redirecionamento Cronológica Estrita."""
         if obj.status == 'finalizado' or obj.horario_finalizacao or obj.comentario_acabamento:
             return 4
-        
-        # 3. Acabamento: Se a lavagem terminou (tem horario_acabamento)
         if obj.horario_acabamento:
             return 3
-            
-        # 2. Lavagem: Se passou pela vistoria (tem horario_lavagem)
         if obj.horario_lavagem:
             return 2
-            
-        # 1. Vistoria: Estado inicial
         return 1
+
 # ---------------------------------------------------------------------------
-#  RF-04 — Criar atendimento
+#  RF-04 — Criar atendimento (COM VALIDAÇÃO DE DATA E STATUS)
 # ---------------------------------------------------------------------------
 
 class CriarAtendimentoSerializer(serializers.Serializer):
@@ -87,6 +80,32 @@ class CriarAtendimentoSerializer(serializers.Serializer):
     observacoes  = serializers.CharField(required=False, allow_blank=True, default='')
     iniciar_agora = serializers.BooleanField(required=False, default=False)
 
+    def validate(self, data):
+        """
+        RN: Impede agendamento simultâneo para HOJE se houver algo em andamento.
+        Permite agendamentos para datas futuras livremente.
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return data
+
+        data_agendamento = data.get('data_hora').date()
+        hoje = timezone.now().date()
+        
+        # Verifica se o funcionário logado já possui uma OS com status 'em_andamento'
+        tem_servico_ativo = Atendimento.objects.filter(
+            funcionario=request.user,
+            status='em_andamento'
+        ).exists()
+
+        # BLOQUEIO: Se for para HOJE (ou passado) e já tiver um carro na esteira
+        if data_agendamento <= hoje and tem_servico_ativo:
+            raise serializers.ValidationError(
+                "Você já possui um veículo em andamento. Finalize-o antes de iniciar ou agendar outro para hoje."
+            )
+        
+        return data
+
 
 # ---------------------------------------------------------------------------
 #  RF-05/06 — Upload de fotos
@@ -95,17 +114,12 @@ class CriarAtendimentoSerializer(serializers.Serializer):
 EXTENSOES_PERMITIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
 
 def validar_extensao_imagem(arquivo):
-    """Valida que o arquivo possui uma extensão de imagem permitida."""
     ext = os.path.splitext(arquivo.name)[1].lower()
     if ext not in EXTENSOES_PERMITIDAS:
-        raise serializers.ValidationError(
-            f'Extensão "{ext}" não permitida. '
-            f'Extensões aceitas: {", ".join(sorted(EXTENSOES_PERMITIDAS))}.'
-        )
+        raise serializers.ValidationError(f'Extensão "{ext}" não permitida.')
 
 
 class MidiaAtendimentoUploadSerializer(serializers.Serializer):
-    """Serializer de ENTRADA para upload de múltiplas fotos (RN-09)."""
     momento = serializers.ChoiceField(choices=['ANTES', 'DEPOIS'])
     arquivos = serializers.ListField(
         child=serializers.ImageField(validators=[validar_extensao_imagem]),
@@ -115,7 +129,6 @@ class MidiaAtendimentoUploadSerializer(serializers.Serializer):
 
 
 class HistoricoAtendimentoFiltroSerializer(serializers.Serializer):
-    """Serializer de entrada para filtro de histórico por período (RF-10)."""
     data_inicial = serializers.DateField()
     data_final = serializers.DateField()
     status = serializers.ChoiceField(
@@ -125,13 +138,11 @@ class HistoricoAtendimentoFiltroSerializer(serializers.Serializer):
     )
 
 class ProximaEtapaSerializer(serializers.ModelSerializer):
-    """Serializer unificado para transição de fases da esteira."""
     class Meta:
         model = Atendimento
         fields = ['laudo_vistoria', 'comentario_lavagem', 'comentario_acabamento']
 
 class FinalizarIndustrialSerializer(serializers.ModelSerializer):
-    """Serializer para a fase final de Liberação."""
     class Meta:
         model = Atendimento
         fields = ['vaga_patio', 'observacoes']

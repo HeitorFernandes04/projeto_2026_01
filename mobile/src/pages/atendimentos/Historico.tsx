@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import { 
   IonPage, IonContent, IonSpinner, IonIcon, 
@@ -30,20 +30,19 @@ const Historico: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // Define o período inicial como os últimos 7 dias
   const [dataInicial, setDataInicial] = useState(
     new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [dataFinal, setDataFinal] = useState(new Date().toISOString().split('T')[0]);
 
-  // Função de carregamento com suporte a filtros e busca
+  // Carrega os dados da API com base nas datas selecionadas
   const carregarHistorico = useCallback(async () => {
     try {
       setLoading(true);
       const dados = await getHistoricoAtendimentos(dataInicial, dataFinal);
       
       if (dados && Array.isArray(dados)) {
-        // Exibe apenas os finalizados no histórico
+        // Filtra apenas os finalizados conforme regra de negócio
         setAtendimentos(dados.filter((at: AtendimentoHistorico) => at.status === 'finalizado'));
       }
     } catch (err) {
@@ -51,13 +50,25 @@ const Historico: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [dataInicial, dataFinal, searchTerm]);
+  }, [dataInicial, dataFinal]);
+
+  // Lógica de Filtro Local (Barra de Busca)
+  // O useMemo garante que o filtro só rode quando searchTerm ou atendimentos mudarem
+  const atendimentosFiltrados = useMemo(() => {
+    if (!searchTerm.trim()) return atendimentos;
+
+    const term = searchTerm.toLowerCase();
+    return atendimentos.filter(at => 
+      at.veiculo.placa.toLowerCase().includes(term) ||
+      at.veiculo.modelo.toLowerCase().includes(term) ||
+      at.veiculo.marca.toLowerCase().includes(term)
+    );
+  }, [searchTerm, atendimentos]);
 
   useIonViewWillEnter(() => {
     carregarHistorico();
   });
 
-  // Atualiza automaticamente quando as datas ou a busca mudam
   useEffect(() => {
     carregarHistorico();
   }, [carregarHistorico]);
@@ -78,7 +89,6 @@ const Historico: React.FC = () => {
           </div>
           <p style={styles.subtitle}>Serviços finalizados</p>
 
-          {/* Seletores de Período (Data Inicial e Final) */}
           <div style={styles.filterGrid}>
             <div>
               <label style={styles.filterLabel}>Início</label>
@@ -106,7 +116,6 @@ const Historico: React.FC = () => {
             </div>
           </div>
 
-          {/* Barra de Busca Dinâmica */}
           <IonSearchbar 
             placeholder="Placa ou modelo..." 
             value={searchTerm}
@@ -120,44 +129,50 @@ const Historico: React.FC = () => {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {atendimentos.map((at) => (
-                <div 
-                  key={at.id}
-                  onClick={() => history.push(`/atendimentos/${at.id}`)}
-                  style={styles.card}
-                >
-                  <div style={styles.cardTop}>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      <div style={styles.checkIcon}>
-                        <IonIcon icon={checkmarkCircle} color="success" />
+              {atendimentosFiltrados.length > 0 ? (
+                atendimentosFiltrados.map((at) => (
+                  <div 
+                    key={at.id}
+                    onClick={() => history.push(`/atendimentos/${at.id}`)}
+                    style={styles.card}
+                  >
+                    <div style={styles.cardTop}>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <div style={styles.checkIcon}>
+                          <IonIcon icon={checkmarkCircle} color="success" />
+                        </div>
+                        <div>
+                          <h3 style={styles.placa}>{at.veiculo.placa}</h3>
+                          <p style={styles.modelo}>{at.veiculo.modelo}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 style={styles.placa}>{at.veiculo.placa}</h3>
-                        <p style={styles.modelo}>{at.veiculo.modelo}</p>
+                      <IonIcon icon={chevronForwardOutline} style={{ color: '#333' }} />
+                    </div>
+
+                    <div style={styles.divider} />
+
+                    <div style={styles.metaRow}>
+                      <div style={styles.metaInfo}>
+                        <IonIcon icon={calendarOutline} size="small" />
+                        {new Date(at.horario_finalizacao).toLocaleDateString()}
+                      </div>
+                      <div style={styles.metaInfo}>
+                        <IonIcon icon={timeOutline} size="small" />
+                        {new Date(at.horario_finalizacao).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                    <IonIcon icon={chevronForwardOutline} style={{ color: '#333' }} />
-                  </div>
 
-                  <div style={styles.divider} />
-
-                  <div style={styles.metaRow}>
-                    <div style={styles.metaInfo}>
-                      <IonIcon icon={calendarOutline} size="small" />
-                      {new Date(at.horario_finalizacao).toLocaleDateString()}
-                    </div>
-                    <div style={styles.metaInfo}>
-                      <IonIcon icon={timeOutline} size="small" />
-                      {new Date(at.horario_finalizacao).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div style={styles.footerRow}>
+                      <span style={styles.servicoNome}>{at.servico.nome}</span>
+                      <span style={styles.duracao}>{at.servico.duracao_estimada_min || '--'} min</span>
                     </div>
                   </div>
-
-                  <div style={styles.footerRow}>
-                    <span style={styles.servicoNome}>{at.servico.nome}</span>
-                    <span style={styles.duracao}>{at.servico.duracao_estimada_min || '--'} min</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p style={{ color: '#444', textAlign: 'center', marginTop: '20px', fontWeight: 700 }}>
+                  Nenhum atendimento encontrado.
+                </p>
+              )}
             </div>
           )}
         </div>

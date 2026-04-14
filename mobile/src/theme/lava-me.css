@@ -1,26 +1,26 @@
 /* Cores e estilos globais do tema Lava-Me - Industrial Dark Mode */
 
 :root {
-  /* Tokens Principais de Cores - Ajustados para Azul Elétrico Premium */
-  --lm-bg:          #000000; /* Fundo principal preto absoluto */
-  --lm-card:        #0a0a0a; /* Cinza quase preto para maior contraste */
-  --lm-card-hover:  #141414;
-  --lm-border:      #1a1a1a; /* Bordas mais escuras e sutis */
+  /* Tokens Principais - Calibrados para Cinza Azulado (Referência Premium) */
+  --lm-bg:          #0b0e11; 
+  --lm-card:        #161b22; 
+  --lm-card-hover:  #1f242c;
+  --lm-border:      #21262d; 
   
-  /* Azul Vibrante da Captura 093703 */
+  /* Azul Elétrico Industrial */
   --lm-primary:     #0066ff; 
   --lm-primary-dark: #0052cc;
   --lm-primary-glow: rgba(0, 102, 255, 0.4);
   
-  --lm-text:        #ffffff;
-  --lm-text-muted:  #666666;
+  /* Texto */
+  --lm-text:        #f0f6fc;
+  --lm-text-muted:  #8b949e;
   
-  /* Cores de Status e Ação */
-  --lm-amber:       #ff9500; /* Laranja iOS para Alertas/Pausado */
+  /* Status */
+  --lm-amber:       #ff9500; 
   --lm-blue:        #0066ff; 
-  --lm-green:       #00ff88; /* Verde Neon para Sucesso */
-  --lm-red:         #ff3b30; /* Vermelho vibrante */
-  --lm-purple:      #af52de;
+  --lm-green:       #00ff88; 
+  --lm-red:         #ff3b30; 
 }
 
 /* Estrutura de Página */
@@ -29,20 +29,42 @@
   background-color: var(--lm-bg);
 }
 
-/* Componentes de Texto e Seção */
-.lm-section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--lm-text);
-  font-weight: 800;
-  font-size: 16px;
-  margin-bottom: 16px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+/* --- AJUSTE DOS ÍCONES DE DETALHES (RESOLUÇÃO DO ACHATAMENTO) --- */
+
+/* Força o ícone a ter o tamanho grande da primeira imagem */
+.icon-etapa {
+  font-size: 32px !important; /* Tamanho expandido conforme a primeira foto */
+  margin-right: 18px !important;
+  color: var(--lm-primary);
+  filter: drop-shadow(0 0 5px var(--lm-primary-glow));
 }
 
-/* Cards e Inputs Industriais */
+/* Garante que o rótulo da etapa acompanhe o peso visual do ícone */
+.label-etapa {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.5px;
+  color: #ffffff !important;
+}
+
+/* Estilização da Esteira / Acordeão para manter o relevo arredondado */
+.item-esteira {
+    background: var(--lm-card) !important;
+    margin-bottom: 16px !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--lm-border) !important;
+    overflow: hidden;
+}
+
+.header-esteira {
+    --background: transparent !important;
+    --color: #ffffff !important;
+    --padding-start: 20px;
+    min-height: 90px !important; /* Altura maior para o cabeçalho respirar */
+}
+
+/* --- RESTANTE DOS COMPONENTES --- */
+
 .lm-card {
   background: var(--lm-card);
   border: 1px solid var(--lm-border);
@@ -52,82 +74,37 @@
 }
 
 .lm-input {
-  --background: #0a0a0a;
+  --background: var(--lm-card) !important;
   --color: var(--lm-text);
   --placeholder-color: var(--lm-text-muted);
   --border-radius: 16px;
   border: 1px solid var(--lm-border);
   border-radius: 16px;
   margin-bottom: 16px;
-  transition: border-color 0.2s ease;
 }
 
-.lm-input:focus-within {
-  border-color: var(--lm-primary);
-}
-
-/* Botões Customizados (Visual de Alta Performance) */
 .lm-btn-primary {
   --background: var(--lm-primary);
-  --background-activated: var(--lm-primary-dark);
   --color: #ffffff;
   --border-radius: 20px;
   font-weight: 800;
-  font-size: 16px;
   height: 64px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
   box-shadow: 0 8px 25px var(--lm-primary-glow);
 }
 
-.lm-btn-secondary {
-  --background: #1a1a1a;
-  --background-activated: #252525;
-  --color: var(--lm-text);
-  --border-radius: 20px;
-  font-weight: 700;
-  font-size: 16px;
-  height: 60px;
-  border: 1px solid var(--lm-border);
-}
-
-/* Badges de Status (Efeito Glassmorphism sutil) */
 .lm-badge {
   padding: 6px 14px;
   border-radius: 10px;
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .lm-badge-agendado   { background: rgba(255, 149, 0, 0.1); color: var(--lm-amber); }
 .lm-badge-andamento  { background: rgba(0, 102, 255, 0.1); color: var(--lm-blue); }
 .lm-badge-finalizado { background: rgba(0, 255, 136, 0.1); color: var(--lm-green); }
-.lm-badge-cancelado  { background: rgba(255, 59, 48, 0.1);  color: var(--lm-red); }
 
-/* Estilização da Esteira (Accordion) */
-.item-esteira {
-    background: var(--lm-card) !important;
-    margin-bottom: 18px !important;
-    border-radius: 24px !important;
-    border: 1px solid var(--lm-border) !important;
-    overflow: hidden;
-}
-
-.header-esteira {
-    --background: transparent !important;
-    --color: #ffffff !important;
-    min-height: 95px !important;
-}
-
-.label-esteira {
-    font-size: 20px !important;
-    font-weight: 900 !important;
-    letter-spacing: -0.5px;
-}
-
-/* Animação de Brilho nos Botões Ativos */
 @keyframes pulse-glow {
   0% { box-shadow: 0 0 10px rgba(0, 102, 255, 0.3); }
   50% { box-shadow: 0 0 25px rgba(0, 102, 255, 0.6); }

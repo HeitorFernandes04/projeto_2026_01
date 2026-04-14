@@ -35,39 +35,42 @@ const NovoAtendimento: React.FC = () => {
       .catch(() => setToastMsg("Erro ao carregar serviços"));
   }, []);
 
-  const handleConfirmar = async () => {
-    if (!form.placa || !form.modelo || !form.servico_id) {
-      setToastMsg("Preencha os campos obrigatórios (*)");
-      setShowToast(true);
-      return;
+  // Trecho atualizado da função handleConfirmar no NovoAtendimento.tsx
+
+const handleConfirmar = async () => {
+  if (!form.placa || !form.modelo || !form.servico_id) {
+    setToastMsg("Preencha os campos obrigatórios (*)");
+    setShowToast(true);
+    return;
+  }
+
+  setLoading(true);
+  try {
+    // CAPTURA DO TEMPO REAL: Registra o momento exato do início [cite: 4]
+    const agora = new Date();
+    
+    const response = await criarAtendimento({
+      ...form,
+      iniciar_agora: true, 
+      data_hora: agora.toISOString(), // Horário de início real para o cronômetro
+      origem: 'AVULSO', // Definido conforme diretriz do novo modelo 
+      observacoes: ''
+    });
+
+    if (response && response.id) {
+      // Navega para a esteira onde o cronômetro já iniciará baseado no data_hora acima
+      history.push(`/atendimentos/${response.id}/esteira`);
+    } else {
+      history.push('/atendimentos/hoje');
     }
-
-    setLoading(true);
-    try {
-      // Diferencial desta tela: inicia imediatamente com iniciar_agora: true
-      const response = await criarAtendimento({
-        ...form,
-        iniciar_agora: true, 
-        data_hora: new Date().toISOString(),
-        observacoes: ''
-      });
-
-      // REDIRECIONAMENTO CORRIGIDO: 
-      // Agora usa o ID retornado pela API para ir direto para a esteira de produção
-      if (response && response.id) {
-        history.push(`/atendimentos/${response.id}/esteira`);
-      } else {
-        history.push('/atendimentos/hoje');
-      }
-
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Erro ao iniciar atendimento";
-      setToastMsg(msg);
-      setShowToast(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Erro ao iniciar atendimento";
+    setToastMsg(msg);
+    setShowToast(true);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <IonPage style={{ background: 'var(--lm-bg)' }}>

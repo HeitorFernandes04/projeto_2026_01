@@ -16,15 +16,21 @@ interface DadosIncidente {
 }
 
 // Interface atualizada conforme nova estrutura de Ordem de Serviço
+// Localize esta interface no seu api.ts e substitua:
 interface DadosNovaOS {
-  veiculo_id: number; // Agora usa FK para Veiculo
+  veiculo_id?: number; // Marcado como opcional com '?'
+  placa: string;
+  modelo: string;
+  marca: string;
+  cor: string;
+  nome_dono: string;
+  celular_dono: string;
   servico_id: number;
   data_hora: string;
+  origem: 'AGENDADO' | 'AVULSO'; // Conforme diretriz 
   observacoes: string;
-  origem: 'AGENDADO' | 'AVULSO'; // Novo campo conforme diretriz 
   iniciar_agora?: boolean;
 }
-
 // --- FUNÇÃO BASE DE REQUISIÇÃO ---
 
 async function request(endpoint: string, options: RequestInit = {}) {
