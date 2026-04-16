@@ -1,7 +1,7 @@
 import factory
 from django.utils import timezone
 from accounts.models import User
-from atendimentos.models import Atendimento, IncidenteOS, MidiaAtendimento, Servico, TagPeca, Veiculo
+from atendimentos.models import OrdemServico, IncidenteOS, MidiaOrdemServico, Servico, TagPeca, Veiculo
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -25,32 +25,32 @@ class VeiculoFactory(factory.django.DjangoModelFactory):
     marca = 'VW'
     nome_dono = 'Cliente Teste'
 
-class AtendimentoFactory(factory.django.DjangoModelFactory):
+class OrdemServicoFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Atendimento
+        model = OrdemServico
     veiculo = factory.SubFactory(VeiculoFactory)
     servico = factory.SubFactory(ServicoFactory)
     funcionario = factory.SubFactory(UserFactory)
     data_hora = factory.LazyFunction(timezone.now)
-    status = 'agendado'
+    status = 'PATIO'
 
-class MidiaAtendimentoFactory(factory.django.DjangoModelFactory):
+class MidiaOrdemServicoFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = MidiaAtendimento
-    atendimento = factory.SubFactory(AtendimentoFactory)
+        model = MidiaOrdemServico
+    ordem_servico = factory.SubFactory(OrdemServicoFactory)
     arquivo = factory.django.ImageField(color='blue')
-    momento = 'VISTORIA_GERAL' # Categorias atualizadas
+    momento = 'VISTORIA_GERAL'
 
 class TagPecaFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TagPeca
     nome = factory.Sequence(lambda n: f'Peça_{n}')
-    categoria = 'CARROCERIA'
+    categoria = 'frente'
 
 class IncidenteOSFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = IncidenteOS
-    atendimento = factory.SubFactory(AtendimentoFactory)
+    ordem_servico = factory.SubFactory(OrdemServicoFactory)
     tag_peca = factory.SubFactory(TagPecaFactory)
     descricao = 'Risco no para-choque detectado'
     foto_url = factory.django.ImageField(color='red')

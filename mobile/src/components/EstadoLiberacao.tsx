@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Check, MapPin, Camera, Key, AlertCircle } from 'lucide-react';
 import { IonSpinner } from '@ionic/react';
-import { finalizarAtendimentoEtapa4, getAtendimento } from '../services/api';
+import { finalizarOrdemServico, getOrdemServico } from '../services/api';
 import { useHistory } from 'react-router-dom';
 import GaleriaFotos from './GaleriaFotos';
 import './EstadoLiberacao.css';
 
-const EstadoLiberacao: React.FC<{ atendimentoId: number; onComplete: () => void; }> = ({ atendimentoId, onComplete }) => {
+const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void; }> = ({ ordemServicoId, onComplete }) => {
   const history = useHistory();
-  const [atendimento, setAtendimento] = useState<{midias?: Array<{arquivo: string; momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO'}>} | null>(null);
+  const [ordemServico, setOrdemServico] = useState<{midias?: Array<{arquivo: string; momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO'}>} | null>(null);
   const [vaga, setVaga] = useState('');
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -16,18 +16,18 @@ const EstadoLiberacao: React.FC<{ atendimentoId: number; onComplete: () => void;
 
   const fetchDados = useCallback(async () => {
     try {
-      const data = await getAtendimento(atendimentoId);
-      setAtendimento(data);
+      const data = await getOrdemServico(ordemServicoId);
+      setOrdemServico(data);
     } catch (err) {
       console.error('Erro ao carregar dados de entrega:', err);
     } finally {
       setLoading(false);
     }
-  }, [atendimentoId]);
+  }, [ordemServicoId]);
 
   useEffect(() => { fetchDados(); }, [fetchDados]);
 
-  const fotosDepois = atendimento?.midias?.filter((m) => m.momento === 'FINALIZADO') || [];
+  const fotosDepois = ordemServico?.midias?.filter((m) => m.momento === 'FINALIZADO') || [];
   const podeLiberar = fotosDepois.length >= 5 && vaga.trim().length > 0;
 
   const handleFinalizarGeral = async (e?: React.MouseEvent) => {
@@ -36,10 +36,10 @@ const EstadoLiberacao: React.FC<{ atendimentoId: number; onComplete: () => void;
 
     setEnviando(true);
     try {
-      await finalizarAtendimentoEtapa4(atendimentoId, { vaga_patio: vaga });
-      setAtendimento(null); // Limpa estado local
+      await finalizarOrdemServico(ordemServicoId, { vaga_patio: vaga });
+      setOrdemServico(null); // Limpa estado local
       onComplete();
-      history.push('/atendimentos/hoje');
+      history.push('/ordens-servico/hoje');
     } catch (err: any) {
       console.error('Erro ao liberar veículo:', err);
       alert('Bloqueio na Liberação: ' + (err.message || 'Verifique se as 5 fotos foram processadas.'));
@@ -62,9 +62,9 @@ const EstadoLiberacao: React.FC<{ atendimentoId: number; onComplete: () => void;
       </p>
 
       <GaleriaFotos
-        atendimentoId={atendimentoId}
+        ordemServicoId={ordemServicoId}
         momento="FINALIZADO"
-        fotosIniciais={atendimento?.midias || []}
+        fotosIniciais={ordemServico?.midias || []}
         onUploadSuccess={fetchDados}
       />
 

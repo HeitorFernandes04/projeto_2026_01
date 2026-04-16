@@ -31,35 +31,36 @@ class Veiculo(models.Model):
         verbose_name_plural = 'Veículos'
 
 
-class Atendimento(models.Model):
-    # Expansão dos estados conforme Documentação Técnica [cite: 50]
+class OrdemServico(models.Model):
     STATUS_CHOICES = [
-        ('agendado', 'Agendado'),
-        ('em_andamento', 'Em Andamento'),
-        ('finalizado', 'Finalizado'),
-        ('cancelado', 'Cancelado'),
-        ('incidente', 'Incidente/Bloqueado'), # Novo estado para travar a esteira [cite: 50, 63]
+        ('PATIO', 'Pátio (Aguardando)'),
+        ('VISTORIA_INICIAL', 'Vistoria Inicial'),
+        ('EM_EXECUCAO', 'Em Execução'),
+        ('LIBERACAO', 'Liberação'),
+        ('FINALIZADO', 'Finalizado'),
+        ('BLOQUEADO_INCIDENTE', 'Bloqueado por Incidente'),
+        ('CANCELADO', 'Cancelado'),
     ]
 
-    veiculo = models.ForeignKey(Veiculo, on_delete=models.PROTECT, related_name='atendimentos')
-    servico = models.ForeignKey(Servico, on_delete=models.PROTECT, related_name='atendimentos')
+    veiculo = models.ForeignKey(Veiculo, on_delete=models.PROTECT, related_name='ordens_servico')
+    servico = models.ForeignKey(Servico, on_delete=models.PROTECT, related_name='ordens_servico')
     funcionario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='atendimentos',
+        related_name='ordens_servico',
     )
-    
-    data_hora = models.DateTimeField() 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='agendado')
+
+    data_hora = models.DateTimeField()
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='PATIO')
     observacoes = models.TextField(blank=True, default='')
-    
+
     laudo_vistoria = models.TextField(blank=True, null=True)
     comentario_lavagem = models.TextField(blank=True, null=True)
     comentario_acabamento = models.TextField(blank=True, null=True)
     vaga_patio = models.CharField(max_length=50, blank=True, null=True)
-    
+
     horario_inicio = models.DateTimeField(null=True, blank=True)
     horario_lavagem = models.DateTimeField(null=True, blank=True)
     horario_acabamento = models.DateTimeField(null=True, blank=True)
@@ -67,13 +68,15 @@ class Atendimento(models.Model):
 
     class Meta:
         ordering = ['-data_hora']
+        verbose_name = 'Ordem de Serviço'
+        verbose_name_plural = 'Ordens de Serviço'
 
     def __str__(self):
         return f"{self.veiculo.placa if self.veiculo else 'S/P'} - {self.status}"
 
 
 class TagPeca(models.Model):
-    """Entidade para popular o grid de seleção rápida no front-end[cite: 60]."""
+    """Entidade para popular o grid de seleção rápida no front-end."""
     CATEGORIA_CHOICES = [
         ('frente', 'Frente'),
         ('lateral_esq', 'Lateral Esquerda'),
@@ -81,7 +84,7 @@ class TagPeca(models.Model):
         ('traseira', 'Traseira'),
         ('interior', 'Interior'),
     ]
-    nome = models.CharField(max_length=100, help_text="Ex: Capô, Porta Dianteira Esq [cite: 60]")
+    nome = models.CharField(max_length=100, help_text="Ex: Capô, Porta Dianteira Esq")
     categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
 
     def __str__(self):
@@ -89,30 +92,29 @@ class TagPeca(models.Model):
 
 
 class IncidenteOS(models.Model):
-    """Isola o fluxo de erros e danos causados pela equipa[cite: 63]."""
-    atendimento = models.ForeignKey(
-        Atendimento, 
-        on_delete=models.CASCADE, 
+    """Isola o fluxo de erros e danos causados pela equipe."""
+    ordem_servico = models.ForeignKey(
+        OrdemServico,
+        on_delete=models.CASCADE,
         related_name='incidentes'
     )
     tag_peca = models.ForeignKey(
-        TagPeca, 
-        on_delete=models.PROTECT, 
+        TagPeca,
+        on_delete=models.PROTECT,
         related_name='incidentes',
-        null=True, 
+        null=True,
         blank=True
     )
-    descricao = models.TextField(help_text="Relato detalhado do operador [cite: 63]")
-    foto_url = models.ImageField(upload_to='incidentes/%Y/%m/%d/', help_text="Evidência do dano causado [cite: 63]")
-    resolvido = models.BooleanField(default=False, help_text="Controle para liberação pelo Gestor [cite: 63]")
+    descricao = models.TextField(help_text="Relato detalhado do operador")
+    foto_url = models.ImageField(upload_to='incidentes/%Y/%m/%d/', help_text="Evidência do dano")
+    resolvido = models.BooleanField(default=False, help_text="Controle para liberação pelo Gestor")
     data_registro = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Incidente OS #{self.atendimento_id} - {self.tag_peca}"
+        return f"Incidente OS #{self.ordem_servico_id} - {self.tag_peca}"
 
 
-class MidiaAtendimento(models.Model):
-    # Categorização expandida conforme Documentação Técnica [cite: 57, 58]
+class MidiaOrdemServico(models.Model):
     MOMENTO_CHOICES = [
         ('VISTORIA_GERAL', 'Vistoria Geral'),
         ('AVARIA_PREVIA', 'Avaria Prévia'),
@@ -120,19 +122,19 @@ class MidiaAtendimento(models.Model):
         ('FINALIZADO', 'Finalizado'),
     ]
 
-    atendimento = models.ForeignKey(
-        Atendimento,
+    ordem_servico = models.ForeignKey(
+        OrdemServico,
         on_delete=models.CASCADE,
         related_name='midias',
     )
-    arquivo = models.ImageField(upload_to='atendimentos/%Y/%m/%d/')
+    arquivo = models.ImageField(upload_to='ordens_servico/%Y/%m/%d/')
     momento = models.CharField(max_length=20, choices=MOMENTO_CHOICES)
     enviado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'Mídia {self.momento} - Atendimento #{self.atendimento_id}'
+        return f'Mídia {self.momento} - OS #{self.ordem_servico_id}'
 
     class Meta:
-        verbose_name = 'Mídia de Atendimento'
-        verbose_name_plural = 'Mídias de Atendimento'
+        verbose_name = 'Mídia de OS'
+        verbose_name_plural = 'Mídias de OS'
         ordering = ['-enviado_em']

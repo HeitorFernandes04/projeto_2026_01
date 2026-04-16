@@ -21,7 +21,7 @@ interface FotoSalva {
 }
 
 interface GaleriaFotosProps {
-  atendimentoId: number;
+  ordemServicoId: number;
   momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
   fotosIniciais: FotoSalva[];
   onUploadSuccess?: () => void;
@@ -30,9 +30,9 @@ interface GaleriaFotosProps {
   onFotosStaged?: (blobs: Blob[], momento: string) => void;
 }
 
-const GaleriaFotos: React.FC<GaleriaFotosProps> = ({ 
-  atendimentoId, momento, fotosIniciais, onUploadSuccess, somenteLeitura, onFotosStaged
-}) => {
+const GaleriaFotos = React.forwardRef<any, GaleriaFotosProps>(({ 
+  ordemServicoId, momento, fotosIniciais, onUploadSuccess, somenteLeitura, onFotosStaged
+}, ref) => {
   // Fotos já confirmadas no servidor (vindas da API)
   const [fotosSalvas, setFotosSalvas] = useState<FotoSalva[]>(
     fotosIniciais.filter((f) => f.momento === momento)
@@ -96,7 +96,7 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({
     if (fotosStaged.length === 0 || enviando) return;
     setEnviando(true);
     try {
-      await uploadFotos(atendimentoId, momento, fotosStaged.map((f) => f.blob));
+      await uploadFotos(ordemServicoId, momento, fotosStaged.map((f) => f.blob));
       // Limpa o staging após sucesso (sem revokeObjectURL porque usamos DataUrl)
       setFotosStaged([]);
       if (onUploadSuccess) onUploadSuccess();
@@ -110,7 +110,7 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({
 
   // Expõe o método de envio ao componente pai via ref imperativo, se necessário
   // (Componentes pais com lógica de confirmar etapa devem chamar enviarFotosStaged)
-  React.useImperativeHandle(null, () => ({ enviarFotosStaged }));
+  React.useImperativeHandle(ref, () => ({ enviarFotosStaged }));
 
   return (
     <div style={styles.container}>
@@ -198,7 +198,7 @@ const GaleriaFotos: React.FC<GaleriaFotosProps> = ({
       </IonModal>
     </div>
   );
-};
+});
 
 const styles: Record<string, React.CSSProperties> = {
   container: {

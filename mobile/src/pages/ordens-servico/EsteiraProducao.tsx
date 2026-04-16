@@ -11,14 +11,14 @@ import {
   warningOutline,
   homeOutline
 } from 'ionicons/icons';
-import { getAtendimento } from '../../services/api';
+import { getOrdemServico } from '../../services/api';
 import EstadoVistoria from '../../components/EstadoVistoria';
 import EstadoLavagem from '../../components/EstadoLavagem';
 import EstadoAcabamento from '../../components/EstadoAcabamento';
 import EstadoLiberacao from '../../components/EstadoLiberacao';
 import TabBar from '../../components/TabBar';
 
-interface AtendimentoData {
+interface OrdemServicoData {
   id: number;
   etapa_atual: number;
   status: string;
@@ -28,14 +28,14 @@ interface AtendimentoData {
 const EsteiraProducao: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
-  const [atendimento, setAtendimento] = useState<AtendimentoData | null>(null);
+  const [ordemServico, setOrdemServico] = useState<OrdemServicoData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const carregarAtendimento = useCallback(async () => {
+  const carregarOrdemServico = useCallback(async () => {
     try {
       setLoading(true);
-      const dados = await getAtendimento(Number(id));
-      if (dados) setAtendimento(dados as unknown as AtendimentoData);
+      const dados = await getOrdemServico(Number(id));
+      if (dados) setOrdemServico(dados as unknown as OrdemServicoData);
     } catch (err) {
       console.error("Erro ao sincronizar:", err);
     } finally {
@@ -57,28 +57,28 @@ const EsteiraProducao: React.FC = () => {
 
   useIonViewWillEnter(() => {
     isAtivoRef.current = true;
-    
+
     // Carregamento inicial silencioso se já houver dados
-    if (!atendimento) {
-      carregarAtendimento();
+    if (!ordemServico) {
+      carregarOrdemServico();
     }
-    
+
     // Inicia Polling apenas se a página estiver ativa
     if (!pollingRef.current) {
       pollingRef.current = setInterval(() => {
         if (!isAtivoRef.current) return;
-        
-        getAtendimento(Number(id)).then(dados => {
-          if (dados && isAtivoRef.current) setAtendimento(dados as unknown as AtendimentoData);
+
+        getOrdemServico(Number(id)).then(dados => {
+          if (dados && isAtivoRef.current) setOrdemServico(dados as unknown as OrdemServicoData);
         }).catch(err => console.debug("Silent sync failed:", err));
-      }, 15000); 
+      }, 15000);
     }
   });
 
   // Mantemos o useEffect apenas para o reset inicial do ID
   useEffect(() => {
     return () => {
-      setAtendimento(null);
+      setOrdemServico(null);
     };
   }, [id]);
 
@@ -90,11 +90,10 @@ const EsteiraProducao: React.FC = () => {
     </IonPage>
   );
 
-  if (!atendimento) return null;
+  if (!ordemServico) return null;
 
-  // BLOQUEIO DE SEGURANÇA (Gatilho Mestre): intercepta antes de renderizar as etapas
-  // Verifica o status de forma insensível a maiúsculas/minúsculas
-  if (atendimento.status?.toUpperCase() === 'INCIDENTE') {
+  // BLOQUEIO DE SEGURANÇA: intercepta OS com incidente antes de renderizar as etapas
+  if (ordemServico.status === 'BLOQUEADO_INCIDENTE') {
     return (
       <IonPage>
         <IonContent style={{ '--background': 'var(--lm-bg)' }}>
@@ -105,11 +104,11 @@ const EsteiraProducao: React.FC = () => {
               </div>
               <h2 style={styles.blockTitle}>ESTEIRA SUSPENSA</h2>
               <p style={styles.blockText}>
-                Esta Ordem de Serviço (<strong>#{atendimento.id}</strong>) possui um incidente registrado e está bloqueada para auditoria do gestor.
+                Esta Ordem de Serviço (<strong>#{ordemServico.id}</strong>) possui um incidente registrado e está bloqueada para auditoria do gestor.
               </p>
               <p style={styles.blockSubText}>O cronômetro de produtividade foi interrompido.</p>
               
-              <button onClick={() => history.push('/atendimentos/hoje')} style={styles.btnBack}>
+              <button onClick={() => history.push('/ordens-servico/hoje')} style={styles.btnBack}>
                 <IonIcon icon={homeOutline} style={{ marginRight: '10px' }} /> RETORNAR AO PÁTIO
               </button>
             </div>
@@ -119,19 +118,19 @@ const EsteiraProducao: React.FC = () => {
     );
   }
 
-  const etapaAtiva = atendimento.etapa_atual || 1;
+  const etapaAtiva = ordemServico.etapa_atual || 1;
 
   return (
     <IonPage className="lm-page-dark">
       <IonContent style={{ '--background': 'var(--lm-bg)' }}>
         <div style={styles.headerNav}>
-          <button onClick={() => history.push('/atendimentos/hoje')} style={styles.btnCircle}>
+          <button onClick={() => history.push('/ordens-servico/hoje')} style={styles.btnCircle}>
             <IonIcon icon={chevronBackOutline} />
           </button>
           <div style={styles.titleGroup}>
-            <h1 style={styles.osTitle}>OS #{String(atendimento.id).padStart(4, '0')}</h1>
+            <h1 style={styles.osTitle}>OS #{String(ordemServico.id).padStart(4, '0')}</h1>
             <p style={styles.carSubtitle}>
-              {atendimento.veiculo.marca} • <span style={{color: 'var(--lm-primary)'}}>{atendimento.veiculo.placa}</span>
+              {ordemServico.veiculo.marca} • <span style={{color: 'var(--lm-primary)'}}>{ordemServico.veiculo.placa}</span>
             </p>
           </div>
           <button onClick={() => history.replace('/login')} style={styles.btnExit}>
@@ -143,7 +142,7 @@ const EsteiraProducao: React.FC = () => {
         <div style={styles.stepperContainer}>
           <div style={styles.stepLine} />
           {[
-            { step: 1, icon: clipboardOutline, label: 'VISTORIA' },
+            { step: 1, icon: clipboardOutline, label: 'VISTORIA INICIAL' },
             { step: 2, icon: waterOutline, label: 'LAVAGEM' },
             { step: 3, icon: sparklesOutline, label: 'ACABAMENTO' },
             { step: 4, icon: keyOutline, label: 'LIBERAÇÃO' }
@@ -165,10 +164,10 @@ const EsteiraProducao: React.FC = () => {
         </div>
 
         <div style={{ padding: '0 20px 120px' }}>
-          {etapaAtiva === 1 && <EstadoVistoria atendimentoId={atendimento.id} onComplete={carregarAtendimento} />}
-          {etapaAtiva === 2 && <EstadoLavagem atendimentoId={atendimento.id} onComplete={carregarAtendimento} />}
-          {etapaAtiva === 3 && <EstadoAcabamento atendimentoId={atendimento.id} onComplete={carregarAtendimento} />}
-          {etapaAtiva >= 4 && <EstadoLiberacao atendimentoId={atendimento.id} onComplete={carregarAtendimento} />}
+          {etapaAtiva === 1 && <EstadoVistoria ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
+          {etapaAtiva === 2 && <EstadoLavagem ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
+          {etapaAtiva === 3 && <EstadoAcabamento ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
+          {etapaAtiva >= 4 && <EstadoLiberacao ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
         </div>
         <TabBar activeTab="pátio" />
       </IonContent>

@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django import forms
-from .models import IncidenteOS, Servico, Veiculo, Atendimento, MidiaAtendimento, TagPeca
+from .models import IncidenteOS, Servico, Veiculo, OrdemServico, MidiaOrdemServico, TagPeca
 
 
-class AtendimentoAdminForm(forms.ModelForm):
+class OrdemServicoAdminForm(forms.ModelForm):
     data_hora = forms.DateTimeField(
         widget=forms.TextInput(attrs={'placeholder': 'DD/MM/AAAA HH:MM'}),
         input_formats=['%d/%m/%Y %H:%M', '%Y-%m-%d %H:%M'],
@@ -11,27 +11,31 @@ class AtendimentoAdminForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Atendimento
+        model = OrdemServico
         fields = '__all__'
 
 
-class MidiaAtendimentoInline(admin.TabularInline):
-    model = MidiaAtendimento
+class MidiaOrdemServicoInline(admin.TabularInline):
+    model = MidiaOrdemServico
     extra = 0
     readonly_fields = ('enviado_em',)
 
 
-@admin.register(Atendimento)
-class AtendimentoAdmin(admin.ModelAdmin):
-    form = AtendimentoAdminForm
-    inlines = [MidiaAtendimentoInline]
+@admin.register(OrdemServico)
+class OrdemServicoAdmin(admin.ModelAdmin):
+    form = OrdemServicoAdminForm
+    inlines = [MidiaOrdemServicoInline]
+    list_display = ('id', 'veiculo', 'servico', 'status', 'data_hora', 'funcionario')
+    list_filter = ('status', 'data_hora')
+    search_fields = ('veiculo__placa',)
 
 
-@admin.register(MidiaAtendimento)
-class MidiaAtendimentoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'atendimento', 'momento', 'enviado_em')
+@admin.register(MidiaOrdemServico)
+class MidiaOrdemServicoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'ordem_servico', 'momento', 'enviado_em')
     list_filter = ('momento',)
     readonly_fields = ('enviado_em',)
+
 
 @admin.register(TagPeca)
 class TagPecaAdmin(admin.ModelAdmin):
@@ -39,9 +43,10 @@ class TagPecaAdmin(admin.ModelAdmin):
     list_filter = ('categoria',)
     search_fields = ('nome',)
 
+
 @admin.register(IncidenteOS)
 class IncidenteOSAdmin(admin.ModelAdmin):
-    list_display = ('atendimento', 'tag_peca', 'resolvido', 'data_registro')
+    list_display = ('ordem_servico', 'tag_peca', 'resolvido', 'data_registro')
     list_filter = ('resolvido', 'data_registro')
 
 

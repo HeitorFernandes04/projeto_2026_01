@@ -5,7 +5,7 @@ import React from 'react';
 
 // Mock da API
 vi.mock('../services/api', () => ({
-  getAtendimento: vi.fn(),
+  getOrdemServico: vi.fn(),
   avancarEtapa: vi.fn(),
   registrarIncidente: vi.fn(),
 }));
@@ -17,7 +17,7 @@ vi.mock('react-router-dom', () => ({
 
 describe('EstadoLavagem', () => {
   const defaultProps = {
-    atendimentoId: 1,
+    ordemServicoId: 1,
     onComplete: vi.fn(),
   };
 
@@ -26,9 +26,9 @@ describe('EstadoLavagem', () => {
   });
 
   it('deve iniciar o cronômetro e incrementar o tempo', async () => {
-    const { getAtendimento } = await import('../services/api');
+    const { getOrdemServico } = await import('../services/api');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(getAtendimento).mockResolvedValue({ status: 'em_andamento' } as any);
+    vi.mocked(getOrdemServico).mockResolvedValue({ status: 'EM_EXECUCAO' } as any);
 
     render(<EstadoLavagem {...defaultProps} />);
 
@@ -41,10 +41,10 @@ describe('EstadoLavagem', () => {
   });
 
   it('deve parar o cronômetro quando houver um incidente (OS BLOQUEADA)', async () => {
-    const { getAtendimento } = await import('../services/api');
+    const { getOrdemServico } = await import('../services/api');
     // Simula status de incidente vindo do banco
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(getAtendimento).mockResolvedValue({ status: 'INCIDENTE' } as any);
+    vi.mocked(getOrdemServico).mockResolvedValue({ status: 'BLOQUEADO_INCIDENTE' } as any);
 
     render(<EstadoLavagem {...defaultProps} />);
 

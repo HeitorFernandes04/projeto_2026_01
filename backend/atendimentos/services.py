@@ -7,9 +7,9 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 
-from atendimentos.models import Atendimento, MidiaAtendimento, Servico, Veiculo, TagPeca, IncidenteOS
+from atendimentos.models import OrdemServico, MidiaOrdemServico, Servico, Veiculo, TagPeca, IncidenteOS
 
-# Constantes de negócio (Axioma 4)
+# Constantes de negócio
 MAX_FOTOS_POR_MOMENTO = 5
 MAX_DIMENSAO_PX = 1920
 QUALIDADE_JPEG = 85
@@ -19,22 +19,30 @@ HORARIO_FECHAMENTO = datetime.time(18, 0)
 SLOT_MINUTOS = 30
 
 
-class MidiaAtendimentoService:
+class MidiaOrdemServicoService:
     """Serviço responsável pelo processamento de upload de mídias."""
 
-    # Status permitidos expandidos para suportar incidentes
-    STATUS_PERMITIDOS = {'agendado', 'em_andamento', 'incidente'}
+    MAPA_STATUS_MOMENTO_PERMITIDO = {
+        'PATIO': ['VISTORIA_GERAL', 'AVARIA_PREVIA'],
+        'VISTORIA_INICIAL': ['VISTORIA_GERAL', 'AVARIA_PREVIA'],
+        'EM_EXECUCAO': ['EXECUCAO'],
+        'LIBERACAO': ['FINALIZADO'],
+        'BLOQUEADO_INCIDENTE': ['EXECUCAO'],
+    }
 
     @staticmethod
-    def processar_upload_multiplo(atendimento, momento, arquivos):
-        """RF-05/RF-06: Processa upload validando limites e novas categorias de momento."""
-        if atendimento.status not in MidiaAtendimentoService.STATUS_PERMITIDOS:
+    def processar_upload_multiplo(ordem_servico, momento, arquivos):
+        """RF-05/RF-06: Processa upload validando limites e matriz de status vs momento."""
+        status_os = ordem_servico.status
+        momentos_permitidos = MidiaOrdemServicoService.MAPA_STATUS_MOMENTO_PERMITIDO.get(status_os, [])
+
+        if momento not in momentos_permitidos:
             raise ValidationError(
-                f'Não é possível enviar mídias para um atendimento com status "{atendimento.get_status_display()}".'
+                f'Momento "{momento}" não é permitido para uma OS com status "{ordem_servico.get_status_display()}".'
             )
 
-        fotos_existentes = MidiaAtendimento.objects.filter(
-            atendimento=atendimento,
+        fotos_existentes = MidiaOrdemServico.objects.filter(
+            ordem_servico=ordem_servico,
             momento=momento,
         ).count()
 
@@ -43,12 +51,12 @@ class MidiaAtendimentoService:
             raise ValidationError(f'Limite de {MAX_FOTOS_POR_MOMENTO} fotos atingido. Pode enviar mais {max(vagas, 0)}.')
 
         arquivos_processados = [
-            MidiaAtendimentoService._comprimir_imagem(arq)
+            MidiaOrdemServicoService._comprimir_imagem(arq)
             for arq in arquivos
         ]
 
         midias = [
-            MidiaAtendimento(atendimento=atendimento, arquivo=arq, momento=momento)
+            MidiaOrdemServico(ordem_servico=ordem_servico, arquivo=arq, momento=momento)
             for arq in arquivos_processados
         ]
 
@@ -59,7 +67,7 @@ class MidiaAtendimentoService:
 
     @staticmethod
     def _comprimir_imagem(arquivo):
-        """Redimensiona e otimiza imagens via Pillow (Axioma 4)."""
+        """Redimensiona e otimiza imagens via Pillow."""
         img = Image.open(arquivo)
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
@@ -80,15 +88,15 @@ class MidiaAtendimentoService:
         )
 
 
-class AtendimentoService:
-    """Serviço responsável pelas operações de criação e transição de atendimentos."""
+class OrdemServicoService:
+    """Serviço responsável pelas operações de criação e transição de Ordens de Serviço."""
 
     @staticmethod
     def listar_historico_por_periodo(funcionario, data_inicial, data_final, status='todos'):
         """RF-10: Lista histórico restrito ao funcionário com validação de datas."""
         if data_inicial > data_final:
             raise ValidationError("A data inicial não pode ser maior que a data final.")
-        
+
         filtros = {
             'funcionario': funcionario,
             'data_hora__date__gte': data_inicial,
@@ -97,28 +105,28 @@ class AtendimentoService:
         if status and status != 'todos':
             filtros['status'] = status
 
-        return Atendimento.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
+        return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
 
     @staticmethod
     def verificar_conflito(data_hora, duracao):
         """Verifica sobreposição de horários no pátio."""
         fim = data_hora + duracao
-        conflitos = Atendimento.objects.filter(
+        conflitos = OrdemServico.objects.filter(
             data_hora__date=data_hora.date(),
-            status__in=['agendado', 'em_andamento']
+            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO']
         ).select_related('servico')
 
-        for a in conflitos:
-            a_inicio = timezone.localtime(a.data_hora)
-            a_fim = a_inicio + datetime.timedelta(minutes=a.servico.duracao_estimada_min)
-            if data_hora < a_fim and a_inicio < fim:
-                raise ValidationError(f'Conflito com atendimento das {a_inicio.strftime("%H:%M")} às {a_fim.strftime("%H:%M")}.')
+        for os in conflitos:
+            os_inicio = timezone.localtime(os.data_hora)
+            os_fim = os_inicio + datetime.timedelta(minutes=os.servico.duracao_estimada_min)
+            if data_hora < os_fim and os_inicio < fim:
+                raise ValidationError(f'Conflito com OS das {os_inicio.strftime("%H:%M")} às {os_fim.strftime("%H:%M")}.')
 
     @staticmethod
     def criar_com_veiculo(dados, funcionario):
-        """Cria atendimento/OS garantindo apenas um ativo por vez."""
+        """Cria OS garantindo apenas uma ativa por vez."""
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
-        AtendimentoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_min))
+        OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_min))
 
         veiculo, _ = Veiculo.objects.update_or_create(
             placa=dados['placa'],
@@ -127,97 +135,93 @@ class AtendimentoService:
 
         iniciar_agora = dados.get('iniciar_agora', False)
         if iniciar_agora:
-            if Atendimento.objects.filter(funcionario=funcionario, status='em_andamento').exists():
-                raise ValidationError('O funcionário já possui um atendimento em andamento.')
+            if OrdemServico.objects.filter(funcionario=funcionario, status='EM_EXECUCAO').exists():
+                raise ValidationError('O funcionário já possui uma OS em execução.')
 
-        return Atendimento.objects.create(
+        return OrdemServico.objects.create(
             veiculo=veiculo, servico=servico, funcionario=funcionario,
             data_hora=dados['data_hora'],
             horario_inicio=timezone.now() if iniciar_agora else None,
-            status='em_andamento' if iniciar_agora else 'agendado',
+            status='VISTORIA_INICIAL' if iniciar_agora else 'PATIO',
             observacoes=dados.get('observacoes', ''),
         )
 
     @staticmethod
-    def avancar_etapa(atendimento_id: int, dados: dict) -> Atendimento:
+    def avancar_etapa(os_id: int, dados: dict) -> OrdemServico:
         """Máquina de Estados Industrial: Gere transições e horários."""
-        atendimento = get_object_or_404(Atendimento, id=atendimento_id)
-        status_atual = atendimento.status
+        os = get_object_or_404(OrdemServico, id=os_id)
+        status_atual = os.status
         agora = timezone.now()
 
-        # RN-09: Validação de evidências obrigatórias para avançar (Vistoria -> Lavagem)
-        # Verifica se é a transição da etapa 1 para a 2
-        if status_atual == 'agendado' or (status_atual == 'em_andamento' and not atendimento.horario_lavagem):
-            contagem_fotos = MidiaAtendimento.objects.filter(
-                atendimento=atendimento, 
+        # ETAPA 1: PATIO -> VISTORIA_INICIAL (Valida fotos obrigatórias de vistoria)
+        if status_atual == 'PATIO' or (status_atual == 'VISTORIA_INICIAL' and not os.horario_lavagem):
+            contagem_fotos = MidiaOrdemServico.objects.filter(
+                ordem_servico=os,
                 momento='VISTORIA_GERAL'
             ).count()
 
             if contagem_fotos < 5:
                 raise ValueError(f"Ação negada: mínimo de 5 fotos de vistoria exigidas. (Atual: {contagem_fotos})")
 
-            atendimento.status = 'em_andamento'
-            atendimento.laudo_vistoria = dados.get('laudo_vistoria', '')
-            atendimento.horario_lavagem = agora
-            atendimento.save()
+            os.status = 'VISTORIA_INICIAL'
+            os.laudo_vistoria = dados.get('laudo_vistoria', '')
+            os.horario_lavagem = agora
+            os.save()
 
-        # ETAPA 2: Lavagem -> Acabamento
-        elif atendimento.horario_lavagem and not atendimento.horario_acabamento:
-            atendimento.comentario_lavagem = dados.get('comentario_lavagem', '')
-            atendimento.horario_acabamento = agora
-            atendimento.save()
+        # ETAPA 2: VISTORIA_INICIAL -> EM_EXECUCAO
+        elif os.horario_lavagem and not os.horario_acabamento:
+            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+            os.status = 'EM_EXECUCAO'
+            os.horario_acabamento = agora
+            os.save()
 
-        # ETAPA 3: Acabamento -> Liberação
-        elif atendimento.horario_acabamento:
-            atendimento.comentario_acabamento = dados.get('comentario_acabamento', '')
-            atendimento.save()
+        # ETAPA 3: EM_EXECUCAO -> LIBERACAO
+        elif os.horario_acabamento:
+            os.comentario_acabamento = dados.get('comentario_acabamento', '')
+            os.status = 'LIBERACAO'
+            os.save()
 
-        return atendimento
-    
+        return os
+
     @staticmethod
-    def finalizar_atendimento_industrial(atendimento_id: int, dados: dict) -> Atendimento:
-        """Etapa 4: Finalização com validação de fotos de entrega e Vaga."""
-        atendimento = get_object_or_404(Atendimento, id=atendimento_id)
-        
-        # Validação conforme RN-13 (Momento FINALIZADO na nova estrutura)
-        if MidiaAtendimento.objects.filter(atendimento=atendimento, momento='FINALIZADO').count() < 5:
+    def finalizar_ordem_servico_industrial(os_id: int, dados: dict) -> OrdemServico:
+        """Etapa 4: Finalização com validação de fotos de entrega e vaga."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+
+        if MidiaOrdemServico.objects.filter(ordem_servico=os, momento='FINALIZADO').count() < 5:
             raise ValueError("5 fotos de entrega exigidas.")
-        
+
         if not dados.get('vaga_patio'):
             raise ValueError("A vaga de saída é obrigatória.")
 
-        atendimento.status = 'finalizado'
-        atendimento.vaga_patio = dados.get('vaga_patio')
-        atendimento.horario_finalizacao = timezone.now()
-        atendimento.save()
-        
-        return atendimento
+        os.status = 'FINALIZADO'
+        os.vaga_patio = dados.get('vaga_patio')
+        os.horario_finalizacao = timezone.now()
+        os.save()
+
+        return os
 
 
 class IncidenteService:
     """Serviço para isolar o fluxo de erros e incidentes operacionais."""
 
     @staticmethod
-    def registrar_incidente(atendimento_id, dados, arquivo_foto):
-        """
-        Registra o incidente, vincula a peça afetada e bloqueia a OS.
-        """
-        atendimento = get_object_or_404(Atendimento, id=atendimento_id)
+    def registrar_incidente(os_id, dados, arquivo_foto):
+        """Registra o incidente, vincula a peça afetada e bloqueia a OS."""
+        os = get_object_or_404(OrdemServico, id=os_id)
         tag_peca = get_object_or_404(TagPeca, id=dados.get('tag_peca_id'))
 
-        # Processa a foto da evidência usando a mesma lógica de compressão
-        foto_processada = MidiaAtendimentoService._comprimir_imagem(arquivo_foto)
+        foto_processada = MidiaOrdemServicoService._comprimir_imagem(arquivo_foto)
 
         incidente = IncidenteOS.objects.create(
-            atendimento=atendimento,
+            ordem_servico=os,
             tag_peca=tag_peca,
             descricao=dados.get('descricao'),
             foto_url=foto_processada,
             resolvido=False
         )
 
-        # Atualiza status da OS para bloquear o operador (Fluxo de Exceção)
-        atendimento.status = 'incidente'
-        atendimento.save()
+        os.status = 'BLOQUEADO_INCIDENTE'
+        os.save()
 
         return incidente

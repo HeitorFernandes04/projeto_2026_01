@@ -15,10 +15,8 @@ interface DadosIncidente {
   foto: File | null;
 }
 
-// Interface atualizada conforme nova estrutura de Ordem de Serviço
-// Localize esta interface no seu api.ts e substitua:
 interface DadosNovaOS {
-  veiculo_id?: number; // Marcado como opcional com '?'
+  veiculo_id?: number;
   placa: string;
   modelo: string;
   marca: string;
@@ -27,10 +25,10 @@ interface DadosNovaOS {
   celular_dono: string;
   servico_id: number;
   data_hora: string;
-  origem: 'AGENDADO' | 'AVULSO'; // Conforme diretriz 
   observacoes: string;
   iniciar_agora?: boolean;
 }
+
 // --- FUNÇÃO BASE DE REQUISIÇÃO ---
 
 async function request(endpoint: string, options: RequestInit = {}) {
@@ -88,7 +86,6 @@ export async function loginUsuario(email: string, password: string) {
   return response.json();
 }
 
-// RF-Registro — Cadastra novo funcionário
 export async function registerUsuario(dados: {
   name: string;
   email: string;
@@ -109,37 +106,30 @@ export async function registerUsuario(dados: {
   return data;
 }
 
-// --- ORDENS DE SERVIÇO (ANTIGOS ATENDIMENTOS) ---
+// --- ORDENS DE SERVIÇO ---
 
-// RF-03 — Lista atendimentos do dia
-export async function getAtendimentosHoje() {
-  return request('/api/atendimentos/hoje/');
+/** RF-03 — Lista Ordens de Serviço do dia (Pátio) */
+export async function getOrdensServicoHoje() {
+  return request('/api/ordens-servico/hoje/');
 }
 
-// RF-10 — Lista histórico por período
-export async function getHistoricoAtendimentos(dataInicial: string, dataFinal: string) {
+/** RF-10 — Lista histórico por período */
+export async function getHistoricoOrdemServico(dataInicial: string, dataFinal: string) {
   const params = new URLSearchParams({
     data_inicial: dataInicial,
     data_final: dataFinal,
   });
-  return request(`/api/atendimentos/historico/?${params.toString()}`, {
+  return request(`/api/ordens-servico/historico/?${params.toString()}`, {
     cache: 'no-store',
   });
 }
 
-export async function getAtendimento(id: number) {
-  return request(`/api/atendimentos/${id}/`);
+/** Busca detalhes de uma OS pelo ID */
+export async function getOrdemServico(id: number) {
+  return request(`/api/ordens-servico/${id}/`);
 }
 
-export async function iniciarAtendimento(id: number) {
-  return request(`/api/atendimentos/${id}/iniciar/`, { method: 'PATCH' });
-}
-
-export async function finalizarAtendimento(id: number) {
-  return request(`/api/atendimentos/${id}/finalizar/`, { method: 'PATCH' });
-}
-
-// RF-05/06 — Envia múltiplas fotos de uma só vez (Staged Multi-Upload)
+/** RF-05/06 — Envia múltiplas fotos de uma só vez */
 export async function uploadFotos(
   id: number,
   momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO',
@@ -151,29 +141,26 @@ export async function uploadFotos(
     formData.append('arquivos', blob, `foto_${i + 1}.jpg`);
   });
 
-  return request(`/api/atendimentos/${id}/fotos/`, {
+  return request(`/api/ordens-servico/${id}/fotos/`, {
     method: 'POST',
     body: formData,
   });
 }
 
-/**
- * RF-04 — Cria uma nova Ordem de Serviço
- * CORREÇÃO DO ERRO 405: Verifique se sua rota no Django não mudou para /api/ordens-servico/
- */
-export async function criarAtendimento(dados: DadosNovaOS) {
-  return request('/api/atendimentos/novo/', {
+/** RF-04 — Cria uma nova Ordem de Serviço */
+export async function criarOrdemServico(dados: DadosNovaOS) {
+  return request('/api/ordens-servico/novo/', {
     method: 'POST',
     body: JSON.stringify(dados),
   });
 }
 
 export async function getServicos() {
-  return request('/api/atendimentos/servicos/');
+  return request('/api/ordens-servico/servicos/');
 }
 
 export async function getHorariosLivres(data: string, servicoId: number) {
-  return request(`/api/atendimentos/horarios-livres/?data=${data}&servico_id=${servicoId}`, {
+  return request(`/api/ordens-servico/horarios-livres/?data=${data}&servico_id=${servicoId}`, {
     cache: 'no-store',
   });
 }
@@ -181,47 +168,39 @@ export async function getHorariosLivres(data: string, servicoId: number) {
 // --- ESTEIRA INDUSTRIAL ---
 
 export async function avancarEtapa(id: number, dados: DadosAvancoEtapa) {
-  return request(`/api/atendimentos/${id}/avancar-etapa/`, {
-    method: 'PATCH',
-    body: JSON.stringify(dados), 
-  });
-}
-
-export async function finalizarAtendimentoEtapa4(id: number, dados: {
-  vaga_patio: string;
-  observacoes?: string;
-}) {
-  return request(`/api/atendimentos/${id}/finalizar-industrial/`, {
+  return request(`/api/ordens-servico/${id}/avancar-etapa/`, {
     method: 'PATCH',
     body: JSON.stringify(dados),
   });
 }
 
-// --- INCIDENTES E OCORRÊNCIAS ---
+export async function finalizarOrdemServico(id: number, dados: {
+  vaga_patio: string;
+  observacoes?: string;
+}) {
+  return request(`/api/ordens-servico/${id}/finalizar/`, {
+    method: 'PATCH',
+    body: JSON.stringify(dados),
+  });
+}
+
+// --- INCIDENTES ---
 
 export async function getTagsPeca() {
-  return request('/api/atendimentos/tags-peca/');
+  return request('/api/ordens-servico/tags-peca/');
 }
 
 export async function registrarIncidente(id: number, dados: DadosIncidente) {
   const formData = new FormData();
   formData.append('descricao', dados.descricao);
   formData.append('tag_peca_id', dados.tag_peca_id.toString());
-  
+
   if (dados.foto) {
     formData.append('foto_url', dados.foto);
   }
-  
-  return request(`/api/atendimentos/${id}/incidente/`, {
+
+  return request(`/api/ordens-servico/${id}/incidente/`, {
     method: 'POST',
     body: formData,
-  });
-}
-
-// --- UTILITÁRIOS ---
-
-export async function getAtendimentosPorData(data: string) {
-  return request(`/api/atendimentos/dia/?data=${data}`, {
-    cache: 'no-store',
   });
 }

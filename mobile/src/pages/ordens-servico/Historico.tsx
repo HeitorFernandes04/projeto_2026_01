@@ -11,12 +11,12 @@ import {
   timeOutline,
   logOutOutline
 } from 'ionicons/icons';
-import { getHistoricoAtendimentos } from '../../services/api';
+import { getHistoricoOrdemServico } from '../../services/api';
 import TabBar from '../../components/TabBar';
 import logoImg from '../../assets/logo.jpeg';
 import '../../theme/lava-me.css';
 
-interface AtendimentoHistorico {
+interface OrdemServicoHistorico {
   id: number;
   veiculo: { placa: string; modelo: string; marca: string };
   servico: { nome: string; duracao_estimada_min?: number };
@@ -26,7 +26,7 @@ interface AtendimentoHistorico {
 
 const Historico: React.FC = () => {
   const history = useHistory();
-  const [atendimentos, setAtendimentos] = useState<AtendimentoHistorico[]>([]);
+  const [ordemServicos, setOrdemServicos] = useState<OrdemServicoHistorico[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   
@@ -39,11 +39,11 @@ const Historico: React.FC = () => {
   const carregarHistorico = useCallback(async () => {
     try {
       setLoading(true);
-      const dados = await getHistoricoAtendimentos(dataInicial, dataFinal);
+      const dados = await getHistoricoOrdemServico(dataInicial, dataFinal);
       
       if (dados && Array.isArray(dados)) {
         // Filtra apenas os finalizados conforme regra de negócio
-        setAtendimentos(dados.filter((at: AtendimentoHistorico) => at.status === 'finalizado'));
+        setOrdemServicos(dados.filter((at: OrdemServicoHistorico) => at.status === 'FINALIZADO'));
       }
     } catch (err) {
       console.error("Erro ao carregar histórico:", err);
@@ -53,17 +53,17 @@ const Historico: React.FC = () => {
   }, [dataInicial, dataFinal]);
 
   // Lógica de Filtro Local (Barra de Busca)
-  // O useMemo garante que o filtro só rode quando searchTerm ou atendimentos mudarem
-  const atendimentosFiltrados = useMemo(() => {
-    if (!searchTerm.trim()) return atendimentos;
+  // O useMemo garante que o filtro só rode quando searchTerm ou ordemServicos mudarem
+  const ordemServicosFiltrados = useMemo(() => {
+    if (!searchTerm.trim()) return ordemServicos;
 
     const term = searchTerm.toLowerCase();
-    return atendimentos.filter(at => 
+    return ordemServicos.filter(at => 
       at.veiculo.placa.toLowerCase().includes(term) ||
       at.veiculo.modelo.toLowerCase().includes(term) ||
       at.veiculo.marca.toLowerCase().includes(term)
     );
-  }, [searchTerm, atendimentos]);
+  }, [searchTerm, ordemServicos]);
 
   useIonViewWillEnter(() => {
     carregarHistorico();
@@ -125,11 +125,11 @@ const Historico: React.FC = () => {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {atendimentosFiltrados.length > 0 ? (
-                atendimentosFiltrados.map((at) => (
+              {ordemServicosFiltrados.length > 0 ? (
+                ordemServicosFiltrados.map((at) => (
                   <div 
                     key={at.id}
-                    onClick={() => history.push(`/atendimentos/${at.id}`)}
+                    onClick={() => history.push(`/ordens-servico/${at.id}`)}
                     style={styles.card}
                   >
                     <div style={styles.cardTop}>
@@ -166,7 +166,7 @@ const Historico: React.FC = () => {
                 ))
               ) : (
                 <p style={{ color: '#444', textAlign: 'center', marginTop: '20px', fontWeight: 700 }}>
-                  Nenhum atendimento encontrado.
+                  Nenhum ordemServico encontrado.
                 </p>
               )}
             </div>

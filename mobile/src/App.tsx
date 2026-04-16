@@ -5,12 +5,12 @@ import { IonReactRouter } from '@ionic/react-router';
 import SelecaoAcesso from './pages/selecao/SelecaoAcesso';
 import Login from './pages/login/Login';
 import Register from './pages/register/Register';
-import AtendimentosHoje from './pages/atendimentos/AtendimentosHoje';
-import DetalhesAtendimento from './pages/atendimentos/DetalhesAtendimento';
-import NovoAtendimento from './pages/atendimentos/NovoAtendimento';
-import Historico from './pages/atendimentos/Historico';
-import Agendar from './pages/atendimentos/Agendar'; 
-import EsteiraProducao from './pages/atendimentos/EsteiraProducao';
+import OrdensServicoHoje from './pages/ordens-servico/OrdensServicoHoje';
+import DetalhesOrdemServico from './pages/ordens-servico/DetalhesOrdemServico';
+import NovaOrdemServico from './pages/ordens-servico/NovaOrdemServico';
+import Historico from './pages/ordens-servico/Historico';
+import Agendar from './pages/ordens-servico/Agendar'; 
+import EsteiraProducao from './pages/ordens-servico/EsteiraProducao';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -39,7 +39,9 @@ import '@ionic/react/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 
-setupIonicReact();
+setupIonicReact({
+  mode: 'md'
+});
 
 const App: React.FC = () => (
   <IonApp>
@@ -52,23 +54,21 @@ const App: React.FC = () => (
         <Route path="/login" component={Login} exact />
         <Route path="/register" component={Register} exact />
         
-        {/* Pátio Principal (Atendimentos Ativos) */}
-        <Route path="/atendimentos/hoje" component={AtendimentosHoje} exact />
+        {/* Pátio Principal (Ordens de Serviço Ativas) */}
+        <Route path="/ordens-servico/hoje" component={OrdensServicoHoje} exact />
         
-        {/* Entrada de Veículos: Rápida vs Agendada */}
-        <Route path="/atendimentos/novo" component={NovoAtendimento} exact />
-        <Route path="/atendimentos/agendar" component={Agendar} exact />
+        {/* Gestão de Fluxo */}
+        <Route path="/ordens-servico/novo" component={NovaOrdemServico} exact />
+        <Route path="/ordens-servico/agendar" component={Agendar} exact />
         
-        {/* Consulta de Serviços Finalizados */}
-        <Route path="/atendimentos/historico" component={Historico} exact />
+        {/* Histórico e Relatórios */}
+        <Route path="/ordens-servico/historico" component={Historico} exact />
 
-        {/* ROTA OPERACIONAL: Esteira de Produção 
-          Axioma 13: Deve vir antes da rota genérica para evitar conflitos de ID.
-        */}
-        <Route path="/atendimentos/:id/esteira" component={EsteiraProducao} exact />
-        
-        {/* Rota de Detalhes (Visualização de Histórico) */}
-        <Route path="/atendimentos/:id(\d+)" component={DetalhesAtendimento} exact />
+        {/* Detalhes e Operação (Esteira) */}
+        <Route path="/ordens-servico/:id/esteira" component={EsteiraProducao} exact />
+
+        {/* Detalhes ( fallback para ID numérico ) */}
+        <Route path="/ordens-servico/:id(\d+)" component={DetalhesOrdemServico} exact />
         
         {/* Redirecionamento Padrão */}
         <Route exact path="/">

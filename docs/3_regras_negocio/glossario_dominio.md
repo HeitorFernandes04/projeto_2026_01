@@ -4,11 +4,12 @@ Este documento serve como a **Fonte da Verdade Semântica** para o projeto. Gara
 
 ## 📌 Termos Principais
 
-*   **Atendimento (Service/Attendance):** A execução do serviço automotivo. O ciclo de vida compreende: *Agendado -> Em Andamento -> Finalizado*.
-*   **Serviço (Service Type):** O tipo de lavagem ou tratamento (ex: Lavagem Simples, Polimento) com duração estimada vinculada.
+*   **Ordem de Serviço (Service Order / OS):** O ciclo de vida da execução do serviço automotivo. Substitui o termo legado "Atendimento".
+*   **Serviço (Service Type):** O tipo de lavagem ou tratamento (ex: Lavagem Simples, Polimento) com duração estimada e preço vinculados.
 *   **Veículo:** Registrado via placa, mantém sempre os dados do portador mais recente.
-*   **Funcionário:** Usuário do sistema com permissão de executar atendimentos. Apenas um funcionário pode ser atrelado a um atendimento.
-*   **Mídia (Fotos):** Evidências do estado do veículo. Requisito legal do sistema para provar o estado do carro.
-    *   **Momento ANTES:** O estado de entrada do veículo.
-    *   **Momento DEPOIS:** O estado do veículo concluído, obrigatório para finalizar o atendimento.
-*   **Claim (Assumir Atendimento):** A transição de status em que um funcionário ociosono "toma posse" do atendimento, alterando do status agendado para "em andamento". Em um mesmo dia, é bloqueado "multitarefa" simultânea.
+*   **Pátio (Fila):** Estado inicial dos veículos que possuem OS agendada mas ainda não iniciaram a execução.
+*   **Mídia (Fotos):** Evidências do estado do veículo. Requisito técnico para provar o estado do carro.
+    *   **Vistoria Geral:** Fotos de entrada (VISTORIA_GERAL). Exige **5 fotos** obrigatórias.
+    *   **Liberação / Entrega:** Fotos de saída (FINALIZADO). Exige **5 fotos** obrigatórias.
+*   **Incidente:** Dano reportado durante a execução que bloqueia o fluxo da OS até auditoria do Gestor.
+*   **Esteira de Produção:** O fluxo progressivo de abas (Vistoria -> Lavagem -> Acabamento -> Liberação).

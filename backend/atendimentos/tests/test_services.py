@@ -1,56 +1,68 @@
 import pytest
+import io
+from PIL import Image
 from django.utils import timezone
-from atendimentos.services import AtendimentoService
-from atendimentos.tests.factories import AtendimentoFactory, MidiaAtendimentoFactory
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.exceptions import ValidationError
+
+from atendimentos.services import OrdemServicoService, MidiaOrdemServicoService
+from atendimentos.tests.factories import OrdemServicoFactory, MidiaOrdemServicoFactory
+
+def gerar_foto_valida(nome="foto.jpg"):
+    """Gera um buffer de imagem 1x1 pixel válida para o PIL."""
+    buf = io.BytesIO()
+    Image.new('RGB', (1, 1), color='white').save(buf, format='JPEG')
+    buf.seek(0)
+    return SimpleUploadedFile(nome, buf.read(), content_type='image/jpeg')
 
 @pytest.mark.django_db
-class TestAtendimentoServiceEtapas:
-    
-    def test_deve_avancar_vistoria_para_lavagem_com_fotos_obrigatorias(self):
-        # Setup: Criar atendimento em vistoria com 5 fotos 'VISTORIA_GERAL' (corrigido)
-        atendimento = AtendimentoFactory(status='agendado')
+class TestOrdemServicoServiceEtapas:
+
+    def test_deve_avancar_vistoria_para_execucao_com_fotos_obrigatorias(self):
+        """RN-09: Com 5 fotos VISTORIA_GERAL, deve avançar de PATIO para VISTORIA_INICIAL."""
+        os = OrdemServicoFactory(status='PATIO')
         for _ in range(5):
-            MidiaAtendimentoFactory(atendimento=atendimento, momento='VISTORIA_GERAL')
-            
-        # Action: Chamar o serviço para avançar
+            MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
+
         dados = {'laudo_vistoria': 'Veículo em bom estado'}
-        atendimento_atualizado = AtendimentoService.avancar_etapa(atendimento.id, dados)
-        
-        # Assert: Status mudou e laudo foi gravado
-        assert atendimento_atualizado.status == 'em_andamento'
-        assert atendimento_atualizado.laudo_vistoria == 'Veículo em bom estado'
-        assert atendimento_atualizado.horario_lavagem is not None
+        os_atualizada = OrdemServicoService.avancar_etapa(os.id, dados)
+
+        assert os_atualizada.status == 'VISTORIA_INICIAL'
+        assert os_atualizada.laudo_vistoria == 'Veículo em bom estado'
+        assert os_atualizada.horario_lavagem is not None
 
     def test_nao_deve_avancar_vistoria_sem_cinco_fotos(self):
-        # Setup: Atendimento com apenas 2 fotos
-        atendimento = AtendimentoFactory(status='agendado')
-        MidiaAtendimentoFactory(atendimento=atendimento, momento='VISTORIA_GERAL')
-        MidiaAtendimentoFactory(atendimento=atendimento, momento='VISTORIA_GERAL')
-        
-        # Action & Assert: Deve lançar erro de validação (Regra RN-09)
+        """RN-09: Com menos de 5 fotos, deve recusar o avanço de etapa."""
+        os = OrdemServicoFactory(status='PATIO')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
+
         with pytest.raises(ValueError) as exc:
-            AtendimentoService.avancar_etapa(atendimento.id, {})
+            OrdemServicoService.avancar_etapa(os.id, {})
         assert "mínimo de 5 fotos" in str(exc.value)
 
-    def test_finalizacao_os_industrial_exige_fotos_finalizado_e_vaga(self):
-        """RN: Não libera OS sem as 5 fotos de FINALIZADO e sem informar vaga_patio."""
-        atendimento = AtendimentoFactory(status='em_andamento')
-        # Apenas 3 fotos FINALIZADO — insuficiente
-        for _ in range(3):
-            MidiaAtendimentoFactory(atendimento=atendimento, momento='FINALIZADO')
+    def test_upload_liberacao_aceita_finalizado(self):
+        """Sucesso: Deve permitir upload de fotos FINALIZADO quando o status é LIBERACAO."""
+        os = OrdemServicoFactory(status='LIBERACAO')
+        foto = gerar_foto_valida()
         
-        with pytest.raises((ValueError, Exception)) as exc:
-            AtendimentoService.finalizar_atendimento_industrial(atendimento.id, {'vaga_patio': ''})
-        assert exc.value  # Deve levantar qualquer erro de validação
+        midias = MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZADO', [foto])
+        assert len(midias) == 1
+        assert midias[0].momento == 'FINALIZADO'
 
-    def test_registro_incidente_bloqueia_esteira(self):
-        """RN: Registrar incidente deve travar a OS com status 'incidente'."""
-        atendimento = AtendimentoFactory(status='em_andamento')
+    def test_upload_liberacao_bloqueia_vistoria(self):
+        """Neutralização de Viés: Não deve permitir fotos de Vistoria na fase de Liberação."""
+        os = OrdemServicoFactory(status='LIBERACAO')
+        foto = gerar_foto_valida()
         
-        # Simula o registro de incidente chamando o service
-        from atendimentos.tests.factories import IncidenteOSFactory
-        incidente = IncidenteOSFactory(atendimento=atendimento)
+        with pytest.raises(ValidationError) as exc:
+            MidiaOrdemServicoService.processar_upload_multiplo(os, 'VISTORIA_GERAL', [foto])
+        assert 'não é permitido' in str(exc.value)
+
+    def test_upload_bloqueado_em_finalizado(self):
+        """Segurança: Não deve permitir upload após a OS estar FINALIZADO."""
+        os = OrdemServicoFactory(status='FINALIZADO')
+        foto = gerar_foto_valida()
         
-        atendimento.refresh_from_db()
-        # Garante que o status da OS foi bloqueado
-        assert atendimento.status == 'incidente' or incidente.atendimento_id == atendimento.id
+        with pytest.raises(ValidationError):
+            MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZADO', [foto])

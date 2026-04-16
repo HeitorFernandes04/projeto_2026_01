@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Pause, CheckCircle, Home } from 'lucide-react';
 import { IonSpinner } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { avancarEtapa, registrarIncidente, getAtendimento } from '../services/api';
+import { avancarEtapa, registrarIncidente, getOrdemServico } from '../services/api';
 import ModalOcorrencia from './ModalOcorrencia';
 import './EstadoLavagem.css';
 
@@ -12,7 +12,7 @@ interface DadosIncidente {
   foto: File | null;
 }
 
-const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }> = ({ atendimentoId, onComplete }) => {
+const EstadoLavagem: React.FC<{ ordemServicoId: number; onComplete: () => void; }> = ({ ordemServicoId, onComplete }) => {
   const history = useHistory();
   const [segundos, setSegundos] = useState(0);
   const [isPausado, setIsPausado] = useState(false);
@@ -25,18 +25,18 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
   useEffect(() => {
     const verificarStatus = async () => {
       try {
-        const data = await getAtendimento(atendimentoId);
+        const data = await getOrdemServico(ordemServicoId);
         setStatusAtual(data.status);
       } catch (err) {
         console.error('Erro ao verificar status:', err);
       }
     };
     verificarStatus();
-  }, [atendimentoId]);
+  }, [ordemServicoId]);
 
   // Cronômetro: Só corre se não estiver pausado E não houver incidente
   useEffect(() => {
-    if (!isPausado && statusAtual !== 'INCIDENTE') {
+    if (!isPausado && statusAtual !== 'BLOQUEADO_INCIDENTE') {
       const interval = setInterval(() => setSegundos(prev => prev + 1), 1000);
       return () => clearInterval(interval);
     }
@@ -51,11 +51,11 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
 
   const handleFinalizar = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
-    if (loading || statusAtual === 'INCIDENTE') return;
+    if (loading || statusAtual === 'BLOQUEADO_INCIDENTE') return;
 
     setLoading(true);
     try {
-      await avancarEtapa(atendimentoId, { comentario_lavagem: observacoes });
+      await avancarEtapa(ordemServicoId, { comentario_lavagem: observacoes });
       onComplete();
     } catch {
       alert('Erro ao avançar etapa. A OS pode estar bloqueada.');
@@ -67,8 +67,8 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
   const handleConfirmarOcorrencia = async (dados: DadosIncidente) => {
     setLoading(true);
     try {
-      await registrarIncidente(atendimentoId, dados);
-      setStatusAtual('INCIDENTE');
+      await registrarIncidente(ordemServicoId, dados);
+      setStatusAtual('BLOQUEADO_INCIDENTE');
       setShowModalOcorrencia(false);
       alert('Incidente registrado. A OS foi bloqueada para análise do Gestor.');
     } catch (error: unknown) {
@@ -80,7 +80,7 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
   };
 
   // Tela de bloqueio industrial
-  if (statusAtual === 'INCIDENTE') {
+  if (statusAtual === 'BLOQUEADO_INCIDENTE') {
     return (
       <div className="el-block-container">
         <div className="el-block-card">
@@ -90,7 +90,7 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
             Um incidente foi registrado para este veículo. O cronômetro foi interrompido e a execução está suspensa.
           </p>
           <p className="el-block-subtext">Aguarde a liberação do Gestor no sistema administrativo.</p>
-          <button onClick={() => history.push('/atendimentos/hoje')} className="el-btn-back">
+          <button onClick={() => history.push('/ordens-servico/hoje')} className="el-btn-back">
             <Home size={20} /> VOLTAR AO PÁTIO
           </button>
         </div>

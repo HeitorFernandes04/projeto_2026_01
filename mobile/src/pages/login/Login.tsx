@@ -22,7 +22,7 @@ const Login: React.FC = () => {
       const data = await loginUsuario(email, password);
       localStorage.setItem('access', data.access);
       localStorage.setItem('refresh', data.refresh);
-      history.push('/atendimentos/hoje');
+      history.push('/ordens-servico/hoje');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Não foi possível conectar ao servidor.';
       setErro(msg);

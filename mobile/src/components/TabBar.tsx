@@ -33,19 +33,19 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.tabItem} onClick={() => history.push('/atendimentos/hoje')}>
+      <div style={styles.tabItem} onClick={() => history.push('/ordens-servico/hoje')}>
         <div style={getIconStyle('pátio')}><LayoutGrid size={24} /></div>
         <span style={getLabelStyle('pátio')}>Pátio</span>
       </div>
-      <div style={styles.tabItem} onClick={() => history.push('/atendimentos/novo')}>
+      <div style={styles.tabItem} onClick={() => history.push('/ordens-servico/novo')}>
         <div style={getIconStyle('iniciar')}><Plus size={24} strokeWidth={3} /></div>
         <span style={getLabelStyle('iniciar')}>Iniciar</span>
       </div>
-      <div style={styles.tabItem} onClick={() => history.push('/atendimentos/agendar')}>
+      <div style={styles.tabItem} onClick={() => history.push('/ordens-servico/agendar')}>
         <div style={getIconStyle('agendar')}><Calendar size={24} /></div>
         <span style={getLabelStyle('agendar')}>Agendar</span>
       </div>
-      <div style={styles.tabItem} onClick={() => history.push('/atendimentos/historico')}>
+      <div style={styles.tabItem} onClick={() => history.push('/ordens-servico/historico')}>
         <div style={getIconStyle('histórico')}><History size={24} /></div>
         <span style={getLabelStyle('histórico')}>Histórico</span>
       </div>

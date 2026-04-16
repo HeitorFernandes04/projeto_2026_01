@@ -2,47 +2,47 @@ import { IonContent, IonPage, IonSpinner, useIonViewWillEnter } from '@ionic/rea
 import { Clock, ChevronRight, Car, LogOut } from 'lucide-react';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { getAtendimentosHoje } from '../../services/api';
+import { getOrdensServicoHoje } from '../../services/api';
 import TabBar from '../../components/TabBar'; 
 
 import logoLavaMe from '../../assets/logo.jpeg';
 
 // Interface atualizada para incluir campos necessários da esteira operacional
-interface Atendimento {
+interface OrdemServico {
   id: number;
   veiculo: { placa: string; modelo: string };
   servico: { nome: string };
-  status: 'agendado' | 'em_andamento' | 'finalizado' | 'cancelado';
+  status: 'PATIO' | 'EM_EXECUCAO' | 'FINALIZADO' | 'CANCELADO';
   data_hora: string;
   etapa_atual?: number; // Axioma: Controle da máquina de estados
 }
 
-const AtendimentosHoje: React.FC = () => {
+const OrdemServicosHoje: React.FC = () => {
   const history = useHistory();
-  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
+  const [ordensServico, setOrdemServicos] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
 
   const nomeFuncionario = localStorage.getItem('nome_usuario') || 'Funcionário';
 
   useIonViewWillEnter(() => {
     // Só exibe o spinner na primeira carga total
-    if (atendimentos.length === 0) {
+    if (ordensServico.length === 0) {
       setLoading(true);
     }
-    getAtendimentosHoje()
+    getOrdensServicoHoje()
       .then((dados) => {
         if (dados && Array.isArray(dados)) {
-          const ativos = dados.filter((a: Atendimento) => 
-            a.status !== 'finalizado' && a.status !== 'cancelado'
+          const ativos = dados.filter((a: OrdemServico) => 
+            a.status !== 'FINALIZADO' && a.status !== 'CANCELADO'
           );
-          setAtendimentos(ativos);
+          setOrdemServicos(ativos);
         }
       })
       .catch((err) => {
         console.error("Erro ao carregar pátio:", err);
       })
       .finally(() => setLoading(false));
-  }, [atendimentos.length]);
+  }, [ordensServico.length]);
 
   const handleLogout = () => {
     localStorage.removeItem('access');
@@ -80,34 +80,34 @@ const AtendimentosHoje: React.FC = () => {
             <div style={styles.cardAgendado}>
               <p style={styles.statsLabelBlue}>AGENDADOS</p>
               <span style={styles.statsValue}>
-                {atendimentos.filter(a => a.status === 'agendado').length}
+                {ordensServico.filter(a => a.status === 'PATIO').length}
               </span>
             </div>
             <div style={styles.cardAndamento}>
               <p style={styles.statsLabelGray}>EM EXECUÇÃO</p>
               <span style={styles.statsValue}>
-                {atendimentos.filter(a => a.status === 'em_andamento').length}
+                {ordensServico.filter(a => a.status === 'EM_EXECUCAO').length}
               </span>
             </div>
           </div>
 
-          {/* Listagem de Atendimentos */}
+          {/* Listagem de OrdemServicos */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {loading ? (
               <div style={{ textAlign: 'center', marginTop: '40px' }}>
                 <IonSpinner color="primary" />
               </div>
-            ) : atendimentos.length === 0 ? (
+            ) : ordensServico.length === 0 ? (
               <div style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
                 <p>Nenhum veículo no pátio agora.</p>
               </div>
             ) : (
-              atendimentos.map((at) => (
+              ordensServico.map((at) => (
                 <div 
                   key={at.id} 
                   // Rota operacional da esteira conforme App.tsx
-                  onClick={() => history.push(`/atendimentos/${at.id}/esteira`)}
-                  style={styles.atendimentoCard}
+                  onClick={() => history.push(`/ordens-servico/${at.id}/esteira`)}
+                  style={styles.ordemServicoCard}
                 >
                   <div style={styles.cardTop}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
@@ -128,8 +128,8 @@ const AtendimentosHoje: React.FC = () => {
                       </span>
                     </div>
                     <div style={{ ...styles.statusBadge, 
-                      background: at.status === 'em_andamento' ? 'rgba(0,255,102,0.1)' : 'rgba(0,102,255,0.15)',
-                      color: at.status === 'em_andamento' ? '#00ff66' : '#0066ff',
+                      background: at.status === 'EM_EXECUCAO' ? 'rgba(0,255,102,0.1)' : 'rgba(0,102,255,0.15)',
+                      color: at.status === 'EM_EXECUCAO' ? '#00ff66' : '#0066ff',
                     }}>
                       {at.status.replace('_', ' ')}
                     </div>
@@ -165,7 +165,7 @@ const styles: Record<string, React.CSSProperties> = {
   statsLabelBlue: { color: '#0066ff', fontSize: '12px', fontWeight: 900, margin: '0 0 10px' },
   statsLabelGray: { color: '#444', fontSize: '12px', fontWeight: 900, margin: '0 0 10px' },
   statsValue: { color: 'var(--lm-text)', fontSize: '40px', fontWeight: 900 },
-  atendimentoCard: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', padding: '24px', borderRadius: '24px', cursor: 'pointer' },
+  ordemServicoCard: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', padding: '24px', borderRadius: '24px', cursor: 'pointer' },
   cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
   iconBox: { background: '#222', padding: '10px', borderRadius: '14px' },
   placaText: { color: 'var(--lm-text)', fontSize: '20px', fontWeight: 900, margin: 0 },
@@ -177,4 +177,4 @@ const styles: Record<string, React.CSSProperties> = {
   servicoNome: { color: 'var(--lm-text)', fontSize: '15px', fontWeight: 800 }
 };
 
-export default AtendimentosHoje;
+export default OrdemServicosHoje;

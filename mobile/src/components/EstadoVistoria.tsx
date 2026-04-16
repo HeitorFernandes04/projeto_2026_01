@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Check, AlertCircle, Camera, ClipboardList } from 'lucide-react';
 import { IonSpinner } from '@ionic/react';
-import { avancarEtapa, getAtendimento } from '../services/api';
+import { avancarEtapa, getOrdemServico } from '../services/api';
 import GaleriaFotos from './GaleriaFotos';
 import './EstadoVistoria.css';
 
@@ -11,15 +11,15 @@ interface Midia {
   momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
 }
 
-interface AtendimentoVistoria {
+interface OrdemServicoVistoria {
   id: number;
   midias?: Midia[];
   status?: string;
   etapa_atual?: number;
 }
 
-const EstadoVistoria: React.FC<{ atendimentoId: number; onComplete: () => void; }> = ({ atendimentoId, onComplete }) => {
-  const [atendimento, setAtendimento] = useState<AtendimentoVistoria | null>(null);
+const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void; }> = ({ ordemServicoId, onComplete }) => {
+  const [ordemServico, setOrdemServico] = useState<OrdemServicoVistoria | null>(null);
   const [loading, setLoading] = useState(true);
   const [observacoes, setObservacoes] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -29,18 +29,18 @@ const EstadoVistoria: React.FC<{ atendimentoId: number; onComplete: () => void; 
 
   const carregarDados = useCallback(async () => {
     try {
-      const data = await getAtendimento(atendimentoId);
-      setAtendimento(data as unknown as AtendimentoVistoria);
+      const data = await getOrdemServico(ordemServicoId);
+      setOrdemServico(data as unknown as OrdemServicoVistoria);
     } catch (err) {
       console.error('Erro ao carregar vistoria:', err);
     } finally {
       setLoading(false);
     }
-  }, [atendimentoId]);
+  }, [ordemServicoId]);
 
   useEffect(() => { carregarDados(); }, [carregarDados]);
 
-  const fotosExistentes = atendimento?.midias?.filter((m: Midia) => m.momento === 'VISTORIA_GERAL') || [];
+  const fotosExistentes = ordemServico?.midias?.filter((m: Midia) => m.momento === 'VISTORIA_GERAL') || [];
   const podeConcluir = fotosExistentes.length >= 5;
 
   const handleFinalizar = async (e?: React.MouseEvent) => {
@@ -49,8 +49,8 @@ const EstadoVistoria: React.FC<{ atendimentoId: number; onComplete: () => void; 
 
     setEnviando(true);
     try {
-      await avancarEtapa(atendimentoId, { laudo_vistoria: observacoes });
-      setAtendimento(null); // Limpa estado local antes de completar
+      await avancarEtapa(ordemServicoId, { laudo_vistoria: observacoes });
+      setOrdemServico(null); // Limpa estado local antes de completar
       onComplete();
     } catch (err: any) {
       console.error('Erro ao salvar vistoria:', err);
@@ -74,9 +74,9 @@ const EstadoVistoria: React.FC<{ atendimentoId: number; onComplete: () => void; 
       </p>
 
       <GaleriaFotos
-        atendimentoId={atendimentoId}
+        ordemServicoId={ordemServicoId}
         momento="VISTORIA_GERAL"
-        fotosIniciais={atendimento?.midias || []}
+        fotosIniciais={ordemServico?.midias || []}
         onUploadSuccess={carregarDados}
       />
 

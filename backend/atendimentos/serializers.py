@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from .models import Atendimento, IncidenteOS, MidiaAtendimento, Servico, TagPeca, Veiculo
+from .models import OrdemServico, IncidenteOS, MidiaOrdemServico, Servico, TagPeca, Veiculo
 from django.utils import timezone
 import os
 import re
+
 
 class ServicoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,13 +25,13 @@ class VeiculoSerializer(serializers.ModelSerializer):
         return ret
 
 
-class MidiaAtendimentoSerializer(serializers.ModelSerializer):
+class MidiaOrdemServicoSerializer(serializers.ModelSerializer):
     """Serializer de SAÍDA — devolve URL absoluta do arquivo."""
     arquivo = serializers.SerializerMethodField()
 
     class Meta:
-        model = MidiaAtendimento
-        fields = ['id', 'atendimento', 'arquivo', 'momento', 'enviado_em']
+        model = MidiaOrdemServico
+        fields = ['id', 'ordem_servico', 'arquivo', 'momento', 'enviado_em']
 
     def get_arquivo(self, obj):
         request = self.context.get('request')
@@ -39,32 +40,32 @@ class MidiaAtendimentoSerializer(serializers.ModelSerializer):
         return None
 
 
-class AtendimentoSerializer(serializers.ModelSerializer):
+class OrdemServicoSerializer(serializers.ModelSerializer):
     veiculo = VeiculoSerializer(read_only=True)
     servico = ServicoSerializer(read_only=True)
-    midias = MidiaAtendimentoSerializer(many=True, read_only=True)
+    midias = MidiaOrdemServicoSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
+
     # Campo virtual para controlar a esteira no Frontend
     etapa_atual = serializers.SerializerMethodField()
 
     class Meta:
-        model = Atendimento
+        model = OrdemServico
         fields = [
             'id', 'veiculo', 'servico', 'data_hora', 'status', 'status_display',
-            'etapa_atual', 
-            'laudo_vistoria', 'comentario_lavagem', 'comentario_acabamento', 
-            'vaga_patio', 'horario_inicio', 'horario_lavagem', 
+            'etapa_atual',
+            'laudo_vistoria', 'comentario_lavagem', 'comentario_acabamento',
+            'vaga_patio', 'horario_inicio', 'horario_lavagem',
             'horario_acabamento', 'horario_finalizacao', 'observacoes', 'midias'
         ]
         read_only_fields = [
-            'horario_inicio', 'horario_lavagem', 
+            'horario_inicio', 'horario_lavagem',
             'horario_acabamento', 'horario_finalizacao'
         ]
 
     def get_etapa_atual(self, obj):
         """Lógica de Redirecionamento Cronológica Estrita."""
-        if obj.status == 'finalizado' or obj.horario_finalizacao or obj.comentario_acabamento:
+        if obj.status in ('FINALIZADO', 'LIBERACAO') or obj.horario_finalizacao or obj.comentario_acabamento:
             return 4
         if obj.horario_acabamento:
             return 3
@@ -72,12 +73,13 @@ class AtendimentoSerializer(serializers.ModelSerializer):
             return 2
         return 1
 
+
 # ---------------------------------------------------------------------------
-#  RF-04 — Criar atendimento (COM VALIDAÇÃO DE DATA E STATUS)
+#  RF-04 — Criar OS (COM VALIDAÇÃO DE DATA E STATUS)
 # ---------------------------------------------------------------------------
 
-class CriarAtendimentoSerializer(serializers.Serializer):
-    """Serializer de ENTRADA para criar um atendimento com veículo embutido."""
+class CriarOrdemServicoSerializer(serializers.Serializer):
+    """Serializer de ENTRADA para criar uma OS com veículo embutido."""
     nome_dono    = serializers.CharField()
     celular_dono = serializers.CharField(required=False, allow_blank=True, default='')
     placa        = serializers.CharField()
@@ -85,7 +87,6 @@ class CriarAtendimentoSerializer(serializers.Serializer):
 
     def validate_placa(self, value):
         """RN: Aceita placas no formato Antigo (ABC1234) e Mercosul (ABC1D23)."""
-        # Normaliza: Remove hífens ou espaços que a máscara do front possa ter enviado
         placa_normalizada = re.sub(r'[^A-Z0-9]', '', value.strip().upper())
         padrao = r'^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$'
         if not re.match(padrao, placa_normalizada):
@@ -93,6 +94,7 @@ class CriarAtendimentoSerializer(serializers.Serializer):
                 'Placa inválida. Use o formato antigo (ABC1234) ou Mercosul (ABC1D23).'
             )
         return placa_normalizada
+
     marca        = serializers.CharField()
     cor          = serializers.CharField(required=False, allow_blank=True, default='')
     servico_id   = serializers.IntegerField()
@@ -101,29 +103,24 @@ class CriarAtendimentoSerializer(serializers.Serializer):
     iniciar_agora = serializers.BooleanField(required=False, default=False)
 
     def validate(self, data):
-        """
-        RN: Impede agendamento simultâneo para HOJE se houver algo em andamento.
-        Permite agendamentos para datas futuras livremente.
-        """
+        """RN: Impede agendamento simultâneo para HOJE se já houver OS em execução."""
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return data
 
         data_agendamento = data.get('data_hora').date()
         hoje = timezone.now().date()
-        
-        # Verifica se o funcionário logado já possui uma OS com status 'em_andamento'
-        tem_servico_ativo = Atendimento.objects.filter(
+
+        tem_servico_ativo = OrdemServico.objects.filter(
             funcionario=request.user,
-            status='em_andamento'
+            status__in=['VISTORIA_INICIAL', 'EM_EXECUCAO']
         ).exists()
 
-        # BLOQUEIO: Se for para HOJE (ou passado) e já tiver um carro na esteira
         if data_agendamento <= hoje and tem_servico_ativo:
             raise serializers.ValidationError(
-                "Você já possui um veículo em andamento. Finalize-o antes de iniciar ou agendar outro para hoje."
+                "Você já possui uma OS em execução. Finalize-a antes de iniciar ou agendar outra para hoje."
             )
-        
+
         return data
 
 
@@ -133,13 +130,14 @@ class CriarAtendimentoSerializer(serializers.Serializer):
 
 EXTENSOES_PERMITIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
 
+
 def validar_extensao_imagem(arquivo):
     ext = os.path.splitext(arquivo.name)[1].lower()
     if ext not in EXTENSOES_PERMITIDAS:
         raise serializers.ValidationError(f'Extensão "{ext}" não permitida.')
 
 
-class MidiaAtendimentoUploadSerializer(serializers.Serializer):
+class MidiaOrdemServicoUploadSerializer(serializers.Serializer):
     momento = serializers.ChoiceField(choices=['VISTORIA_GERAL', 'FINALIZADO', 'AVARIA_PREVIA', 'EXECUCAO'])
     arquivos = serializers.ListField(
         child=serializers.ImageField(validators=[validar_extensao_imagem]),
@@ -148,31 +146,35 @@ class MidiaAtendimentoUploadSerializer(serializers.Serializer):
     )
 
 
-class HistoricoAtendimentoFiltroSerializer(serializers.Serializer):
+class HistoricoOrdemServicoFiltroSerializer(serializers.Serializer):
     data_inicial = serializers.DateField()
     data_final = serializers.DateField()
     status = serializers.ChoiceField(
-        choices=['todos', *[status for status, _ in Atendimento.STATUS_CHOICES]],
+        choices=['todos', *[s for s, _ in OrdemServico.STATUS_CHOICES]],
         required=False,
         default='todos',
     )
 
+
 class ProximaEtapaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Atendimento
+        model = OrdemServico
         fields = ['laudo_vistoria', 'comentario_lavagem', 'comentario_acabamento']
+
 
 class FinalizarIndustrialSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Atendimento
+        model = OrdemServico
         fields = ['vaga_patio', 'observacoes']
+
 
 class TagPecaSerializer(serializers.ModelSerializer):
     class Meta:
         model = TagPeca
         fields = '__all__'
 
+
 class IncidenteOSSerializer(serializers.ModelSerializer):
     class Meta:
         model = IncidenteOS
-        fields = ['atendimento', 'tag_peca', 'descricao', 'foto_url']
+        fields = ['ordem_servico', 'tag_peca', 'descricao', 'foto_url']
