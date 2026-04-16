@@ -12,3 +12,13 @@ window.matchMedia = window.matchMedia || function() {
       removeListener: function() {}
   };
 };
+
+// Mock URL functions missing in JSDOM
+if (typeof window.URL.createObjectURL === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  window.URL.createObjectURL = (obj: Blob | MediaSource) => 'blob:mock-url';
+}
+if (typeof window.URL.revokeObjectURL === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  window.URL.revokeObjectURL = (url: string) => {};
+}

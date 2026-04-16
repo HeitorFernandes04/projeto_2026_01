@@ -87,5 +87,75 @@ def list_mobile_components() -> str:
     file_list = [f"- {t.name}" for t in files]
     return "Componentes React/Ionic Encontrados:\n" + "\n".join(file_list) + "\n\n(Reaproveite estes arquivos e respeite suas Props)"
 
+# ======== Ferramentas de Manutenção e Testes (Django Base) ========
+
+@mcp.tool()
+def read_django_models_schema() -> str:
+    """Retorna a estrutura atual (campos, tipos e relacionamentos) de todos os Models registrados no Django."""
+    code = '''import django
+django.setup()
+from django.apps import apps
+output = []
+for app in apps.get_app_configs():
+    for model in app.get_models():
+        output.append(f"Model: {model.__name__} (App: {app.name})")
+        for f in model._meta.get_fields():
+            output.append(f"  - {f.name}: {type(f).__name__}")
+print("\\n".join(output))'''
+    try:
+        proc = subprocess.run([sys.executable, str(BASE_DIR / "manage.py"), "shell", "-c", code], capture_output=True, text=True, check=True)
+        return proc.stdout
+    except Exception as e:
+        return f"Erro ao extrair schema: {str(e)}"
+
+@mcp.tool()
+def execute_django_query(python_query_code: str) -> str:
+    """Executa um código Python dentro do shell do Django e retorna os prints. 
+    Ideal para usar o ORM (ex: 'from atendimentos.models import Atendimento; print(Atendimento.objects.count())')."""
+    setup = "import django; django.setup();\n"
+    full_code = setup + python_query_code
+    try:
+        proc = subprocess.run([sys.executable, str(BASE_DIR / "manage.py"), "shell", "-c", full_code], capture_output=True, text=True, timeout=10)
+        return proc.stdout if proc.stdout else proc.stderr
+    except Exception as e:
+        return f"Erro ao executar query: {str(e)}"
+
+@mcp.tool()
+def run_backend_tests(test_path: str = "") -> str:
+    """Executa o pytest no backend. Pode receber o caminho de um arquivo ou pasta específica. Deixe vazio para rodar tudo."""
+    cmd = [sys.executable, "-m", "pytest"]
+    if test_path:
+        cmd.append(test_path)
+    try:
+        env = os.environ.copy()
+        env['DJANGO_SETTINGS_MODULE'] = 'lava_me.settings'
+        proc = subprocess.run(cmd, cwd=str(BASE_DIR), capture_output=True, text=True, env=env)
+        return proc.stdout if proc.stdout else proc.stderr
+    except Exception as e:
+        return f"Erro ao rodar pytest: {str(e)}"
+
+# ======== Ferramentas de Manutenção e Testes (Frontend / Mobile) ========
+
+@mcp.tool()
+def run_frontend_tests(test_file: str = "") -> str:
+    """Executa os testes unitários (Vitest) no frontend/mobile. Retorna o output de sucesso ou falha."""
+    cmd = ["npm", "run", "test.unit", "--", "--run"]
+    if test_file:
+        cmd.append(test_file)
+    try:
+        proc = subprocess.run(cmd, cwd=str(MOBILE_DIR), capture_output=True, text=True)
+        return proc.stdout if proc.stdout else proc.stderr
+    except Exception as e:
+        return f"Erro ao rodar vitest: {str(e)}"
+
+@mcp.tool()
+def run_frontend_linter() -> str:
+    """Executa o linter e checagem de tipos estáticos (ESLint e TSC) na pasta mobile."""
+    try:
+        proc = subprocess.run(["npm", "run", "lint"], cwd=str(MOBILE_DIR), capture_output=True, text=True)
+        return proc.stdout if proc.stdout else proc.stderr
+    except Exception as e:
+        return f"Erro no linter front: {str(e)}"
+
 if __name__ == "__main__":
     mcp.run(transport='stdio')

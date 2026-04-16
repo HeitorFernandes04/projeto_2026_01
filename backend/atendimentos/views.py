@@ -150,7 +150,13 @@ class FotoUploadView(APIView):
 
     def post(self, request, pk):
         atendimento = request.atendimento
-        serializer = MidiaAtendimentoUploadSerializer(data=request.data)
+        # Força o carregamento de múltiplos arquivos com o mesmo nome 'arquivos'
+        arquivos = request.FILES.getlist('arquivos')
+        
+        serializer = MidiaAtendimentoUploadSerializer(data={
+            'momento': request.data.get('momento'),
+            'arquivos': arquivos
+        })
         serializer.is_valid(raise_exception=True)
 
         try:
@@ -167,6 +173,14 @@ class FotoUploadView(APIView):
 
 class ServicoListView(APIView):
     def get(self, request):
+        if not Servico.objects.exists():
+            # RN: Se o banco estiver vazio, popula com serviços padrão para não travar o fluxo mobile
+            Servico.objects.bulk_create([
+                Servico(nome="Lavagem Simples", preco=50.00, duracao_estimada_min=45),
+                Servico(nome="Lavagem Completa", preco=80.00, duracao_estimada_min=90),
+                Servico(nome="Higienização Interna", preco=150.00, duracao_estimada_min=180),
+            ])
+            
         servicos = Servico.objects.all()
         return Response(ServicoSerializer(servicos, many=True).data)
 

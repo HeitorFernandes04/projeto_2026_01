@@ -16,7 +16,7 @@ import '../../theme/lava-me.css';
 interface MidiaAtendimento {
   id: number;
   arquivo: string;
-  momento: 'ANTES' | 'DEPOIS';
+  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
 }
 
 interface Atendimento {
@@ -95,8 +95,8 @@ const DetalhesAtendimento: React.FC = () => {
               <div slot="content" style={styles.accordionContent}>
                 <GaleriaFotos 
                   atendimentoId={atendimento.id} 
-                  momento="ANTES" 
-                  fotosIniciais={atendimento.midias?.filter(m => m.momento === 'ANTES') || []} 
+                  momento="VISTORIA_GERAL" 
+                  fotosIniciais={atendimento.midias?.filter(m => m.momento === 'VISTORIA_GERAL') || []} 
                   somenteLeitura 
                 />
                 <div style={styles.statusBox}>
@@ -153,8 +153,8 @@ const DetalhesAtendimento: React.FC = () => {
                 </div>
                 <GaleriaFotos 
                   atendimentoId={atendimento.id} 
-                  momento="DEPOIS" 
-                  fotosIniciais={atendimento.midias?.filter(m => m.momento === 'DEPOIS') || []} 
+                  momento="FINALIZADO" 
+                  fotosIniciais={atendimento.midias?.filter(m => m.momento === 'FINALIZADO') || []} 
                   somenteLeitura 
                 />
               </div>

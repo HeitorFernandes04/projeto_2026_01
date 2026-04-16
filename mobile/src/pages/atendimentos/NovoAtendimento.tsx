@@ -7,6 +7,7 @@ import { LogOut, Check } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getServicos, criarAtendimento } from '../../services/api';
+import { validarPlaca, maskPlaca, maskTelefone } from '../../services/validators';
 import TabBar from '../../components/TabBar';
 import Toast from '../../components/Toast';
 import logoLavaMe from '../../assets/logo.jpeg';
@@ -38,8 +39,14 @@ const NovoAtendimento: React.FC = () => {
   // Trecho atualizado da função handleConfirmar no NovoAtendimento.tsx
 
 const handleConfirmar = async () => {
-  if (!form.placa || !form.modelo || !form.servico_id) {
-    setToastMsg("Preencha os campos obrigatórios (*)");
+  if (!validarPlaca(form.placa)) {
+    setToastMsg('Informe uma placa válida (ex: ABC-1234 ou ABC-1A34).');
+    setShowToast(true);
+    return;
+  }
+
+  if (!form.modelo || !form.servico_id) {
+    setToastMsg('Preencha os campos obrigatórios (*)');
     setShowToast(true);
     return;
   }
@@ -98,7 +105,7 @@ const handleConfirmar = async () => {
           <div style={styles.inputGroup}>
             <input 
               value={form.placa} 
-              onChange={e => setForm({...form, placa: e.target.value.toUpperCase()})}
+              onChange={e => setForm({...form, placa: maskPlaca(e.target.value)})}
               style={styles.inputMain} 
               placeholder="PLACA *" 
             />
@@ -122,6 +129,15 @@ const handleConfirmar = async () => {
               onChange={e => setForm({...form, nome_dono: e.target.value})}
               style={styles.input} 
               placeholder="NOME DO PROPRIETÁRIO" 
+            />
+
+            <input 
+              value={form.celular_dono} 
+              onChange={e => setForm({...form, celular_dono: maskTelefone(e.target.value)})}
+              style={styles.input} 
+              placeholder="CELULAR DO PROPRIETÁRIO (opcional)"
+              type="tel"
+              inputMode="tel"
             />
 
             <input 

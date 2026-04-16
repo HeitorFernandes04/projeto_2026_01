@@ -4,8 +4,8 @@ import { IonSpinner } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { avancarEtapa, registrarIncidente, getAtendimento } from '../services/api';
 import ModalOcorrencia from './ModalOcorrencia';
+import './EstadoLavagem.css';
 
-// Interface para dados do incidente
 interface DadosIncidente {
   descricao: string;
   tag_peca_id: number;
@@ -19,23 +19,22 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
   const [loading, setLoading] = useState(false);
   const [observacoes, setObservacoes] = useState('');
   const [statusAtual, setStatusAtual] = useState<string>('');
-  
   const [showModalOcorrencia, setShowModalOcorrencia] = useState(false);
 
-  // Verifica o status real no banco para detectar bloqueios (RN-09/RN-13) [cite: 16, 49]
+  // Verifica o status real no banco para detectar bloqueios (RN-09/RN-13)
   useEffect(() => {
     const verificarStatus = async () => {
       try {
         const data = await getAtendimento(atendimentoId);
         setStatusAtual(data.status);
       } catch (err) {
-        console.error("Erro ao verificar status:", err);
+        console.error('Erro ao verificar status:', err);
       }
     };
     verificarStatus();
   }, [atendimentoId]);
 
-  // Cronômetro: Só corre se não estiver pausado E não houver incidente (Bloqueio Industrial) [cite: 44, 49]
+  // Cronômetro: Só corre se não estiver pausado E não houver incidente
   useEffect(() => {
     if (!isPausado && statusAtual !== 'INCIDENTE') {
       const interval = setInterval(() => setSegundos(prev => prev + 1), 1000);
@@ -57,9 +56,8 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
     setLoading(true);
     try {
       await avancarEtapa(atendimentoId, { comentario_lavagem: observacoes });
-      onComplete(); 
+      onComplete();
     } catch {
-      // Variável 'err' removida para satisfazer o ESLint
       alert('Erro ao avançar etapa. A OS pode estar bloqueada.');
     } finally {
       setLoading(false);
@@ -69,18 +67,10 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
   const handleConfirmarOcorrencia = async (dados: DadosIncidente) => {
     setLoading(true);
     try {
-      // 1. Envia para o Django
       await registrarIncidente(atendimentoId, dados);
-      
-      // 2. FORÇA a mudança de estado local IMEDIATAMENTE
-      // Isso faz o React esconder o cronômetro e mostrar a tela de bloqueio
-      setStatusAtual('INCIDENTE'); 
-      
+      setStatusAtual('INCIDENTE');
       setShowModalOcorrencia(false);
-      
-      // 3. Feedback visual
       alert('Incidente registrado. A OS foi bloqueada para análise do Gestor.');
-      
     } catch (error: unknown) {
       const mensagem = error instanceof Error ? error.message : 'Erro desconhecido';
       alert('Falha ao registrar: ' + mensagem);
@@ -89,18 +79,18 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
     }
   };
 
-  // TELA DE BLOQUEIO (MODO LEITURA / INCIDENTE) [cite: 16, 60]
+  // Tela de bloqueio industrial
   if (statusAtual === 'INCIDENTE') {
     return (
-      <div style={styles.blockContainer}>
-        <div style={styles.blockCard}>
+      <div className="el-block-container">
+        <div className="el-block-card">
           <AlertTriangle size={60} color="var(--lm-amber)" style={{ marginBottom: '20px' }} />
-          <h2 style={styles.blockTitle}>OS BLOQUEADA</h2>
-          <p style={styles.blockText}>
-            Um incidente foi registrado para este veículo. O cronômetro foi interrompido e a execução está suspensa. [cite: 16, 49]
+          <h2 className="el-block-title">OS BLOQUEADA</h2>
+          <p className="el-block-text">
+            Um incidente foi registrado para este veículo. O cronômetro foi interrompido e a execução está suspensa.
           </p>
-          <p style={styles.blockSubText}>Aguarde a liberação do Gestor no sistema administrativo. [cite: 16]</p>
-          <button onClick={() => history.push('/atendimentos/hoje')} style={styles.btnBack}>
+          <p className="el-block-subtext">Aguarde a liberação do Gestor no sistema administrativo.</p>
+          <button onClick={() => history.push('/atendimentos/hoje')} className="el-btn-back">
             <Home size={20} /> VOLTAR AO PÁTIO
           </button>
         </div>
@@ -109,77 +99,52 @@ const EstadoLavagem: React.FC<{ atendimentoId: number; onComplete: () => void; }
   }
 
   return (
-    <div style={{ background: '#000', padding: '0' }}>
-      <div style={styles.timerContainer}>
-        <div style={{ ...styles.timer, color: 'var(--lm-primary)', textShadow: '0 0 20px var(--lm-primary-glow)' }}>
-          {formatarTempo(segundos)}
-        </div>
-        <span style={styles.timerLabel}>Tempo Decorrido</span>
+    <div className="el-root">
+      <div className="el-timer-container">
+        <div className="el-timer">{formatarTempo(segundos)}</div>
+        <span className="el-timer-label">Tempo Decorrido</span>
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
-        <label style={styles.inputLabel}>Observações da Lavagem</label>
-        <textarea 
+      <div className="el-obs-wrapper">
+        <label className="el-input-label">Observações da Lavagem</label>
+        <textarea
           value={observacoes}
           onChange={(e) => setObservacoes(e.target.value)}
           placeholder="Ex: Utilizado shampoo neutro..."
-          style={styles.textarea}
+          className="el-textarea"
         />
       </div>
 
-      <div style={styles.btnGroup}>
-        <button type="button" style={styles.btnSecondary} onClick={() => setShowModalOcorrencia(true)}>
-          <AlertTriangle size={20} color="var(--lm-amber)" /> Ocorrência [cite: 49]
+      <div className="el-btn-group">
+        <button type="button" className="el-btn-secondary" onClick={() => setShowModalOcorrencia(true)}>
+          <AlertTriangle size={20} color="var(--lm-amber)" /> Relatar Problema
         </button>
 
-        <button 
+        <button
           type="button"
-          style={{ 
-            ...styles.btnPause, 
-            background: isPausado ? 'var(--lm-primary)' : 'var(--lm-amber)',
-            color: isPausado ? '#fff' : '#000'
-          }} 
+          className={`el-btn-pause ${isPausado ? 'is-pausado' : 'is-rodando'}`}
           onClick={() => setIsPausado(!isPausado)}
         >
-          <Pause size={20} /> {isPausado ? 'Retomar' : 'Pausar'} [cite: 48]
+          <Pause size={20} /> {isPausado ? 'Retomar' : 'Pausar'}
         </button>
 
-        <button 
+        <button
           type="button"
-          className="btn-pulse"
-          style={styles.btnPrimary} 
-          onClick={handleFinalizar} 
+          className="el-btn-primary btn-pulse"
+          onClick={handleFinalizar}
           disabled={loading}
         >
-          {loading ? <IonSpinner name="crescent" /> : <><CheckCircle size={20} /> Finalizar Lavagem</>} [cite: 57]
+          {loading ? <IonSpinner name="crescent" /> : <><CheckCircle size={20} /> Finalizar Lavagem</>}
         </button>
       </div>
 
-      <ModalOcorrencia 
+      <ModalOcorrencia
         isOpen={showModalOcorrencia}
         onClose={() => setShowModalOcorrencia(false)}
         onConfirm={handleConfirmarOcorrencia}
       />
     </div>
   );
-};
-
-const styles = {
-  timerContainer: { textAlign: 'center' as const, padding: '40px 0' },
-  timer: { fontSize: '56px', fontWeight: 900, letterSpacing: '2px' },
-  timerLabel: { fontSize: '12px', color: '#666', textTransform: 'uppercase' as const, fontWeight: 700 },
-  inputLabel: { color: '#fff', fontSize: '12px', fontWeight: 900, display: 'block', marginBottom: '10px', textTransform: 'uppercase' as const, letterSpacing: '1px' },
-  textarea: { background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '20px', color: '#fff', width: '100%', padding: '18px', minHeight: '140px', outline: 'none' },
-  btnGroup: { display: 'flex', flexDirection: 'column' as const, gap: '16px', paddingBottom: '100px' },
-  btnPrimary: { background: 'var(--lm-primary)', color: '#fff', height: '68px', borderRadius: '20px', fontWeight: 900, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', textTransform: 'uppercase' as const },
-  btnSecondary: { background: '#0a0a0a', color: '#fff', height: '64px', borderRadius: '20px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontWeight: 800 },
-  btnPause: { height: '64px', borderRadius: '20px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontWeight: 900, textTransform: 'uppercase' as const },
-  blockContainer: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '20px' },
-  blockCard: { background: '#0a0a0a', border: '2px solid #1a1a1a', borderRadius: '32px', padding: '40px 24px', textAlign: 'center' as const, width: '100%' },
-  blockTitle: { color: '#fff', fontSize: '24px', fontWeight: 900, marginBottom: '16px', letterSpacing: '1px' },
-  blockText: { color: '#bbb', fontSize: '14px', lineHeight: '1.6', marginBottom: '8px' },
-  blockSubText: { color: '#555', fontSize: '12px', fontWeight: 600, marginBottom: '32px' },
-  btnBack: { background: '#fff', color: '#000', width: '100%', padding: '18px', borderRadius: '16px', border: 'none', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }
 };
 
 export default EstadoLavagem;

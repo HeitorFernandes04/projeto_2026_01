@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import { IonPage, IonContent, IonSpinner, IonIcon } from '@ionic/react';
+import { IonPage, IonContent, IonSpinner, IonIcon, useIonViewWillEnter, useIonViewWillLeave } from '@ionic/react';
 import { 
   chevronBackOutline, 
   logOutOutline, 
@@ -43,21 +43,44 @@ const EsteiraProducao: React.FC = () => {
     }
   }, [id]);
 
-  useEffect(() => { 
-    if (id) {
-      carregarAtendimento();
-      
-      // Polling de segurança: verifica o status no banco a cada 10 segundos
-      // para garantir que o bloqueio apareça se o gestor travar a OS remotamente
-      const interval = setInterval(() => {
-        getAtendimento(Number(id)).then(dados => {
-          if (dados) setAtendimento(dados as unknown as AtendimentoData);
-        });
-      }, 10000);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const isAtivoRef = useRef(false);
 
-      return () => clearInterval(interval);
+  // Axioma: Limpeza agressiva ao sair da página (Prevenção de Ghost Polling)
+  useIonViewWillLeave(() => {
+    isAtivoRef.current = false;
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
     }
-  }, [id, carregarAtendimento]);
+  });
+
+  useIonViewWillEnter(() => {
+    isAtivoRef.current = true;
+    
+    // Carregamento inicial silencioso se já houver dados
+    if (!atendimento) {
+      carregarAtendimento();
+    }
+    
+    // Inicia Polling apenas se a página estiver ativa
+    if (!pollingRef.current) {
+      pollingRef.current = setInterval(() => {
+        if (!isAtivoRef.current) return;
+        
+        getAtendimento(Number(id)).then(dados => {
+          if (dados && isAtivoRef.current) setAtendimento(dados as unknown as AtendimentoData);
+        }).catch(err => console.debug("Silent sync failed:", err));
+      }, 15000); 
+    }
+  });
+
+  // Mantemos o useEffect apenas para o reset inicial do ID
+  useEffect(() => {
+    return () => {
+      setAtendimento(null);
+    };
+  }, [id]);
 
   if (loading) return (
     <IonPage style={{ background: 'var(--lm-bg)' }}>

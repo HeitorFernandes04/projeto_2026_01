@@ -89,6 +89,16 @@ const Login: React.FC = () => {
             ← Voltar para seleção de acesso
           </button>
 
+          <p style={styles.registerLink}>
+            Ainda não tem conta?{' '}
+            <span
+              style={styles.registerSpan}
+              onClick={() => history.push('/register')}
+            >
+              Cadastrar-se
+            </span>
+          </p>
+
         </div>
       </IonContent>
     </IonPage>
@@ -189,6 +199,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     background: 'none',
     border: 'none',
+  },
+  registerLink: {
+    marginTop: 24,
+    color: '#8899aa',
+    fontSize: 13,
+    textAlign: 'center' as const,
+  },
+  registerSpan: {
+    color: '#00b4d8',
+    fontWeight: 700,
+    cursor: 'pointer',
+    textDecoration: 'underline',
   },
 };
 

@@ -88,6 +88,27 @@ export async function loginUsuario(email: string, password: string) {
   return response.json();
 }
 
+// RF-Registro — Cadastra novo funcionário
+export async function registerUsuario(dados: {
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+}) {
+  const response = await fetch(`${BASE_URL}/api/auth/register/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const primeiroErro = Object.values(data)[0];
+    const msg = Array.isArray(primeiroErro) ? (primeiroErro as string[])[0] : (data.detail || 'Erro ao cadastrar.');
+    throw new Error(msg);
+  }
+  return data;
+}
+
 // --- ORDENS DE SERVIÇO (ANTIGOS ATENDIMENTOS) ---
 
 // RF-03 — Lista atendimentos do dia
@@ -118,11 +139,17 @@ export async function finalizarAtendimento(id: number) {
   return request(`/api/atendimentos/${id}/finalizar/`, { method: 'PATCH' });
 }
 
-// RF-05/06 — Envia fotos (Categorias atualizadas conforme diretriz) 
-export async function uploadFotos(id: number, momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO', fotoBlob: Blob) {
+// RF-05/06 — Envia múltiplas fotos de uma só vez (Staged Multi-Upload)
+export async function uploadFotos(
+  id: number,
+  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO',
+  fotoBlobs: Blob[]
+) {
   const formData = new FormData();
   formData.append('momento', momento);
-  formData.append('arquivos', fotoBlob, 'foto.jpg');
+  fotoBlobs.forEach((blob, i) => {
+    formData.append('arquivos', blob, `foto_${i + 1}.jpg`);
+  });
 
   return request(`/api/atendimentos/${id}/fotos/`, {
     method: 'POST',

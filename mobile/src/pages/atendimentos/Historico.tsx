@@ -69,10 +69,6 @@ const Historico: React.FC = () => {
     carregarHistorico();
   });
 
-  useEffect(() => {
-    carregarHistorico();
-  }, [carregarHistorico]);
-
   return (
     <IonPage style={{ background: 'var(--lm-bg)' }}>
       <IonContent style={{ '--background': 'var(--lm-bg)' }}>

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Atendimento, IncidenteOS, MidiaAtendimento, Servico, TagPeca, Veiculo
 from django.utils import timezone
 import os
+import re
 
 class ServicoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,6 +14,14 @@ class VeiculoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Veiculo
         fields = ['id', 'placa', 'modelo', 'marca', 'cor', 'nome_dono', 'celular_dono']
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        placa = ret.get('placa', '')
+        # RN: Aplica máscara visual na saída da API (AAA-1234 ou AAA-1A23)
+        if len(placa) == 7 and '-' not in placa:
+            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        return ret
 
 
 class MidiaAtendimentoSerializer(serializers.ModelSerializer):
@@ -73,6 +82,17 @@ class CriarAtendimentoSerializer(serializers.Serializer):
     celular_dono = serializers.CharField(required=False, allow_blank=True, default='')
     placa        = serializers.CharField()
     modelo       = serializers.CharField()
+
+    def validate_placa(self, value):
+        """RN: Aceita placas no formato Antigo (ABC1234) e Mercosul (ABC1D23)."""
+        # Normaliza: Remove hífens ou espaços que a máscara do front possa ter enviado
+        placa_normalizada = re.sub(r'[^A-Z0-9]', '', value.strip().upper())
+        padrao = r'^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$'
+        if not re.match(padrao, placa_normalizada):
+            raise serializers.ValidationError(
+                'Placa inválida. Use o formato antigo (ABC1234) ou Mercosul (ABC1D23).'
+            )
+        return placa_normalizada
     marca        = serializers.CharField()
     cor          = serializers.CharField(required=False, allow_blank=True, default='')
     servico_id   = serializers.IntegerField()
@@ -120,7 +140,7 @@ def validar_extensao_imagem(arquivo):
 
 
 class MidiaAtendimentoUploadSerializer(serializers.Serializer):
-    momento = serializers.ChoiceField(choices=['ANTES', 'DEPOIS'])
+    momento = serializers.ChoiceField(choices=['VISTORIA_GERAL', 'FINALIZADO', 'AVARIA_PREVIA', 'EXECUCAO'])
     arquivos = serializers.ListField(
         child=serializers.ImageField(validators=[validar_extensao_imagem]),
         allow_empty=False,

@@ -7,6 +7,7 @@ import { LogOut, Check } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getServicos, criarAtendimento } from '../../services/api';
+import { maskPlaca, maskTelefone, validarPlaca } from '../../services/validators';
 import TabBar from '../../components/TabBar';
 import GradeHorarios from '../../components/GradeHorarios';
 import Toast from '../../components/Toast';
@@ -43,6 +44,12 @@ const Agendar: React.FC = () => {
     // Validação de campos obrigatórios incluindo o horário selecionado
     if (!form.placa || !form.modelo || !form.servico_id || !form.data || !form.hora) {
       setToastMsg("Preencha todos os campos e selecione um horário.");
+      setShowToast(true);
+      return;
+    }
+
+    if (!validarPlaca(form.placa)) {
+      setToastMsg("Informe uma placa válida (ex: ABC-1234 ou ABC-1D23).");
       setShowToast(true);
       return;
     }
@@ -108,7 +115,7 @@ const Agendar: React.FC = () => {
           <div style={styles.inputGroup}>
             <input 
               value={form.placa} 
-              onChange={e => setForm({...form, placa: e.target.value.toUpperCase()})}
+              onChange={e => setForm({...form, placa: maskPlaca(e.target.value)})}
               style={styles.inputMain} placeholder="PLACA *" 
             />
             <input 
@@ -125,6 +132,13 @@ const Agendar: React.FC = () => {
               value={form.nome_dono} 
               onChange={e => setForm({...form, nome_dono: e.target.value})}
               style={styles.input} placeholder="NOME DO PROPRIETÁRIO *" 
+            />
+            <input 
+              value={form.celular_dono} 
+              onChange={e => setForm({...form, celular_dono: maskTelefone(e.target.value)})}
+              style={styles.input} placeholder="CELULAR DO PROPRIETÁRIO"
+              type="tel"
+              inputMode="numeric"
             />
             <input 
               value={form.cor} 

@@ -4,6 +4,8 @@
 
 - [Requisitos](#requisitos)
 - [Backend](#backend-django)
+- [Mobile](#mobile-ionic)
+- [Testes](#-testes)
 - [Git Flow](#git-flow)
 ---
 
@@ -170,6 +172,48 @@ python manage.py shell
 | Rodar servidor | `python manage.py runserver` |
 | Atualizar requirements | `pip freeze > requirements.txt` |
 | Shell Django | `python manage.py shell`|
+
+---
+
+## 🧪 Testes
+
+A qualidade do projeto Lava-Me é garantida por uma suíte de testes automatizados. **Sempre execute os testes antes de iniciar uma alteração e após finalizá-la.**
+
+### 🖥️ Backend (Pytest)
+
+Os testes do backend utilizam `pytest` e `pytest-django`.
+
+**Comandos:**
+```bash
+cd backend
+source ../venv/bin/activate
+pytest                          # Roda toda a suíte (exceto integração externa)
+pytest <pasta/arquivo>          # Roda apenas um módulo (ex: pytest atendimentos/)
+pytest -v                       # Modo detalhado (verbose)
+```
+
+> **Configuração:** O arquivo `backend/pytest.ini` já define os *settings* automáticos. Se houver erro de conexão, verifique se você não está tentando rodar arquivos de teste que dependem de servidor ligado (como `test_register.py`).
+
+### 📱 Mobile (Vitest & Cypress)
+
+O mobile possui testes unitários de lógica (Vitest) e testes de fluxo fim-a-fim (Cypress).
+
+**Testes Unitários (Lógica e Componentes):**
+```bash
+cd mobile
+npm run test.unit               # Interface interativa
+npm run test.unit -- --run      # Execução única (CI)
+```
+
+**Testes E2E (Workflow do Usuário):**
+```bash
+cd mobile
+npm run dev                     # 1. Inicie o servidor dev em um terminal
+npm run test.e2e                # 2. Em outro terminal, rode os testes (headless)
+npx cypress open                # Opcional: abre a interface visual do Cypress
+```
+
+---
 
 ## Git Flow
 

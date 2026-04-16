@@ -1,7 +1,7 @@
 import factory
 from django.utils import timezone
 from accounts.models import User
-from atendimentos.models import Atendimento, MidiaAtendimento, Servico, Veiculo
+from atendimentos.models import Atendimento, IncidenteOS, MidiaAtendimento, Servico, TagPeca, Veiculo
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -40,3 +40,17 @@ class MidiaAtendimentoFactory(factory.django.DjangoModelFactory):
     atendimento = factory.SubFactory(AtendimentoFactory)
     arquivo = factory.django.ImageField(color='blue')
     momento = 'VISTORIA_GERAL' # Categorias atualizadas
+
+class TagPecaFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = TagPeca
+    nome = factory.Sequence(lambda n: f'Peça_{n}')
+    categoria = 'CARROCERIA'
+
+class IncidenteOSFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = IncidenteOS
+    atendimento = factory.SubFactory(AtendimentoFactory)
+    tag_peca = factory.SubFactory(TagPecaFactory)
+    descricao = 'Risco no para-choque detectado'
+    foto_url = factory.django.ImageField(color='red')

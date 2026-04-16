@@ -25,11 +25,13 @@ const AtendimentosHoje: React.FC = () => {
   const nomeFuncionario = localStorage.getItem('nome_usuario') || 'Funcionário';
 
   useIonViewWillEnter(() => {
-    setLoading(true);
+    // Só exibe o spinner na primeira carga total
+    if (atendimentos.length === 0) {
+      setLoading(true);
+    }
     getAtendimentosHoje()
       .then((dados) => {
         if (dados && Array.isArray(dados)) {
-          // Filtra para exibir apenas o que está no pátio agora (não finalizados/cancelados)
           const ativos = dados.filter((a: Atendimento) => 
             a.status !== 'finalizado' && a.status !== 'cancelado'
           );
@@ -40,7 +42,7 @@ const AtendimentosHoje: React.FC = () => {
         console.error("Erro ao carregar pátio:", err);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [atendimentos.length]);
 
   const handleLogout = () => {
     localStorage.removeItem('access');
