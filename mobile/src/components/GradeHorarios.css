@@ -1,0 +1,49 @@
+.grade-horarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.slot-horario {
+  background: var(--lm-card);
+  border: 1px solid var(--lm-border);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slot-horario:hover {
+  border-color: var(--lm-primary);
+  transform: translateY(-2px);
+}
+
+.slot-horario.ocupado {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.slot-horario.ocupado:hover {
+  transform: none;
+  border-color: var(--lm-border);
+}
+
+.horario-texto {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.atendimento-info {
+  color: #666;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.placa-veiculo {
+  color: var(--lm-primary);
+  font-weight: 600;
+}

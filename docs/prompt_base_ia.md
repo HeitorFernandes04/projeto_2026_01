@@ -38,3 +38,7 @@ Sempre que for me apresentar o código, quebre-o obedecendo à seguinte ordem ca
 5. **Serializers (`serializers.py`)** -> *(A peneira limitadora de Campos)*.
 6. **Views (`views.py`)** -> *(O Controller REST enxuto)*.
 7. **URLs (`urls.py`)** -> *(Os endpoints expostos)*.
+
+## 🔴 Ciclo de Vida da Tarefa (Regra de Ouro)
+*   **Axioma 14 (Regressão Obrigatória):** Antes de gerar qualquer código, a IA deve atestar que a suíte de testes atual está passando. Após a implementação, é mandatório rodar novamente `pytest` (Backend) e `npm run cypress:run` (Mobile E2E) para garantir que nenhuma regra de negócio anterior foi quebrada. 
+*   **Axioma 15 (Fim de Sprint / Documentação de Testes):** Todo novo Service ou funcionalidade crítica deve vir acompanhado de seu respectivo arquivo de teste agnóstico a viés (ver `testes_standard.md`). Não existe "funcionalidade pronta" sem "teste passando".

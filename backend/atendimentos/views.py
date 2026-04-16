@@ -7,49 +7,55 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from .models import TagPeca, IncidenteOS
+from .serializers import TagPecaSerializer, IncidenteOSSerializer
+from .services import IncidenteService
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
-from .models import Atendimento, Servico
-from .permissions import IsFuncionarioDoAtendimento
+from .models import OrdemServico, Servico
+from .permissions import IsFuncionarioDaOS
 from .serializers import (
-    AtendimentoSerializer,
-    CriarAtendimentoSerializer,
-    HistoricoAtendimentoFiltroSerializer,
-    MidiaAtendimentoSerializer,
-    MidiaAtendimentoUploadSerializer,
+    OrdemServicoSerializer,
+    CriarOrdemServicoSerializer,
+    HistoricoOrdemServicoFiltroSerializer,
+    MidiaOrdemServicoSerializer,
+    MidiaOrdemServicoUploadSerializer,
     ServicoSerializer,
-    AtualizarComentarioSerializer,
+    ProximaEtapaSerializer,
+    FinalizarIndustrialSerializer,
 )
-from .services import AtendimentoService, MidiaAtendimentoService
+from .services import OrdemServicoService, MidiaOrdemServicoService
 
 
-class AtendimentosHojeView(APIView):
+class OrdensServicoHojeView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         hoje = timezone.localdate()
-
-        atendimentos = Atendimento.objects.filter(
+        # Exibe OS sem funcionário ou do próprio usuário (fila do pátio)
+        ordens = OrdemServico.objects.filter(
             Q(funcionario__isnull=True) | Q(funcionario=request.user),
             data_hora__date=hoje,
         ).select_related('veiculo', 'servico').prefetch_related('midias').order_by('data_hora')
 
-        serializer = AtendimentoSerializer(atendimentos, many=True, context={'request': request})
+        serializer = OrdemServicoSerializer(ordens, many=True, context={'request': request})
         return Response(serializer.data)
 
 
-class HistoricoAtendimentosView(APIView):
-    """GET /api/atendimentos/historico/?data_inicial=YYYY-MM-DD&data_final=YYYY-MM-DD."""
-
+class HistoricoOrdemServicoView(APIView):
+    """GET /api/ordens-servico/historico/"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        filtro_serializer = HistoricoAtendimentoFiltroSerializer(data=request.query_params)
+        filtro_serializer = HistoricoOrdemServicoFiltroSerializer(data=request.query_params)
         filtro_serializer.is_valid(raise_exception=True)
 
         try:
-            atendimentos = AtendimentoService.listar_historico_por_periodo(
+            ordens = OrdemServicoService.listar_historico_por_periodo(
                 funcionario=request.user,
                 data_inicial=filtro_serializer.validated_data['data_inicial'],
                 data_final=filtro_serializer.validated_data['data_final'],
@@ -61,76 +67,31 @@ class HistoricoAtendimentosView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = AtendimentoSerializer(atendimentos, many=True, context={'request': request})
+        serializer = OrdemServicoSerializer(ordens, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class ServicoListView(APIView):
-    """GET /api/atendimentos/servicos/ — lista todos os serviços disponíveis."""
-
-    def get(self, request):
-        servicos = Servico.objects.all()
-        serializer = ServicoSerializer(servicos, many=True)
-        return Response(serializer.data)
-
-
-class HorariosLivresView(APIView):
-    """
-    GET /api/atendimentos/horarios-livres/?data=YYYY-MM-DD&servico_id=X
-    Retorna os slots vagos para um determinado dia e serviço, bloqueando intersecções.
-    """
+class OrdemServicoDetailView(APIView):
+    """GET /api/ordens-servico/{id}/"""
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        data_str = request.query_params.get('data')
-        servico_id = request.query_params.get('servico_id')
-
-        if not data_str or not servico_id:
-            return Response(
-                {'detail': 'Parâmetros "data" e "servico_id" são obrigatórios.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            horarios = AtendimentoService.get_horarios_livres(data_str, servico_id)
-            return Response({'horarios': horarios}, status=status.HTTP_200_OK)
-        except ValidationError as e:
-            return Response({'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            from django.http import Http404
-            if isinstance(e, Http404):
-                return Response({'detail': 'Serviço não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class AtendimentoDetailView(APIView):
-    """GET /api/atendimentos/{id}/ — detalhe completo de um atendimento."""
-
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
 
     def get(self, request, pk):
-        # Atendimento já carregado e autorizado pela permission
-        serializer = AtendimentoSerializer(request.atendimento, context={'request': request})
+        serializer = OrdemServicoSerializer(request.ordem_servico, context={'request': request})
         return Response(serializer.data)
 
 
-class CriarAtendimentoView(APIView):
-    """
-    POST /api/atendimentos/
-    Cria um veículo (ou reutiliza pela placa) e registra o atendimento.
-    """
-
+class CriarOrdemServicoView(APIView):
+    """POST /api/ordens-servico/"""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = CriarAtendimentoSerializer(data=request.data)
+        serializer = CriarOrdemServicoSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
         try:
-            atendimento = AtendimentoService.criar_com_veiculo(
+            os = OrdemServicoService.criar_com_veiculo(
                 dados=serializer.validated_data,
                 funcionario=request.user,
             )
@@ -140,135 +101,118 @@ class CriarAtendimentoView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response(AtendimentoSerializer(atendimento, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        return Response(OrdemServicoSerializer(os, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
-class IniciarAtendimentoView(APIView):
+class AvancarEtapaView(APIView):
     """
-    PATCH /api/atendimentos/{id}/iniciar/
-
-    Inicia um atendimento: salva o horário de início e muda o status para em_andamento.
-    Só é possível iniciar um atendimento que esteja com status 'agendado'.
+    PATCH /api/ordens-servico/{id}/avancar-etapa/
+    Endpoint unificado para transições da esteira.
     """
-
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
 
     def patch(self, request, pk):
-        # Atendimento já carregado e autorizado pela permission
-        atendimento = request.atendimento
+        serializer = ProximaEtapaSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
 
-        if atendimento.status != 'agendado':
-            return Response(
-                {'detail': f'Não é possível iniciar um atendimento com status "{atendimento.status}".'},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Trava: o funcionário já está ocupado com outro atendimento?
-        hoje = timezone.localdate()
-        if Atendimento.objects.filter(
-            funcionario=request.user, 
-            status='em_andamento',
-            data_hora__date=hoje  # Ignora atendimentos de dias anteriores
-        ).exists():
-            return Response(
-                {'detail': 'Termine o atendimento atual antes de iniciar outro.'},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Concorrência: outro funcionário assumiu este atendimento no intervalo entre
-        # a checagem de permissão e esta execução? Relê o DB para garantir estado fresco.
-        atendimento.refresh_from_db()
-        if atendimento.funcionario is not None and atendimento.funcionario != request.user:
-            return Response(
-                {'detail': 'Este serviço acabou de ser assumido por outro funcionário.'},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Claim: assume a fila e inicia
-        atendimento.funcionario = request.user
-        atendimento.status = 'em_andamento'
-        atendimento.horario_inicio = timezone.now()
-        atendimento.save()
-
-        serializer = AtendimentoSerializer(atendimento, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class FinalizarAtendimentoView(APIView):
-    """
-    PATCH /api/atendimentos/{id}/finalizar/
-    Finaliza um atendimento em andamento. Requer que as fotos do DEPOIS tenham sido enviadas.
-    """
-
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
-
-    def patch(self, request, pk):
         try:
-            AtendimentoService.finalizar(request.atendimento)
-        except ValidationError as e:
-            # Retorna a mensagem de erro formatada extraída da ValidationError
-            return Response({'detail': e.messages[0] if hasattr(e, 'messages') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            os = OrdemServicoService.avancar_etapa(pk, serializer.validated_data)
+            return Response(OrdemServicoSerializer(os, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = AtendimentoSerializer(request.atendimento, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class FinalizarIndustrialView(APIView):
+    """
+    PATCH /api/ordens-servico/{id}/finalizar/
+    Finaliza a OS na etapa 4 (Liberação) validando fotos FINALIZADO e vaga.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
+
+    def patch(self, request, pk):
+        serializer = FinalizarIndustrialSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            os = OrdemServicoService.finalizar_ordem_servico_industrial(pk, serializer.validated_data)
+            return Response(OrdemServicoSerializer(os, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FotoUploadView(APIView):
-    """
-    POST /api/atendimentos/{id}/fotos/
-
-    Upload de múltiplas fotos para um atendimento.
-    Toda lógica de negócio é delegada para MidiaAtendimentoService.
-    """
-
+    """POST /api/ordens-servico/{id}/fotos/"""
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
 
     def post(self, request, pk):
-        # O atendimento já foi carregado pela permission e cacheado em request
-        atendimento = request.atendimento
+        ordem_servico = request.ordem_servico
+        arquivos = request.FILES.getlist('arquivos')
 
-        # Validação de entrada
-        serializer = MidiaAtendimentoUploadSerializer(data=request.data)
+        serializer = MidiaOrdemServicoUploadSerializer(data={
+            'momento': request.data.get('momento'),
+            'arquivos': arquivos
+        })
         serializer.is_valid(raise_exception=True)
 
-        momento = serializer.validated_data['momento']
-        arquivos = serializer.validated_data['arquivos']
-
-        # Delega para a camada de serviço
         try:
-            midias = MidiaAtendimentoService.processar_upload_multiplo(
-                atendimento=atendimento,
-                momento=momento,
-                arquivos=arquivos,
+            midias = MidiaOrdemServicoService.processar_upload_multiplo(
+                ordem_servico=ordem_servico,
+                momento=serializer.validated_data['momento'],
+                arquivos=serializer.validated_data['arquivos'],
             )
+            output = MidiaOrdemServicoSerializer(midias, many=True, context={'request': request})
+            return Response(output.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response(
-                {'detail': e.message},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Serializa a saída com URLs absolutas
-        output = MidiaAtendimentoSerializer(
-            midias,
-            many=True,
-            context={'request': request},
-        )
-
-        return Response(output.data, status=status.HTTP_201_CREATED)
+            return Response({'detail': e.message}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ServicoListView(APIView):
+    def get(self, request):
+        if not Servico.objects.exists():
+            Servico.objects.bulk_create([
+                Servico(nome="Lavagem Simples", preco=50.00, duracao_estimada_min=45),
+                Servico(nome="Lavagem Completa", preco=80.00, duracao_estimada_min=90),
+                Servico(nome="Higienização Interna", preco=150.00, duracao_estimada_min=180),
+            ])
 
-class AdicionarComentarioView(APIView):
-    """PATCH /api/atendimentos/{id}/comentario/"""
+        servicos = Servico.objects.all()
+        return Response(ServicoSerializer(servicos, many=True).data)
+
+
+class HorariosLivresView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsFuncionarioDoAtendimento]
+    permission_classes = [IsAuthenticated]
 
-    def patch(self, request, pk):
-        atendimento = request.atendimento # Injetado pela permissionIsFuncionarioDoAtendimento
-        serializer = AtualizarComentarioSerializer(atendimento, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        atendimento_atualizado = serializer.save()
-        return Response(AtendimentoSerializer(atendimento_atualizado, context={'request': request}).data)
+    def get(self, request):
+        data_str = request.query_params.get('data')
+        servico_id = request.query_params.get('servico_id')
+        if not data_str or not servico_id:
+            return Response({'detail': 'Data e serviço são obrigatórios.'}, status=400)
+
+        try:
+            horarios = OrdemServicoService.get_horarios_livres(data_str, servico_id)
+            return Response({'horarios': horarios})
+        except Exception as e:
+            return Response({'detail': str(e)}, status=400)
+
+
+class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TagPeca.objects.all()
+    serializer_class = TagPecaSerializer
+
+
+@api_view(['POST'])
+def registrar_incidente(request, pk):
+    """Endpoint para o operador relatar um dano e travar a OS."""
+    try:
+        incidente = IncidenteService.registrar_incidente(
+            os_id=pk,
+            dados=request.data,
+            arquivo_foto=request.FILES.get('foto_url')
+        )
+        return Response({'status': 'OS bloqueada por incidente'}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

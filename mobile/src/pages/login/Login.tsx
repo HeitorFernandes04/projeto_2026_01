@@ -22,7 +22,7 @@ const Login: React.FC = () => {
       const data = await loginUsuario(email, password);
       localStorage.setItem('access', data.access);
       localStorage.setItem('refresh', data.refresh);
-      history.push('/atendimentos/hoje');
+      history.push('/ordens-servico/hoje');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Não foi possível conectar ao servidor.';
       setErro(msg);
@@ -88,6 +88,16 @@ const Login: React.FC = () => {
           >
             ← Voltar para seleção de acesso
           </button>
+
+          <p style={styles.registerLink}>
+            Ainda não tem conta?{' '}
+            <span
+              style={styles.registerSpan}
+              onClick={() => history.push('/register')}
+            >
+              Cadastrar-se
+            </span>
+          </p>
 
         </div>
       </IonContent>
@@ -189,6 +199,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     background: 'none',
     border: 'none',
+  },
+  registerLink: {
+    marginTop: 24,
+    color: '#8899aa',
+    fontSize: 13,
+    textAlign: 'center' as const,
+  },
+  registerSpan: {
+    color: '#00b4d8',
+    fontWeight: 700,
+    cursor: 'pointer',
+    textDecoration: 'underline',
   },
 };
 

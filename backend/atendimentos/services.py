@@ -1,9 +1,3 @@
-"""
-Camada de serviço — atendimentos.
-
-Toda lógica de negócio do app fica isolada aqui.
-Views delegam para estes métodos; nunca implementam regras diretamente.
-"""
 import datetime
 from io import BytesIO
 
@@ -13,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 
-from atendimentos.models import Atendimento, MidiaAtendimento, Servico, Veiculo
+from atendimentos.models import OrdemServico, MidiaOrdemServico, Servico, Veiculo, TagPeca, IncidenteOS
 
 # Constantes de negócio
 MAX_FOTOS_POR_MOMENTO = 5
@@ -25,65 +19,45 @@ HORARIO_FECHAMENTO = datetime.time(18, 0)
 SLOT_MINUTOS = 30
 
 
-class MidiaAtendimentoService:
+class MidiaOrdemServicoService:
     """Serviço responsável pelo processamento de upload de mídias."""
 
-    # Status que permitem receber novas mídias
-    STATUS_PERMITIDOS = {'agendado', 'em_andamento'}
+    MAPA_STATUS_MOMENTO_PERMITIDO = {
+        'PATIO': ['VISTORIA_GERAL', 'AVARIA_PREVIA'],
+        'VISTORIA_INICIAL': ['VISTORIA_GERAL', 'AVARIA_PREVIA'],
+        'EM_EXECUCAO': ['EXECUCAO'],
+        'LIBERACAO': ['FINALIZADO'],
+        'BLOQUEADO_INCIDENTE': ['EXECUCAO'],
+    }
 
     @staticmethod
-    def processar_upload_multiplo(atendimento, momento, arquivos):
-        """
-        Processa o upload de múltiplos arquivos de mídia para um atendimento.
+    def processar_upload_multiplo(ordem_servico, momento, arquivos):
+        """RF-05/RF-06: Processa upload validando limites e matriz de status vs momento."""
+        status_os = ordem_servico.status
+        momentos_permitidos = MidiaOrdemServicoService.MAPA_STATUS_MOMENTO_PERMITIDO.get(status_os, [])
 
-        Args:
-            atendimento: instância de Atendimento
-            momento: str — 'ANTES' ou 'DEPOIS'
-            arquivos: lista de UploadedFile (imagens)
-
-        Returns:
-            list[MidiaAtendimento] — objetos criados
-
-        Raises:
-            ValidationError: se o status do atendimento não permitir uploads
-            ValidationError: se o limite de 5 fotos por momento for excedido
-        """
-        if atendimento.status not in MidiaAtendimentoService.STATUS_PERMITIDOS:
+        if momento not in momentos_permitidos:
             raise ValidationError(
-                f'Não é possível enviar mídias para um atendimento com status '
-                f'"{atendimento.get_status_display()}". '
-                f'Status permitidos: agendado, em andamento.'
+                f'Momento "{momento}" não é permitido para uma OS com status "{ordem_servico.get_status_display()}".'
             )
 
-        # Validação de limite de fotos por momento (RF-05/RF-06)
-        fotos_existentes = MidiaAtendimento.objects.filter(
-            atendimento=atendimento,
+        fotos_existentes = MidiaOrdemServico.objects.filter(
+            ordem_servico=ordem_servico,
             momento=momento,
         ).count()
 
-        total_apos_upload = fotos_existentes + len(arquivos)
-
-        if total_apos_upload > MAX_FOTOS_POR_MOMENTO:
+        if fotos_existentes + len(arquivos) > MAX_FOTOS_POR_MOMENTO:
             vagas = MAX_FOTOS_POR_MOMENTO - fotos_existentes
-            raise ValidationError(
-                f'Limite de {MAX_FOTOS_POR_MOMENTO} fotos por momento atingido. '
-                f'Já existem {fotos_existentes} foto(s) "{momento}". '
-                f'Você pode enviar no máximo mais {max(vagas, 0)}.'
-            )
+            raise ValidationError(f'Limite de {MAX_FOTOS_POR_MOMENTO} fotos atingido. Pode enviar mais {max(vagas, 0)}.')
 
-        # Compressão e normalização via Pillow
         arquivos_processados = [
-            MidiaAtendimentoService._comprimir_imagem(arq)
+            MidiaOrdemServicoService._comprimir_imagem(arq)
             for arq in arquivos
         ]
 
         midias = [
-            MidiaAtendimento(
-                atendimento=atendimento,
-                arquivo=arquivo,
-                momento=momento,
-            )
-            for arquivo in arquivos_processados
+            MidiaOrdemServico(ordem_servico=ordem_servico, arquivo=arq, momento=momento)
+            for arq in arquivos_processados
         ]
 
         for midia in midias:
@@ -93,58 +67,35 @@ class MidiaAtendimentoService:
 
     @staticmethod
     def _comprimir_imagem(arquivo):
-        """
-        Abre a imagem com Pillow, redimensiona se necessário (max 1920px)
-        e salva com quality=85 em JPEG. Retorna um InMemoryUploadedFile.
-
-        Imagens menores que o limite não sofrem upscale.
-        """
+        """Redimensiona e otimiza imagens via Pillow."""
         img = Image.open(arquivo)
-
-        # Converte RGBA/P para RGB (JPEG não suporta transparência)
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
 
-        # Redimensiona apenas se exceder o limite (sem upscale)
         if img.width > MAX_DIMENSAO_PX or img.height > MAX_DIMENSAO_PX:
             img.thumbnail((MAX_DIMENSAO_PX, MAX_DIMENSAO_PX), Image.LANCZOS)
 
-        # Salva em buffer JPEG com qualidade controlada
         buffer = BytesIO()
         img.save(buffer, format='JPEG', quality=QUALIDADE_JPEG, optimize=True)
         buffer.seek(0)
 
-        # Determina o nome do arquivo de saída
         nome_original = getattr(arquivo, 'name', 'foto.jpg')
-        nome_base = nome_original.rsplit('.', 1)[0]
-        nome_saida = f'{nome_base}.jpg'
+        nome_saida = f"{nome_original.rsplit('.', 1)[0]}.jpg"
 
         return InMemoryUploadedFile(
-            file=buffer,
-            field_name='arquivo',
-            name=nome_saida,
-            content_type='image/jpeg',
-            size=buffer.getbuffer().nbytes,
-            charset=None,
+            file=buffer, field_name='arquivo', name=nome_saida,
+            content_type='image/jpeg', size=buffer.getbuffer().nbytes, charset=None,
         )
 
 
-class AtendimentoService:
-    """Serviço responsável pelas operações de criação de atendimentos."""
+class OrdemServicoService:
+    """Serviço responsável pelas operações de criação e transição de Ordens de Serviço."""
 
     @staticmethod
     def listar_historico_por_periodo(funcionario, data_inicial, data_final, status='todos'):
-        """
-        RF-10: Lista o histÃ³rico de atendimentos finalizados do funcionÃ¡rio por perÃ­odo.
-
-        O intervalo Ã© inclusivo nas duas pontas e sempre restrito ao usuÃ¡rio logado,
-        evitando exposiÃ§Ã£o de dados de outros funcionÃ¡rios.
-        """
-        hoje = timezone.localdate()
+        """RF-10: Lista histórico restrito ao funcionário com validação de datas."""
         if data_inicial > data_final:
-            raise ValidationError('A data inicial nÃ£o pode ser maior que a data final.')
-        if data_inicial > hoje or data_final > hoje:
-            raise ValidationError('O periodo do historico nao pode incluir datas futuras.')
+            raise ValidationError("A data inicial não pode ser maior que a data final.")
 
         filtros = {
             'funcionario': funcionario,
@@ -154,151 +105,123 @@ class AtendimentoService:
         if status and status != 'todos':
             filtros['status'] = status
 
-        return (
-            Atendimento.objects.filter(**filtros)
-            .select_related('veiculo', 'servico')
-            .prefetch_related('midias')
-            .order_by('-data_hora')
-        )
+        return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
 
     @staticmethod
     def verificar_conflito(data_hora, duracao):
-        """Verifica se o novo horário entra em conflito com algum atendimento ativo (agendado/em andamento)."""
+        """Verifica sobreposição de horários no pátio."""
         fim = data_hora + duracao
-        
-        conflitos = Atendimento.objects.filter(
+        conflitos = OrdemServico.objects.filter(
             data_hora__date=data_hora.date(),
-            status__in=['agendado', 'em_andamento']
+            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO']
         ).select_related('servico')
 
-        for a in conflitos:
-            a_inicio = timezone.localtime(a.data_hora)
-            a_fim = a_inicio + datetime.timedelta(minutes=a.servico.duracao_estimada_min)
-            
-            # (StartA < EndB) and (StartB < EndA) logic
-            if data_hora < a_fim and a_inicio < fim:
-                raise ValidationError(
-                    f'O horário selecionado entra em conflito com outro atendimento já agendado '
-                    f'(das {a_inicio.strftime("%H:%M")} às {a_fim.strftime("%H:%M")}).'
-                )
-
-    @staticmethod
-    def get_horarios_livres(data_str, servico_id):
-        """Gera a lista de slots de horários vagos no dia."""
-        servico = get_object_or_404(Servico, pk=servico_id)
-        duracao = datetime.timedelta(minutes=servico.duracao_estimada_min)
-
-        from django.utils.dateparse import parse_date
-        data = parse_date(data_str)
-        if not data:
-            raise ValidationError('Data inválida.')
-
-        atendimentos_ativos = Atendimento.objects.filter(
-            data_hora__date=data,
-            status__in=['agendado', 'em_andamento']
-        ).select_related('servico')
-
-        ocupados = []
-        for a in atendimentos_ativos:
-            inicio = timezone.localtime(a.data_hora)
-            fim = inicio + datetime.timedelta(minutes=a.servico.duracao_estimada_min)
-            ocupados.append((inicio, fim))
-
-        horarios_livres = []
-        current_time = timezone.make_aware(datetime.datetime.combine(data, HORARIO_ABERTURA))
-        fim_expediente = timezone.make_aware(datetime.datetime.combine(data, HORARIO_FECHAMENTO))
-
-        while current_time + duracao <= fim_expediente:
-            slot_inicio = current_time
-            slot_fim = current_time + duracao
-
-            if slot_inicio < timezone.localtime():
-                current_time += datetime.timedelta(minutes=SLOT_MINUTOS)
-                continue
-
-            conflito = False
-            for oc_inicio, oc_fim in ocupados:
-                if slot_inicio < oc_fim and oc_inicio < slot_fim:
-                    conflito = True
-                    break
-            
-            if not conflito:
-                horarios_livres.append(slot_inicio.strftime('%H:%M'))
-            
-            current_time += datetime.timedelta(minutes=SLOT_MINUTOS)
-
-        return horarios_livres
+        for os in conflitos:
+            os_inicio = timezone.localtime(os.data_hora)
+            os_fim = os_inicio + datetime.timedelta(minutes=os.servico.duracao_estimada_min)
+            if data_hora < os_fim and os_inicio < fim:
+                raise ValidationError(f'Conflito com OS das {os_inicio.strftime("%H:%M")} às {os_fim.strftime("%H:%M")}.')
 
     @staticmethod
     def criar_com_veiculo(dados, funcionario):
-        """
-        Cria (ou reutiliza) um veículo pela placa e registra um novo atendimento.
-
-        Args:
-            dados: dict com os campos validados pelo CriarAtendimentoSerializer.
-            funcionario: instância de User (quem está criando o atendimento).
-
-        Returns:
-            Atendimento — instância criada.
-
-        Raises:
-            Http404: se o servico_id não corresponder a nenhum Servico.
-            ValidationError: se houver conflito de horário.
-        """
+        """Cria OS garantindo apenas uma ativa por vez."""
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
-
-        AtendimentoService.verificar_conflito(
-            data_hora=dados['data_hora'],
-            duracao=datetime.timedelta(minutes=servico.duracao_estimada_min)
-        )
+        OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_min))
 
         veiculo, _ = Veiculo.objects.update_or_create(
             placa=dados['placa'],
-            defaults={
-                'modelo':      dados['modelo'],
-                'marca':       dados['marca'],
-                'cor':         dados['cor'],
-                'nome_dono':   dados['nome_dono'],
-                'celular_dono': dados['celular_dono'],
-            },
+            defaults={k: dados[k] for k in ['modelo', 'marca', 'cor', 'nome_dono', 'celular_dono']}
         )
 
         iniciar_agora = dados.get('iniciar_agora', False)
-
         if iniciar_agora:
-            if Atendimento.objects.filter(
-                funcionario=funcionario, 
-                status='em_andamento',
-                data_hora__date=dados['data_hora'].date()
-            ).exists():
-                raise ValidationError('O funcionário já possui um atendimento em andamento hoje. Termine o atendimento atual antes de iniciar outro.')
+            if OrdemServico.objects.filter(funcionario=funcionario, status='EM_EXECUCAO').exists():
+                raise ValidationError('O funcionário já possui uma OS em execução.')
 
-        return Atendimento.objects.create(
-            veiculo=veiculo,
-            servico=servico,
-            funcionario=funcionario,
+        return OrdemServico.objects.create(
+            veiculo=veiculo, servico=servico, funcionario=funcionario,
             data_hora=dados['data_hora'],
             horario_inicio=timezone.now() if iniciar_agora else None,
-            status='em_andamento' if iniciar_agora else 'agendado',
+            status='VISTORIA_INICIAL' if iniciar_agora else 'PATIO',
             observacoes=dados.get('observacoes', ''),
         )
 
     @staticmethod
-    def finalizar(atendimento):
-        """
-        RF-06: Finaliza um atendimento em andamento verificando restrições de negócio.
-        
-        Raises:
-            ValidationError se o atendimento não estiver em andamento ou 
-            não possuir fotos do momento DEPOIS.
-        """
-        if atendimento.status != 'em_andamento':
-            raise ValidationError('Apenas atendimentos em andamento podem ser finalizados.')
+    def avancar_etapa(os_id: int, dados: dict) -> OrdemServico:
+        """Máquina de Estados Industrial: Gere transições e horários."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+        status_atual = os.status
+        agora = timezone.now()
 
-        if not atendimento.midias.filter(momento='DEPOIS').exists():
-            raise ValidationError('Não é possível finalizar sem enviar as fotos do DEPOIS.')
+        # ETAPA 1: PATIO -> VISTORIA_INICIAL (Valida fotos obrigatórias de vistoria)
+        if status_atual == 'PATIO' or (status_atual == 'VISTORIA_INICIAL' and not os.horario_lavagem):
+            contagem_fotos = MidiaOrdemServico.objects.filter(
+                ordem_servico=os,
+                momento='VISTORIA_GERAL'
+            ).count()
 
-        atendimento.status = 'finalizado'
-        # Salva para ativar possíveis signals do Django
-        atendimento.save()
-        return atendimento
+            if contagem_fotos < 5:
+                raise ValueError(f"Ação negada: mínimo de 5 fotos de vistoria exigidas. (Atual: {contagem_fotos})")
+
+            os.status = 'VISTORIA_INICIAL'
+            os.laudo_vistoria = dados.get('laudo_vistoria', '')
+            os.horario_lavagem = agora
+            os.save()
+
+        # ETAPA 2: VISTORIA_INICIAL -> EM_EXECUCAO
+        elif os.horario_lavagem and not os.horario_acabamento:
+            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+            os.status = 'EM_EXECUCAO'
+            os.horario_acabamento = agora
+            os.save()
+
+        # ETAPA 3: EM_EXECUCAO -> LIBERACAO
+        elif os.horario_acabamento:
+            os.comentario_acabamento = dados.get('comentario_acabamento', '')
+            os.status = 'LIBERACAO'
+            os.save()
+
+        return os
+
+    @staticmethod
+    def finalizar_ordem_servico_industrial(os_id: int, dados: dict) -> OrdemServico:
+        """Etapa 4: Finalização com validação de fotos de entrega e vaga."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+
+        if MidiaOrdemServico.objects.filter(ordem_servico=os, momento='FINALIZADO').count() < 5:
+            raise ValueError("5 fotos de entrega exigidas.")
+
+        if not dados.get('vaga_patio'):
+            raise ValueError("A vaga de saída é obrigatória.")
+
+        os.status = 'FINALIZADO'
+        os.vaga_patio = dados.get('vaga_patio')
+        os.horario_finalizacao = timezone.now()
+        os.save()
+
+        return os
+
+
+class IncidenteService:
+    """Serviço para isolar o fluxo de erros e incidentes operacionais."""
+
+    @staticmethod
+    def registrar_incidente(os_id, dados, arquivo_foto):
+        """Registra o incidente, vincula a peça afetada e bloqueia a OS."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+        tag_peca = get_object_or_404(TagPeca, id=dados.get('tag_peca_id'))
+
+        foto_processada = MidiaOrdemServicoService._comprimir_imagem(arquivo_foto)
+
+        incidente = IncidenteOS.objects.create(
+            ordem_servico=os,
+            tag_peca=tag_peca,
+            descricao=dados.get('descricao'),
+            foto_url=foto_processada,
+            resolvido=False
+        )
+
+        os.status = 'BLOQUEADO_INCIDENTE'
+        os.save()
+
+        return incidente

@@ -12,7 +12,7 @@ const cards = [
   {
     icon: '👥',
     titulo: 'Funcionário',
-    descricao: 'Gerencie a agenda e registre atendimentos',
+    descricao: 'Gerencie a agenda e registre ordemServicos',
     rota: '/login',
   },
   {
@@ -28,7 +28,7 @@ const SelecaoAcesso: React.FC = () => {
 
   useIonViewDidEnter(() => {
     if (localStorage.getItem('access')) {
-      history.replace('/atendimentos/hoje');
+      history.replace('/ordens-servico/hoje');
     }
   });
 

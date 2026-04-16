@@ -1,121 +1,213 @@
 import React, { useState } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { uploadFotos } from '../services/api';
-import { IonSpinner } from '@ionic/react';
+import { 
+  IonModal, IonSpinner, IonIcon, IonHeader, 
+  IonToolbar, IonTitle, IonButtons, IonButton, IonContent 
+} from '@ionic/react';
+import { closeOutline, addOutline } from 'ionicons/icons';
 
-interface Foto {
+// Representa uma foto staged localmente (não enviada ao servidor ainda)
+interface FotoLocal {
+  blobUrl: string;   // URL object temporária para preview
+  blob: Blob;        // Blob bruto pronto para upload
+}
+
+// Representa uma foto já salva no servidor
+interface FotoSalva {
   id?: number;
-  arquivo: string; // URL ou Blob local
-  momento: 'ANTES' | 'DEPOIS';
-  enviando?: boolean;
-  erro?: boolean;
+  arquivo: string;
+  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
 }
 
 interface GaleriaFotosProps {
-  atendimentoId: number;
-  momento: 'ANTES' | 'DEPOIS';
-  fotosIniciais: Foto[];
+  ordemServicoId: number;
+  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
+  fotosIniciais: FotoSalva[];
   onUploadSuccess?: () => void;
   somenteLeitura?: boolean;
+  // Callback para o componente pai acionar o envio das fotos em staging
+  onFotosStaged?: (blobs: Blob[], momento: string) => void;
 }
 
-const GaleriaFotos: React.FC<GaleriaFotosProps> = ({ atendimentoId, momento, fotosIniciais, onUploadSuccess, somenteLeitura }) => {
-  const [fotos, setFotos] = useState<Foto[]>(
+const GaleriaFotos = React.forwardRef<any, GaleriaFotosProps>(({ 
+  ordemServicoId, momento, fotosIniciais, onUploadSuccess, somenteLeitura, onFotosStaged
+}, ref) => {
+  // Fotos já confirmadas no servidor (vindas da API)
+  const [fotosSalvas, setFotosSalvas] = useState<FotoSalva[]>(
     fotosIniciais.filter((f) => f.momento === momento)
   );
+  // Fotos capturadas localmente aguardando confirmação (staging)
+  const [fotosStaged, setFotosStaged] = useState<FotoLocal[]>([]);
+  const [enviando, setEnviando] = useState(false);
+  const [fotoSelecionada, setFotoSelecionada] = useState<string | null>(null);
+
+  const totalFotos = fotosSalvas.length + fotosStaged.length;
+  const limiteAtingido = totalFotos >= 5;
 
   React.useEffect(() => {
-    setFotos(fotosIniciais.filter((f) => f.momento === momento));
+    setFotosSalvas(fotosIniciais.filter((f) => f.momento === momento));
   }, [fotosIniciais, momento]);
 
   const tirarFoto = async () => {
-    if (fotos.length >= 5) return;
+    if (limiteAtingido || somenteLeitura) return;
 
     try {
       const cameraPhoto = await Camera.getPhoto({
         quality: 85,
         allowEditing: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera,
       });
 
-      if (!cameraPhoto.webPath) return;
+      if (!cameraPhoto.dataUrl) return;
 
-      const novaFoto: Foto = {
-        arquivo: cameraPhoto.webPath,
-        momento,
-        enviando: true,
-      };
-
-      setFotos((prev) => [...prev, novaFoto]);
-
-      // Conversão para Blob
-      const response = await fetch(cameraPhoto.webPath);
+      // Converte DataUrl (Base64) para Blob — compatível com todos os WebViews
+      const response = await fetch(cameraPhoto.dataUrl);
       const blob = await response.blob();
+      // Usa o próprio dataUrl como preview (evita ObjectURL fantasma em WebView nativo)
+      const blobUrl = cameraPhoto.dataUrl;
 
-      try {
-        const result = await uploadFotos(atendimentoId, momento, blob);
-        // API devolve array recém-criado
-        const fotoSalva = result[0];
-        
-        setFotos((prev) => 
-          prev.map((f) => f === novaFoto ? { ...fotoSalva, enviando: false } : f)
-        );
-        
-        if (onUploadSuccess) onUploadSuccess();
-      } catch (e) {
-        console.error('Erro no upload', e);
-        setFotos((prev) => 
-          prev.map((f) => f === novaFoto ? { ...f, enviando: false, erro: true } : f)
-        );
+      const novaFoto: FotoLocal = { blobUrl, blob };
+      const fotosAtualizadas = [...fotosStaged, novaFoto];
+      setFotosStaged(fotosAtualizadas);
+
+      // Notifica o pai com todos os blobs staged atuais
+      if (onFotosStaged) {
+        onFotosStaged(fotosAtualizadas.map((f) => f.blob), momento);
       }
     } catch (e) {
-      // Câmera cancelada ou falha nativa
-      console.log('Câmera cancelada ou erro:', e);
+      console.log('Captura cancelada:', e);
     }
   };
 
+  // Remove uma foto staged (ainda não enviada ao servidor)
+  const removerFotoStaged = (index: number) => {
+    const fotos = [...fotosStaged];
+    fotos.splice(index, 1);
+    setFotosStaged(fotos);
+    if (onFotosStaged) {
+      onFotosStaged(fotos.map((f) => f.blob), momento);
+    }
+  };
+
+  // Envia todas as fotos staged de uma vez ao servidor
+  const enviarFotosStaged = async () => {
+    if (fotosStaged.length === 0 || enviando) return;
+    setEnviando(true);
+    try {
+      await uploadFotos(ordemServicoId, momento, fotosStaged.map((f) => f.blob));
+      // Limpa o staging após sucesso (sem revokeObjectURL porque usamos DataUrl)
+      setFotosStaged([]);
+      if (onUploadSuccess) onUploadSuccess();
+    } catch (e) {
+      console.error('Erro no upload em lote:', e);
+      alert('Erro ao enviar fotos. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  // Expõe o método de envio ao componente pai via ref imperativo, se necessário
+  // (Componentes pais com lógica de confirmar etapa devem chamar enviarFotosStaged)
+  React.useImperativeHandle(ref, () => ({ enviarFotosStaged }));
+
   return (
     <div style={styles.container}>
-      {fotos.map((foto, idx) => (
-        <div key={foto.id || `temp-${idx}`} style={styles.thumbWrapper}>
-          <img src={foto.arquivo} style={{ ...styles.thumb, opacity: foto.enviando ? 0.5 : 1 }} alt="" />
-          {foto.enviando && (
-            <div style={styles.overlay}>
-              <IonSpinner name="crescent" style={{ color: '#fff' }} />
-            </div>
-          )}
-          {foto.erro && (
-            <div style={styles.overlay}>
-              <span style={{ color: '#ef4444', fontSize: 24, fontWeight: 'bold' }}>✖</span>
-            </div>
-          )}
-        </div>
-      ))}
+      {/* Grade de 5 slots fixos */}
+      {Array.from({ length: 5 }).map((_, slotIndex) => {
+        // Determina qual foto ocupa este slot (salvas primeiro, depois staged)
+        const fotoSalva = fotosSalvas[slotIndex];
+        const indexStaged = slotIndex - fotosSalvas.length;
+        const fotoStaged = !fotoSalva && indexStaged >= 0 ? fotosStaged[indexStaged] : undefined;
+        const temFoto = !!(fotoSalva || fotoStaged);
+        const srcPreview = fotoSalva?.arquivo ?? fotoStaged?.blobUrl ?? null;
+        const ehStaged = !!fotoStaged;
 
-      {!somenteLeitura && fotos.length < 5 && (
-        <button style={styles.btnAdd} onClick={tirarFoto}>
-          <span style={styles.iconAdd}>+</span>
+        return (
+          <div key={`slot-${slotIndex}`} style={{ ...styles.thumbWrapper, position: 'relative' }}>
+            {temFoto ? (
+              <>
+                {/* Miniatura da foto */}
+                <img
+                  src={srcPreview!}
+                  style={{ ...styles.thumb, opacity: ehStaged ? 0.85 : 1, cursor: 'pointer' }}
+                  alt={`Foto ${slotIndex + 1}`}
+                  onClick={() => setFotoSelecionada(srcPreview!)}
+                />
+                {/* Badge amarelo para fotos ainda não enviadas (staged) */}
+                {ehStaged && <div style={styles.badgePendente} title="Aguardando confirmação" />}
+                {/* Botão X — só em fotos staged pois as salvas não podem ser removidas aqui */}
+                {ehStaged && !somenteLeitura && (
+                  <button
+                    style={styles.btnTrash}
+                    onClick={(e) => { e.stopPropagation(); removerFotoStaged(indexStaged); }}
+                    title="Remover foto"
+                  >
+                    <IonIcon icon={closeOutline} style={{ fontSize: 14, color: '#fff' }} />
+                  </button>
+                )}
+              </>
+            ) : (
+              /* Slot vazio — clique abre a câmera */
+              !somenteLeitura ? (
+                <button
+                  style={styles.btnSlotVazio}
+                  onClick={tirarFoto}
+                  title={`Adicionar foto ${slotIndex + 1}`}
+                >
+                  <IonIcon icon={addOutline} style={{ fontSize: 28, color: 'var(--lm-primary)' }} />
+                </button>
+              ) : (
+                <div style={styles.btnSlotVazio} />
+              )
+            )}
+          </div>
+        );
+      })}
+
+      {/* Botão de envio em lote — só aparece se houver fotos staged */}
+      {fotosStaged.length > 0 && !somenteLeitura && (
+        <button style={styles.btnEnviar} onClick={enviarFotosStaged} disabled={enviando}>
+          {enviando
+            ? <IonSpinner name="crescent" style={{ color: '#fff' }} />
+            : `Confirmar ${fotosStaged.length} foto(s)`}
         </button>
       )}
 
-      {fotos.length === 0 && (
-        <p style={{ color: '#8899aa', fontSize: 13, alignSelf: 'center', marginLeft: 8, margin: 0 }}>
-          Nenhuma foto adicionada.
-        </p>
-      )}
+      {/* Modal para visualização em tela cheia */}
+      <IonModal
+        isOpen={!!fotoSelecionada}
+        onDidDismiss={() => setFotoSelecionada(null)}
+      >
+        <IonHeader className="ion-no-border">
+          <IonToolbar style={{ '--background': '#000', '--color': '#fff' }}>
+            <IonTitle>Visualizar Evidência</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={() => setFotoSelecionada(null)}>
+                <IonIcon icon={closeOutline} slot="icon-only" />
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent style={{ '--background': '#000' }}>
+          <div style={styles.modalContent}>
+            <img src={fotoSelecionada || ''} style={styles.fullImage} alt="Evidência ampliada" />
+          </div>
+        </IonContent>
+      </IonModal>
     </div>
   );
-};
+});
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
+    flexWrap: 'wrap',
     gap: 12,
-    overflowX: 'auto',
     paddingBottom: 8,
     alignItems: 'center',
-    minHeight: 84, // Garante altura mínima do scroll
+    minHeight: 84,
   },
   thumbWrapper: {
     position: 'relative',
@@ -124,36 +216,84 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     borderRadius: 12,
     overflow: 'hidden',
-    border: '1px solid #1e2d40',
+    border: '1px solid var(--lm-border)',
   },
   thumb: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+    cursor: 'pointer',
   },
-  overlay: {
+  btnTrash: {
     position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'rgba(0,0,0,0.4)',
+    top: 4,
+    right: 4,
+    background: 'rgba(220,38,38,0.85)',
+    border: 'none',
+    borderRadius: '50%',
+    width: 22,
+    height: 22,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    zIndex: 10,
   },
-  btnAdd: {
+  badgePendente: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    background: '#f59e0b',
+  },
+  btnSlotVazio: {
     width: 80,
     height: 80,
     flexShrink: 0,
     borderRadius: 12,
-    border: '2px dashed #1e2d40',
-    background: '#161b27',
-    color: '#00b4d8',
+    border: '2px dashed var(--lm-border)',
+    background: 'var(--lm-card)',
+    color: 'var(--lm-primary)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
   },
-  iconAdd: {
-    fontSize: 32,
-    fontWeight: 300,
+  btnEnviar: {
+    flex: '1 0 100%',
+    padding: '12px',
+    borderRadius: 12,
+    background: 'var(--lm-primary)',
+    color: '#fff',
+    border: 'none',
+    fontWeight: 700,
+    fontSize: 14,
+    cursor: 'pointer',
+    marginTop: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  overlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    background: '#000'
+  },
+  fullImage: {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain'
+  }
 };
 
 export default GaleriaFotos;

@@ -4,162 +4,6 @@ info:
   version: 1.0.0
   description: Documentação oficial da API do projeto Lava-me.
 paths:
-  /api/atendimentos/:
-    post:
-      operationId: atendimentos_create
-      description: |-
-        POST /api/atendimentos/
-        Cria um veículo (ou reutiliza pela placa) e registra o atendimento.
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/{id}/:
-    get:
-      operationId: atendimentos_retrieve
-      description: GET /api/atendimentos/{id}/ — detalhe completo de um atendimento.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/{id}/comentario/:
-    patch:
-      operationId: atendimentos_comentario_partial_update
-      description: PATCH /api/atendimentos/{id}/comentario/
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/{id}/finalizar/:
-    patch:
-      operationId: atendimentos_finalizar_partial_update
-      description: |-
-        PATCH /api/atendimentos/{id}/finalizar/
-        Finaliza um atendimento em andamento. Requer que as fotos do DEPOIS tenham sido enviadas.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/{id}/fotos/:
-    post:
-      operationId: atendimentos_fotos_create
-      description: |-
-        POST /api/atendimentos/{id}/fotos/
-
-        Upload de múltiplas fotos para um atendimento.
-        Toda lógica de negócio é delegada para MidiaAtendimentoService.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/{id}/iniciar/:
-    patch:
-      operationId: atendimentos_iniciar_partial_update
-      description: |-
-        PATCH /api/atendimentos/{id}/iniciar/
-
-        Inicia um atendimento: salva o horário de início e muda o status para em_andamento.
-        Só é possível iniciar um atendimento que esteja com status 'agendado'.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/historico/:
-    get:
-      operationId: atendimentos_historico_retrieve
-      description: GET /api/atendimentos/historico/?data_inicial=YYYY-MM-DD&data_final=YYYY-MM-DD.
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/hoje/:
-    get:
-      operationId: atendimentos_hoje_retrieve
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/horarios-livres/:
-    get:
-      operationId: atendimentos_horarios_livres_retrieve
-      description: |-
-        GET /api/atendimentos/horarios-livres/?data=YYYY-MM-DD&servico_id=X
-        Retorna os slots vagos para um determinado dia e serviço, bloqueando intersecções.
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/atendimentos/servicos/:
-    get:
-      operationId: atendimentos_servicos_retrieve
-      description: GET /api/atendimentos/servicos/ — lista todos os serviços disponíveis.
-      tags:
-      - atendimentos
-      security:
-      - jwtAuth: []
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          description: No response body
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -216,8 +60,212 @@ paths:
               schema:
                 $ref: '#/components/schemas/Register'
           description: ''
+  /api/ordens-servico/{id}/:
+    get:
+      operationId: ordens_servico_retrieve
+      description: GET /api/ordens-servico/{id}/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/avancar-etapa/:
+    patch:
+      operationId: ordens_servico_avancar_etapa_partial_update
+      description: |-
+        PATCH /api/ordens-servico/{id}/avancar-etapa/
+        Endpoint unificado para transições da esteira.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/finalizar/:
+    patch:
+      operationId: ordens_servico_finalizar_partial_update
+      description: |-
+        PATCH /api/ordens-servico/{id}/finalizar/
+        Finaliza a OS na etapa 4 (Liberação) validando fotos FINALIZADO e vaga.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/fotos/:
+    post:
+      operationId: ordens_servico_fotos_create
+      description: POST /api/ordens-servico/{id}/fotos/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/incidente/:
+    post:
+      operationId: ordens_servico_incidente_create
+      description: Endpoint para o operador relatar um dano e travar a OS.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/historico/:
+    get:
+      operationId: ordens_servico_historico_retrieve
+      description: GET /api/ordens-servico/historico/
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/hoje/:
+    get:
+      operationId: ordens_servico_hoje_retrieve
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/horarios-livres/:
+    get:
+      operationId: ordens_servico_horarios_livres_retrieve
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/novo/:
+    post:
+      operationId: ordens_servico_novo_create
+      description: POST /api/ordens-servico/
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/servicos/:
+    get:
+      operationId: ordens_servico_servicos_retrieve
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/tags-peca/:
+    get:
+      operationId: ordens_servico_tags_peca_list
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagPeca'
+          description: ''
+  /api/ordens-servico/tags-peca/{id}/:
+    get:
+      operationId: ordens_servico_tags_peca_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este tag peca.
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
 components:
   schemas:
+    CategoriaEnum:
+      enum:
+      - frente
+      - lateral_esq
+      - lateral_dir
+      - traseira
+      - interior
+      type: string
+      description: |-
+        * `frente` - Frente
+        * `lateral_esq` - Lateral Esquerda
+        * `lateral_dir` - Lateral Direita
+        * `traseira` - Traseira
+        * `interior` - Interior
     Register:
       type: object
       properties:
@@ -230,7 +278,6 @@ components:
         email:
           type: string
           format: email
-          maxLength: 254
         username:
           type: string
           title: Usuário
@@ -248,6 +295,22 @@ components:
       - name
       - password
       - username
+    TagPeca:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          description: 'Ex: Capô, Porta Dianteira Esq'
+          maxLength: 100
+        categoria:
+          $ref: '#/components/schemas/CategoriaEnum'
+      required:
+      - categoria
+      - id
+      - nome
     TokenObtainPair:
       type: object
       properties:

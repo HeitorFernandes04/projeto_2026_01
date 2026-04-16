@@ -1,0 +1,104 @@
+/* ModalOcorrencia.css */
+
+.mo-photo-placeholder {
+  height: 180px;
+  background: var(--lm-card);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--lm-border);
+  cursor: pointer;
+}
+
+.mo-photo-preview-container {
+  height: 180px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mo-img-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mo-btn-remove-photo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(220, 38, 38, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  cursor: pointer;
+}
+
+.mo-photo-hint {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.mo-photo-area {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Label customizado */
+.mo-custom-label {
+  color: var(--lm-primary);
+  font-size: 11px;
+  font-weight: 900;
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+/* Select wrapper */
+.mo-select-wrapper {
+  background: var(--lm-card);
+  border-radius: 16px;
+  border: 1px solid var(--lm-border);
+  display: flex;
+  align-items: center;
+  min-height: 60px;
+}
+
+.mo-ion-select {
+  color: var(--lm-text);
+  width: 100%;
+  padding-left: 8px;
+  font-weight: 700;
+}
+
+.mo-select-wrapper-outer {
+  margin-bottom: 24px;
+}
+
+/* Textarea */
+.mo-textarea-wrapper {
+  margin-bottom: 24px;
+}
+
+/* Botão confirmar */
+.mo-btn-confirm {
+  width: 100%;
+  padding: 22px;
+  border-radius: 20px;
+  background: #ff3b30;
+  color: #fff;
+  font-weight: 900;
+  border: none;
+  text-transform: uppercase;
+  box-shadow: 0 10px 30px rgba(255, 59, 48, 0.2);
+  cursor: pointer;
+}

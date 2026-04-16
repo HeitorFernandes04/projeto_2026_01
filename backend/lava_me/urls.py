@@ -22,7 +22,7 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
-    path('api/atendimentos/', include('atendimentos.urls')),
+    path('api/ordens-servico/', include('atendimentos.urls')),
 ]
 
 # Servir arquivos de mídia (uploads) em desenvolvimento

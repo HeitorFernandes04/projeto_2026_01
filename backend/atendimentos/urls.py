@@ -1,26 +1,27 @@
-from django.urls import path
+# atendimentos/urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
-    AdicionarComentarioView,
-    AtendimentoDetailView,
-    HistoricoAtendimentosView,
-    AtendimentosHojeView,
-    CriarAtendimentoView,
-    FotoUploadView,
-    IniciarAtendimentoView,
-    FinalizarAtendimentoView,
-    HorariosLivresView,
-    ServicoListView,
+    OrdensServicoHojeView, HistoricoOrdemServicoView,
+    OrdemServicoDetailView, CriarOrdemServicoView,
+    AvancarEtapaView, FinalizarIndustrialView,
+    FotoUploadView, ServicoListView, HorariosLivresView,
+    registrar_incidente, TagPecaViewSet
 )
 
+router = DefaultRouter()
+router.register(r'tags-peca', TagPecaViewSet)
+
 urlpatterns = [
-    path('',              CriarAtendimentoView.as_view(),  name='atendimento-criar'),
-    path('historico/',    HistoricoAtendimentosView.as_view(), name='atendimentos-historico'),
-    path('hoje/',         AtendimentosHojeView.as_view(),  name='atendimentos-hoje'),
+    path('', include(router.urls)),
+    path('novo/', CriarOrdemServicoView.as_view(), name='os-criar'),
+    path('hoje/', OrdensServicoHojeView.as_view(), name='os-hoje'),
+    path('historico/', HistoricoOrdemServicoView.as_view(), name='os-historico'),
+    path('servicos/', ServicoListView.as_view(), name='servico-list'),
     path('horarios-livres/', HorariosLivresView.as_view(), name='horarios-livres'),
-    path('servicos/',     ServicoListView.as_view(),        name='servico-list'),
-    path('<int:pk>/',     AtendimentoDetailView.as_view(), name='atendimento-detail'),
-    path('<int:pk>/iniciar/', IniciarAtendimentoView.as_view(), name='atendimento-iniciar'),
-    path('<int:pk>/finalizar/', FinalizarAtendimentoView.as_view(), name='atendimento-finalizar'),
-    path('<int:pk>/fotos/',   FotoUploadView.as_view(),    name='atendimento-fotos'),
-    path('<int:pk>/comentario/', AdicionarComentarioView.as_view(), name='atendimento-comentario'),
+    path('<int:pk>/', OrdemServicoDetailView.as_view(), name='os-detail'),
+    path('<int:pk>/fotos/', FotoUploadView.as_view(), name='os-fotos'),
+    path('<int:pk>/avancar-etapa/', AvancarEtapaView.as_view(), name='os-avancar'),
+    path('<int:pk>/finalizar/', FinalizarIndustrialView.as_view(), name='os-finalizar'),
+    path('<int:pk>/incidente/', registrar_incidente, name='os-incidente'),
 ]

@@ -23,6 +23,7 @@
 - [Equipe](#-equipe)
 - [Metodologia](#-metodologia)
 - [Como Rodar](#️-como-rodar)
+- [Testes](#-testes)
 - [Roadmap](#-roadmap)
 - [Protótipos](#️-protótipos---figma)
 - [Licença](#-licença)
@@ -212,6 +213,13 @@ release/*     ← preparação para nova versão
 - PostgreSQL 15+
 
 [Clique aqui para ir ao documento de como rodar o projeto](Como%20rodar.md)
+
+### 🧪 Testes
+Para garantir a estabilidade do sistema, o projeto conta com uma cobertura rigorosa de testes no Backend e no Mobile.
+- **Backend:** `pytest`
+- **Mobile:** `vitest` e `cypress`
+
+[Veja como executar os testes no guia detalhado](Como%20rodar.md#%EF%B8%8F-testes)
 
 <!-- ### Backend
 ```bash
