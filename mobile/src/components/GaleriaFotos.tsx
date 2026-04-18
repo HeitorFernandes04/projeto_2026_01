@@ -30,7 +30,7 @@ interface GaleriaFotosProps {
   onFotosStaged?: (blobs: Blob[], momento: string) => void;
 }
 
-const GaleriaFotos = React.forwardRef<any, GaleriaFotosProps>(({ 
+const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, GaleriaFotosProps>(({ 
   ordemServicoId, momento, fotosIniciais, onUploadSuccess, somenteLeitura, onFotosStaged
 }, ref) => {
   // Fotos já confirmadas no servidor (vindas da API)

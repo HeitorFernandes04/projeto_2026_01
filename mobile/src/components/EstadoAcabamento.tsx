@@ -143,7 +143,7 @@ const EstadoAcabamento: React.FC<{ ordemServicoId: number; onComplete: () => voi
           className={`ea-btn-pause ${isPausado ? 'is-pausado' : 'is-rodando'}`}
           onClick={() => setIsPausado(!isPausado)}
         >
-          <Pause size={20} /> {isPausado ? 'RETOMAR ATENDIMENTO' : 'PAUSAR ATENDIMENTO'}
+          <Pause size={20} /> {isPausado ? 'RETOMAR ORDEM DE SERVIÇO' : 'PAUSAR ORDEM DE SERVIÇO'}
         </button>
 
         <button

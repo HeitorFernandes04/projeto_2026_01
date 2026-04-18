@@ -1,0 +1,187 @@
+/* Reset e Layout Principal */
+* {
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #0b0e11; /* Cor de fundo principal */
+  overflow: hidden;
+}
+
+/* Sidebar Estilo Protótipo */
+.main-sidebar {
+  width: 280px;
+  background-color: #0d1117; /* Fundo escuro profundo */
+  border-right: 1px solid #21262d; /* Borda lateral sutil */
+  display: flex;
+  flex-direction: column;
+  padding: 32px 16px;
+  flex-shrink: 0;
+
+  .logo-container {
+    padding: 0 16px 40px;
+    display: flex;
+    justify-content: center;
+
+    .brand-logo {
+      max-width: 180px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+  }
+
+  .nav-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    text-decoration: none;
+    color: #f0f6fc;
+    border-radius: 100px; /* Formato pílula */
+    font-weight: 500;
+    font-size: 16px;
+    transition: 0.2s ease;
+
+    .icon {
+      margin-right: 16px;
+      font-size: 24px;
+      font-family: 'Material Symbols Outlined' !important;
+    }
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    &.active {
+      background-color: #0066ff; /* Azul Elétrico */
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(0, 102, 255, 0.4);
+
+      .icon {
+        font-variation-settings: 'FILL' 1;
+      }
+    }
+
+    .badge {
+      margin-left: auto;
+      background-color: #f85149; /* Alerta para incidentes */
+      color: white;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+  }
+
+  /* Rodapé do Perfil e Logout */
+  .sidebar-footer {
+    padding-top: 20px;
+    border-top: 1px solid #21262d;
+
+    .profile-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .profile-card {
+        flex: 1;
+        background-color: #161b22; /* Fundo do card de perfil */
+        padding: 14px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .avatar {
+          width: 40px;
+          height: 40px;
+          background-color: #1c2128;
+          color: #0066ff;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          border: 1px solid rgba(0, 102, 255, 0.2);
+        }
+
+        .profile-info {
+          display: flex;
+          flex-direction: column;
+          .name { color: #f0f6fc; font-size: 14px; font-weight: 600; }
+          .unit { color: #8b949e; font-size: 11px; }
+        }
+      }
+
+      /* Botão de Logout Estilizado */
+      .btn-logout {
+        background: rgba(248, 81, 73, 0.1); /* Vermelho sutil */
+        border: 1px solid rgba(248, 81, 73, 0.2);
+        color: #f85149;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.2s ease;
+
+        &:hover {
+          background: #f85149;
+          color: #ffffff;
+          box-shadow: 0 4px 15px rgba(248, 81, 73, 0.3);
+        }
+
+        span {
+          font-size: 22px;
+          font-family: 'Material Symbols Outlined' !important;
+        }
+      }
+    }
+  }
+}
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  background: #0b0e11;
+}
+
+/* ... Estilos anteriores mantidos ... */
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #0b0e11;
+  overflow: hidden;
+
+  /* Quando NÃO houver sidebar (Tela de Login) */
+  &.no-sidebar {
+    .content-area {
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+/* Garante que o conteúdo ocupe o espaço restante */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  background: #0b0e11;
+}

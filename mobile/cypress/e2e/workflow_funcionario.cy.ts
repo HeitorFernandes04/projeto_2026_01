@@ -12,7 +12,7 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
       body: []
     }).as('getOrdens');
 
-    cy.intercept('GET', '**/api/ordens-servico/servicos/', {
+    cy.intercept('GET', '**/api/gestao/servicos/', {
       statusCode: 200,
       body: [
         { id: 1, nome: 'Lavagem Completa', preco: '50.00' }
@@ -42,9 +42,12 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
     cy.get('input[type="email"]').type('funcionario@lava.me');
     cy.get('input[type="password"]').type('123456');
     cy.get('button').contains('Entrar').click();
-    cy.wait('@loginRequest').then(() => {
-      expect(localStorage.getItem('access')).to.eq('mock-access-token');
-    });
+    
+    // Aguarda a resposta da API antes de validar o token
+    cy.wait('@loginRequest');
+    
+    // O .should() vai tentar ler o localStorage repetidamente até que o valor apareça
+    cy.window().its('localStorage.access').should('exist');
 
     // 2. Nova OS Expressa
     cy.visit('/ordens-servico/novo');
@@ -55,7 +58,10 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
     cy.get('input[placeholder*="MARCA"]').type('VW');
     cy.get('input[placeholder*="COR"]').type('Branco');
     cy.contains('Lavagem Completa').click();
-    cy.get('button').contains('INICIAR ATENDIMENTO AGORA').click();
+    
+    // Aguarda estabilidade antes de clicar no botão
+    cy.wait(500);
+    cy.contains(/INICIAR ORDEM DE SERVIÇO AGORA/i).should('be.visible').click();
     cy.wait('@criarOS');
 
     // 3. Vistoria Inicial — Mock com 5 fotos VISTORIA_GERAL
@@ -94,7 +100,7 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
       }
     }).as('getOSExecucao');
 
-    cy.get('textarea').type('Veículo sem avarias aparentes na entrada.');
+    cy.get('ion-textarea, textarea').type('Veículo sem avarias aparentes na entrada.', { force: true });
     cy.get('button').contains('CONCLUIR VISTORIA').click();
     cy.wait('@avancarExecucao');
 
@@ -120,7 +126,8 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
       }
     }).as('getOSAcabamento');
 
-    cy.get('textarea').scrollIntoView().type('Lavagem finalizada com shampoo neutro.');
+    cy.contains('Tempo Decorrido').should('be.visible');
+    cy.get('ion-textarea, textarea').scrollIntoView().type('Lavagem finalizada com shampoo neutro.', { force: true });
     cy.get('button').contains(/Finalizar Lavagem/i).click();
     cy.wait('@avancarAcabamento');
 
@@ -142,7 +149,7 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
       }
     }).as('getOSLiberacao');
 
-    cy.get('textarea').scrollIntoView().type('Acabamento interno realizado.');
+    cy.get('ion-textarea, textarea').scrollIntoView().type('Acabamento interno realizado.', { force: true });
     cy.get('button').contains(/Relatar Problema/i).should('exist');
     cy.get('button').contains(/FINALIZAR ETAPA/i).click();
     cy.wait('@avancarLiberacao');

@@ -1,0 +1,36 @@
+<div class="login-wrapper">
+  <div class="login-card">
+    <header class="login-header">
+      <img src="logo.jpeg" alt="Lava-Me Logo" class="brand-logo">
+      <h2>Acesso ao Gestor</h2>
+      <p>Entre com suas credenciais para gerenciar a unidade</p>
+    </header>
+
+    <form class="login-form" (submit)="acessar(); $event.preventDefault()">
+      <div class="input-group">
+        <label>E-mail ou Usuário</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined">person</span>
+          <input type="email" name="email" [(ngModel)]="email" placeholder="exemplo@lavame.com.br" required>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Senha de Acesso</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined">lock</span>
+          <input type="password" name="password" [(ngModel)]="password" placeholder="••••••••" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login" [disabled]="!email || !password">
+        Acessar Painel
+        <span class="material-symbols-outlined">login</span>
+      </button>
+
+      <div class="form-footer">
+        <a href="javascript:void(0)">Esqueceu sua senha?</a>
+      </div>
+    </form>
+  </div>
+</div>

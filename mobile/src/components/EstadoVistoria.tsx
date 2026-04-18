@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, AlertCircle, Camera, ClipboardList } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Check, AlertCircle, ClipboardList } from 'lucide-react';
 import { IonSpinner } from '@ionic/react';
 import { avancarEtapa, getOrdemServico } from '../services/api';
 import GaleriaFotos from './GaleriaFotos';
@@ -23,9 +23,7 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
   const [loading, setLoading] = useState(true);
   const [observacoes, setObservacoes] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const galeriaRef = useRef<HTMLDivElement>(null);
 
-  const partesObrigatorias = ['Lateral Motorista', 'Lateral Passageiro', 'Teto', 'Frente', 'Atrás'];
 
   const carregarDados = useCallback(async () => {
     try {
@@ -52,9 +50,10 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
       await avancarEtapa(ordemServicoId, { laudo_vistoria: observacoes });
       setOrdemServico(null); // Limpa estado local antes de completar
       onComplete();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar vistoria:', err);
-      alert('Bloqueio na Vistoria: ' + (err.message || 'Verifique se as 5 fotos foram processadas.'));
+      const errorMessage = err instanceof Error ? err.message : 'Verifique se as 5 fotos foram processadas.';
+      alert('Bloqueio na Vistoria: ' + errorMessage);
     } finally {
       setEnviando(false);
     }

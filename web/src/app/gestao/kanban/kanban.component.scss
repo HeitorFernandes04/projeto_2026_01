@@ -1,0 +1,147 @@
+.patio-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #0b0e11;
+  overflow: hidden;
+
+  /* HEADER FIXO */
+  .page-header {
+    flex-shrink: 0;
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: #0b0e11;
+    z-index: 100;
+
+    .title-group {
+      h1 { font-size: 32px; font-weight: 800; color: #ffffff; margin: 0; }
+      p { color: #8b949e; font-size: 15px; margin-top: 4px; }
+    }
+
+    .header-actions {
+      display: flex; gap: 16px; align-items: center;
+      .live-indicator {
+        display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 20px;
+        border: 1px solid rgba(0, 102, 255, 0.2); background: rgba(0, 102, 255, 0.05);
+        .dot { width: 8px; height: 8px; background: #0066ff; border-radius: 50%; box-shadow: 0 0 8px #0066ff; }
+        .text { color: #0066ff; font-size: 12px; font-weight: 800; }
+      }
+      .notification-btn {
+        background: #161b22; border: 1px solid #30363d; color: #8b949e; padding: 10px; border-radius: 12px; position: relative;
+        .badge { position: absolute; top: -4px; right: -4px; background: #ff3b30; color: white; font-size: 10px; font-weight: 800; padding: 2px 5px; border-radius: 10px; }
+      }
+      .date-selector {
+        background: #161b22; border: 1px solid #30363d; padding: 8px 18px; border-radius: 12px; display: flex; flex-direction: column;
+        .date-label { color: #8b949e; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .date-value { color: #f0f6fc; font-size: 13px; font-weight: 800; }
+      }
+    }
+  }
+
+  /* KANBAN ÁREA DE ROLAGEM (AJUSTADO PARA ESCONDER O REGULADOR) */
+  .kanban-scroll-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 0 40px;
+    margin-bottom: 10px;
+
+    /* Esconde barra no IE, Edge e Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    /* Esconde barra no Chrome, Safari e Opera */
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .kanban-grid-background {
+      min-width: max-content;
+      min-height: 100%;
+      background-image:
+        linear-gradient(#161b22 1px, transparent 1px),
+        linear-gradient(90deg, #161b22 1px, transparent 1px);
+      background-size: 40px 40px;
+      border: 1px solid #21262d;
+      border-radius: 16px;
+      padding: 32px;
+    }
+  }
+
+  .kanban-columns { display: flex; gap: 24px; }
+  .kanban-column { width: 320px; flex-shrink: 0; }
+
+  /* COLUNAS E LEGENDAS */
+  .column-header {
+    margin-bottom: 24px;
+    .header-main {
+      display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;
+      h3 { font-size: 13px; font-weight: 900; color: #ffffff; margin: 0; letter-spacing: 0.5px; }
+      .column-badge { background: #161b22; color: #0066ff; font-size: 11px; font-weight: 800; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid #21262d; }
+    }
+    .column-status-line {
+      height: 2px; border-radius: 2px;
+      &.gray { background: #484f58; }
+      &.purple { background: #a371f7; box-shadow: 0 0 10px rgba(163, 113, 247, 0.4); }
+      &.blue { background: #0066ff; box-shadow: 0 0 10px rgba(0, 102, 255, 0.4); }
+      &.cyan { background: #58a6ff; box-shadow: 0 0 10px rgba(88, 166, 255, 0.4); }
+    }
+  }
+
+  /* CARDS COM ANIMAÇÃO DE PULSO */
+  .vehicle-card {
+    background: rgba(22, 27, 34, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid #30363d;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+
+    &.has-incident {
+      border-color: #d29922;
+      animation: orange-pulse 1.8s infinite ease-in-out;
+      .alert-icon { color: #d29922; }
+    }
+
+    .alert-icon { position: absolute; top: 20px; right: 20px; font-size: 18px; color: #484f58; }
+    .card-row {
+      display: flex; gap: 12px; margin-bottom: 16px;
+      .car-icon-box { width: 36px; height: 36px; background: rgba(0, 102, 255, 0.1); color: #0066ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+      .vehicle-info { .plate { color: #fff; font-weight: 800; font-size: 16px; display: block; } .model { color: #8b949e; font-size: 11px; } }
+    }
+    .service-info { margin-bottom: 16px; label { color: #484f58; font-size: 10px; font-weight: 700; text-transform: uppercase; } p { color: #fff; font-size: 14px; font-weight: 700; margin: 2px 0 0; } }
+    .timer-row { display: flex; align-items: center; gap: 6px; color: #fff; font-size: 16px; margin-bottom: 12px; strong { font-weight: 900; } }
+    .progress-container { height: 4px; background: #161b22; border-radius: 2px; overflow: hidden; .progress-bar { height: 100%; background: #0066ff; box-shadow: 0 0 10px rgba(0, 102, 255, 0.4); &.warning { background: #ff3b30; } } }
+  }
+
+  /* FOOTER FIXO */
+  .patio-footer {
+    flex-shrink: 0;
+    padding: 20px 40px 30px;
+    background: #0b0e11;
+    border-top: 1px solid #21262d;
+    z-index: 100;
+
+    .footer-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      .stat-mini-card {
+        background: #161b22; border: 1px solid #21262d; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; gap: 16px;
+        .icon-wrap {
+          width: 40px; height: 40px; border-radius: 50%; background: #0b0e11; display: flex; align-items: center; justify-content: center; color: #8b949e;
+          &.blue-glow { color: #0066ff; }
+          &.purple-glow { color: #a371f7; }
+        }
+        .stat-details { .stat-label { color: #8b949e; font-size: 11px; font-weight: 600; display: block; } .stat-val { color: #fff; font-size: 16px; font-weight: 800; } }
+      }
+    }
+  }
+}
+
+@keyframes orange-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(210, 153, 34, 0.5); }
+  50% { box-shadow: 0 0 15px 4px rgba(210, 153, 34, 0.25); }
+  100% { box-shadow: 0 0 0 0 rgba(210, 153, 34, 0.5); }
+}

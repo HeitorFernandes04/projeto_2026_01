@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, MapPin, Camera, Key, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Check, MapPin, Key, AlertCircle } from 'lucide-react';
 import { IonSpinner } from '@ionic/react';
 import { finalizarOrdemServico, getOrdemServico } from '../services/api';
 import { useHistory } from 'react-router-dom';
@@ -12,7 +12,6 @@ const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void
   const [vaga, setVaga] = useState('');
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
-  const galeriaRef = useRef<HTMLDivElement>(null);
 
   const fetchDados = useCallback(async () => {
     try {
@@ -40,9 +39,10 @@ const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void
       setOrdemServico(null); // Limpa estado local
       onComplete();
       history.push('/ordens-servico/hoje');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao liberar veículo:', err);
-      alert('Bloqueio na Liberação: ' + (err.message || 'Verifique se as 5 fotos foram processadas.'));
+      const errorMessage = err instanceof Error ? err.message : 'Verifique se as 5 fotos foram processadas.';
+      alert('Bloqueio na Liberação: ' + errorMessage);
     } finally {
       setEnviando(false);
     }

@@ -12,6 +12,7 @@ LOG_FILE = BASE_DIR / "logs" / "dev.log"
 SCRIPTS_DIR = BASE_DIR / "scripts"
 DOCS_DIR = BASE_DIR.parent / "docs"
 MOBILE_DIR = BASE_DIR.parent / "mobile"
+WEB_DIR = BASE_DIR.parent / "web"
 
 # Setup FastMCP
 mcp = FastMCP("LavaMe-AI-Governance")
@@ -56,8 +57,8 @@ def sync_api_schema() -> str:
         # Usando sys.executable (o python do ambiente ativado)
         subprocess.run([sys.executable, str(BASE_DIR / "manage.py"), "spectacular", "--file", str(schema_path)], check=True)
         
-        sys.path.append(str(SCRIPTS_DIR))
-        from ingest_docs import ingest_documents
+        sys.path.append(str(SCRIPTS_DIR)) 
+        from ingest_docs import ingest_documents  # type: ignore
         msg = ingest_documents()
         return f"Swagger OpenAPI gerado. Re-ingestão RAG finalizada: {msg}"
     except subprocess.CalledProcessError:
@@ -87,6 +88,27 @@ def list_mobile_components() -> str:
     file_list = [f"- {t.name}" for t in files]
     return "Componentes React/Ionic Encontrados:\n" + "\n".join(file_list) + "\n\n(Reaproveite estes arquivos e respeite suas Props)"
 
+# ======== Ferramentas Web (Angular) ========
+
+@mcp.tool()
+def read_web_standard() -> str:
+    """Retorna as regras absolutas de arquitetura e design do projeto Angular. Use antes de criar telas WEB."""
+    standard_file = DOCS_DIR / "1_arquitetura" / "web_standard.md"
+    if not standard_file.exists():
+        return "Padronização web não encontrada."
+    with open(standard_file, "r") as f:
+        return f.read()
+
+@mcp.tool()
+def list_web_components() -> str:
+    """Lista todos os componentes Angular (.component.ts) em busca de reuso no diretório web/."""
+    if not WEB_DIR.exists():
+        return "Diretório Web não encontrado."
+    
+    files = list(WEB_DIR.glob("src/app/**/*.component.ts"))
+    file_list = [f"- {f.relative_to(WEB_DIR)}" for f in files]
+    return "Componentes Angular Encontrados:\n" + "\n".join(file_list)
+
 # ======== Ferramentas de Manutenção e Testes (Django Base) ========
 
 @mcp.tool()
@@ -111,7 +133,7 @@ print("\\n".join(output))'''
 @mcp.tool()
 def execute_django_query(python_query_code: str) -> str:
     """Executa um código Python dentro do shell do Django e retorna os prints. 
-    Ideal para usar o ORM (ex: 'from atendimentos.models import Atendimento; print(Atendimento.objects.count())')."""
+    Ideal para usar o ORM (ex: 'from operacao.models import OrdemServico; print(OrdemServico.objects.count())')."""
     setup = "import django; django.setup();\n"
     full_code = setup + python_query_code
     try:
@@ -156,6 +178,77 @@ def run_frontend_linter() -> str:
         return proc.stdout if proc.stdout else proc.stderr
     except Exception as e:
         return f"Erro no linter front: {str(e)}"
+
+# ======== Ferramentas de Consistência e Governança ========
+
+@mcp.tool()
+def verify_api_endpoints() -> str:
+    """Verifica se as URLs chamadas no Mobile/Web existem no Backend (Django). Detecta erros de integração."""
+    # 1. Extrair URLs do Django
+    code = '''import django; django.setup(); from django.urls import get_resolver;
+def get_urls(resolver, prefix=''):
+    out = []
+    for pattern in resolver.url_patterns:
+        if hasattr(pattern, 'url_patterns'):
+            out.extend(get_urls(pattern, prefix + pattern.pattern.regex.pattern.replace('^', '')))
+        else:
+            p = prefix + pattern.pattern.regex.pattern.replace('^', '').replace('$', '')
+            out.append(p.replace('\\\\', ''))
+    return out
+print("\\n".join(get_urls(get_resolver())))'''
+    
+    try:
+        proc = subprocess.run([sys.executable, str(BASE_DIR / "manage.py"), "shell", "-c", code], 
+                            capture_output=True, text=True, check=True)
+        django_urls = [u.strip() for u in proc.stdout.split('\n') if u.strip()]
+        
+        # 2. Buscar URLs no Front (Busca simplificada por strings que parecem /api/)
+        errors = []
+        for directory in [MOBILE_DIR, WEB_DIR]:
+            if not directory.exists(): continue
+            # Busca em arquivos de serviço/api
+            p = subprocess.run(['grep', '-r', "/api/", str(directory)], capture_output=True, text=True)
+            for line in p.stdout.split('\n'):
+                if not line or ".spec.ts" in line or "node_modules" in line: continue
+                # Extrair o que parece uma rota (ex: /api/gestao/servicos/)
+                import re
+                matches = re.findall(r'(/api/[a-zA-Z0-9\-_/]+)', line)
+                for m in matches:
+                    # Limpar e verificar se existe no backend (match parcial ou exato)
+                    found = any(u.startswith(m.lstrip('/')) for u in django_urls) or \
+                            any(m.lstrip('/') in u for u in django_urls)
+                    if not found:
+                        errors.append(f"ALERTA: Rota '{m}' usada em {line.split(':')[0]} não encontrada no Backend.")
+        
+        return "\n".join(errors) if errors else "Todas as rotas mapeadas parecem válidas."
+    except Exception as e:
+        return f"Erro na verificação: {str(e)}"
+
+@mcp.tool()
+def check_test_coverage(files: list[str]) -> str:
+    """Verifica se arquivos alterados (lista de paths) possuem arquivos de teste correspondentes."""
+    results = []
+    for f in files:
+        path = Path(f)
+        if not path.exists(): continue
+        
+        # Lógica de mapeamento
+        test_file = None
+        if f.endswith('.py'):
+            # Backend: views.py -> tests/test_views.py ou tests.py
+            test_file = path.parent / f"tests/test_{path.name}"
+            if not test_file.exists(): test_file = path.parent / "tests.py"
+        elif f.endswith('.ts') or f.endswith('.tsx'):
+            # Frontend: name.component.ts -> name.component.spec.ts
+            test_file = path.parent / f"{path.stem}.spec.ts"
+            if not test_file.exists(): test_file = path.parent / f"{path.stem}.spec.tsx"
+
+        if test_file and test_file.exists():
+            results.append(f"✅ {f} -> Testado em {test_file.name}")
+        else:
+            results.append(f"❌ {f} -> SEM TESTE CORRESPONDENTE")
+            
+    return "\n".join(results)
 
 if __name__ == "__main__":
     mcp.run(transport='stdio')

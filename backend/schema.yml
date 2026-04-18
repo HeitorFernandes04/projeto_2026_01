@@ -1,0 +1,612 @@
+openapi: 3.0.3
+info:
+  title: Lava-me API
+  version: 1.0.0
+  description: Documentação oficial da API do projeto Lava-me.
+paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Funcionario'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Funcionario'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Funcionario'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funcionario'
+          description: ''
+  /api/gestao/estabelecimento/:
+    get:
+      operationId: gestao_estabelecimento_retrieve
+      description: |-
+        GET /api/gestao/estabelecimento/ - Retorna dados do estabelecimento
+        PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: gestao_estabelecimento_partial_update
+      description: |-
+        GET /api/gestao/estabelecimento/ - Retorna dados do estabelecimento
+        PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/servicos/:
+    get:
+      operationId: gestao_servicos_list
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Servico'
+          description: ''
+    post:
+      operationId: gestao_servicos_create
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Servico'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+  /api/gestao/servicos/{id}/:
+    get:
+      operationId: gestao_servicos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+    put:
+      operationId: gestao_servicos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Servico'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+    patch:
+      operationId: gestao_servicos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServico'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+    delete:
+      operationId: gestao_servicos_destroy
+      description: Soft Delete - marca is_active=False em vez de remover
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/gestao/tags-peca/:
+    get:
+      operationId: gestao_tags_peca_list
+      description: Lista tags de peça do estabelecimento do usuário.
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagPeca'
+          description: ''
+  /api/ordens-servico/{id}/:
+    get:
+      operationId: ordens_servico_retrieve
+      description: GET /api/ordens-servico/{id}/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/avancar-etapa/:
+    patch:
+      operationId: ordens_servico_avancar_etapa_partial_update
+      description: |-
+        PATCH /api/ordens-servico/{id}/avancar-etapa/
+        Endpoint unificado para transições da esteira.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/finalizar/:
+    patch:
+      operationId: ordens_servico_finalizar_partial_update
+      description: |-
+        PATCH /api/ordens-servico/{id}/finalizar/
+        Finaliza a OS na etapa 4 (Liberação) validando fotos FINALIZADO e vaga.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/fotos/:
+    post:
+      operationId: ordens_servico_fotos_create
+      description: POST /api/ordens-servico/{id}/fotos/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/incidente/:
+    post:
+      operationId: ordens_servico_incidente_create
+      description: Endpoint para o operador relatar um dano e travar a OS.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/historico/:
+    get:
+      operationId: ordens_servico_historico_retrieve
+      description: GET /api/ordens-servico/historico/
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/hoje/:
+    get:
+      operationId: ordens_servico_hoje_retrieve
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/horarios-livres/:
+    get:
+      operationId: ordens_servico_horarios_livres_retrieve
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/novo/:
+    post:
+      operationId: ordens_servico_novo_create
+      description: POST /api/ordens-servico/
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/servicos/:
+    get:
+      operationId: ordens_servico_servicos_retrieve
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/tags-peca/:
+    get:
+      operationId: ordens_servico_tags_peca_list
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagPeca'
+          description: ''
+  /api/ordens-servico/tags-peca/{id}/:
+    get:
+      operationId: ordens_servico_tags_peca_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Um valor inteiro único que identifica este tag peca.
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+components:
+  schemas:
+    CargoEnum:
+      enum:
+      - GESTOR
+      - LAVADOR
+      - DETALHISTA
+      type: string
+      description: |-
+        * `GESTOR` - Gestor
+        * `LAVADOR` - Lavador
+        * `DETALHISTA` - Detalhista
+    CategoriaEnum:
+      enum:
+      - INTERNO
+      - EXTERNO
+      type: string
+      description: |-
+        * `INTERNO` - Interno
+        * `EXTERNO` - Externo
+    Funcionario:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          title: Usuário
+          description: Obrigatório. 150 caracteres ou menos. Letras, números e @/./+/-/_
+            apenas.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 6
+        estabelecimento:
+          type: integer
+          writeOnly: true
+        cargo:
+          allOf:
+          - $ref: '#/components/schemas/CargoEnum'
+          default: LAVADOR
+      required:
+      - email
+      - estabelecimento
+      - id
+      - name
+      - password
+      - username
+    PatchedServico:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 100
+        preco:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        duracao_estimada_minutos:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Tempo médio em minutos
+        is_active:
+          type: boolean
+        estabelecimento:
+          type: integer
+          readOnly: true
+    Servico:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 100
+        preco:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        duracao_estimada_minutos:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Tempo médio em minutos
+        is_active:
+          type: boolean
+        estabelecimento:
+          type: integer
+          readOnly: true
+      required:
+      - duracao_estimada_minutos
+      - estabelecimento
+      - id
+      - nome
+      - preco
+    TagPeca:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 50
+        categoria:
+          $ref: '#/components/schemas/CategoriaEnum'
+        estabelecimento:
+          type: integer
+          readOnly: true
+      required:
+      - categoria
+      - estabelecimento
+      - id
+      - nome
+    TokenObtainPair:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - email
+      - password
+      - refresh
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,238 @@
+<div class="setup-wrapper">
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Configurações</h1>
+      <p>Gestão de Serviços, Funcionários e Unidade</p>
+    </div>
+    <div class="header-actions">
+      <button class="notification-btn" (click)="irParaIncidentes()">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="badge">2</span>
+      </button>
+      <div class="header-date-picker">
+        <div class="date-texts">
+          <span class="label">Data</span>
+          <span class="value">17 ABR 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  @if (exibirModal) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ modoEdicao ? 'Editar Serviço' : 'Novo Serviço' }}</h3>
+        <button class="modal-close" (click)="fecharModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        @if (erroValidacao) {
+        <div class="error-message">
+          {{ erroValidacao }}
+        </div>
+        }
+        <div class="form-group">
+          <label for="nome">Nome do Serviço *</label>
+          <input type="text" id="nome" [(ngModel)]="novoServico.nome" placeholder="Ex: Lavagem Completa" required>
+        </div>
+        <div class="form-group">
+          <label for="preco">Preço (R$) *</label>
+          <input type="number" id="preco" [(ngModel)]="novoServico.preco" step="0.01" placeholder="0.00" min="0.01" required>
+        </div>
+        <div class="form-group">
+          <label for="duracao">Duração Estimada (minutos) *</label>
+          <input type="number" id="duracao" [(ngModel)]="novoServico.duracao_estimada_minutos" placeholder="45" min="1" required>
+          <small class="form-hint">Obrigatório para cálculos de produtividade da equipe.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="fecharModal()">Cancelar</button>
+        <button class="btn-primary-blue" (click)="salvarServico()"
+                [disabled]="!novoServico.nome || novoServico.preco <= 0 || !novoServico.duracao_estimada_minutos">
+          {{ modoEdicao ? 'Atualizar Serviço' : 'Salvar Serviço' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <nav class="setup-tabs-container">
+    <div class="tabs-pill">
+      <button [class.active]="abaAtiva === 'servicos'" (click)="setAba('servicos')">Serviços</button>
+      <button [class.active]="abaAtiva === 'funcionarios'" (click)="setAba('funcionarios')">Funcionários</button>
+      <button [class.active]="abaAtiva === 'unidade'" (click)="setAba('unidade')">Unidade</button>
+    </div>
+  </nav>
+
+  @if (abaAtiva === 'servicos') {
+    <section class="setup-card-industrial">
+      <div class="card-header">
+        <div class="header-left">
+          <h3>Gestão de Serviços</h3>
+          <p>Configure os serviços oferecidos e suas durações estimadas</p>
+        </div>
+        <button class="btn-primary-blue" (click)="abrirModal()">
+          <span class="material-symbols-outlined">add</span> Novo Serviço
+        </button>
+      </div>
+      <div class="table-container">
+        <table class="industrial-table">
+          <thead>
+            <tr>
+              <th class="col-servico">SERVIÇO</th>
+              <th class="col-preco">PREÇO</th>
+              <th class="col-duracao">DURAÇÃO ESTIMADA</th>
+              <th class="col-acoes text-right">AÇÕES</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of servicos; track s.id) {
+              <tr>
+                <td class="col-servico font-bold-white">{{ s.nome }}</td>
+                <td class="col-preco font-blue-price">{{ s.preco | currency:'BRL':'symbol':'1.2-2' }}</td>
+                <td class="col-duracao">
+                  <div class="duration-box">
+                    <span class="material-symbols-outlined">schedule</span>
+                    {{ s.duracao_estimada_minutos || 0 }} min
+                  </div>
+                </td>
+                <td class="col-acoes text-right">
+                  <button class="btn-edit-action" (click)="editarServico(s)">
+                    <span class="material-symbols-outlined">edit</span>Editar
+                  </button>
+                  <button class="btn-delete-action" (click)="excluirServico(s.id!)">
+                    <span class="material-symbols-outlined">delete</span>Excluir
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (abaAtiva === 'funcionarios') {
+    <section class="setup-card-industrial">
+      <div class="card-header">
+        <div class="header-left">
+          <h3>Gestão de Funcionários</h3>
+          <p>Gerencie a equipe de colaboradores e monitore a eficiência operacional</p>
+        </div>
+        <button class="btn-primary-blue" (click)="abrirModal()">
+          <span class="material-symbols-outlined">add</span> Novo Funcionário
+        </button>
+      </div>
+      <div class="table-container">
+        <table class="industrial-table">
+          <thead>
+            <tr>
+              <th class="col-nome">NOME</th>
+              <th class="col-email">E-MAIL</th>
+              <th class="col-cargo">CARGO</th>
+              <th class="col-status">STATUS</th>
+              <th class="col-acoes text-right">AÇÕES</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of funcionarios; track f.nome) {
+              <tr>
+                <td class="col-nome">
+                  <div class="user-row">
+                    <div class="avatar-circle">{{ f.nome.charAt(0) }}</div>
+                    <div class="user-data">
+                      <span class="user-name">{{ f.nome }}</span>
+                      <div class="user-metrics">
+                        <span class="time"><span class="material-symbols-outlined">schedule</span> {{ f.tempoMedio }}</span>
+                        <span class="efficiency" [class.up]="f.tendencia === 'up'" [class.down]="f.tendencia === 'down'">
+                          {{ f.tendencia === 'up' ? '↑' : '↓' }} {{ f.eficiencia }}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="col-email">{{ f.email }}</td>
+                <td class="col-cargo"><span class="cargo-pill">{{ f.cargo }}</span></td>
+                <td class="col-status">
+                  <label class="switch">
+                    <input type="checkbox" [checked]="f.ativo">
+                    <span class="slider"></span>
+                  </label>
+                </td>
+                <td class="col-acoes text-right">
+                  <div class="action-group">
+                    <button class="btn-action edit"><span class="material-symbols-outlined">edit</span>Editar</button>
+                    <button class="btn-action disable"><span class="material-symbols-outlined">person_remove</span>Desativar</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <div class="setup-footer-metrics">
+          <div class="metric-card"><span class="m-label">Total de Funcionários</span><span class="m-value white">{{ funcionarios.length }}</span></div>
+          <div class="metric-card"><span class="m-label">Funcionários Ativos</span><span class="m-value blue">4</span></div>
+          <div class="metric-card"><span class="m-label">Eficiência Média</span><span class="m-value blue-light">103%</span></div>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (abaAtiva === 'unidade') {
+    <section class="setup-card-industrial">
+      <div class="card-header">
+        <div class="header-left-row">
+          <div class="icon-box-blue"><span class="material-symbols-outlined">domain</span></div>
+          <div>
+            <h3>Configurações da Unidade</h3>
+            <p>Gerencie os dados cadastrais da unidade e link de autoagendamento</p>
+          </div>
+        </div>
+      </div>
+      <div class="unit-form">
+        @if (erroUnidade) {
+        <div class="error-message">
+          {{ erroUnidade }}
+        </div>
+        }
+        @if (sucessoUnidade) {
+        <div class="success-message">
+          {{ sucessoUnidade }}
+        </div>
+        }
+        <div class="form-group">
+          <label for="nomeFantasia">Nome Fantasia *</label>
+          <input type="text" id="nomeFantasia" [(ngModel)]="unidade.nome_fantasia" placeholder="Lava-Me Centro" required>
+        </div>
+        <div class="form-group">
+          <label for="cnpj">CNPJ *</label>
+          <input type="text" id="cnpj" [(ngModel)]="unidade.cnpj" placeholder="12.345.678/0001-90" maxlength="14" required>
+          <small class="form-hint">Apenas números (14 dígitos)</small>
+        </div>
+        <div class="form-group">
+          <label for="endereco">Endereço Completo</label>
+          <input type="text" id="endereco" [(ngModel)]="unidade.endereco_completo" placeholder="Rua das Flores, 123 - Centro - São Paulo - SP">
+        </div>
+
+        <div class="booking-link-card">
+          <div class="link-header">
+            <div class="icon-wrap"><span class="material-symbols-outlined">link</span></div>
+            <div class="link-text">
+              <h4>Link de Autoagendamento Público</h4>
+              <p>Compartilhe para permitir que clientes agendem serviços online</p>
+            </div>
+          </div>
+          <div class="link-action-row">
+            <div class="link-display">{{ linkAgendamento }}</div>
+            <button class="btn-copy" (click)="copiarLink()">
+              <span class="material-symbols-outlined">content_copy</span>Copiar Link
+            </button>
+          </div>
+        </div>
+        <div class="form-actions-footer">
+          <button class="btn-save-large" (click)="salvarUnidade()">Salvar Alterações na Unidade</button>
+        </div>
+      </div>
+    </section>
+  }
+</div>

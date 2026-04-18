@@ -1,0 +1,106 @@
+<div class="incidentes-wrapper">
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Incidentes</h1>
+      <p>Ordens de serviço bloqueadas aguardando resolução</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="notification-btn">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="badge">2</span>
+      </button>
+
+      <div class="date-selector">
+        <span class="date-label">Data</span>
+        <span class="date-value">14 ABR 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="incidentes-content">
+    <div class="central-banner">
+      <div class="icon-box">
+        <span class="material-symbols-outlined">report_problem</span>
+      </div>
+      <div class="banner-text">
+        <h2>Central de Incidentes</h2>
+        <p>Ordens de serviço bloqueadas aguardando resolução</p>
+      </div>
+    </div>
+
+    <div class="incidentes-list">
+      @for (item of incidentes; track item.os) {
+        <div class="incidente-card" (click)="abrirModal(item)">
+          <div class="card-header">
+            <div class="vehicle-info">
+              <h3>{{ item.placa }}</h3>
+              <span class="model">{{ item.modelo }} • {{ item.motivo }}</span>
+            </div>
+            <span class="status-badge">BLOQUEADO</span>
+          </div>
+
+          <p class="description">{{ item.descricao }}</p>
+
+          <div class="card-footer">
+            <span class="author">Reportado por: {{ item.reportadoPor }}</span>
+            <span class="timestamp">{{ item.data }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </main>
+
+  <div class="modal-overlay" [class.active]="modalAberto">
+    <div class="modal-container">
+      <header class="modal-header">
+        <div class="header-main">
+          <h2>Auditoria de Incidente</h2>
+          <span class="subtitle">{{ incidenteSelecionado?.placa }} • {{ incidenteSelecionado?.modelo }}</span>
+        </div>
+        <button class="close-btn" (click)="fecharModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </header>
+
+      <div class="modal-body custom-scrollbar">
+        <div class="modal-incident-description">
+          <label>DESCRIÇÃO DO INCIDENTE</label>
+          <p>{{ incidenteSelecionado?.descricao }}</p>
+          <div class="report-meta">
+            <span>Reportado por: <strong>{{ incidenteSelecionado?.reportadoPor }}</strong></span>
+            <span>Data/Hora: <strong>{{ incidenteSelecionado?.data }}</strong></span>
+          </div>
+        </div>
+
+        <div class="comparison-grid">
+          <div class="photo-column">
+            <div class="label-row"><span class="dot green"></span> Vistoria Inicial</div>
+            <div class="photo-card">
+              <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=500" alt="Vistoria">
+              <span class="caption">Estado do veículo ao chegar no pátio</span>
+            </div>
+          </div>
+
+          <div class="photo-column">
+            <div class="label-row"><span class="dot red"></span> Incidente Detectado</div>
+            <div class="photo-card border-red">
+              <div class="placeholder-icon">
+                <span class="material-symbols-outlined">image</span>
+              </div>
+              <span class="caption">Dano identificado pelo funcionário</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="btn-resolver" (click)="liberarOS(incidenteSelecionado?.os)">
+          <span class="material-symbols-outlined">check_circle</span>
+          Resolver e Desbloquear OS
+        </button>
+        <button class="btn-cancelar" (click)="fecharModal()">Cancelar</button>
+      </footer>
+    </div>
+  </div>
+</div>

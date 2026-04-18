@@ -1,0 +1,113 @@
+<div class="historico-wrapper">
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Histórico</h1>
+      <p>Dossiê completo de Ordens de Serviço</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="notification-btn" (click)="irParaIncidentes()">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="badge">2</span>
+      </button>
+
+      <div class="header-date-picker">
+        <span class="material-symbols-outlined cal-icon">calendar_today</span>
+        <div class="date-texts">
+          <span class="label">Data</span>
+          <span class="value">14 ABR 2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="search-engine-card">
+    <div class="card-header-inner">
+      <div class="icon-circle">
+        <span class="material-symbols-outlined">search</span>
+      </div>
+      <div class="header-text">
+        <h3>Motor de Busca</h3>
+        <p>Filtre as ordens de serviço por período, placa ou status</p>
+      </div>
+    </div>
+
+    <div class="search-controls-grid">
+      <div class="control-item">
+        <label>Período</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined pre-icon">calendar_today</span>
+          <input type="text" placeholder="dd/mm/aaaa">
+          <span class="material-symbols-outlined post-icon">calendar_month</span>
+        </div>
+      </div>
+
+      <div class="control-item">
+        <label>Placa do Veículo</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined pre-icon">search</span>
+          <input type="text" placeholder="Ex: ABC-1234">
+        </div>
+      </div>
+
+      <div class="control-item">
+        <label>Status da OS</label>
+        <div class="custom-select-container">
+          <div class="input-box select-trigger" (click)="toggleDropdown()">
+            <span>{{ selectedStatus }}</span>
+            <span class="material-symbols-outlined expand-icon" [class.rotated]="dropdownAberto">expand_more</span>
+          </div>
+
+          <div class="custom-options" *ngIf="dropdownAberto">
+            @for (opt of statusOptions; track opt) {
+              <div class="option-item"
+                   [class.selected]="selectedStatus === opt"
+                   (click)="selectOption(opt)">
+                {{ opt }}
+                @if (selectedStatus === opt) {
+                  <span class="material-symbols-outlined check-icon">check</span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="results-section">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ORDEM DE SERVIÇO</th>
+            <th>DATA / HORA</th>
+            <th>PLACA</th>
+            <th>CLIENTE</th>
+            <th>SERVIÇO</th>
+            <th>STATUS</th>
+            <th>AÇÕES</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of ordensFinalizadas; track item.os) {
+            <tr>
+              <td><span class="os-tag">{{ item.os }}</span></td>
+              <td>{{ item.dataHora }}</td>
+              <td class="bold-white">{{ item.placa }}</td>
+              <td>{{ item.cliente }}</td>
+              <td>{{ item.servico }}</td>
+              <td><span class="status-pill">{{ item.status }}</span></td>
+              <td>
+                <button class="btn-dossie" (click)="visualizarDossie(item.os)">
+                  <span class="material-symbols-outlined">description</span>
+                  Dossiê
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

@@ -15,15 +15,15 @@ import logoLavaMe from '../../assets/logo.jpeg';
 const NovaOrdemServico: React.FC = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
-  const [servicos, setServicos] = useState<Array<{id: number; nome: string; preco: string}>>([]);
+  const [servicos, setServicos] = useState<Array<{id: number; nome: string; duracao_estimada_minutos: number}>>([]);
   
   const [form, setForm] = useState({
     placa: '',
     modelo: '',
     marca: '',
+    cor: '',
     nome_dono: '',
     celular_dono: '',
-    cor: '',
     servico_id: 0
   });
 
@@ -127,16 +127,16 @@ const handleConfirmar = async () => {
               value={form.nome_dono} 
               onChange={e => setForm({...form, nome_dono: e.target.value})}
               style={styles.input} 
-              placeholder="NOME DO PROPRIETÁRIO" 
+              placeholder="NOME DO PROPRIETÁRIO *" 
             />
 
             <input 
               value={form.celular_dono} 
               onChange={e => setForm({...form, celular_dono: maskTelefone(e.target.value)})}
               style={styles.input} 
-              placeholder="CELULAR DO PROPRIETÁRIO (opcional)"
+              placeholder="CELULAR DO PROPRIETÁRIO"
               type="tel"
-              inputMode="tel"
+              inputMode="numeric"
             />
 
             <input 
@@ -169,7 +169,7 @@ const handleConfirmar = async () => {
             disabled={loading} 
             style={styles.btnAction}
           >
-            {loading ? <IonSpinner name="crescent" /> : 'INICIAR ATENDIMENTO AGORA'}
+            {loading ? <IonSpinner name="crescent" /> : 'INICIAR ORDEM DE SERVIÇO AGORA'}
           </button>
 
         </div>
