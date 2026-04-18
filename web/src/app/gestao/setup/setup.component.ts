@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ServicoService, Servico } from '../../services/servico.service';
 import { EstabelecimentoService, Estabelecimento } from '../../services/estabelecimento.service';
+import { FuncionarioService, Funcionario } from '../../services/funcionario.service';
 
 @Component({
   selector: 'app-setup',
@@ -29,6 +30,7 @@ export class SetupComponent implements OnInit {
   sucessoUnidade: string = '';
   abaAtiva: 'servicos' | 'funcionarios' | 'unidade' = 'servicos';
   exibirModal: boolean = false;
+  tipoModal: 'servico' | 'funcionario' = 'servico';
   
   // Controle de edição
   servicoEmEdicao: Servico | null = null;
@@ -46,24 +48,28 @@ export class SetupComponent implements OnInit {
   // Dados complementares para UI
   linkAgendamento: string = 'https://lavame.com.br/agendar/unidade-centro';
 
-  // Funcionários (Mock conforme RF-12)
-  funcionarios = [
-    { nome: 'Carlos Silva', email: 'carlos.silva@lavame.com.br', cargo: 'Lavador', tempoMedio: '38min', eficiencia: 118, tendencia: 'up', ativo: true },
-    { nome: 'João Santos', email: 'joao.santos@lavame.com.br', cargo: 'Detalhista', tempoMedio: '42min', eficiencia: 107, tendencia: 'up', ativo: true },
-    { nome: 'Maria Oliveira', email: 'maria.oliveira@lavame.com.br', cargo: 'Lavador', tempoMedio: '48min', eficiencia: 94, tendencia: 'down', ativo: true },
-    { nome: 'Pedro Costa', email: 'pedro.costa@lavame.com.br', cargo: 'Lavador', tempoMedio: '55min', eficiencia: 82, tendencia: 'down', ativo: false },
-    { nome: 'Ana Lima', email: 'ana.lima@lavame.com.br', cargo: 'Detalhista', tempoMedio: '40min', eficiencia: 113, tendencia: 'up', ativo: true }
-  ];
+  // Funcionários (RF-12)
+  funcionarios: Funcionario[] = [];
+  novoFuncionario: Funcionario = {
+    name: '',
+    email: '',
+    password: '',
+    username: '',
+    cargo: 'LAVADOR'
+  };
+  cargosDisponiveis = ['GESTOR', 'LAVADOR', 'DETALHISTA'];
 
   constructor(
     private router: Router,
     private servicoService: ServicoService,
-    private estabelecimentoService: EstabelecimentoService
+    private estabelecimentoService: EstabelecimentoService,
+    private funcionarioService: FuncionarioService
   ) {}
 
   ngOnInit() {
     this.carregarServicos();
     this.carregarDadosUnidade();
+    this.carregarFuncionarios();
   }
 
   /**
@@ -72,12 +78,21 @@ export class SetupComponent implements OnInit {
   carregarServicos() {
     this.servicoService.listarServicos().subscribe({
       next: (servicos) => {
-        console.log('Dados Recebidos:', servicos);
         this.servicos = servicos;
       },
       error: (err) => {
         console.error('Erro ao carregar serviços:', err);
       }
+    });
+  }
+
+  /**
+   * Busca funcionários vinculados à unidade (RF-12)
+   */
+  carregarFuncionarios() {
+    this.funcionarioService.listarFuncionarios().subscribe({
+      next: (f) => this.funcionarios = f,
+      error: (err) => console.error('Erro ao carregar equipe:', err)
     });
   }
 
@@ -114,14 +129,16 @@ export class SetupComponent implements OnInit {
   // Navegação e UI
   setAba(aba: 'servicos' | 'funcionarios' | 'unidade') { this.abaAtiva = aba; }
 
-  abrirModal() {
+  abrirModal(tipo: 'servico' | 'funcionario' = 'servico') {
     this.resetarFormulario();
+    this.tipoModal = tipo;
     this.modoEdicao = false;
     this.servicoEmEdicao = null;
     this.exibirModal = true;
   }
 
   editarServico(servico: Servico) {
+    this.tipoModal = 'servico';
     this.servicoEmEdicao = servico;
     this.modoEdicao = true;
     this.novoServico = { ...servico };
@@ -135,6 +152,7 @@ export class SetupComponent implements OnInit {
 
   resetarFormulario() {
     this.novoServico = { nome: '', preco: 0, duracao_estimada_minutos: 0, is_active: true };
+    this.novoFuncionario = { name: '', email: '', password: '', username: '', cargo: 'LAVADOR' };
     this.erroValidacao = '';
     this.modoEdicao = false;
     this.servicoEmEdicao = null;
@@ -261,6 +279,52 @@ export class SetupComponent implements OnInit {
         error: (err) => {
           console.error('Erro ao excluir serviço:', err);
         }
+      });
+    }
+  }
+
+  /**
+   * Lógica de Funcionários (RF-12)
+   */
+  salvarGeral() {
+    if (this.tipoModal === 'servico') {
+      this.salvarServico();
+    } else {
+      this.salvarFuncionario();
+    }
+  }
+
+  validarFormFuncionario(): boolean {
+    if (!this.novoFuncionario.name || !this.novoFuncionario.email || !this.novoFuncionario.password) {
+      this.erroValidacao = 'Nome, E-mail e Senha são obrigatórios.';
+      return false;
+    }
+    if (!this.novoFuncionario.username) {
+      this.novoFuncionario.username = this.novoFuncionario.email;
+    }
+    return true;
+  }
+
+  salvarFuncionario() {
+    if (!this.validarFormFuncionario()) return;
+
+    this.funcionarioService.criarFuncionario(this.novoFuncionario).subscribe({
+      next: () => {
+        this.fecharModal();
+        this.carregarFuncionarios();
+      },
+      error: (err) => {
+        this.erroValidacao = err.error?.email?.[0] || 'Erro ao cadastrar funcionário. Verifique se o e-mail já existe.';
+      }
+    });
+  }
+
+  inativarFuncionario(id: number | undefined) {
+    if (!id) return;
+    if (confirm('Deseja realmente desativar este funcionário?')) {
+      this.funcionarioService.inativarFuncionario(id).subscribe({
+        next: () => this.carregarFuncionarios(),
+        error: (err) => console.error('Erro ao inativar:', err)
       });
     }
   }

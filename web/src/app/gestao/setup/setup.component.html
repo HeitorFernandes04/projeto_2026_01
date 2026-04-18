@@ -22,7 +22,7 @@
   <div class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>{{ modoEdicao ? 'Editar Serviço' : 'Novo Serviço' }}</h3>
+        <h3>{{ tipoModal === 'servico' ? (modoEdicao ? 'Editar Serviço' : 'Novo Serviço') : 'Novo Funcionário' }}</h3>
         <button class="modal-close" (click)="fecharModal()">&times;</button>
       </div>
       <div class="modal-body">
@@ -31,25 +31,48 @@
           {{ erroValidacao }}
         </div>
         }
-        <div class="form-group">
-          <label for="nome">Nome do Serviço *</label>
-          <input type="text" id="nome" [(ngModel)]="novoServico.nome" placeholder="Ex: Lavagem Completa" required>
-        </div>
-        <div class="form-group">
-          <label for="preco">Preço (R$) *</label>
-          <input type="number" id="preco" [(ngModel)]="novoServico.preco" step="0.01" placeholder="0.00" min="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="duracao">Duração Estimada (minutos) *</label>
-          <input type="number" id="duracao" [(ngModel)]="novoServico.duracao_estimada_minutos" placeholder="45" min="1" required>
-          <small class="form-hint">Obrigatório para cálculos de produtividade da equipe.</small>
-        </div>
+        
+        @if (tipoModal === 'servico') {
+          <div class="form-group">
+            <label for="nome">Nome do Serviço *</label>
+            <input type="text" id="nome" [(ngModel)]="novoServico.nome" placeholder="Ex: Lavagem Completa" required>
+          </div>
+          <div class="form-group">
+            <label for="preco">Preço (R$) *</label>
+            <input type="number" id="preco" [(ngModel)]="novoServico.preco" step="0.01" placeholder="0.00" min="0.01" required>
+          </div>
+          <div class="form-group">
+            <label for="duracao">Duração Estimada (minutos) *</label>
+            <input type="number" id="duracao" [(ngModel)]="novoServico.duracao_estimada_minutos" placeholder="45" min="1" required>
+            <small class="form-hint">Obrigatório para cálculos de produtividade da equipe.</small>
+          </div>
+        } @else {
+          <div class="form-group">
+            <label for="f-nome">Nome Completo *</label>
+            <input type="text" id="f-nome" [(ngModel)]="novoFuncionario.name" placeholder="Nome do colaborador" required>
+          </div>
+          <div class="form-group">
+            <label for="f-email">E-mail de Acesso *</label>
+            <input type="email" id="f-email" [(ngModel)]="novoFuncionario.email" placeholder="exemplo@lavame.com.br" required>
+          </div>
+          <div class="form-group">
+            <label for="f-pass">Senha Inicial *</label>
+            <input type="password" id="f-pass" [(ngModel)]="novoFuncionario.password" placeholder="Mínimo 6 caracteres" required>
+          </div>
+          <div class="form-group">
+            <label for="f-cargo">Cargo/Função *</label>
+            <select id="f-cargo" [(ngModel)]="novoFuncionario.cargo" class="form-select">
+              @for (cargo of cargosDisponiveis; track cargo) {
+                <option [value]="cargo">{{ cargo }}</option>
+              }
+            </select>
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" (click)="fecharModal()">Cancelar</button>
-        <button class="btn-primary-blue" (click)="salvarServico()"
-                [disabled]="!novoServico.nome || novoServico.preco <= 0 || !novoServico.duracao_estimada_minutos">
-          {{ modoEdicao ? 'Atualizar Serviço' : 'Salvar Serviço' }}
+        <button class="btn-primary-blue" (click)="salvarGeral()">
+          {{ tipoModal === 'servico' ? (modoEdicao ? 'Atualizar Serviço' : 'Salvar Serviço') : 'Cadastrar Funcionário' }}
         </button>
       </div>
     </div>
@@ -119,7 +142,7 @@
           <h3>Gestão de Funcionários</h3>
           <p>Gerencie a equipe de colaboradores e monitore a eficiência operacional</p>
         </div>
-        <button class="btn-primary-blue" (click)="abrirModal()">
+        <button class="btn-primary-blue" (click)="abrirModal('funcionario')">
           <span class="material-symbols-outlined">add</span> Novo Funcionário
         </button>
       </div>
@@ -135,18 +158,16 @@
             </tr>
           </thead>
           <tbody>
-            @for (f of funcionarios; track f.nome) {
+            @for (f of funcionarios; track f.id) {
               <tr>
                 <td class="col-nome">
                   <div class="user-row">
-                    <div class="avatar-circle">{{ f.nome.charAt(0) }}</div>
+                    <div class="avatar-circle">{{ f.name.charAt(0) }}</div>
                     <div class="user-data">
-                      <span class="user-name">{{ f.nome }}</span>
+                      <span class="user-name">{{ f.name }}</span>
                       <div class="user-metrics">
-                        <span class="time"><span class="material-symbols-outlined">schedule</span> {{ f.tempoMedio }}</span>
-                        <span class="efficiency" [class.up]="f.tendencia === 'up'" [class.down]="f.tendencia === 'down'">
-                          {{ f.tendencia === 'up' ? '↑' : '↓' }} {{ f.eficiencia }}%
-                        </span>
+                        <span class="time"><span class="material-symbols-outlined">schedule</span> -- </span>
+                        <span class="efficiency">ND</span>
                       </div>
                     </div>
                   </div>
@@ -155,14 +176,15 @@
                 <td class="col-cargo"><span class="cargo-pill">{{ f.cargo }}</span></td>
                 <td class="col-status">
                   <label class="switch">
-                    <input type="checkbox" [checked]="f.ativo">
+                    <input type="checkbox" [checked]="f.is_active" disabled>
                     <span class="slider"></span>
                   </label>
                 </td>
                 <td class="col-acoes text-right">
                   <div class="action-group">
-                    <button class="btn-action edit"><span class="material-symbols-outlined">edit</span>Editar</button>
-                    <button class="btn-action disable"><span class="material-symbols-outlined">person_remove</span>Desativar</button>
+                    <button class="btn-action disable" (click)="inativarFuncionario(f.id)">
+                      <span class="material-symbols-outlined">person_remove</span>Desativar
+                    </button>
                   </div>
                 </td>
               </tr>

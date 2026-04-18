@@ -70,7 +70,15 @@ class FuncionarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'email', 'username', 'password', 'estabelecimento', 'cargo']
+        fields = ['id', 'name', 'email', 'username', 'password', 'estabelecimento', 'cargo', 'is_active']
+        read_only_fields = ['is_active']
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Tenta pegar o cargo do perfil vinculado, se existir
+        if hasattr(instance, 'perfil_funcionario'):
+            ret['cargo'] = instance.perfil_funcionario.cargo
+        return ret
 
     def validate(self, attrs):
         # Normaliza e-mail para evitar duplicatas silenciosos por espaços ou caixa
