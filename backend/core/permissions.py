@@ -14,3 +14,12 @@ class IsGestorOrReadOnlyFuncionario(permissions.BasePermission):
         
         # Para métodos de escrita, permite apenas gestores
         return hasattr(request.user, 'perfil_gestor')
+
+
+class IsGestorOnly(permissions.BasePermission):
+    """
+    Permite acesso apenas a usuários com perfil Gestor.
+    Utilizado em endpoints de administração crítica.
+    """
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and hasattr(request.user, 'perfil_gestor')

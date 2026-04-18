@@ -6,9 +6,9 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from .models import Servico, TagPeca
 from .serializers import ServicoSerializer, TagPecaSerializer
-from accounts.models import Estabelecimento
-from .services import EstabelecimentoService, ServicoService
-from .permissions import IsGestorOrReadOnlyFuncionario
+from accounts.models import Estabelecimento, Funcionario
+from .services import EstabelecimentoService, ServicoService, FuncionarioService
+from .permissions import IsGestorOrReadOnlyFuncionario, IsGestorOnly
 
 class ServicoViewSet(viewsets.ModelViewSet):
     serializer_class = ServicoSerializer
@@ -152,3 +152,42 @@ class GestaoViewSet(viewsets.ViewSet):
                     {'error': 'Erro interno do servidor.'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
+
+    @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsGestorOnly])
+    def funcionarios(self, request):
+        """
+        GET /api/gestao/funcionarios/ - Lista funcionários do estabelecimento
+        POST /api/gestao/funcionarios/ - Cadastra novo funcionário
+        """
+        if request.method == 'GET':
+            from accounts.serializers import FuncionarioSerializer
+            funcionarios = FuncionarioService.listar_funcionarios(request.user)
+            serializer = FuncionarioSerializer(funcionarios, many=True)
+            return Response(serializer.data)
+
+        elif request.method == 'POST':
+            try:
+                user_criado = FuncionarioService.criar_funcionario(request.user, request.data)
+                from accounts.serializers import FuncionarioSerializer
+                serializer = FuncionarioSerializer(user_criado)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except ValidationError as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except PermissionDenied as e:
+                return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsGestorOnly], url_path='funcionarios')
+    def funcionarios_detalhe(self, request, pk=None):
+        """
+        PATCH /api/gestao/funcionarios/<id>/ - Inativa um funcionário (Soft Delete)
+        """
+        try:
+            # CA-02/CA-03: Inativação preservando integridade (Soft Delete)
+            funcionario_inativado = FuncionarioService.inativar_funcionario(request.user, pk)
+            from accounts.serializers import FuncionarioSerializer
+            serializer = FuncionarioSerializer(funcionario_inativado)
+            return Response(serializer.data)
+        except PermissionDenied as e:
+            return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+             return Response({'error': 'Erro ao processar inativação.'}, status=status.HTTP_400_BAD_REQUEST)

@@ -40,13 +40,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Register'
+              $ref: '#/components/schemas/Funcionario'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Register'
+              $ref: '#/components/schemas/Funcionario'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Register'
+              $ref: '#/components/schemas/Funcionario'
         required: true
       security:
       - jwtAuth: []
@@ -58,7 +58,205 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Register'
+                $ref: '#/components/schemas/Funcionario'
+          description: ''
+  /api/gestao/estabelecimento/:
+    get:
+      operationId: gestao_estabelecimento_retrieve
+      description: |-
+        GET /api/gestao/estabelecimento/ - Retorna dados do estabelecimento
+        PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: gestao_estabelecimento_partial_update
+      description: |-
+        GET /api/gestao/estabelecimento/ - Retorna dados do estabelecimento
+        PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/servicos/:
+    get:
+      operationId: gestao_servicos_list
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Servico'
+          description: ''
+    post:
+      operationId: gestao_servicos_create
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Servico'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+  /api/gestao/servicos/{id}/:
+    get:
+      operationId: gestao_servicos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+    put:
+      operationId: gestao_servicos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Servico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Servico'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+    patch:
+      operationId: gestao_servicos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServico'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServico'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServico'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Servico'
+          description: ''
+    delete:
+      operationId: gestao_servicos_destroy
+      description: Soft Delete - marca is_active=False em vez de remover
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/gestao/tags-peca/:
+    get:
+      operationId: gestao_tags_peca_list
+      description: Lista tags de peça do estabelecimento do usuário.
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagPeca'
           description: ''
   /api/ordens-servico/{id}/:
     get:
@@ -201,9 +399,6 @@ paths:
       - ordens-servico
       security:
       - jwtAuth: []
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
       responses:
         '200':
           description: No response body
@@ -252,21 +447,25 @@ paths:
           description: ''
 components:
   schemas:
-    CategoriaEnum:
+    CargoEnum:
       enum:
-      - frente
-      - lateral_esq
-      - lateral_dir
-      - traseira
-      - interior
+      - GESTOR
+      - LAVADOR
+      - DETALHISTA
       type: string
       description: |-
-        * `frente` - Frente
-        * `lateral_esq` - Lateral Esquerda
-        * `lateral_dir` - Lateral Direita
-        * `traseira` - Traseira
-        * `interior` - Interior
-    Register:
+        * `GESTOR` - Gestor
+        * `LAVADOR` - Lavador
+        * `DETALHISTA` - Detalhista
+    CategoriaEnum:
+      enum:
+      - INTERNO
+      - EXTERNO
+      type: string
+      description: |-
+        * `INTERNO` - Interno
+        * `EXTERNO` - Externo
+    Funcionario:
       type: object
       properties:
         id:
@@ -289,12 +488,74 @@ components:
           type: string
           writeOnly: true
           minLength: 6
+        estabelecimento:
+          type: integer
+          writeOnly: true
+        cargo:
+          allOf:
+          - $ref: '#/components/schemas/CargoEnum'
+          default: LAVADOR
       required:
       - email
+      - estabelecimento
       - id
       - name
       - password
       - username
+    PatchedServico:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 100
+        preco:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        duracao_estimada_minutos:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Tempo médio em minutos
+        is_active:
+          type: boolean
+        estabelecimento:
+          type: integer
+          readOnly: true
+    Servico:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 100
+        preco:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        duracao_estimada_minutos:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Tempo médio em minutos
+        is_active:
+          type: boolean
+        estabelecimento:
+          type: integer
+          readOnly: true
+      required:
+      - duracao_estimada_minutos
+      - estabelecimento
+      - id
+      - nome
+      - preco
     TagPeca:
       type: object
       properties:
@@ -303,12 +564,15 @@ components:
           readOnly: true
         nome:
           type: string
-          description: 'Ex: Capô, Porta Dianteira Esq'
-          maxLength: 100
+          maxLength: 50
         categoria:
           $ref: '#/components/schemas/CategoriaEnum'
+        estabelecimento:
+          type: integer
+          readOnly: true
       required:
       - categoria
+      - estabelecimento
       - id
       - nome
     TokenObtainPair:
