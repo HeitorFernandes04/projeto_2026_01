@@ -57,8 +57,8 @@ def sync_api_schema() -> str:
         # Usando sys.executable (o python do ambiente ativado)
         subprocess.run([sys.executable, str(BASE_DIR / "manage.py"), "spectacular", "--file", str(schema_path)], check=True)
         
-        sys.path.append(str(SCRIPTS_DIR))
-        from ingest_docs import ingest_documents
+        sys.path.append(str(SCRIPTS_DIR)) 
+        from ingest_docs import ingest_documents  # type: ignore
         msg = ingest_documents()
         return f"Swagger OpenAPI gerado. Re-ingestão RAG finalizada: {msg}"
     except subprocess.CalledProcessError:
