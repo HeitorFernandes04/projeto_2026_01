@@ -155,7 +155,7 @@ export async function criarOrdemServico(dados: DadosNovaOS) {
 }
 
 export async function getServicos() {
-  return request('/api/core/servicos/');
+  return request('/api/gestao/servicos/');
 }
 
 export async function getHorariosLivres(data: string, servicoId: number) {
@@ -186,7 +186,7 @@ export async function finalizarOrdemServico(id: number, dados: {
 // --- INCIDENTES ---
 
 export async function getTagsPeca() {
-  return request('/api/core/tags-peca/');
+  return request('/api/gestao/tags-peca/');
 }
 
 export async function registrarIncidente(id: number, dados: DadosIncidente) {

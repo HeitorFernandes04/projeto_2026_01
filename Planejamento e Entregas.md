@@ -177,11 +177,11 @@ Responsáveis: ---
 
 **Critérios de Aceitação:**
 
-* [ ] Cadastro contendo: Nome, Descrição, Preço e Duração Estimada (`duracao_estimada_minutos`).
-* [ ] Proteção de Domínio (IDOR): Listagem estritamente filtrada pelo `estabelecimento_id` do gestor logado.
-* [ ] Soft Delete: Impedir exclusão física de serviços que já possuam OS vinculada (usar inativação lógica).
+* [x] Cadastro contendo: Nome, Descrição, Preço e Duração Estimada (`duracao_estimada_minutos`).
+* [x] Proteção de Domínio (IDOR): Listagem estritamente filtrada pelo `estabelecimento_id` do gestor logado.
+* [x] Soft Delete: Impedir exclusão física de serviços que já possuam OS vinculada (usar inativação lógica).
 
-Responsáveis: ---
+Responsáveis: Letícia Gomes Lopes
 
 ### RF-12 · Administração do Quadro de Funcionários
 
@@ -205,10 +205,10 @@ Responsáveis: ---
 
 **Critérios de Aceitação:**
 
-* [ ] Formulário para alteração na tabela de Estabelecimento (Nome Fantasia, CNPJ, Endereço).
-* [ ] Exibição da URL pública de autoagendamento (`link_autoagendamento`).
+* [x] Formulário para alteração na tabela de Estabelecimento (Nome Fantasia, CNPJ, Endereço).
+* [x] Exibição da URL pública de autoagendamento (`link_autoagendamento`).
 
-Responsáveis: ---
+Responsáveis: Letícia Gomes Lopes
 
 ### TRILHA 2: Operação em Tempo Real
 

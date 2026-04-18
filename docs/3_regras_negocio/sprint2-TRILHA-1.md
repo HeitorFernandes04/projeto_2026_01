@@ -35,7 +35,7 @@
 - **Método:** `GET/POST/PATCH/DELETE`
 - **Camada:** `GestaoViewSet`
 - **Descrição:** CRUD de serviços do estabelecimento.
-- **Requisição (POST):** JSON com `nome`, `descricao`, `preco`, `duracao_estimada_min`.
+- **Requisição (POST):** JSON com `nome`, `descricao`, `preco`, `duracao_estimada_minutos`.
 - **Resposta:** Sucesso `200/201` | Falha `400/403`.
 
 **Endpoint:** `/api/gestao/funcionarios/` (RF-12)
@@ -57,7 +57,7 @@
 ### 1.5 Critérios de Aceitação
 | Critério | Descrição |
 | :--- | :--- |
-| **CA-01** | O formulário de serviço deve obrigar o preenchimento da `duracao_estimada_min` para alimentar o cálculo de eficiência (RF-20). <br> *(Nota: Corrigido de "duracao_estimada_minutos" para refletir o schema real do `models.py`)* |
+| **CA-01** | O formulário de serviço deve obrigar o preenchimento da `duracao_estimada_minutos` para alimentar o cálculo de eficiência (RF-20). <br>  |
 | **CA-02** | Ao inativar um serviço ou funcionário, o sistema deve apenas alterar o campo de controle (`is_active` / `status_ativo`) para falso (Soft Delete). |
 | **CA-03** | A inativação de um funcionário não pode anular ou corromper o campo `funcionario_id` nas `OrdemServico` do histórico que ele já finalizou. |
 | **CA-04** | O backend deve rejeitar automaticamente tentativas de criação de funcionários vinculados a um `estabelecimento_id` diferente daquele do gestor autenticado. |
