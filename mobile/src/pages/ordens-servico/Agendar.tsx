@@ -16,7 +16,7 @@ import logoLavaMe from '../../assets/logo.jpeg';
 const Agendar: React.FC = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
-  const [servicos, setServicos] = useState<Array<{id: number; nome: string; preco: string}>>([]);
+  const [servicos, setServicos] = useState<Array<{id: number; nome: string; duracao_estimada_minutos: number}>>([]);
   
   // Captura a data de hoje para o limite do calendário
   const hojeStr = new Date().toISOString().split('T')[0];
@@ -25,9 +25,9 @@ const Agendar: React.FC = () => {
     placa: '',
     modelo: '',
     marca: '',
+    cor: '',
     nome_dono: '',
     celular_dono: '',
-    cor: '',
     servico_id: 0,
     data: hojeStr,
     hora: ''
@@ -42,7 +42,7 @@ const Agendar: React.FC = () => {
 
   const handleConfirmar = async () => {
     // Validação de campos obrigatórios incluindo o horário selecionado
-    if (!form.placa || !form.modelo || !form.servico_id || !form.data || !form.hora) {
+    if (!form.placa || !form.modelo || !form.nome_dono || !form.servico_id || !form.data || !form.hora) {
       setToastMsg("Preencha todos os campos e selecione um horário.");
       setShowToast(true);
       return;
@@ -76,7 +76,7 @@ const Agendar: React.FC = () => {
       setToastMsg("Agendamento realizado com sucesso!");
       setShowToast(true);
       
-      // Pequeno delay para o usuário ler o toast e depois volta ao pátio
+      // Pequeno delay para o usuário ler o toast e depois volta ao Pátio
       setTimeout(() => {
         history.push('/ordens-servico/hoje');
       }, 1500);
@@ -130,19 +130,22 @@ const Agendar: React.FC = () => {
             <input 
               value={form.nome_dono} 
               onChange={e => setForm({...form, nome_dono: e.target.value})}
-              style={styles.input} placeholder="NOME DO PROPRIETÁRIO *" 
+              style={styles.input} 
+              placeholder="NOME DO PROPRIETÁRIO *" 
             />
             <input 
               value={form.celular_dono} 
               onChange={e => setForm({...form, celular_dono: maskTelefone(e.target.value)})}
-              style={styles.input} placeholder="CELULAR DO PROPRIETÁRIO"
+              style={styles.input} 
+              placeholder="CELULAR DO PROPRIETÁRIO"
               type="tel"
               inputMode="numeric"
             />
             <input 
               value={form.cor} 
               onChange={e => setForm({...form, cor: e.target.value})}
-              style={styles.input} placeholder="COR DO VEÍCULO *" 
+              style={styles.input} 
+              placeholder="COR DO VEÍCULO *" 
             />
           </div>
 

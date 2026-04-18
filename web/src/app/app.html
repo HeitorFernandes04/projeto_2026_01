@@ -1,0 +1,54 @@
+<div class="app-layout" [class.no-sidebar]="!exibirSidebar">
+  <aside class="main-sidebar" *ngIf="exibirSidebar">
+    <div class="logo-container">
+      <img src="logo.jpeg" alt="Lava-Me Logo" class="brand-logo">
+    </div>
+
+    <nav class="nav-container">
+      <a routerLink="/gestao/dashboard" routerLinkActive="active" class="nav-item">
+        <span class="material-symbols-outlined icon">grid_view</span>
+        <span class="label">Dashboard</span>
+      </a>
+
+      <a routerLink="/gestao/kanban" routerLinkActive="active" class="nav-item">
+        <span class="material-symbols-outlined icon">view_column</span>
+        <span class="label">Pátio</span>
+      </a>
+
+      <a routerLink="/gestao/incidentes" routerLinkActive="active" class="nav-item">
+        <span class="material-symbols-outlined icon">warning</span>
+        <span class="label">Incidentes</span>
+        <span class="badge" (click)="irParaIncidentes()">2</span>
+      </a>
+
+      <a routerLink="/gestao/historico" routerLinkActive="active" class="nav-item">
+        <span class="material-symbols-outlined icon">history</span>
+        <span class="label">Histórico</span>
+      </a>
+
+      <a routerLink="/gestao/setup" routerLinkActive="active" class="nav-item">
+        <span class="material-symbols-outlined icon">settings</span>
+        <span class="label">Configurações</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="profile-row">
+        <div class="profile-card">
+          <div class="avatar">GS</div>
+          <div class="profile-info">
+            <span class="name">Gestor Sistema</span>
+            <span class="unit">Unidade Centro</span>
+          </div>
+        </div>
+        <button class="btn-logout" title="Sair do Sistema" (click)="logout()">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content-area">
+    <router-outlet></router-outlet>
+  </main>
+</div>

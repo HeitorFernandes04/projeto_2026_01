@@ -1,0 +1,205 @@
+<div class="patio-wrapper">
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Pátio</h1>
+      <p>Operação em tempo real - Controle de pista</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="live-indicator">
+        <span class="dot"></span>
+        <span class="text">AO VIVO</span>
+      </div>
+
+      <button class="notification-btn" (click)="irParaIncidentes()">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="badge">2</span>
+      </button>
+
+      <div class="date-selector">
+        <span class="date-label">Data</span>
+        <span class="date-value">14 ABR 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="kanban-scroll-area">
+    <div class="kanban-grid-background">
+      <div class="kanban-columns">
+
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>PÁTIO</h3>
+              <span class="column-badge">2</span>
+            </div>
+            <div class="column-status-line gray"></div>
+          </div>
+
+          <div class="cards-list">
+            <div class="vehicle-card">
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">ABC-1234</span>
+                  <span class="model">Toyota Corolla</span>
+                </div>
+              </div>
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem Completa</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>00:39</strong> <small>/ 00:45</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar" style="width: 80%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>VISTORIA</h3>
+              <span class="column-badge">1</span>
+            </div>
+            <div class="column-status-line purple"></div>
+          </div>
+          <div class="cards-list">
+            <div class="vehicle-card">
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">XYZ-5678</span>
+                  <span class="model">Honda Civic</span>
+                </div>
+              </div>
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem + Polimento</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>00:49</strong> <small>/ 01:30</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar" style="width: 30%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>LAVAGEM / ACABAMENTO</h3>
+              <span class="column-badge">4</span>
+            </div>
+            <div class="column-status-line blue"></div>
+          </div>
+
+          <div class="cards-list">
+            <div class="vehicle-card has-incident">
+              <span class="material-symbols-outlined alert-icon">warning</span>
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">DEF-9012</span>
+                  <span class="model">Volkswagen Gol</span>
+                </div>
+              </div>
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem Expressa</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>00:59</strong> <small>/ 00:30</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar warning" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>LIBERAÇÃO</h3>
+              <span class="column-badge">1</span>
+            </div>
+            <div class="column-status-line cyan"></div>
+          </div>
+          <div class="cards-list">
+            <div class="vehicle-card">
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">MNO-2345</span>
+                  <span class="model">Hyundai HB20</span>
+                </div>
+              </div>
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem Completa</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>01:04</strong> <small>/ 00:45</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar" style="width: 95%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="patio-footer">
+    <div class="footer-stats">
+      <div class="stat-mini-card">
+        <div class="icon-wrap blue-glow">
+          <span class="material-symbols-outlined">analytics</span>
+        </div>
+        <div class="stat-details">
+          <span class="stat-label">Em Operação</span>
+          <span class="stat-val">8 veículos</span>
+        </div>
+      </div>
+      <div class="stat-mini-card">
+        <div class="icon-wrap">
+          <span class="material-symbols-outlined">timer</span>
+        </div>
+        <div class="stat-details">
+          <span class="stat-label">Tempo Médio</span>
+          <span class="stat-val">42 min</span>
+        </div>
+      </div>
+      <div class="stat-mini-card">
+        <div class="icon-wrap">
+          <span class="material-symbols-outlined">trending_up</span>
+        </div>
+        <div class="stat-details">
+          <span class="stat-label">Eficiência</span>
+          <span class="stat-val">94%</span>
+        </div>
+      </div>
+      <div class="stat-mini-card">
+        <div class="icon-wrap purple-glow">
+          <span class="material-symbols-outlined">group</span>
+        </div>
+        <div class="stat-details">
+          <span class="stat-label">Funcionários</span>
+          <span class="stat-val">5 ativos</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>

@@ -1,0 +1,28 @@
+:root {
+  /* Paleta Industrial calibrada conforme protótipo */
+  --lm-bg:          #0b0e11;
+  --lm-sidebar:     #0f1218;
+  --lm-card:        #161b22;
+  --lm-card-hover:  #1f242c;
+  --lm-border:      #21262d;
+
+  /* Azul Elétrico Principal */
+  --lm-primary:     #0066ff;
+  --lm-primary-glow: rgba(0, 102, 255, 0.4);
+
+  /* Texto e Status */
+  --lm-text:        #f0f6fc;
+  --lm-text-muted:  #8b949e;
+  --lm-accent:      #ff3b30; // Vermelho para incidentes
+}
+
+body {
+  background-color: var(--lm-bg);
+  color: var(--lm-text);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+/* Scrollbar fina do protótipo */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }

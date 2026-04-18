@@ -19,7 +19,7 @@ import '../../theme/lava-me.css';
 interface OrdemServicoHistorico {
   id: number;
   veiculo: { placa: string; modelo: string; marca: string };
-  servico: { nome: string; duracao_estimada_min?: number };
+  servico: { nome: string; duracao_estimada_minutos: number };
   horario_finalizacao: string;
   status: string;
 }
@@ -160,7 +160,7 @@ const Historico: React.FC = () => {
 
                     <div style={styles.footerRow}>
                       <span style={styles.servicoNome}>{at.servico.nome}</span>
-                      <span style={styles.duracao}>{at.servico.duracao_estimada_min || '--'} min</span>
+                      <span style={styles.duracao}>{at.servico.duracao_estimada_minutos} min</span>
                     </div>
                   </div>
                 ))

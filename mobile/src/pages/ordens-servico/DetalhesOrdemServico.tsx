@@ -21,8 +21,8 @@ interface MidiaOrdemServico {
 
 interface OrdemServico {
   id: number;
-  veiculo: { placa: string; modelo: string; marca: string; nome_dono: string; };
-  servico: { nome: string; preco: string; };
+  veiculo: { placa: string; modelo: string; marca: string; nome_dono: string; celular_dono: string; };
+  servico: { nome: string; duracao_estimada_minutos: number; };
   status: string; 
   observacoes: string;
   laudo_vistoria?: string;

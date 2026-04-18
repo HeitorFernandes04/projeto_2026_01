@@ -111,7 +111,7 @@ print("\\n".join(output))'''
 @mcp.tool()
 def execute_django_query(python_query_code: str) -> str:
     """Executa um código Python dentro do shell do Django e retorna os prints. 
-    Ideal para usar o ORM (ex: 'from atendimentos.models import Atendimento; print(Atendimento.objects.count())')."""
+    Ideal para usar o ORM (ex: 'from operacao.models import OrdemServico; print(OrdemServico.objects.count())')."""
     setup = "import django; django.setup();\n"
     full_code = setup + python_query_code
     try:
