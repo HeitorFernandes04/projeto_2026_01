@@ -170,15 +170,32 @@ class FotoUploadView(APIView):
 
 
 class ServicoListView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request):
+        # Obter o estabelecimento do usuário logado (Gestor ou Funcionário)
+        estabelecimento = None
+        if hasattr(request.user, 'perfil_gestor'):
+            estabelecimento = request.user.perfil_gestor.estabelecimento
+        elif hasattr(request.user, 'perfil_funcionario'):
+            estabelecimento = request.user.perfil_funcionario.estabelecimento
+        else:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Usuário sem estabelecimento vinculado.")
+        
         if not Servico.objects.exists():
             Servico.objects.bulk_create([
-                Servico(nome="Lavagem Simples", preco=50.00, duracao_estimada_minutos=45),
-                Servico(nome="Lavagem Completa", preco=80.00, duracao_estimada_minutos=90),
-                Servico(nome="Higienização Interna", preco=150.00, duracao_estimada_minutos=180),
+                Servico(nome="Lavagem Simples", preco=50.00, duracao_estimada_minutos=45, estabelecimento=estabelecimento),
+                Servico(nome="Lavagem Completa", preco=80.00, duracao_estimada_minutos=90, estabelecimento=estabelecimento),
+                Servico(nome="Higienização Interna", preco=150.00, duracao_estimada_minutos=180, estabelecimento=estabelecimento),
             ])
 
-        servicos = Servico.objects.filter(is_active=True)
+        # Filtrar serviços pelo estabelecimento do usuário (RNF-01: Multi-locação)
+        servicos = Servico.objects.filter(
+            estabelecimento=estabelecimento,
+            is_active=True
+        )
         return Response(ServicoSerializer(servicos, many=True).data)
 
 

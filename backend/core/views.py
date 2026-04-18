@@ -8,22 +8,26 @@ from .models import Servico, TagPeca
 from .serializers import ServicoSerializer, TagPecaSerializer
 from accounts.models import Estabelecimento
 from .services import EstabelecimentoService, ServicoService
-
+from .permissions import IsGestorOrReadOnlyFuncionario
 
 class ServicoViewSet(viewsets.ModelViewSet):
     serializer_class = ServicoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGestorOrReadOnlyFuncionario]
 
     def get_queryset(self):
         user = self.request.user
-        # Se o usuário não tem perfil de gestor vinculado, 
-        # devemos lançar uma exceção de permissão para gerar o 403
-        if not hasattr(user, 'perfil_gestor'):
+        # Obter o estabelecimento do usuário logado (Gestor ou Funcionário)
+        estabelecimento = None
+        if hasattr(user, 'perfil_gestor'):
+            estabelecimento = user.perfil_gestor.estabelecimento
+        elif hasattr(user, 'perfil_funcionario'):
+            estabelecimento = user.perfil_funcionario.estabelecimento
+        else:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Usuário sem estabelecimento vinculado.")
 
         return Servico.objects.filter(
-            estabelecimento=user.perfil_gestor.estabelecimento, 
+            estabelecimento=estabelecimento, 
             is_active=True
         )
             
