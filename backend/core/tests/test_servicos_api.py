@@ -2,8 +2,9 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
-from accounts.models import Estabelecimento, Gestor
+from accounts.models import Estabelecimento
 from core.models import Servico
+from accounts.models import Gestor
 
 User = get_user_model()
 
@@ -11,65 +12,51 @@ User = get_user_model()
 class ServicoAPITestCase(TestCase):
     """Testes unitários para API de Serviços (RF-11 e Axioma 14)"""
     
+    # core/tests/test_servicos.py
+
     def setUp(self):
-        """Configuração inicial para os testes"""
+        """Configuração inicial com vínculo obrigatório de Gestor"""
         self.client = APIClient()
         
-        # Criar estabelecimento A
+        # 1. Criar estabelecimentos com CNPJ limpo para evitar erro 400
         self.estabelecimento_a = Estabelecimento.objects.create(
             nome_fantasia='Lava-Me Centro',
-            cnpj='12345678000190',
-            endereco_completo='Rua das Flores, 123 - Centro'
+            cnpj='12345678000190'
         )
-        
-        # Criar gestor A
-        self.gestor_a = User.objects.create_user(
-            username='gestor_a',
-            email='gestor_a@lavame.com.br',
-            password='test123',
-            is_staff=True
-        )
-        
-        self.gestor_a_perfil = Gestor.objects.create(
-            user=self.gestor_a,
-            estabelecimento=self.estabelecimento_a
-        )
-        
-        # Criar estabelecimento B (para testes de isolamento)
         self.estabelecimento_b = Estabelecimento.objects.create(
             nome_fantasia='Lava-Me Norte',
-            cnpj='12345678000291',
-            endereco_completo='Avenida Principal, 456 - Norte'
+            cnpj='12345678000291'
         )
-        
-        # Criar gestor B
+
+        # 2. Criar utilizadores
+        self.gestor_a = User.objects.create_user(
+            username='gestor_a', email='gestora@lavame.com.br', password='test123'
+        )
         self.gestor_b = User.objects.create_user(
-            username='gestor_b',
-            email='gestor_b@lavame.com.br',
-            password='test123',
-            is_staff=True
+            username='gestor_b', email='gestorb@lavame.com.br', password='test123'
         )
         
-        self.gestor_b_perfil = Gestor.objects.create(
-            user=self.gestor_b,
-            estabelecimento=self.estabelecimento_b
-        )
+        # 3. CRIAR VÍNCULO DE PERFIL (Resolve o Forbidden 403)
+        # A View em core/views.py exige este vínculo para identificar o estabelecimento
+        Gestor.objects.create(user=self.gestor_a, estabelecimento=self.estabelecimento_a)
+        Gestor.objects.create(user=self.gestor_b, estabelecimento=self.estabelecimento_b)
         
-        # Serviço de teste para gestor A
-        self.servico_a = Servico.objects.create(
-            nome='Lavação Simples',
-            preco=29.90,
-            duracao_estimada_minutos=30,
-            estabelecimento=self.estabelecimento_a
-        )
-        
-        # Serviço de teste para gestor B
-        self.servico_b = Servico.objects.create(
-            nome='Lavação Premium',
-            preco=49.90,
+        # 4. Criar dados base para os testes
+        self.servico_ativo_a = Servico.objects.create(
+            nome='Lavagem Completa A',
+            preco=80.00,
             duracao_estimada_minutos=45,
-            estabelecimento=self.estabelecimento_b
+            estabelecimento=self.estabelecimento_a,
+            is_active=True
         )
+        self.servico_ativo_b = Servico.objects.create(
+            nome='Lavagem Completa B',
+            preco=85.00,
+            duracao_estimada_minutos=50,
+            estabelecimento=self.estabelecimento_b,
+            is_active=True
+        )
+        
 
     def test_criar_servico_com_campos_obrigatorios(self):
         """Testa criação de serviço com campos obrigatórios (RF-11)"""

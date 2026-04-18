@@ -2,8 +2,8 @@ import pytest
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
-from core.models import Servico, Estabelecimento
-from accounts.models import User
+from core.models import Servico
+from accounts.models import User, Estabelecimento, Gestor
 
 User = get_user_model()
 
@@ -36,9 +36,16 @@ class TestServicos(TestCase):
             cnpj='12.345.678/0002-91'
         )
         
-        # Associar usuários aos estabelecimentos únicos
-        self.gestor_a.estabelecimento = self.estabelecimento_a
-        self.gestor_b.estabelecimento = self.estabelecimento_b
+        # Criar objetos Gestor vinculando usuários aos estabelecimentos
+        self.gestor_perfil_a = Gestor.objects.create(
+            user=self.gestor_a,
+            estabelecimento=self.estabelecimento_a
+        )
+        
+        self.gestor_perfil_b = Gestor.objects.create(
+            user=self.gestor_b,
+            estabelecimento=self.estabelecimento_b
+        )
         
         self.servico_ativo_a = Servico.objects.create(
             nome='Lavagem Completa A',
@@ -190,3 +197,120 @@ class TestServicos(TestCase):
         
         # Deve falhar por proteção de estabelecimento
         assert response.status_code in [403, 404]
+
+    def test_criar_servico_sem_nome(self):
+        """Testa criação de serviço sem nome retorna 400"""
+        # Autentica como Gestor A
+        self.client.force_authenticate(user=self.gestor_a)
+        
+        # Tenta criar serviço sem nome
+        response = self.client.post('/api/gestao/servicos/', {
+            'preco': '50.00',
+            'duracao_estimada_minutos': 30
+        })
+        
+        # Deve retornar erro de validação
+        assert response.status_code == 400
+
+    def test_criar_servico_sem_preco(self):
+        """Testa criação de serviço sem preço retorna 400"""
+        # Autentica como Gestor A
+        self.client.force_authenticate(user=self.gestor_a)
+        
+        # Tenta criar serviço sem preço
+        response = self.client.post('/api/gestao/servicos/', {
+            'nome': 'Serviço Teste',
+            'duracao_estimada_minutos': 30
+        })
+        
+        # Deve retornar erro de validação
+        assert response.status_code == 400
+
+    def test_criar_servico_com_duracao_invalida(self):
+        """Testa criação de serviço com duração inválida retorna 400"""
+        # Autentica como Gestor A
+        self.client.force_authenticate(user=self.gestor_a)
+        
+        # Tenta criar serviço com duração negativa
+        response = self.client.post('/api/gestao/servicos/', {
+            'nome': 'Serviço Teste',
+            'preco': '50.00',
+            'duracao_estimada_minutos': -10
+        })
+        
+        # Deve retornar erro de validação
+        assert response.status_code == 400
+
+    def test_duplicidade_nome_mesmo_estabelecimento(self):
+        """Testa validação de duplicidade de nome no mesmo estabelecimento"""
+        # Autentica como Gestor A
+        self.client.force_authenticate(user=self.gestor_a)
+        
+        # Tenta criar serviço com nome duplicado
+        response = self.client.post('/api/gestao/servicos/', {
+            'nome': 'Lavagem Completa A',  # Nome duplicado
+            'preco': '90.00',
+            'duracao_estimada_minutos': 40
+        })
+        
+        # Deve retornar erro de duplicidade
+        assert response.status_code == 400
+
+    def test_mesmo_nome_estabelecimentos_diferentes(self):
+        """Testa que mesmo nome em estabelecimentos diferentes é permitido"""
+        # Autentica como Gestor B
+        self.client.force_authenticate(user=self.gestor_b)
+        
+        # Cria serviço com mesmo nome do estabelecimento A
+        response = self.client.post('/api/gestao/servicos/', {
+            'nome': 'Lavagem Completa A',  # Mesmo nome do estabelecimento A
+            'preco': '95.00',
+            'duracao_estimada_minutos': 55
+        })
+        
+        # Deve permitir criação
+        assert response.status_code == 201
+
+    def test_soft_delete_via_api(self):
+        """Testa soft delete via API endpoint"""
+        # Autentica como Gestor A
+        self.client.force_authenticate(user=self.gestor_a)
+        
+        # Realiza soft delete via API
+        response = self.client.delete(f'/api/gestao/servicos/{self.servico_ativo_a.id}/')
+        
+        # Deve retornar 204 (No Content)
+        assert response.status_code == 204
+        
+        # Verifica se is_active foi alterado para False
+        self.servico_ativo_a.refresh_from_db()
+        assert self.servico_ativo_a.is_active is False
+        
+        # Verifica se o registro ainda existe no banco
+        assert Servico.objects.filter(id=self.servico_ativo_a.id).exists()
+
+    def test_acesso_nao_autenticado(self):
+        """Testa que usuários não autenticados não podem acessar"""
+        # Tenta acessar sem autenticação
+        response = self.client.get('/api/gestao/servicos/')
+        
+        # Deve retornar 401 (Unauthorized)
+        assert response.status_code == 401
+
+    def test_usuario_sem_perfil_gestor(self):
+        """Testa que usuário sem perfil gestor é bloqueado"""
+        # Cria usuário sem perfil gestor
+        usuario_sem_gestor = User.objects.create_user(
+            username='sem_gestor',
+            email='semgestor@lavame.com.br',
+            password='test123'
+        )
+        
+        # Autentica como usuário sem perfil gestor
+        self.client.force_authenticate(user=usuario_sem_gestor)
+        
+        # Tenta acessar serviços
+        response = self.client.get('/api/gestao/servicos/')
+        
+        # Deve retornar 403 (Forbidden)
+        assert response.status_code == 403
