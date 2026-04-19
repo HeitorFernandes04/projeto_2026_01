@@ -65,6 +65,22 @@ class FuncionarioDetailView(generics.RetrieveUpdateAPIView):
             perfil_funcionario__estabelecimento_id=estabelecimento_id
         ).select_related('perfil_funcionario', 'perfil_funcionario__estabelecimento')
 
+    def perform_update(self, serializer):
+        # Captura a senha se ela foi enviada para reset
+        password = self.request.data.get('password')
+        user = serializer.save()
+        
+        if password:
+            user.set_password(password)
+            user.save()
+            
+        # Atualiza o cargo no perfil vinculado, se enviado
+        cargo = self.request.data.get('cargo')
+        if cargo and hasattr(user, 'perfil_funcionario'):
+            perfil = user.perfil_funcionario
+            perfil.cargo = cargo
+            perfil.save()
+
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])

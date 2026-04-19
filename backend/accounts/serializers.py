@@ -70,8 +70,8 @@ class FuncionarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'email', 'username', 'password', 'estabelecimento', 'cargo', 'is_active']
-        read_only_fields = ['is_active']
+        fields = ['id', 'name', 'email', 'username', 'password', 'estabelecimento', 'cargo', 'is_active', 'last_login']
+        read_only_fields = ['last_login']
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
@@ -83,6 +83,11 @@ class FuncionarioSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         # Normaliza e-mail para evitar duplicatas silenciosos por espaços ou caixa
         attrs['email'] = attrs['email'].strip().lower()
+        
+        # Bloqueio de Cargo GESTOR no fluxo de funcionários
+        if attrs.get('cargo') == CargoChoices.GESTOR:
+            raise serializers.ValidationError({"cargo": "Não é permitido cadastrar gestores através deste fluxo."})
+            
         return attrs
 
     def create(self, validated_data):
