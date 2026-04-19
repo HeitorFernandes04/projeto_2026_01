@@ -137,4 +137,6 @@ GitHub.sublime-settings
 !.vscode/tasks.json 
 !.vscode/launch.json 
 !.vscode/extensions.json 
-.history/etapas_desenvolvimento/
+
+# Documentação e Logs de IA IA-Generated #
+documentos\ de\ organização\ desenvolvimento/
