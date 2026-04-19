@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from accounts.models import User, Estabelecimento, Cliente, Funcionario, Gestor, CargoChoices
+from accounts.forms import MyUserCreationForm, MyUserChangeForm
 
 
 @admin.register(Estabelecimento)
@@ -10,12 +12,37 @@ class EstabelecimentoAdmin(admin.ModelAdmin):
     ordering = ['nome_fantasia']
 
 
+
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ['email', 'name', 'is_active', 'date_joined']
-    list_filter = ['is_active', 'date_joined']
-    search_fields = ['email', 'name']
-    ordering = ['email']
+class UserAdmin(BaseUserAdmin):
+    # Formulários customizados
+    add_form = MyUserCreationForm
+    form = MyUserChangeForm
+
+    # Campos exibidos na lista
+    list_display = ('email', 'name', 'is_active', 'is_staff', 'date_joined')
+    list_filter = ('is_active', 'is_staff', 'is_superuser', 'date_joined')
+    
+    # Busca por e-mail e nome (customizado para seu modelo)
+    search_fields = ('email', 'name')
+    ordering = ('email',)
+
+    # Estrutura do formulário de EDIÇÃO
+    fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Informações Pessoais', {'fields': ('name',)}),
+        ('Permissões', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Datas Importantes', {'fields': ('last_login', 'date_joined')}),
+    )
+
+    # Estrutura do formulário de CRIAÇÃO (Novo Usuário)
+    add_fieldsets = (
+        (None, {
+            'classes': ('advanced',),
+            'fields': ('email', 'name', 'username', 'password1', 'password2', 'is_active', 'is_staff'),
+        }),
+    )
+
     readonly_fields = ['date_joined', 'last_login']
 
 
