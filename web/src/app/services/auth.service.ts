@@ -22,6 +22,8 @@ export class AuthService {
   }
 
   obterPerfil() {
-    return this.http.get<any>('/api/auth/meu_perfil/');
+    const token = localStorage.getItem('access_token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    return this.http.get<any>('/api/auth/meu_perfil/', { headers });
   }
 }

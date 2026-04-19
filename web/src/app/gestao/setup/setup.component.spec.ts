@@ -14,6 +14,7 @@ describe('SetupComponent - Configurações do Sistema', () => {
   let component: SetupComponent;
   let servicoServiceSpy: any;
   let estabelecimentoServiceSpy: any;
+  let funcionarioServiceSpy: any;
   let routerSpy: any;
 
   // Mock data
@@ -23,6 +24,14 @@ describe('SetupComponent - Configurações do Sistema', () => {
     { id: 3, nome: 'Polimento', preco: 120.00, duracao_estimada_minutos: 90, is_active: true },
     { id: 4, nome: 'Higienização Interna', preco: 80.00, duracao_estimada_minutos: 45, is_active: true },
     { id: 5, nome: 'Cerâmica', preco: 200.00, duracao_estimada_minutos: 120, is_active: true }
+  ];
+
+  const mockFuncionarios: any[] = [
+    { id: 1, name: 'Carlos Silva', email: 'carlos.silva@lavame.com.br', cargo: 'Lavador', is_active: true, eficiencia: 118, tendencia: 'up' },
+    { id: 2, name: 'João Souza', email: 'joao.souza@lavame.com.br', cargo: 'Lavador', is_active: true, eficiencia: 105, tendencia: 'up' },
+    { id: 3, name: 'Maria Oliveira', email: 'maria.oliveira@lavame.com.br', cargo: 'Detallista', is_active: true, eficiencia: 94, tendencia: 'down' },
+    { id: 4, name: 'Pedro Costa', email: 'pedro.costa@lavame.com.br', cargo: 'Lavador', is_active: false, eficiencia: 88, tendencia: 'down' },
+    { id: 5, name: 'Ana Santos', email: 'ana.santos@lavame.com.br', cargo: 'Gerente', is_active: true, eficiencia: 112, tendencia: 'up' }
   ];
 
   const mockEstabelecimento: Estabelecimento = {
@@ -46,12 +55,19 @@ describe('SetupComponent - Configurações do Sistema', () => {
       atualizarDadosEstabelecimento: vi.fn().mockReturnValue(of(mockEstabelecimento))
     };
 
+    funcionarioServiceSpy = {
+      listarFuncionarios: vi.fn().mockReturnValue(of(mockFuncionarios)),
+      criarFuncionario: vi.fn().mockReturnValue(of(mockFuncionarios[0])),
+      atualizarFuncionario: vi.fn().mockReturnValue(of(mockFuncionarios[0])),
+      inativarFuncionario: vi.fn().mockReturnValue(of(void 0))
+    };
+
     routerSpy = {
       navigate: vi.fn()
     };
 
     // Create component instance manually without TestBed
-    component = new SetupComponent(routerSpy, servicoServiceSpy, estabelecimentoServiceSpy);
+    component = new SetupComponent(routerSpy, servicoServiceSpy, estabelecimentoServiceSpy, funcionarioServiceSpy);
     
     // Call ngOnInit to trigger service calls
     component.ngOnInit();
@@ -152,44 +168,44 @@ describe('SetupComponent - Configurações do Sistema', () => {
       
       // Verifica dados do primeiro funcionário
       const firstFunc = component.funcionarios[0];
-      expect(firstFunc.nome).toBe('Carlos Silva');
+      expect(firstFunc.name).toBe('Carlos Silva');
       expect(firstFunc.email).toBe('carlos.silva@lavame.com.br');
       expect(firstFunc.cargo).toBe('Lavador');
-      expect(firstFunc.ativo).toBeTruthy();
+      expect(firstFunc.is_active).toBeTruthy();
     });
 
     it('deve renderizar avatar com inicial do nome', () => {
       // Verifica dados mockados
-      expect(component.funcionarios[0].nome.charAt(0)).toBe('C');
-      expect(component.funcionarios[1].nome.charAt(0)).toBe('J');
-      expect(component.funcionarios[2].nome.charAt(0)).toBe('M');
-      expect(component.funcionarios[3].nome.charAt(0)).toBe('P');
-      expect(component.funcionarios[4].nome.charAt(0)).toBe('A');
+      expect(component.funcionarios[0].name.charAt(0)).toBe('C');
+      expect(component.funcionarios[1].name.charAt(0)).toBe('J');
+      expect(component.funcionarios[2].name.charAt(0)).toBe('M');
+      expect(component.funcionarios[3].name.charAt(0)).toBe('P');
+      expect(component.funcionarios[4].name.charAt(0)).toBe('A');
     });
 
     it('deve exibir métricas de eficiência com setas de tendência', () => {
       // Verifica dados mockados de eficiência
-      const upTrends = component.funcionarios.filter(f => f.tendencia === 'up');
-      const downTrends = component.funcionarios.filter(f => f.tendencia === 'down');
+      const upTrends = component.funcionarios.filter((f: any) => f.tendencia === 'up');
+      const downTrends = component.funcionarios.filter((f: any) => f.tendencia === 'down');
       
       expect(upTrends.length).toBe(3); // Carlos, João, Ana
       expect(downTrends.length).toBe(2); // Maria, Pedro
       
-      expect(upTrends[0].eficiencia).toBe(118);
-      expect(downTrends[0].eficiencia).toBe(94);
+      expect((upTrends[0] as any).eficiencia).toBe(118);
+      expect((downTrends[0] as any).eficiencia).toBe(94);
     });
 
     it('deve ter Switch Toggle de status presente e refletir estado ativo', () => {
       // Verifica estados dos switches nos dados mockados
-      const activeFuncs = component.funcionarios.filter(f => f.ativo);
-      const inactiveFuncs = component.funcionarios.filter(f => !f.ativo);
+      const activeFuncs = component.funcionarios.filter(f => f.is_active);
+      const inactiveFuncs = component.funcionarios.filter(f => !f.is_active);
       
       expect(activeFuncs.length).toBe(4); // 4 funcionários ativos
       expect(inactiveFuncs.length).toBe(1); // 1 funcionário inativo
       
       // Verifica funcionários específicos
-      expect(component.funcionarios[0].ativo).toBeTruthy(); // Carlos Silva
-      expect(component.funcionarios[3].ativo).toBeFalsy(); // Pedro Costa
+      expect(component.funcionarios[0].is_active).toBeTruthy(); // Carlos Silva
+      expect(component.funcionarios[3].is_active).toBeFalsy(); // Pedro Costa
     });
   });
 
@@ -200,9 +216,9 @@ describe('SetupComponent - Configurações do Sistema', () => {
       expect(component.funcionarios.length).toBe(5);
       
       const totalFuncionarios = component.funcionarios.length;
-      const funcionariosAtivos = component.funcionarios.filter(f => f.ativo).length;
+      const funcionariosAtivos = component.funcionarios.filter(f => f.is_active).length;
       const eficienciaMedia = Math.round(
-        component.funcionarios.reduce((sum, f) => sum + f.eficiencia, 0) / component.funcionarios.length
+        component.funcionarios.reduce((sum, f: any) => sum + f.eficiencia, 0) / component.funcionarios.length
       );
       
       expect(totalFuncionarios).toBe(5);
@@ -213,9 +229,9 @@ describe('SetupComponent - Configurações do Sistema', () => {
     it('deve exibir valores calculados corretamente nos KPIs', () => {
       // Verifica cálculos diretamente dos dados mockados
       const totalFuncionarios = component.funcionarios.length;
-      const funcionariosAtivos = component.funcionarios.filter(f => f.ativo).length;
+      const funcionariosAtivos = component.funcionarios.filter(f => f.is_active).length;
       const eficienciaMedia = Math.round(
-        component.funcionarios.reduce((sum, f) => sum + f.eficiencia, 0) / component.funcionarios.length
+        component.funcionarios.reduce((sum, f: any) => sum + f.eficiencia, 0) / component.funcionarios.length
       );
       
       expect(totalFuncionarios).toBe(5);
@@ -285,7 +301,7 @@ describe('SetupComponent - Configurações do Sistema', () => {
       
       // KPIs devem calcular zero
       const totalFuncionarios = component.funcionarios.length;
-      const funcionariosAtivos = component.funcionarios.filter(f => f.ativo).length;
+      const funcionariosAtivos = component.funcionarios.filter(f => f.is_active).length;
       
       expect(totalFuncionarios).toBe(0);
       expect(funcionariosAtivos).toBe(0);

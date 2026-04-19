@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ServicoService, Servico } from '../../services/servico.service';
 import { EstabelecimentoService, Estabelecimento } from '../../services/estabelecimento.service';
 import { FuncionarioService, Funcionario } from '../../services/funcionario.service';
@@ -28,6 +29,7 @@ export class SetupComponent implements OnInit {
   erroValidacao: string = '';
   erroUnidade: string = '';
   sucessoUnidade: string = '';
+  salvandoUnidade: boolean = false;
   abaAtiva: 'servicos' | 'funcionarios' | 'unidade' = 'servicos';
   exibirModal: boolean = false;
   tipoModal: 'servico' | 'funcionario' = 'servico';
@@ -65,7 +67,8 @@ export class SetupComponent implements OnInit {
     private router: Router,
     private servicoService: ServicoService,
     private estabelecimentoService: EstabelecimentoService,
-    private funcionarioService: FuncionarioService
+    private funcionarioService: FuncionarioService,
+    private cdRef: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -79,11 +82,13 @@ export class SetupComponent implements OnInit {
    */
   carregarServicos() {
     this.servicoService.listarServicos().subscribe({
-      next: (servicos) => {
-        this.servicos = servicos;
+      next: (dados) => {
+        this.servicos = dados;
+        this.cdRef.detectChanges();
       },
       error: (err) => {
         console.error('Erro ao carregar serviços:', err);
+        this.cdRef.detectChanges();
       }
     });
   }
@@ -93,8 +98,14 @@ export class SetupComponent implements OnInit {
    */
   carregarFuncionarios() {
     this.funcionarioService.listarFuncionarios().subscribe({
-      next: (f) => this.funcionarios = f,
-      error: (err) => console.error('Erro ao carregar equipe:', err)
+      next: (dados) => {
+        this.funcionarios = dados;
+        this.cdRef.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erro ao carregar funcionários:', err);
+        this.cdRef.detectChanges();
+      }
     });
   }
 
@@ -103,12 +114,18 @@ export class SetupComponent implements OnInit {
    */
   carregarDadosUnidade() {
     this.estabelecimentoService.obterDadosEstabelecimento().subscribe({
-      next: (estabelecimento) => {
-        this.unidade = estabelecimento;
-        this.atualizarLinkAgendamento();
+      next: (dados) => {
+        if (dados) {
+          this.unidade = {
+            ...dados,
+            cnpj: this.aplicarMascaraCNPJ(dados.cnpj)
+          };
+        }
+        this.cdRef.detectChanges();
       },
       error: (err) => {
         console.error('Erro ao carregar dados da unidade:', err);
+        this.cdRef.detectChanges();
       }
     });
   }
@@ -129,7 +146,13 @@ export class SetupComponent implements OnInit {
   }
 
   // Navegação e UI
-  setAba(aba: 'servicos' | 'funcionarios' | 'unidade') { this.abaAtiva = aba; }
+  setAba(aba: 'servicos' | 'funcionarios' | 'unidade') { 
+    this.abaAtiva = aba; 
+    // Recarrega dados ao trocar de aba para garantir atualização
+    if (aba === 'servicos') this.carregarServicos();
+    if (aba === 'funcionarios') this.carregarFuncionarios();
+    if (aba === 'unidade') this.carregarDadosUnidade();
+  }
 
   abrirModal(tipo: 'servico' | 'funcionario' = 'servico') {
     this.resetarFormulario();
@@ -197,6 +220,9 @@ export class SetupComponent implements OnInit {
       return;
     }
 
+    // Inicia estado de carregamento apenas se passar na validação
+    this.salvandoUnidade = true;
+
     // Prepara payload conforme RF-13
     const dadosAtualizacao: Partial<Estabelecimento> = {
       nome_fantasia: this.unidade.nome_fantasia.trim(),
@@ -204,22 +230,33 @@ export class SetupComponent implements OnInit {
       endereco_completo: this.unidade.endereco_completo.trim()
     };
 
-    // Chamada ao serviço
-    this.estabelecimentoService.atualizarDadosEstabelecimento(dadosAtualizacao).subscribe({
-      next: (res) => {
-        this.unidade = res;
-        this.atualizarLinkAgendamento();
-        this.sucessoUnidade = 'Dados da unidade atualizados com sucesso!';
+    // Chamada ao serviço com finalize para garantir que o botão destrave sempre
+    this.estabelecimentoService.atualizarDadosEstabelecimento(dadosAtualizacao)
+      .pipe(
+        finalize(() => {
+          this.salvandoUnidade = false;
+          this.cdRef.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (res) => {
+          this.unidade = {
+            ...res,
+            cnpj: this.aplicarMascaraCNPJ(res.cnpj)
+          };
+          this.atualizarLinkAgendamento();
+          this.sucessoUnidade = 'Dados da unidade atualizados com sucesso!';
 
-        setTimeout(() => {
-          this.sucessoUnidade = '';
-        }, 3000);
-      },
-      error: (err) => {
-        console.error('Erro ao salvar unidade:', err);
-        this.erroUnidade = 'Não foi possível salvar. Verifique se a URL da API está correta.';
-      }
-    });
+          setTimeout(() => {
+            this.sucessoUnidade = '';
+            this.cdRef.detectChanges();
+          }, 3000);
+        },
+        error: (err) => {
+          console.error('Erro ao salvar unidade:', err);
+          this.erroUnidade = 'Não foi possível salvar os dados. Tente novamente.';
+        }
+      });
   }
 
   irParaIncidentes() {
@@ -290,6 +327,7 @@ export class SetupComponent implements OnInit {
       this.servicoService.deletarServico(id).subscribe({
         next: () => {
           this.carregarServicos();
+          this.cdRef.detectChanges();
         },
         error: (err) => {
           console.error('Erro ao excluir serviço:', err);
@@ -328,14 +366,27 @@ export class SetupComponent implements OnInit {
     if (!this.validarFormFuncionario()) return;
 
     if (this.modoEdicao && this.funcionarioEmEdicao?.id) {
-      // Edição via PATCH
-      this.funcionarioService.atualizarFuncionario(this.funcionarioEmEdicao.id, this.novoFuncionario).subscribe({
+      // Edição via PATCH - Enviamos apenas o que pode ter mudado
+      const payload: any = {
+        name: this.novoFuncionario.name,
+        email: this.novoFuncionario.email,
+        cargo: this.novoFuncionario.cargo,
+        is_active: this.novoFuncionario.is_active
+      };
+
+      // Só envia a senha se o usuário digitou algo
+      if (this.novoFuncionario.password && this.novoFuncionario.password.trim().length >= 6) {
+        payload.password = this.novoFuncionario.password;
+      }
+
+      this.funcionarioService.atualizarFuncionario(this.funcionarioEmEdicao.id, payload).subscribe({
         next: () => {
           this.fecharModal();
           this.carregarFuncionarios();
         },
         error: (err) => {
-          this.erroValidacao = 'Erro ao atualizar colaborador. Tente novamente.';
+          console.error('Erro ao atualizar colaborador:', err);
+          this.erroValidacao = 'Erro ao atualizar colaborador. Verifique os dados.';
         }
       });
     } else {
@@ -352,18 +403,6 @@ export class SetupComponent implements OnInit {
     }
   }
 
-  alternarStatusFuncionario(funcionario: Funcionario) {
-    if (!funcionario.id) return;
-    
-    const novoStatus = !funcionario.is_active;
-    this.funcionarioService.atualizarFuncionario(funcionario.id, { is_active: novoStatus }).subscribe({
-      next: () => this.carregarFuncionarios(),
-      error: (err) => {
-        console.error('Erro ao mudar status:', err);
-        alert('Não foi possível alterar o status do colaborador no momento.');
-      }
-    });
-  }
 
   get funcionariosFiltrados(): Funcionario[] {
     if (this.exibirInativos) {
@@ -377,13 +416,70 @@ export class SetupComponent implements OnInit {
     return this.funcionarios.filter(f => f.is_active).length;
   }
 
-  inativarFuncionario(id: number | undefined) {
-    if (!id) return;
-    if (confirm('Deseja realmente desativar este funcionário?')) {
-      this.funcionarioService.inativarFuncionario(id).subscribe({
-        next: () => this.carregarFuncionarios(),
-        error: (err) => console.error('Erro ao inativar:', err)
-      });
+  toggleExibirInativos() {
+    this.exibirInativos = !this.exibirInativos;
+    this.carregarFuncionarios();
+  }
+
+  onToggleChange(valor: boolean) {
+    this.exibirInativos = valor;
+    this.carregarFuncionarios();
+  }
+
+  getUltimaAtividade(funcionario: any): string {
+    if (!funcionario) return '--';
+
+    // Prioridade 1: Último Login
+    if (funcionario.last_login) {
+      try {
+        const lastLogin = new Date(funcionario.last_login);
+        const agora = new Date();
+        const diffMs = agora.getTime() - lastLogin.getTime();
+        
+        if (!isNaN(diffMs)) {
+          const diffMin = Math.floor(diffMs / (1000 * 60));
+          const diffHoras = Math.floor(diffMin / 60);
+          const diffDias = Math.floor(diffHoras / 24);
+
+          if (diffMin < 1) return 'Acessou agora';
+          if (diffMin < 60) return `Há ${diffMin}min`;
+          if (diffHoras < 24) return `Há ${diffHoras}h`;
+          if (diffDias === 1) return 'Ontem';
+          if (diffDias < 30) return `Há ${diffDias}d`;
+        }
+      } catch (e) {}
     }
+
+    // fallback: Data de cadastro (date_joined)
+    if (funcionario.date_joined) {
+      try {
+        const dateJoined = new Date(funcionario.date_joined);
+        if (!isNaN(dateJoined.getTime())) {
+          return `Início: ${dateJoined.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`;
+        }
+      } catch (e) {}
+    }
+
+    return 'S/ registro';
+  }
+
+  formatarEntradaCNPJ(event: any) {
+    const input = event.target as HTMLInputElement;
+    const valorComMascara = this.aplicarMascaraCNPJ(input.value);
+    this.unidade.cnpj = valorComMascara;
+    input.value = valorComMascara; // Força atualização visual
+  }
+
+  aplicarMascaraCNPJ(v: string): string {
+    if (!v) return '';
+    v = v.replace(/\D/g, ''); // Remove tudo que não é dígito
+    
+    if (v.length > 14) v = v.substring(0, 14);
+
+    if (v.length <= 2) return v;
+    if (v.length <= 5) return v.replace(/^(\d{2})(\d)/, '$1.$2');
+    if (v.length <= 8) return v.replace(/^(\d{2})(\d{3})(\d)/, '$1.$2.$3');
+    if (v.length <= 12) return v.replace(/^(\d{2})(\d{3})(\d{3})(\d)/, '$1.$2.$3/$4');
+    return v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d)/, '$1.$2.$3/$4-$5');
   }
 }

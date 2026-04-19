@@ -22,6 +22,11 @@ export class App implements OnInit {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.atualizarEstadoSidebar(event.url);
+      
+      // Se estamos entrando em uma área protegida e não temos perfil, tenta carregar
+      if (this.exibirSidebar && !this.perfil) {
+        this.carregarPerfil();
+      }
     });
   }
 

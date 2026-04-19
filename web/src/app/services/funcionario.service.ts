@@ -52,14 +52,6 @@ export class FuncionarioService {
     });
   }
 
-  /**
-   * Inativa um funcionário (CA-02: Soft Delete)
-   */
-  inativarFuncionario(id: number): Observable<Funcionario> {
-    return this.http.patch<Funcionario>(`${this.apiUrl}${id}/`, { is_active: false }, {
-      headers: this.getHeaders()
-    });
-  }
 
   /**
    * Atualiza dados de um funcionário (Nome, Email, Cargo ou Senha)

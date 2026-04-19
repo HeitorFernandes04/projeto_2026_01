@@ -179,15 +179,18 @@ class GestaoViewSet(viewsets.ViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsGestorOnly], url_path='funcionarios')
     def funcionarios_detalhe(self, request, pk=None):
         """
-        PATCH /api/gestao/funcionarios/<id>/ - Inativa um funcionário (Soft Delete)
+        PATCH /api/gestao/funcionarios/<id>/ - Atualiza dados do funcionário (Incluindo Status)
         """
         try:
-            # CA-02/CA-03: Inativação preservando integridade (Soft Delete)
-            funcionario_inativado = FuncionarioService.inativar_funcionario(request.user, pk)
+            # CA-02/CA-03/CA-05: Atualização genérica via Service
+            funcionario_atualizado = FuncionarioService.atualizar_funcionario(request.user, pk, request.data)
             from accounts.serializers import FuncionarioSerializer
-            serializer = FuncionarioSerializer(funcionario_inativado)
+            serializer = FuncionarioSerializer(funcionario_atualizado)
             return Response(serializer.data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except PermissionDenied as e:
-            return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
         except Exception as e:
-             return Response({'error': 'Erro ao processar inativação.'}, status=status.HTTP_400_BAD_REQUEST)
+            print(f"Erro ao atualizar funcionário: {e}")
+            return Response({'error': 'Erro ao processar atualização do colaborador.'}, status=status.HTTP_400_BAD_REQUEST)

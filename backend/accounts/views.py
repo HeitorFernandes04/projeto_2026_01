@@ -39,13 +39,9 @@ class FuncionarioListCreateView(generics.ListCreateAPIView):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Apenas gestores podem cadastrar funcionários.")
         
-        # Criar user e perfil funcionário
-        new_user = serializer.save()
-        Funcionario.objects.create(
-            user=new_user,
-            estabelecimento=estabelecimento,
-            cargo=self.request.data.get('cargo', CargoChoices.LAVADOR)
-        )
+        # O serializer.save() já cria o User E o perfil Funcionario
+        # vinculando ao estabelecimento passado no formulário.
+        serializer.save(estabelecimento=estabelecimento)
 
 
 class FuncionarioDetailView(generics.RetrieveUpdateAPIView):

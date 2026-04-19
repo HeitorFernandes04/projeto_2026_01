@@ -11,6 +11,7 @@ class EstabelecimentoSerializer(serializers.ModelSerializer):
 
 class ClienteSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
+        required=False,
         validators=[
             UniqueValidator(
                 queryset=User.objects.all(),
@@ -18,7 +19,7 @@ class ClienteSerializer(serializers.ModelSerializer):
             )
         ]
     )
-    password = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(write_only=True, min_length=6, required=False, allow_blank=True)
     telefone_whatsapp = serializers.CharField(max_length=20, required=False, allow_blank=True)
     endereco_padrao = serializers.CharField(max_length=255, required=False, allow_blank=True)
 
@@ -27,30 +28,40 @@ class ClienteSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'email', 'username', 'password', 'telefone_whatsapp', 'endereco_padrao']
 
     def validate(self, attrs):
-        # Normaliza e-mail para evitar duplicatas silenciosos por espaços ou caixa
-        attrs['email'] = attrs['email'].strip().lower()
+        # Validação mandatória apenas para novas contas (POST)
+        password = attrs.get('password')
+        email = attrs.get('email')
+
+        if not self.instance:
+            if not email:
+                raise serializers.ValidationError({"email": "Este campo é obrigatório para novos cadastros."})
+            if not password:
+                raise serializers.ValidationError({"password": "Este campo é obrigatório para novos cadastros."})
+
+        # Se for edição (PATCH) e a senha veio vazia, removemos dos attrs para não tentar salvar
+        if self.instance and 'password' in attrs and not password:
+            attrs.pop('password')
+
+        # Normaliza e-mail para evitar duplicatas (apenas se fornecido)
+        if email:
+            attrs['email'] = email.strip().lower()
         return attrs
 
     def create(self, validated_data):
-        # Extrair dados do perfil cliente
         telefone_whatsapp = validated_data.pop('telefone_whatsapp', '')
         endereco_padrao = validated_data.pop('endereco_padrao', '')
-        
-        # Criar usuário
         user = User.objects.create_user(**validated_data)
-        
-        # Criar perfil cliente
         Cliente.objects.create(
             user=user,
             telefone_whatsapp=telefone_whatsapp,
             endereco_padrao=endereco_padrao
         )
-        
         return user
 
 
 class FuncionarioSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
+        required=False,
         validators=[
             UniqueValidator(
                 queryset=User.objects.all(),
@@ -58,10 +69,11 @@ class FuncionarioSerializer(serializers.ModelSerializer):
             )
         ]
     )
-    password = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(write_only=True, min_length=6, required=False, allow_blank=True)
     estabelecimento = serializers.PrimaryKeyRelatedField(
         queryset=Estabelecimento.objects.all(),
-        write_only=True
+        write_only=True,
+        required=False
     )
     cargo = serializers.ChoiceField(
         choices=CargoChoices.choices,
@@ -70,19 +82,35 @@ class FuncionarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'email', 'username', 'password', 'estabelecimento', 'cargo', 'is_active', 'last_login']
-        read_only_fields = ['last_login']
+        fields = ['id', 'name', 'email', 'username', 'password', 'estabelecimento', 'cargo', 'is_active', 'last_login', 'date_joined']
+        read_only_fields = ['last_login', 'date_joined']
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        # Tenta pegar o cargo do perfil vinculado, se existir
         if hasattr(instance, 'perfil_funcionario'):
             ret['cargo'] = instance.perfil_funcionario.cargo
         return ret
 
     def validate(self, attrs):
-        # Normaliza e-mail para evitar duplicatas silenciosos por espaços ou caixa
-        attrs['email'] = attrs['email'].strip().lower()
+        password = attrs.get('password')
+        email = attrs.get('email')
+
+        # Validação mandatória apenas para novos colaboradores (POST)
+        if not self.instance:
+            if not email:
+                raise serializers.ValidationError({"email": "Este campo é obrigatório para novos cadastros."})
+            if not password:
+                raise serializers.ValidationError({"password": "Este campo é obrigatório para novos cadastros."})
+            if not attrs.get('estabelecimento'):
+                raise serializers.ValidationError({"estabelecimento": "Este campo é obrigatório para novos cadastros."})
+
+        # Se for edição (PATCH) e a senha veio vazia, removemos para ignorar a mudança
+        if self.instance and 'password' in attrs and not password:
+            attrs.pop('password')
+
+        # Normaliza e-mail apenas se presente
+        if email:
+            attrs['email'] = email.strip().lower()
         
         # Bloqueio de Cargo GESTOR no fluxo de funcionários
         if attrs.get('cargo') == CargoChoices.GESTOR:
@@ -91,25 +119,20 @@ class FuncionarioSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Extrair dados do perfil funcionário
         estabelecimento = validated_data.pop('estabelecimento')
         cargo = validated_data.pop('cargo', CargoChoices.LAVADOR)
-        
-        # Criar usuário
         user = User.objects.create_user(**validated_data)
-        
-        # Criar perfil funcionário
         Funcionario.objects.create(
             user=user,
             estabelecimento=estabelecimento,
             cargo=cargo
         )
-        
         return user
 
 
 class GestorSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
+        required=False,
         validators=[
             UniqueValidator(
                 queryset=User.objects.all(),
@@ -117,10 +140,11 @@ class GestorSerializer(serializers.ModelSerializer):
             )
         ]
     )
-    password = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(write_only=True, min_length=6, required=False, allow_blank=True)
     estabelecimento = serializers.PrimaryKeyRelatedField(
         queryset=Estabelecimento.objects.all(),
-        write_only=True
+        write_only=True,
+        required=False
     )
 
     class Meta:
@@ -128,25 +152,35 @@ class GestorSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'email', 'username', 'password', 'estabelecimento']
 
     def validate(self, attrs):
-        # Normaliza e-mail para evitar duplicatas silenciosos por espaços ou caixa
-        attrs['email'] = attrs['email'].strip().lower()
+        password = attrs.get('password')
+        email = attrs.get('email')
+
+        # Validação mandatória apenas para novos gestores (POST)
+        if not self.instance:
+            if not email:
+                raise serializers.ValidationError({"email": "Este campo é obrigatório para novos cadastros."})
+            if not password:
+                raise serializers.ValidationError({"password": "Este campo é obrigatório para novos cadastros."})
+            if not attrs.get('estabelecimento'):
+                raise serializers.ValidationError({"estabelecimento": "Este campo é obrigatório para novos cadastros."})
+
+        # Se for edição (PATCH) e a senha veio vazia, removemos
+        if self.instance and 'password' in attrs and not password:
+            attrs.pop('password')
+
+        # Normaliza e-mail apenas se fornecido
+        if email:
+            attrs['email'] = email.strip().lower()
         return attrs
 
     def create(self, validated_data):
-        # Extrair dados do perfil gestor
         estabelecimento = validated_data.pop('estabelecimento')
-        
-        # Criar usuário
         user = User.objects.create_user(**validated_data)
-        
-        # Criar perfil gestor
         Gestor.objects.create(
             user=user,
             estabelecimento=estabelecimento
         )
-        
         return user
 
 
-# RegisterSerializer mantido para compatibilidade, mas agora é um alias para FuncionarioSerializer
 RegisterSerializer = FuncionarioSerializer

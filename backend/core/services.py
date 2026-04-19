@@ -138,9 +138,10 @@ class FuncionarioService:
         estabelecimento = EstabelecimentoService.obter_estabelecimento_usuario(user)
         from accounts.models import Funcionario
         # Retorna apenas usuários que possuem perfil de funcionário neste estabelecimento
+        # Retorna os usuários que possuem perfil de funcionário neste estabelecimento
+        # O filtro de ativos/inativos será flexibilizado ou tratado no ViewSet/Frontend
         return User.objects.filter(
-            perfil_funcionario__estabelecimento=estabelecimento,
-            is_active=True
+            perfil_funcionario__estabelecimento=estabelecimento
         ).select_related('perfil_funcionario')
 
     @staticmethod
@@ -158,9 +159,10 @@ class FuncionarioService:
         return None
 
     @staticmethod
-    def inativar_funcionario(user, funcionario_id):
-        """Inativa um funcionário (Soft Delete) garantindo isolamento"""
+    def atualizar_funcionario(user, funcionario_id, dados):
+        """Atualiza dados de um funcionário (Nome, Email, Cargo ou Status) com validação de isolamento"""
         estabelecimento = EstabelecimentoService.obter_estabelecimento_usuario(user)
+        from accounts.serializers import FuncionarioSerializer
         
         try:
             # Busca o usuário que tem perfil de funcionário no estabelecimento do gestor
@@ -168,8 +170,19 @@ class FuncionarioService:
                 id=funcionario_id,
                 perfil_funcionario__estabelecimento=estabelecimento
             )
-            funcionario_user.is_active = False
-            funcionario_user.save()
+            
+            # Se cargo for enviado, atualizamos no perfil
+            if 'cargo' in dados:
+                cargo = dados.pop('cargo')
+                perfil = funcionario_user.perfil_funcionario
+                perfil.cargo = cargo
+                perfil.save()
+
+            # O restante é atualizado no User via Serializer (para garantir validações de email/senha/status)
+            serializer = FuncionarioSerializer(funcionario_user, data=dados, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                return serializer.save()
             return funcionario_user
+            
         except User.DoesNotExist:
             raise PermissionDenied("Funcionário não encontrado ou não pertence ao seu estabelecimento.")
