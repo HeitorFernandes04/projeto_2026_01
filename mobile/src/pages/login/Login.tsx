@@ -1,11 +1,12 @@
-import { IonContent, IonPage, IonSpinner } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonAlert } from '@ionic/react';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { loginUsuario } from '../../services/api';
+import { loginUsuario, getMeuPerfil } from '../../services/api';
 import '../../theme/lava-me.css';
 
 const Login: React.FC = () => {
   const history = useHistory();
+  const [present] = useIonAlert();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [carregando, setCarregando] = useState(false);
@@ -22,6 +23,15 @@ const Login: React.FC = () => {
       const data = await loginUsuario(email, password);
       localStorage.setItem('access', data.access);
       localStorage.setItem('refresh', data.refresh);
+      
+      // Validação de Perfil (CA: Apenas Operadores no Mobile)
+      const perfil = await getMeuPerfil();
+      if (perfil.cargo === 'GESTOR') {
+        localStorage.clear();
+        setErro('Acesso negado: Este aplicativo é restrito à equipe operacional.');
+        return;
+      }
+
       history.push('/ordens-servico/hoje');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Não foi possível conectar ao servidor.';
@@ -71,6 +81,19 @@ const Login: React.FC = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
             />
 
+            <div style={styles.forgotPassContainer}>
+              <span 
+                style={styles.forgotPass}
+                onClick={() => present({
+                  header: 'Esqueci minha senha',
+                  message: 'Por motivos de segurança, entre em contato com o Gestor da sua filial para redefinir sua senha.',
+                  buttons: ['Entendido']
+                })}
+              >
+                Esqueci minha senha
+              </span>
+            </div>
+
             {erro && <p style={styles.erro}>{erro}</p>}
 
             <button
@@ -82,21 +105,9 @@ const Login: React.FC = () => {
             </button>
           </div>
 
-          <button
-            style={styles.voltar}
-            onClick={() => history.push('/selecao')}
-          >
-            ← Voltar para seleção de acesso
-          </button>
-
           <p style={styles.registerLink}>
-            Ainda não tem conta?{' '}
-            <span
-              style={styles.registerSpan}
-              onClick={() => history.push('/register')}
-            >
-              Cadastrar-se
-            </span>
+            Problemas técnicos?{' '}
+            <span style={styles.registerSpan}>Suporte TI</span>
           </p>
 
         </div>
@@ -210,8 +221,19 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#00b4d8',
     fontWeight: 700,
     cursor: 'pointer',
-    textDecoration: 'underline',
   },
+  forgotPassContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginBottom: 24,
+    marginTop: -8
+  },
+  forgotPass: {
+    color: '#8899aa',
+    fontSize: 13,
+    cursor: 'pointer',
+    textDecoration: 'none'
+  }
 };
 
 export default Login;
