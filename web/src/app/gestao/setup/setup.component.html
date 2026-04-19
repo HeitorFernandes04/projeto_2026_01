@@ -55,7 +55,11 @@
             <label for="f-email">E-mail de Acesso *</label>
             <input type="email" id="f-email" [(ngModel)]="novoFuncionario.email" placeholder="exemplo@lavame.com.br" required>
           </div>
-          <div class="form-group">
+          <div class="form-group" *ngIf="modoEdicao">
+            <label for="f-pass">Alterar Senha (opcional)</label>
+            <input type="password" id="f-pass" [(ngModel)]="novoFuncionario.password" placeholder="Deixe em branco para manter">
+          </div>
+          <div class="form-group" *ngIf="!modoEdicao">
             <label for="f-pass">Senha Inicial *</label>
             <input type="password" id="f-pass" [(ngModel)]="novoFuncionario.password" placeholder="Mínimo 6 caracteres" required>
           </div>
@@ -142,9 +146,14 @@
           <h3>Gestão de Funcionários</h3>
           <p>Gerencie a equipe de colaboradores e monitore a eficiência operacional</p>
         </div>
-        <button class="btn-primary-blue" (click)="abrirModal('funcionario')">
-          <span class="material-symbols-outlined">add</span> Novo Funcionário
-        </button>
+        <div class="table-actions-header">
+           <label class="show-inactive-toggle">
+             <input type="checkbox" [(ngModel)]="exibirInativos"> Mostrar funcionários desativados
+           </label>
+           <button class="btn-primary-blue" (click)="abrirModal('funcionario')">
+             <span class="material-symbols-outlined">add</span> Novo Funcionário
+           </button>
+        </div>
       </div>
       <div class="table-container">
         <table class="industrial-table">
@@ -158,8 +167,8 @@
             </tr>
           </thead>
           <tbody>
-            @for (f of funcionarios; track f.id) {
-              <tr>
+            @for (f of funcionariosFiltrados; track f.id) {
+              <tr [class.row-inactive]="!f.is_active">
                 <td class="col-nome">
                   <div class="user-row">
                     <div class="avatar-circle">{{ f.name.charAt(0) }}</div>
@@ -173,16 +182,21 @@
                   </div>
                 </td>
                 <td class="col-email">{{ f.email }}</td>
-                <td class="col-cargo"><span class="cargo-pill">{{ f.cargo }}</span></td>
+                <td class="col-cargo">
+                  <span class="cargo-pill" [ngClass]="f.cargo.toLowerCase()">{{ f.cargo }}</span>
+                </td>
                 <td class="col-status">
                   <label class="switch">
-                    <input type="checkbox" [checked]="f.is_active" disabled>
+                    <input type="checkbox" [checked]="f.is_active" (change)="alternarStatusFuncionario(f)">
                     <span class="slider"></span>
                   </label>
                 </td>
                 <td class="col-acoes text-right">
                   <div class="action-group">
-                    <button class="btn-action disable" (click)="inativarFuncionario(f.id)">
+                    <button class="btn-edit-action" (click)="editarFuncionario(f)">
+                      <span class="material-symbols-outlined">edit</span>Editar
+                    </button>
+                    <button class="btn-delete-action" (click)="inativarFuncionario(f.id)" *ngIf="f.is_active">
                       <span class="material-symbols-outlined">person_remove</span>Desativar
                     </button>
                   </div>
@@ -192,9 +206,9 @@
           </tbody>
         </table>
         <div class="setup-footer-metrics">
-          <div class="metric-card"><span class="m-label">Total de Funcionários</span><span class="m-value white">{{ funcionarios.length }}</span></div>
-          <div class="metric-card"><span class="m-label">Funcionários Ativos</span><span class="m-value blue">4</span></div>
-          <div class="metric-card"><span class="m-label">Eficiência Média</span><span class="m-value blue-light">103%</span></div>
+          <div class="metric-card"><span class="m-label">Total de Equipe</span><span class="m-value white">{{ funcionarios.length }}</span></div>
+          <div class="metric-card"><span class="m-label">Ativos no Pátio</span><span class="m-value blue">{{ totalAtivos }}</span></div>
+          <div class="metric-card"><span class="m-label">Performance Unidade</span><span class="m-value blue-light">103%</span></div>
         </div>
       </div>
     </section>

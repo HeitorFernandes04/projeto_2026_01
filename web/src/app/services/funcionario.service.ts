@@ -60,4 +60,13 @@ export class FuncionarioService {
       headers: this.getHeaders()
     });
   }
+
+  /**
+   * Atualiza dados de um funcionário (Nome, Email, Cargo ou Senha)
+   */
+  atualizarFuncionario(id: number, dados: Partial<Funcionario>): Observable<Funcionario> {
+    return this.http.patch<Funcionario>(`${this.apiUrl}${id}/`, dados, {
+      headers: this.getHeaders()
+    });
+  }
 }

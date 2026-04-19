@@ -191,11 +191,6 @@
       h3 { font-size: 22px; font-weight: 800; color: #fff; margin: 0; }
       p { color: #8b949e; font-size: 14px; margin-top: 6px; }
 
-      .btn-primary-blue {
-        background: #0066ff; color: #fff; border: none; padding: 14px 28px; border-radius: 18px;
-        font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer;
-      }
-
       .header-left-row {
         display: flex;
         align-items: center;
@@ -205,6 +200,22 @@
           display: flex; align-items: center; justify-content: center; color: #0066ff;
         }
       }
+
+      .table-actions-header {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+
+        .show-inactive-toggle {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 13px;
+          color: #8b949e;
+          cursor: pointer;
+          input { accent-color: #0066ff; }
+        }
+      }
     }
 
     .industrial-table {
@@ -212,6 +223,13 @@
 
       th { text-align: left; padding: 16px; color: #484f58; font-size: 11px; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #21262d; }
       td { padding: 20px 16px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+
+      tr.row-inactive {
+        opacity: 0.5;
+        background: rgba(255, 255, 255, 0.02);
+        .avatar-circle { filter: grayscale(1); }
+        .cargo-pill { background: #161b22; opacity: 0.6; }
+      }
 
       .col-servico { width: 35%; }
       .col-preco { width: 20%; }
@@ -260,7 +278,19 @@
       }
     }
 
-    .cargo-pill { background: #0d1117; color: #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid #21262d; }
+    .cargo-pill { 
+      background: #0d1117; 
+      color: #fff; 
+      padding: 6px 16px; 
+      border-radius: 20px; 
+      font-size: 12px; 
+      font-weight: 700; 
+      border: 1px solid #21262d; 
+
+      &.lavador { background: rgba(0, 102, 255, 0.1); color: #0066ff; border-color: rgba(0, 102, 255, 0.2); }
+      &.detalhista { background: rgba(255, 193, 7, 0.1); color: #ffc107; border-color: rgba(255, 193, 7, 0.2); }
+      &.gestor { background: #21262d; color: #8b949e; }
+    }
 
     .switch {
       position: relative; display: inline-block; width: 34px; height: 18px;

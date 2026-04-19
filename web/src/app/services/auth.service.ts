@@ -20,4 +20,8 @@ export class AuthService {
       })
     );
   }
+
+  obterPerfil() {
+    return this.http.get<any>('/api/auth/meu_perfil/');
+  }
 }

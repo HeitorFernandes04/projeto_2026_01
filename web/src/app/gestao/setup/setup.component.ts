@@ -57,7 +57,9 @@ export class SetupComponent implements OnInit {
     username: '',
     cargo: 'LAVADOR'
   };
-  cargosDisponiveis = ['GESTOR', 'LAVADOR', 'DETALHISTA'];
+  cargosDisponiveis = ['LAVADOR', 'DETALHISTA'];
+  exibirInativos: boolean = false;
+  funcionarioEmEdicao: Funcionario | null = null;
 
   constructor(
     private router: Router,
@@ -134,6 +136,18 @@ export class SetupComponent implements OnInit {
     this.tipoModal = tipo;
     this.modoEdicao = false;
     this.servicoEmEdicao = null;
+    this.funcionarioEmEdicao = null;
+    this.exibirModal = true;
+  }
+
+  editarFuncionario(funcionario: Funcionario) {
+    this.tipoModal = 'funcionario';
+    this.funcionarioEmEdicao = funcionario;
+    this.modoEdicao = true;
+    this.novoFuncionario = { 
+      ...funcionario, 
+      password: '' // Senha fica vazia por segurança na edição
+    };
     this.exibirModal = true;
   }
 
@@ -156,6 +170,7 @@ export class SetupComponent implements OnInit {
     this.erroValidacao = '';
     this.modoEdicao = false;
     this.servicoEmEdicao = null;
+    this.funcionarioEmEdicao = null;
   }
 
   copiarLink() {
@@ -295,8 +310,12 @@ export class SetupComponent implements OnInit {
   }
 
   validarFormFuncionario(): boolean {
-    if (!this.novoFuncionario.name || !this.novoFuncionario.email || !this.novoFuncionario.password) {
-      this.erroValidacao = 'Nome, E-mail e Senha são obrigatórios.';
+    if (!this.novoFuncionario.name || !this.novoFuncionario.email) {
+      this.erroValidacao = 'Nome e E-mail são obrigatórios.';
+      return false;
+    }
+    if (!this.modoEdicao && !this.novoFuncionario.password) {
+      this.erroValidacao = 'A senha é obrigatória para novos cadastros.';
       return false;
     }
     if (!this.novoFuncionario.username) {
@@ -308,15 +327,54 @@ export class SetupComponent implements OnInit {
   salvarFuncionario() {
     if (!this.validarFormFuncionario()) return;
 
-    this.funcionarioService.criarFuncionario(this.novoFuncionario).subscribe({
-      next: () => {
-        this.fecharModal();
-        this.carregarFuncionarios();
-      },
+    if (this.modoEdicao && this.funcionarioEmEdicao?.id) {
+      // Edição via PATCH
+      this.funcionarioService.atualizarFuncionario(this.funcionarioEmEdicao.id, this.novoFuncionario).subscribe({
+        next: () => {
+          this.fecharModal();
+          this.carregarFuncionarios();
+        },
+        error: (err) => {
+          this.erroValidacao = 'Erro ao atualizar colaborador. Tente novamente.';
+        }
+      });
+    } else {
+      // Criação via POST
+      this.funcionarioService.criarFuncionario(this.novoFuncionario).subscribe({
+        next: () => {
+          this.fecharModal();
+          this.carregarFuncionarios();
+        },
+        error: (err) => {
+          this.erroValidacao = err.error?.email?.[0] || 'Erro ao cadastrar funcionário. Verifique se o e-mail já existe.';
+        }
+      });
+    }
+  }
+
+  alternarStatusFuncionario(funcionario: Funcionario) {
+    if (!funcionario.id) return;
+    
+    const novoStatus = !funcionario.is_active;
+    this.funcionarioService.atualizarFuncionario(funcionario.id, { is_active: novoStatus }).subscribe({
+      next: () => this.carregarFuncionarios(),
       error: (err) => {
-        this.erroValidacao = err.error?.email?.[0] || 'Erro ao cadastrar funcionário. Verifique se o e-mail já existe.';
+        console.error('Erro ao mudar status:', err);
+        alert('Não foi possível alterar o status do colaborador no momento.');
       }
     });
+  }
+
+  get funcionariosFiltrados(): Funcionario[] {
+    if (this.exibirInativos) {
+      // Prioriza ativos no topo
+      return [...this.funcionarios].sort((a, b) => (b.is_active ? 1 : 0) - (a.is_active ? 1 : 0));
+    }
+    return this.funcionarios.filter(f => f.is_active);
+  }
+
+  get totalAtivos(): number {
+    return this.funcionarios.filter(f => f.is_active).length;
   }
 
   inativarFuncionario(id: number | undefined) {
