@@ -31,3 +31,12 @@ class IsFuncionarioDaOS(BasePermission):
         # Permite acesso quando a OS ainda não tem dono (fila livre)
         # ou quando o usuário logado já é o funcionário vinculado.
         return os.funcionario is None or os.funcionario == request.user
+
+
+class IsGestorOperacao(BasePermission):
+    """Permite acesso somente a usuarios com perfil gestor."""
+
+    message = 'Apenas gestores podem acessar incidentes operacionais.'
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and hasattr(request.user, 'perfil_gestor'))

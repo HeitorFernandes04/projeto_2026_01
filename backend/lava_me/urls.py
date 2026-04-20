@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path('api/gestao/', include('core.urls')),
     path('api/ordens-servico/', include('operacao.urls')),
+    path('api/incidentes-os/', include('operacao.incidentes_urls')),
 ]
 
 # Servir arquivos de mídia (uploads) em desenvolvimento

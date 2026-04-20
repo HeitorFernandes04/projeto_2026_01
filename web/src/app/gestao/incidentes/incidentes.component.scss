@@ -1,138 +1,299 @@
 .incidentes-wrapper {
-  padding: 40px;
-  background-color: #0b0e11; // Fundo principal industrial
   min-height: 100vh;
-  position: relative;
-
-  /* HEADER */
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 48px;
-
-    .title-group {
-      h1 { font-size: 34px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -1px; }
-      p { color: #8b949e; font-size: 16px; margin-top: 6px; }
-    }
-
-    .header-actions {
-      display: flex; gap: 16px; align-items: center;
-      .notification-btn {
-        background: #161b22; border: 1px solid #30363d; color: #8b949e; padding: 12px; border-radius: 14px; position: relative;
-        .badge { position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 10px; border: 2px solid #0b0e11; }
-      }
-      .date-selector {
-        background: #161b22; border: 1px solid #30363d; padding: 10px 24px; border-radius: 14px;
-        .date-label { color: #8b949e; font-size: 10px; font-weight: 800; text-transform: uppercase; display: block; }
-        .date-value { color: #fff; font-size: 14px; font-weight: 800; }
-      }
-    }
-  }
-
-  /* BANNER DA CENTRAL */
-  .central-banner {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 48px;
-
-    .icon-box {
-      width: 56px; height: 56px;
-      background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.2);
-      border-radius: 16px; display: flex; align-items: center; justify-content: center;
-      span { color: #ff3b30; font-size: 32px; }
-    }
-    h2 { font-size: 24px; font-weight: 800; color: #ffffff; margin: 0; }
-    p { color: #8b949e; font-size: 15px; margin: 4px 0 0 0; }
-  }
-
-  /* LISTA DE CARDS BLOQUEADOS */
-  .incidente-card {
-    background: #161b22;
-    border: 1px solid rgba(255, 59, 48, 0.3); // Borda vermelha do protótipo
-    border-radius: 28px;
-    padding: 32px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 24px;
-
-    &:hover { border-color: #ff3b30; transform: translateY(-4px); box-shadow: 0 12px 40px rgba(255, 59, 48, 0.15); }
-
-    .card-header {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      h3 { font-size: 26px; font-weight: 900; color: #fff; margin: 0; }
-      .model { color: #8b949e; font-size: 14px; font-weight: 600; margin-top: 6px; display: block; }
-      .status-badge { background: rgba(255, 59, 48, 0.1); color: #ff3b30; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 10px; text-transform: uppercase; letter-spacing: 1px; }
-    }
-
-    .description { color: #c9d1d9; font-size: 16px; line-height: 1.6; margin: 20px 0; }
-    .card-footer { display: flex; justify-content: space-between; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); color: #484f58; font-size: 13px; font-weight: 700; }
-  }
-
-  /* ESTILOS DO MODAL (REUTILIZADOS) */
-  .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px);
-    display: none; align-items: center; justify-content: center; z-index: 9999;
-    &.active { display: flex; }
-
-    .modal-container {
-      background: #161b22; width: 95%; max-width: 900px;
-      max-height: 90vh; border-radius: 36px; border: 1px solid #30363d;
-      display: flex; flex-direction: column; overflow: hidden;
-      animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .modal-header {
-      padding: 40px; display: flex; justify-content: space-between;
-      h2 { font-size: 28px; font-weight: 900; color: #fff; margin: 0; }
-      .subtitle { color: #8b949e; font-size: 16px; margin-top: 8px; display: block; }
-      .close-btn { background: #21262d; border: none; width: 40px; height: 40px; border-radius: 50%; color: #fff; cursor: pointer; }
-    }
-
-    .modal-body {
-      padding: 0 40px 40px; overflow-y: auto; flex-grow: 1;
-
-      &.custom-scrollbar {
-        &::-webkit-scrollbar { width: 8px; }
-        &::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
-      }
-
-      .modal-incident-description {
-        background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.2);
-        border-radius: 24px; padding: 24px; margin-bottom: 32px;
-        label { color: #ff3b30; font-size: 12px; font-weight: 900; letter-spacing: 1px; }
-        p { color: #fff; font-size: 18px; font-weight: 600; margin: 12px 0; }
-        .report-meta { display: flex; gap: 24px; color: #8b949e; font-size: 13px; strong { color: #fff; } }
-      }
-
-      .comparison-grid {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
-        .label-row { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; margin-bottom: 16px;
-          .dot { width: 8px; height: 8px; border-radius: 50%; &.green { background: #00ff88; } &.red { background: #ff3b30; } }
-        }
-        .photo-card {
-          border-radius: 24px; overflow: hidden; background: #0d1117; border: 2px solid #30363d;
-          img { width: 100%; height: 240px; object-fit: cover; }
-          .placeholder-icon { height: 240px; display: flex; align-items: center; justify-content: center; color: #30363d; span { font-size: 64px; } }
-          &.border-red { border-color: rgba(255, 59, 48, 0.5); }
-        }
-        .caption { display: block; color: #484f58; font-size: 12px; margin-top: 12px; font-weight: 600; }
-      }
-    }
-
-    .modal-footer {
-      padding: 32px 40px; display: flex; justify-content: space-between; align-items: center;
-      background: #161b22; border-top: 1px solid #21262d;
-      .btn-resolver {
-        background: transparent; border: none; color: #fff; font-weight: 800; font-size: 18px;
-        display: flex; align-items: center; gap: 12px; cursor: pointer;
-        &:hover { filter: brightness(1.2); }
-      }
-      .btn-cancelar { background: #21262d; border: none; color: #fff; padding: 14px 32px; border-radius: 18px; font-weight: 800; cursor: pointer; }
-    }
-  }
+  padding: 40px;
+  background: var(--lm-bg);
+  color: var(--lm-text);
 }
 
-@keyframes modalIn { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+.page-header,
+.header-actions,
+.central-banner,
+.card-header,
+.card-footer,
+.modal-header,
+.modal-footer,
+.report-meta {
+  display: flex;
+}
+
+.page-header {
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.title-group h1, .central-banner h2, .vehicle-info h3, .modal-header h2 { margin: 0; color: var(--lm-text); }
+
+.title-group h1 {
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.title-group p, .central-banner p, .model, .subtitle, .card-footer, .report-meta, .photo-empty { color: var(--lm-text-muted); }
+
+.header-actions {
+  align-items: center;
+  gap: 12px;
+}
+
+button {
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.notification-btn,
+.refresh-btn,
+.close-btn,
+.btn-cancelar {
+  border: 1px solid var(--lm-border);
+  background: var(--lm-card);
+  color: var(--lm-text);
+}
+
+.notification-btn {
+  position: relative;
+  padding: 10px 12px;
+}
+
+.notification-btn.has-alert {
+  border-color: var(--lm-accent);
+}
+
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: 8px;
+  background: var(--lm-accent);
+  color: var(--lm-text);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.refresh-btn,
+.btn-cancelar {
+  padding: 12px 18px;
+  font-weight: 800;
+}
+
+.central-banner {
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+  padding: 20px;
+  border: 1px solid var(--lm-border);
+  border-radius: 8px;
+  background: var(--lm-card);
+}
+
+.central-banner.has-alert {
+  border-color: var(--lm-accent);
+}
+
+.icon-box {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--lm-border);
+  color: var(--lm-accent);
+}
+
+.incidentes-list {
+  display: grid;
+  gap: 16px;
+}
+
+.incidente-card {
+  width: 100%;
+  padding: 24px;
+  border: 1px solid var(--lm-border);
+  border-left: 4px solid var(--lm-accent);
+  background: var(--lm-card);
+  color: inherit;
+  text-align: left;
+}
+
+.incidente-card:hover {
+  border-color: var(--lm-accent);
+}
+
+.card-header,
+.modal-header,
+.modal-footer {
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.vehicle-info h3 {
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.model {
+  display: block;
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+.status-badge {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--lm-accent);
+  color: var(--lm-text);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.description {
+  margin: 18px 0;
+  line-height: 1.6;
+}
+
+.card-footer,
+.report-meta {
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.state-panel {
+  padding: 20px;
+  border: 1px solid var(--lm-border);
+  border-radius: 8px;
+  background: var(--lm-card);
+  color: var(--lm-text-muted);
+}
+
+.state-panel.error,
+.resolution-error {
+  border-color: var(--lm-accent);
+  color: var(--lm-accent);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-container {
+  width: min(920px, calc(100% - 48px));
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--lm-border);
+  border-radius: 8px;
+  background: var(--lm-card);
+}
+
+.modal-header,
+.modal-footer {
+  padding: 24px;
+  align-items: center;
+}
+
+.close-btn {
+  width: 40px;
+  height: 40px;
+}
+
+.modal-body {
+  padding: 0 24px 24px;
+  overflow-y: auto;
+}
+
+.modal-incident-description,
+.audit-grid {
+  margin-bottom: 20px;
+  padding: 18px;
+  border: 1px solid var(--lm-border);
+  border-radius: 8px;
+  background: var(--lm-bg);
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--lm-accent);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.audit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+  gap: 18px;
+}
+
+.audit-grid img,
+.photo-empty {
+  width: 100%;
+  min-height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--lm-border);
+  background: var(--lm-card);
+}
+
+.photo-empty {
+  display: grid;
+  place-items: center;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid var(--lm-border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--lm-bg);
+  color: var(--lm-text);
+  font: inherit;
+}
+
+.resolution-error {
+  margin-top: 10px;
+  font-weight: 800;
+}
+
+.btn-resolver {
+  padding: 14px 18px;
+  border: 1px solid var(--lm-primary);
+  background: var(--lm-primary);
+  color: var(--lm-text);
+  font-weight: 900;
+}
+
+@media (max-width: 760px) {
+  .incidentes-wrapper {
+    padding: 24px;
+  }
+
+  .page-header,
+  .audit-grid,
+  .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -42,7 +42,15 @@ class IncidenteOS(models.Model):
     tag_peca = models.ForeignKey(TagPeca, on_delete=models.CASCADE)
     descricao = models.TextField()
     foto_url = models.ImageField(upload_to='incidentes/')
+    status_anterior_os = models.CharField(max_length=25, choices=OrdemServico.STATUS_CHOICES)
     resolvido = models.BooleanField(default=False)
     data_registro = models.DateTimeField(auto_now_add=True)
     data_resolucao = models.DateTimeField(null=True, blank=True)
+    gestor_resolucao = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='incidentes_resolvidos',
+    )
     observacoes_resolucao = models.TextField(blank=True, null=True)

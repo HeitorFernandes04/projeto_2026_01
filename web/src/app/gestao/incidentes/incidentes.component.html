@@ -6,101 +6,136 @@
     </div>
 
     <div class="header-actions">
-      <button class="notification-btn">
+      <button class="notification-btn" type="button" [class.has-alert]="temPendencias" aria-label="Incidentes pendentes">
         <span class="material-symbols-outlined">notifications</span>
-        <span class="badge">2</span>
+        @if (temPendencias) {
+          <span class="badge">{{ incidentes.length }}</span>
+        }
       </button>
 
-      <div class="date-selector">
-        <span class="date-label">Data</span>
-        <span class="date-value">14 ABR 2026</span>
-      </div>
+      <button class="refresh-btn" type="button" (click)="carregarPendentes()" [disabled]="carregando">
+        Atualizar
+      </button>
     </div>
   </header>
 
   <main class="incidentes-content">
-    <div class="central-banner">
+    <section class="central-banner" [class.has-alert]="temPendencias">
       <div class="icon-box">
         <span class="material-symbols-outlined">report_problem</span>
       </div>
       <div class="banner-text">
         <h2>Central de Incidentes</h2>
-        <p>Ordens de serviço bloqueadas aguardando resolução</p>
+        <p>
+          @if (temPendencias) {
+            {{ incidentes.length }} ordem(ns) bloqueada(s) precisam de auditoria.
+          } @else {
+            Nenhuma ordem bloqueada por incidente neste momento.
+          }
+        </p>
       </div>
-    </div>
+    </section>
 
-    <div class="incidentes-list">
-      @for (item of incidentes; track item.os) {
-        <div class="incidente-card" (click)="abrirModal(item)">
-          <div class="card-header">
-            <div class="vehicle-info">
-              <h3>{{ item.placa }}</h3>
-              <span class="model">{{ item.modelo }} • {{ item.motivo }}</span>
+    @if (carregando) {
+      <div class="state-panel" role="status">Carregando incidentes pendentes...</div>
+    } @else if (erro) {
+      <div class="state-panel error" role="alert">{{ erro }}</div>
+    } @else if (!temPendencias) {
+      <div class="state-panel">Fluxo liberado. Não há incidentes pendentes.</div>
+    } @else {
+      <div class="incidentes-list">
+        @for (item of incidentes; track item.id) {
+          <button class="incidente-card" type="button" (click)="abrirModal(item)">
+            <div class="card-header">
+              <div class="vehicle-info">
+                <h3>{{ item.ordem_servico.veiculo.placa }}</h3>
+                <span class="model">{{ item.ordem_servico.veiculo.modelo }} - {{ item.ordem_servico.servico.nome }}</span>
+              </div>
+              <span class="status-badge">BLOQUEADO</span>
             </div>
-            <span class="status-badge">BLOQUEADO</span>
-          </div>
 
-          <p class="description">{{ item.descricao }}</p>
+            <p class="description">{{ item.descricao }}</p>
 
-          <div class="card-footer">
-            <span class="author">Reportado por: {{ item.reportadoPor }}</span>
-            <span class="timestamp">{{ item.data }}</span>
-          </div>
-        </div>
-      }
-    </div>
+            <div class="card-footer">
+              <span>Peça: {{ item.tag_peca.nome }}</span>
+              <span>{{ formatarData(item.data_registro) }}</span>
+            </div>
+          </button>
+        }
+      </div>
+    }
   </main>
 
   <div class="modal-overlay" [class.active]="modalAberto">
-    <div class="modal-container">
+    <section class="modal-container" role="dialog" aria-modal="true" aria-labelledby="auditoria-titulo">
       <header class="modal-header">
         <div class="header-main">
-          <h2>Auditoria de Incidente</h2>
-          <span class="subtitle">{{ incidenteSelecionado?.placa }} • {{ incidenteSelecionado?.modelo }}</span>
+          <h2 id="auditoria-titulo">Auditoria de Incidente</h2>
+          <span class="subtitle">
+            {{ incidenteSelecionado?.ordem_servico?.veiculo?.placa }} - {{ incidenteSelecionado?.ordem_servico?.veiculo?.modelo }}
+          </span>
         </div>
-        <button class="close-btn" (click)="fecharModal()">
+        <button class="close-btn" type="button" (click)="fecharModal()" [disabled]="salvandoResolucao" aria-label="Fechar auditoria">
           <span class="material-symbols-outlined">close</span>
         </button>
       </header>
 
       <div class="modal-body custom-scrollbar">
-        <div class="modal-incident-description">
-          <label>DESCRIÇÃO DO INCIDENTE</label>
-          <p>{{ incidenteSelecionado?.descricao }}</p>
-          <div class="report-meta">
-            <span>Reportado por: <strong>{{ incidenteSelecionado?.reportadoPor }}</strong></span>
-            <span>Data/Hora: <strong>{{ incidenteSelecionado?.data }}</strong></span>
-          </div>
-        </div>
-
-        <div class="comparison-grid">
-          <div class="photo-column">
-            <div class="label-row"><span class="dot green"></span> Vistoria Inicial</div>
-            <div class="photo-card">
-              <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=500" alt="Vistoria">
-              <span class="caption">Estado do veículo ao chegar no pátio</span>
+        @if (auditoriaCarregando) {
+          <div class="state-panel" role="status">Carregando auditoria...</div>
+        } @else {
+          <div class="modal-incident-description">
+            <label>DESCRIÇÃO DO INCIDENTE</label>
+            <p>{{ incidenteSelecionado?.descricao }}</p>
+            <div class="report-meta">
+              <span>Peça afetada: <strong>{{ incidenteSelecionado?.tag_peca?.nome }}</strong></span>
+              <span>Registrado em: <strong>{{ formatarData(incidenteSelecionado?.data_registro || null) }}</strong></span>
             </div>
           </div>
 
-          <div class="photo-column">
-            <div class="label-row"><span class="dot red"></span> Incidente Detectado</div>
-            <div class="photo-card border-red">
-              <div class="placeholder-icon">
-                <span class="material-symbols-outlined">image</span>
-              </div>
-              <span class="caption">Dano identificado pelo funcionário</span>
+          <div class="audit-grid">
+            <div>
+              <label>ORDEM DE SERVIÇO</label>
+              <p>Serviço: <strong>{{ incidenteSelecionado?.ordem_servico?.servico?.nome }}</strong></p>
+              <p>Status atual: <strong>{{ incidenteSelecionado?.ordem_servico?.status_display }}</strong></p>
+              <p>Retorno previsto: <strong>{{ incidenteSelecionado?.status_anterior_os }}</strong></p>
+            </div>
+
+            <div>
+              <label>FOTO DO INCIDENTE</label>
+              @if (incidenteSelecionado?.foto_url) {
+                <img [src]="incidenteSelecionado?.foto_url" alt="Foto vinculada ao incidente">
+              } @else {
+                <div class="photo-empty">Sem foto vinculada</div>
+              }
             </div>
           </div>
-        </div>
+
+          <label class="resolution-label" for="nota-resolucao">NOTA DE RESOLUÇÃO</label>
+          <textarea
+            id="nota-resolucao"
+            [(ngModel)]="notaResolucao"
+            [disabled]="salvandoResolucao"
+            rows="4"
+            placeholder="Registre a auditoria feita pelo gestor antes de desbloquear a OS."
+          ></textarea>
+
+          @if (erroResolucao) {
+            <div class="resolution-error" role="alert">{{ erroResolucao }}</div>
+          }
+        }
       </div>
 
       <footer class="modal-footer">
-        <button class="btn-resolver" (click)="liberarOS(incidenteSelecionado?.os)">
-          <span class="material-symbols-outlined">check_circle</span>
-          Resolver e Desbloquear OS
+        <button class="btn-resolver" type="button" (click)="resolverIncidente()" [disabled]="auditoriaCarregando || salvandoResolucao">
+          @if (salvandoResolucao) {
+            Salvando...
+          } @else {
+            Resolver e desbloquear OS
+          }
         </button>
-        <button class="btn-cancelar" (click)="fecharModal()">Cancelar</button>
+        <button class="btn-cancelar" type="button" (click)="fecharModal()" [disabled]="salvandoResolucao">Cancelar</button>
       </footer>
-    </div>
+    </section>
   </div>
 </div>

@@ -11,9 +11,11 @@
         <span class="text">AO VIVO</span>
       </div>
 
-      <button class="notification-btn" (click)="irParaIncidentes()">
+      <button class="notification-btn" (click)="irParaIncidentes()" [class.has-alert]="incidentesPendentes > 0">
         <span class="material-symbols-outlined">notifications</span>
-        <span class="badge">2</span>
+        @if (incidentesPendentes > 0) {
+          <span class="badge">{{ incidentesPendentes }}</span>
+        }
       </button>
 
       <div class="date-selector">

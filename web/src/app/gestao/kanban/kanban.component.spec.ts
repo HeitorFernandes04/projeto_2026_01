@@ -1,4 +1,5 @@
 import { Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
 
 // Import Angular compiler for JIT compilation
 import '@angular/compiler';
@@ -48,6 +49,29 @@ describe('KanbanComponent - Pátio', () => {
   });
 
   describe('Teste 3 (Lógica de Incidente)', () => {
+    it('deve carregar a contagem real de incidentes pendentes para o alerta visual', () => {
+      const incidenteService = {
+        listarPendentes: vi.fn(() => of([{ id: 1 }, { id: 2 }]))
+      };
+      component = new KanbanComponent(routerSpy, incidenteService as any);
+
+      component.ngOnInit();
+
+      expect(incidenteService.listarPendentes).toHaveBeenCalled();
+      expect(component.incidentesPendentes).toBe(2);
+    });
+
+    it('deve zerar alerta visual se a consulta de incidentes falhar', () => {
+      const incidenteService = {
+        listarPendentes: vi.fn(() => throwError(() => new Error('falha')))
+      };
+      component = new KanbanComponent(routerSpy, incidenteService as any);
+
+      component.ngOnInit();
+
+      expect(component.incidentesPendentes).toBe(0);
+    });
+
     it('deve ter cards com alerta configurados corretamente', () => {
       // Verifica se há cards com incidente nos dados mockados
       const incidentCards = component.colunas.flatMap(col => 

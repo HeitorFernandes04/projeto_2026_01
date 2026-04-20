@@ -175,6 +175,47 @@ class TagPecaSerializer(serializers.ModelSerializer):
 
 
 class IncidenteOSSerializer(serializers.ModelSerializer):
+    ordem_servico = OrdemServicoSerializer(read_only=True)
+    tag_peca = TagPecaSerializer(read_only=True)
+    foto_url = serializers.SerializerMethodField()
+    gestor_resolucao = serializers.SerializerMethodField()
+
     class Meta:
         model = IncidenteOS
-        fields = ['ordem_servico', 'tag_peca', 'descricao', 'foto_url']
+        fields = [
+            'id',
+            'ordem_servico',
+            'tag_peca',
+            'descricao',
+            'foto_url',
+            'status_anterior_os',
+            'resolvido',
+            'data_registro',
+            'data_resolucao',
+            'gestor_resolucao',
+            'observacoes_resolucao',
+        ]
+
+    def get_foto_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.foto_url:
+            return request.build_absolute_uri(obj.foto_url.url)
+        return obj.foto_url.url if obj.foto_url else None
+
+    def get_gestor_resolucao(self, obj):
+        if not obj.gestor_resolucao:
+            return None
+        return {
+            'id': obj.gestor_resolucao.id,
+            'nome': obj.gestor_resolucao.name,
+            'email': obj.gestor_resolucao.email,
+        }
+
+
+class ResolverIncidenteSerializer(serializers.Serializer):
+    nota_resolucao = serializers.CharField(allow_blank=True, trim_whitespace=True)
+
+    def validate_nota_resolucao(self, value):
+        if not value.strip():
+            raise serializers.ValidationError('A nota de resolução é obrigatória.')
+        return value.strip()

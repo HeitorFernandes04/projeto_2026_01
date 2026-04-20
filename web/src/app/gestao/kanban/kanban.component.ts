@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { IncidenteService } from '../../services/incidente.service';
 
 @Component({
   selector: 'app-kanban',
@@ -10,7 +11,20 @@ import { Router } from '@angular/router';
   styleUrl: './kanban.component.scss'
 })
 export class KanbanComponent {
-  constructor(private router: Router) {}
+  incidentesPendentes = 0;
+
+  constructor(private router: Router, private incidenteService?: IncidenteService) {}
+
+ngOnInit() {
+  this.incidenteService?.listarPendentes().subscribe({
+    next: incidentes => {
+      this.incidentesPendentes = incidentes.length;
+    },
+    error: () => {
+      this.incidentesPendentes = 0;
+    },
+  });
+}
 colunas = [
   {
     nome: 'PÁTIO',

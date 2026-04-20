@@ -30,6 +30,7 @@
       }
       .notification-btn {
         background: #161b22; border: 1px solid #30363d; color: #8b949e; padding: 10px; border-radius: 12px; position: relative;
+        &.has-alert { border-color: #ff3b30; color: #ff3b30; }
         .badge { position: absolute; top: -4px; right: -4px; background: #ff3b30; color: white; font-size: 10px; font-weight: 800; padding: 2px 5px; border-radius: 10px; }
       }
       .date-selector {

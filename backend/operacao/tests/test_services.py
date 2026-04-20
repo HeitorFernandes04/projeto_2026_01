@@ -5,11 +5,11 @@ from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 
-from operacao.services import OrdemServicoService, MidiaOrdemServicoService
-from operacao.tests.factories import OrdemServicoFactory, MidiaOrdemServicoFactory
+from operacao.services import OrdemServicoService, MidiaOrdemServicoService, IncidenteService
+from operacao.tests.factories import OrdemServicoFactory, MidiaOrdemServicoFactory, IncidenteOSFactory, GestorFactory
 # Imports ajustados conforme nova estrutura
 from core.models import Servico, Veiculo
-from operacao.models import OrdemServico
+from operacao.models import OrdemServico, IncidenteOS
 
 def gerar_foto_valida(nome="foto.jpg"):
     """Gera um buffer de imagem 1x1 pixel válida para o PIL."""
@@ -69,3 +69,81 @@ class TestOrdemServicoServiceEtapas:
         
         with pytest.raises(ValidationError):
             MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZADO', [foto])
+
+
+@pytest.mark.django_db
+class TestIncidenteServiceAuditoria:
+
+    def test_listar_pendentes_retorna_apenas_os_bloqueadas_do_estabelecimento_do_gestor(self):
+        gestor = GestorFactory()
+        os_bloqueada = OrdemServicoFactory(
+            estabelecimento=gestor.estabelecimento,
+            status='BLOQUEADO_INCIDENTE',
+        )
+        incidente_pendente = IncidenteOSFactory(
+            ordem_servico=os_bloqueada,
+            resolvido=False,
+            status_anterior_os='EM_EXECUCAO',
+        )
+        IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(estabelecimento=gestor.estabelecimento, status='EM_EXECUCAO'),
+            resolvido=False,
+        )
+        IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(status='BLOQUEADO_INCIDENTE'),
+            resolvido=False,
+        )
+
+        pendentes = list(IncidenteService.listar_pendentes(gestor.user))
+
+        assert pendentes == [incidente_pendente]
+
+    def test_resolver_incidente_desbloqueia_os_para_status_anterior_e_registra_auditoria(self):
+        gestor = GestorFactory()
+        ordem_servico = OrdemServicoFactory(
+            estabelecimento=gestor.estabelecimento,
+            status='BLOQUEADO_INCIDENTE',
+        )
+        incidente = IncidenteOSFactory(
+            ordem_servico=ordem_servico,
+            resolvido=False,
+            status_anterior_os='LIBERACAO',
+        )
+
+        incidente_resolvido = IncidenteService.resolver_incidente(
+            gestor.user,
+            incidente.id,
+            'Cliente ciente e continuidade liberada.',
+        )
+
+        ordem_servico.refresh_from_db()
+        incidente_resolvido.refresh_from_db()
+        assert incidente_resolvido.resolvido is True
+        assert incidente_resolvido.observacoes_resolucao == 'Cliente ciente e continuidade liberada.'
+        assert incidente_resolvido.gestor_resolucao == gestor.user
+        assert incidente_resolvido.data_resolucao is not None
+        assert ordem_servico.status == 'LIBERACAO'
+
+    def test_resolver_incidente_sem_nota_deve_falhar(self):
+        gestor = GestorFactory()
+        incidente = IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(estabelecimento=gestor.estabelecimento, status='BLOQUEADO_INCIDENTE'),
+        )
+
+        with pytest.raises(ValidationError) as exc:
+            IncidenteService.resolver_incidente(gestor.user, incidente.id, '   ')
+
+        assert 'A nota de resolução é obrigatória.' in str(exc.value)
+        assert IncidenteOS.objects.get(id=incidente.id).resolvido is False
+
+    def test_resolver_incidente_ja_resolvido_deve_falhar_com_conflito_de_negocio(self):
+        gestor = GestorFactory()
+        incidente = IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(estabelecimento=gestor.estabelecimento, status='BLOQUEADO_INCIDENTE'),
+            resolvido=True,
+        )
+
+        with pytest.raises(ValueError) as exc:
+            IncidenteService.resolver_incidente(gestor.user, incidente.id, 'Nova tentativa')
+
+        assert 'O incidente informado já foi resolvido.' in str(exc.value)

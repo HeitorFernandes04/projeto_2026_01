@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from io import BytesIO
 from PIL import Image
-from operacao.tests.factories import OrdemServicoFactory, UserFactory, MidiaOrdemServicoFactory, ServicoFactory
+from operacao.tests.factories import OrdemServicoFactory, UserFactory, MidiaOrdemServicoFactory, ServicoFactory, GestorFactory, IncidenteOSFactory
 # Imports ajustados conforme nova estrutura
 from core.models import Servico, Veiculo
 from operacao.models import OrdemServico
@@ -144,3 +144,119 @@ class TestHistoricoAPI(APITestCase):
         """Valida bloqueio de datas invertidas."""
         response = self.client.get(self.url, {'data_inicial': '2026-12-31', 'data_final': '2026-01-01'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TestIncidentesGestorAPI(APITestCase):
+    def setUp(self):
+        self.gestor = GestorFactory()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.gestor.user)
+
+    def test_pendentes_lista_apenas_incidentes_com_os_bloqueada(self):
+        ordem_bloqueada = OrdemServicoFactory(
+            estabelecimento=self.gestor.estabelecimento,
+            status='BLOQUEADO_INCIDENTE',
+        )
+        incidente = IncidenteOSFactory(ordem_servico=ordem_bloqueada, resolvido=False)
+        IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(estabelecimento=self.gestor.estabelecimento, status='EM_EXECUCAO'),
+            resolvido=False,
+        )
+
+        response = self.client.get(reverse('incidentes-os-pendentes'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], incidente.id)
+        self.assertEqual(response.data[0]['ordem_servico']['status'], 'BLOQUEADO_INCIDENTE')
+
+    def test_auditoria_retorna_dados_consolidados_da_os_incidente_e_peca(self):
+        incidente = IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(
+                estabelecimento=self.gestor.estabelecimento,
+                status='BLOQUEADO_INCIDENTE',
+            ),
+            descricao='Avaria detectada no para-choque.',
+        )
+
+        response = self.client.get(reverse('incidentes-os-auditoria', kwargs={'pk': incidente.pk}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], incidente.id)
+        self.assertEqual(response.data['descricao'], 'Avaria detectada no para-choque.')
+        self.assertIn('ordem_servico', response.data)
+        self.assertIn('tag_peca', response.data)
+        self.assertIn('foto_url', response.data)
+
+    def test_resolver_incidente_com_nota_desbloqueia_os(self):
+        ordem_servico = OrdemServicoFactory(
+            estabelecimento=self.gestor.estabelecimento,
+            status='BLOQUEADO_INCIDENTE',
+        )
+        incidente = IncidenteOSFactory(
+            ordem_servico=ordem_servico,
+            resolvido=False,
+            status_anterior_os='EM_EXECUCAO',
+        )
+
+        response = self.client.patch(
+            reverse('incidentes-os-resolver', kwargs={'pk': incidente.pk}),
+            {'nota_resolucao': 'Auditoria aprovada.'},
+            format='json',
+        )
+
+        ordem_servico.refresh_from_db()
+        incidente.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(incidente.resolvido)
+        self.assertEqual(ordem_servico.status, 'EM_EXECUCAO')
+        self.assertEqual(response.data['observacoes_resolucao'], 'Auditoria aprovada.')
+
+    def test_resolver_sem_nota_retorna_400(self):
+        incidente = IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(
+                estabelecimento=self.gestor.estabelecimento,
+                status='BLOQUEADO_INCIDENTE',
+            ),
+        )
+
+        response = self.client.patch(
+            reverse('incidentes-os-resolver', kwargs={'pk': incidente.pk}),
+            {'nota_resolucao': ''},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'A nota de resolução é obrigatória.')
+
+    def test_resolver_incidente_ja_resolvido_retorna_409(self):
+        incidente = IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(
+                estabelecimento=self.gestor.estabelecimento,
+                status='BLOQUEADO_INCIDENTE',
+            ),
+            resolvido=True,
+        )
+
+        response = self.client.patch(
+            reverse('incidentes-os-resolver', kwargs={'pk': incidente.pk}),
+            {'nota_resolucao': 'Nova nota'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['detail'], 'O incidente informado já foi resolvido.')
+
+    def test_usuario_sem_perfil_gestor_nao_acessa_auditoria(self):
+        funcionario = UserFactory()
+        incidente = IncidenteOSFactory(
+            ordem_servico=OrdemServicoFactory(
+                estabelecimento=self.gestor.estabelecimento,
+                status='BLOQUEADO_INCIDENTE',
+            ),
+        )
+        self.client.force_authenticate(user=funcionario)
+
+        response = self.client.get(reverse('incidentes-os-auditoria', kwargs={'pk': incidente.pk}))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

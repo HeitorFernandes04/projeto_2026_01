@@ -2,11 +2,13 @@ import datetime
 from io import BytesIO
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca
-from operacao.models import OrdemServico, MidiaOrdemServico
+from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
 MAX_FOTOS_POR_MOMENTO = 5
@@ -215,6 +217,79 @@ class IncidenteService:
     """Serviço para isolar o fluxo de erros e incidentes operacionais."""
 
     @staticmethod
+    def _estabelecimento_do_gestor(gestor):
+        if not hasattr(gestor, 'perfil_gestor'):
+            raise PermissionDenied('Apenas gestores podem acessar incidentes operacionais.')
+        return gestor.perfil_gestor.estabelecimento
+
+    @staticmethod
+    def _queryset_gestor(gestor, estabelecimento_id=None):
+        estabelecimento = IncidenteService._estabelecimento_do_gestor(gestor)
+        if estabelecimento_id and str(estabelecimento.id) != str(estabelecimento_id):
+            raise PermissionDenied('Gestor sem acesso ao estabelecimento informado.')
+
+        return IncidenteOS.objects.filter(
+            ordem_servico__estabelecimento=estabelecimento,
+        ).select_related(
+            'ordem_servico',
+            'ordem_servico__veiculo',
+            'ordem_servico__servico',
+            'tag_peca',
+            'gestor_resolucao',
+        ).order_by('-data_registro')
+
+    @staticmethod
+    def listar_pendentes(gestor, estabelecimento_id=None):
+        """RF-15: Lista somente incidentes abertos em OS bloqueadas do gestor."""
+        return IncidenteService._queryset_gestor(gestor, estabelecimento_id).filter(
+            resolvido=False,
+            ordem_servico__status='BLOQUEADO_INCIDENTE',
+        )
+
+    @staticmethod
+    def obter_auditoria(gestor, incidente_id):
+        """RF-16: Retorna um incidente com dados de OS e peca ja otimizados."""
+        return get_object_or_404(
+            IncidenteService._queryset_gestor(gestor),
+            id=incidente_id,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def resolver_incidente(gestor, incidente_id, nota_resolucao):
+        """Resolve o incidente e restaura a OS ao status anterior em uma transacao."""
+        estabelecimento = IncidenteService._estabelecimento_do_gestor(gestor)
+        nota = (nota_resolucao or '').strip()
+        if not nota:
+            raise ValidationError('A nota de resolução é obrigatória.')
+
+        incidente = get_object_or_404(
+            IncidenteOS.objects.select_for_update().select_related('ordem_servico'),
+            id=incidente_id,
+            ordem_servico__estabelecimento=estabelecimento,
+        )
+        ordem_servico = OrdemServico.objects.select_for_update().get(id=incidente.ordem_servico_id)
+
+        if incidente.resolvido:
+            raise ValueError('O incidente informado já foi resolvido.')
+
+        incidente.resolvido = True
+        incidente.observacoes_resolucao = nota
+        incidente.gestor_resolucao = gestor
+        incidente.data_resolucao = timezone.now()
+        incidente.save(update_fields=[
+            'resolvido',
+            'observacoes_resolucao',
+            'gestor_resolucao',
+            'data_resolucao',
+        ])
+
+        ordem_servico.status = incidente.status_anterior_os
+        ordem_servico.save(update_fields=['status'])
+
+        return incidente
+
+    @staticmethod
     def registrar_incidente(os_id, dados, arquivo_foto):
         """Registra o incidente, vincula a peça afetada e bloqueia a OS."""
         os = get_object_or_404(OrdemServico, id=os_id)
@@ -227,6 +302,7 @@ class IncidenteService:
             tag_peca=tag_peca,
             descricao=dados.get('descricao'),
             foto_url=foto_processada,
+            status_anterior_os=os.status,
             resolvido=False
         )
 

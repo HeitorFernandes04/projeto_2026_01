@@ -15,7 +15,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .permissions import IsFuncionarioDaOS
+from .permissions import IsFuncionarioDaOS, IsGestorOperacao
 from .serializers import (
     OrdemServicoSerializer,
     CriarOrdemServicoSerializer,
@@ -25,6 +25,7 @@ from .serializers import (
     ServicoSerializer,
     ProximaEtapaSerializer,
     FinalizarIndustrialSerializer,
+    ResolverIncidenteSerializer,
 )
 from .services import OrdemServicoService, MidiaOrdemServicoService
 
@@ -219,6 +220,46 @@ class HorariosLivresView(APIView):
 class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TagPeca.objects.all()
     serializer_class = TagPecaSerializer
+
+
+class IncidenteViewSet(viewsets.ViewSet):
+    """RF-15/RF-16: Central, auditoria e desbloqueio de incidentes pelo gestor."""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestorOperacao]
+
+    def pendentes(self, request):
+        incidentes = IncidenteService.listar_pendentes(
+            gestor=request.user,
+            estabelecimento_id=request.query_params.get('estabelecimento_id'),
+        )
+        serializer = IncidenteOSSerializer(incidentes, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def auditoria(self, request, pk=None):
+        incidente = IncidenteService.obter_auditoria(request.user, pk)
+        serializer = IncidenteOSSerializer(incidente, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def resolver(self, request, pk=None):
+        serializer = ResolverIncidenteSerializer(data=request.data)
+        if not serializer.is_valid():
+            erro = serializer.errors.get('nota_resolucao', ['A nota de resolução é obrigatória.'])[0]
+            return Response({'detail': str(erro)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            incidente = IncidenteService.resolver_incidente(
+                gestor=request.user,
+                incidente_id=pk,
+                nota_resolucao=serializer.validated_data['nota_resolucao'],
+            )
+        except ValidationError as exc:
+            detalhe = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+            return Response({'detail': detalhe}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_409_CONFLICT)
+
+        serializer_saida = IncidenteOSSerializer(incidente, context={'request': request})
+        return Response(serializer_saida.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
