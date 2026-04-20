@@ -1,7 +1,7 @@
 # core/services.py
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from .models import Servico
-from accounts.models import Estabelecimento
+from accounts.models import Estabelecimento, User
 
 
 class EstabelecimentoService:
@@ -128,4 +128,61 @@ class ServicoService:
             raise PermissionDenied("Serviço não encontrado ou não pertence ao seu estabelecimento.")
         
         servico.soft_delete()
-        return servico
+
+class FuncionarioService:
+    """Serviço para gerenciar equipe do estabelecimento (RF-12)"""
+
+    @staticmethod
+    def listar_funcionarios(user):
+        """Lista funcionários do estabelecimento do gestor logado"""
+        estabelecimento = EstabelecimentoService.obter_estabelecimento_usuario(user)
+        from accounts.models import Funcionario
+        # Retorna apenas usuários que possuem perfil de funcionário neste estabelecimento
+        # Retorna os usuários que possuem perfil de funcionário neste estabelecimento
+        # O filtro de ativos/inativos será flexibilizado ou tratado no ViewSet/Frontend
+        return User.objects.filter(
+            perfil_funcionario__estabelecimento=estabelecimento
+        ).select_related('perfil_funcionario')
+
+    @staticmethod
+    def criar_funcionario(user, dados_funcionario):
+        """Cria um novo usuário e perfil de funcionário vinculado ao estabelecimento"""
+        estabelecimento = EstabelecimentoService.obter_estabelecimento_usuario(user)
+        from accounts.serializers import FuncionarioSerializer
+        
+        # Força o estabelecimento do gestor logado (Previne IDOR CA-04)
+        dados_funcionario['estabelecimento'] = estabelecimento.id
+        
+        serializer = FuncionarioSerializer(data=dados_funcionario)
+        if serializer.is_valid(raise_exception=True):
+            return serializer.save()
+        return None
+
+    @staticmethod
+    def atualizar_funcionario(user, funcionario_id, dados):
+        """Atualiza dados de um funcionário (Nome, Email, Cargo ou Status) com validação de isolamento"""
+        estabelecimento = EstabelecimentoService.obter_estabelecimento_usuario(user)
+        from accounts.serializers import FuncionarioSerializer
+        
+        try:
+            # Busca o usuário que tem perfil de funcionário no estabelecimento do gestor
+            funcionario_user = User.objects.get(
+                id=funcionario_id,
+                perfil_funcionario__estabelecimento=estabelecimento
+            )
+            
+            # Se cargo for enviado, atualizamos no perfil
+            if 'cargo' in dados:
+                cargo = dados.pop('cargo')
+                perfil = funcionario_user.perfil_funcionario
+                perfil.cargo = cargo
+                perfil.save()
+
+            # O restante é atualizado no User via Serializer (para garantir validações de email/senha/status)
+            serializer = FuncionarioSerializer(funcionario_user, data=dados, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                return serializer.save()
+            return funcionario_user
+            
+        except User.DoesNotExist:
+            raise PermissionDenied("Funcionário não encontrado ou não pertence ao seu estabelecimento.")

@@ -1,8 +1,8 @@
 import { IonContent, IonPage, IonSpinner, useIonViewWillEnter } from '@ionic/react';
 import { Clock, ChevronRight, Car, LogOut } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
-import { getOrdensServicoHoje } from '../../services/api';
+import { getOrdensServicoHoje, getMeuPerfil } from '../../services/api';
 import TabBar from '../../components/TabBar'; 
 
 import logoLavaMe from '../../assets/logo.jpeg';
@@ -21,14 +21,24 @@ const OrdemServicosHoje: React.FC = () => {
   const history = useHistory();
   const [ordensServico, setOrdemServicos] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nomeUsuario, setNomeUsuario] = useState('Colaborador');
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  const nomeFuncionario = localStorage.getItem('nome_usuario') || 'Funcionário';
+  // Relógio em tempo real
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useIonViewWillEnter(() => {
     // Só exibe o spinner na primeira carga total
     if (ordensServico.length === 0) {
       setLoading(true);
     }
+
+    // Busca Perfil para o Header
+    getMeuPerfil().then(p => setNomeUsuario(p.name)).catch(() => {});
+
     getOrdensServicoHoje()
       .then((dados) => {
         if (dados && Array.isArray(dados)) {
@@ -64,7 +74,14 @@ const OrdemServicosHoje: React.FC = () => {
               </div>
               <div>
                 <h1 style={styles.headerTitle}>Lava-Me</h1>
-                <p style={styles.headerSubtitle}>Olá, {nomeFuncionario}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                  <p style={styles.headerSubtitle}>Olá, {nomeUsuario}</p>
+                  <span style={{ color: '#444', fontSize: '10px' }}>•</span>
+                  <div style={styles.clockHeader}>
+                    <Clock size={10} color="var(--lm-primary)" />
+                    <span>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
               </div>
             </div>
             <button onClick={handleLogout} style={styles.btnLogout}>
@@ -155,10 +172,11 @@ const styles: Record<string, React.CSSProperties> = {
   logoWrapper: { padding: '2px', borderRadius: '12px', border: '1px solid var(--lm-border)', background: '#000000' },
   logoImg: { width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover' },
   headerTitle: { color: 'var(--lm-text)', fontSize: '20px', fontWeight: 800, margin: 0 },
-  headerSubtitle: { color: 'var(--lm-text-muted)', fontSize: '11px', margin: 0, fontWeight: 700 },
+  headerSubtitle: { color: 'var(--lm-text-muted)', fontSize: '12px', margin: 0, fontWeight: 700 },
+  clockHeader: { display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--lm-primary)', fontSize: '11px', fontWeight: 800 },
   btnLogout: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', padding: '12px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   pageTitle: { color: 'var(--lm-text)', fontSize: '32px', fontWeight: 900, margin: '0 0 4px' },
-  pageSubtitle: { color: '#444', fontSize: '15px', fontWeight: 700, marginBottom: '28px' },
+  pageSubtitle: { color: '#444', fontSize: '14px', fontWeight: 700, marginBottom: '28px' },
   statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' },
   cardAgendado: { background: '#0a1220', border: '1px solid #0066ff50', padding: '24px', borderRadius: '24px' },
   cardAndamento: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', padding: '24px', borderRadius: '24px' },

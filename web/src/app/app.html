@@ -35,10 +35,10 @@
     <div class="sidebar-footer">
       <div class="profile-row">
         <div class="profile-card">
-          <div class="avatar">GS</div>
+          <div class="avatar">{{ perfil?.name?.charAt(0) || 'GS' }}</div>
           <div class="profile-info">
-            <span class="name">Gestor Sistema</span>
-            <span class="unit">Unidade Centro</span>
+            <span class="name">{{ perfil?.name || 'Gestor Sistema' }}</span>
+            <span class="unit">{{ perfil?.estabelecimento?.nome_fantasia || 'Lava-Me' }}</span>
           </div>
         </div>
         <button class="btn-logout" title="Sair do Sistema" (click)="logout()">

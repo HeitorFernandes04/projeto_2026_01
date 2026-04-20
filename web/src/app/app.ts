@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
 import { filter } from 'rxjs/operators';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -13,13 +14,19 @@ import { filter } from 'rxjs/operators';
 export class App implements OnInit {
   title = 'Gestor';
   exibirSidebar: boolean = true;
+  perfil: any = null;
 
-  constructor(private router: Router, private location: Location) {
+  constructor(private router: Router, private location: Location, private authService: AuthService) {
     // Monitora as mudanças de rota futuras para esconder a sidebar no login
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.atualizarEstadoSidebar(event.url);
+      
+      // Se estamos entrando em uma área protegida e não temos perfil, tenta carregar
+      if (this.exibirSidebar && !this.perfil) {
+        this.carregarPerfil();
+      }
     });
   }
 
@@ -28,6 +35,17 @@ export class App implements OnInit {
     // Isso evita que a sidebar apareça brevemente ao carregar o localhost:4200 diretamente no login.
     const urlInicial = this.location.path();
     this.atualizarEstadoSidebar(urlInicial);
+
+    if (this.exibirSidebar) {
+      this.carregarPerfil();
+    }
+  }
+
+  carregarPerfil() {
+    this.authService.obterPerfil().subscribe({
+      next: (p) => this.perfil = p,
+      error: () => console.warn('Usuário não autenticado ou sessão expirada.')
+    });
   }
 
   /**

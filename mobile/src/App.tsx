@@ -2,7 +2,6 @@ import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 
-import SelecaoAcesso from './pages/selecao/SelecaoAcesso';
 import Login from './pages/login/Login';
 import Register from './pages/register/Register';
 import OrdensServicoHoje from './pages/ordens-servico/OrdensServicoHoje';
@@ -47,8 +46,6 @@ const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
-        {/* Rota inicial de seleção de perfil */}
-        <Route path="/selecao" component={SelecaoAcesso} exact />
         
         {/* Rotas de Autenticação */}
         <Route path="/login" component={Login} exact />
@@ -72,7 +69,7 @@ const App: React.FC = () => (
         
         {/* Redirecionamento Padrão */}
         <Route exact path="/">
-          <Redirect to="/selecao" />
+          <Redirect to="/login" />
         </Route>
       </IonRouterOutlet>
     </IonReactRouter>

@@ -146,6 +146,10 @@ export async function uploadFotos(
   });
 }
 
+export async function getMeuPerfil() {
+  return request('/api/auth/meu_perfil/');
+}
+
 /** RF-04 — Cria uma nova Ordem de Serviço */
 export async function criarOrdemServico(dados: DadosNovaOS) {
   return request('/api/ordens-servico/novo/', {

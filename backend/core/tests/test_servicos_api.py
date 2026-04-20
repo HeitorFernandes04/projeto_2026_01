@@ -42,16 +42,16 @@ class ServicoAPITestCase(TestCase):
         Gestor.objects.create(user=self.gestor_b, estabelecimento=self.estabelecimento_b)
         
         # 4. Criar dados base para os testes
-        self.servico_ativo_a = Servico.objects.create(
-            nome='Lavagem Completa A',
+        self.servico_a = Servico.objects.create(
+            nome='Lavação Simples',
             preco=80.00,
             duracao_estimada_minutos=45,
             estabelecimento=self.estabelecimento_a,
             is_active=True
         )
-        self.servico_ativo_b = Servico.objects.create(
-            nome='Lavagem Completa B',
-            preco=85.00,
+        self.servico_b = Servico.objects.create(
+            nome='Lavação Premium',
+            preco=49.90,
             duracao_estimada_minutos=50,
             estabelecimento=self.estabelecimento_b,
             is_active=True

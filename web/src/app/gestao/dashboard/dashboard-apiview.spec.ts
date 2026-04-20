@@ -1,4 +1,5 @@
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 
 // Import Angular compiler for JIT compilation
 import '@angular/compiler';
@@ -8,31 +9,54 @@ import { DashboardAPIView } from './dashboard-apiview';
 describe('DashboardAPIView', () => {
   let component: DashboardAPIView;
   let routerSpy: any;
+  let mockDashboardService: any;
+  let mockCdRef: any;
 
   beforeEach(() => {
     routerSpy = {
       navigate: vi.fn()
     };
+    
+    mockDashboardService = {
+      getIndicadores: vi.fn().mockReturnValue(of({
+        totalOsFinalizadas: 5,
+        receitaTotal: 100,
+        volume_por_hora: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        receita_semanal: [],
+        incidentesAtivos: 2
+      })),
+      getEficienciaEquipe: vi.fn().mockReturnValue(of([
+        { funcionarioId: 1, nomeFuncionario: 'Lavador X', totalOs: 5, tempoTotalEstimadoMinutos: 100, tempoTotalRealMinutos: 90, desvioTotalMinutos: -10 }
+      ]))
+    };
+    
+    mockCdRef = {
+      detectChanges: vi.fn()
+    };
 
     // Create component instance manually without TestBed
-    component = new DashboardAPIView(routerSpy);
+    component = new DashboardAPIView(routerSpy, mockDashboardService, mockCdRef);
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('Teste 2 (Dashboard - KPI)', () => {
-    it('deve ter dados mockados de topServicos corretamente', () => {
-      // Verifica se os dados mockados estão presentes
-      expect(component.topServicos).toBeDefined();
-      expect(component.topServicos.length).toBe(5);
-      
-      // Verifica dados do primeiro serviço
-      expect(component.topServicos[0].nome).toBe('Lavagem Completa');
-      expect(component.topServicos[0].vendas).toBe(87);
-      expect(component.topServicos[0].valor).toBe('5.220');
-      expect(component.topServicos[0].percentual).toBe(100);
+  describe('Teste de Inicialização (Dashboard API)', () => {
+    it('deve chamar carregarDados no ngOnInit', () => {
+      const spi = vi.spyOn(component, 'carregarDados');
+      component.ngOnInit();
+      expect(spi).toHaveBeenCalled();
+      expect(mockDashboardService.getIndicadores).toHaveBeenCalled();
+      expect(mockDashboardService.getEficienciaEquipe).toHaveBeenCalled();
+    });
+
+    it('deve formatar as métricas na tela usando os Observables', () => {
+      component.carregarDados();
+      expect(component.receitaHoje).toBe(100);
+      expect(component.veiculosHoje).toBe(5);
+      expect(component.incidentesAtivos).toBe(2);
+      expect(mockCdRef.detectChanges).toHaveBeenCalled();
     });
 
     it('deve ter método irParaIncidentes disponível', () => {
@@ -46,58 +70,29 @@ describe('DashboardAPIView', () => {
     });
   });
 
-  describe('Teste 4 (Ranking)', () => {
-    it('deve renderizar Top 5 Serviços baseado no array de dados mockados', () => {
-      // Verifica se o componente topServicos está populado
-      expect(component.topServicos.length).toBe(5);
-      expect(component.topServicos[0].nome).toBe('Lavagem Completa');
-      expect(component.topServicos[0].vendas).toBe(87);
-      expect(component.topServicos[0].valor).toBe('5.220');
-      expect(component.topServicos[0].percentual).toBe(100);
-      
-      // Verifica dados do segundo serviço
-      expect(component.topServicos[1].nome).toBe('Lavagem + Polimento');
-      expect(component.topServicos[1].vendas).toBe(45);
-      expect(component.topServicos[1].valor).toBe('6.750');
-      expect(component.topServicos[1].percentual).toBe(75);
-      
-      // Verifica dados do terceiro serviço
-      expect(component.topServicos[2].nome).toBe('Lavagem Expressa');
-      expect(component.topServicos[2].vendas).toBe(62);
-      expect(component.topServicos[2].valor).toBe('2.170');
-      expect(component.topServicos[2].percentual).toBe(60);
+  describe('Teste de Eficiência API', () => {
+    it('deve renderizar o Ranking baseado na API', () => {
+      component.carregarDados();
+      // Verifica se o array rankingEficiencia está populado
+      expect(component.rankingEficiencia.length).toBe(1);
+      expect(component.rankingEficiencia[0].nomeFuncionario).toBe('Lavador X');
+      expect(component.rankingEficiencia[0].desvioTotalMinutos).toBe(-10);
     });
 
-    it('deve manter integridade dos dados mockados', () => {
-      // Verifica se os dados mockados seguem o contrato esperado
-      component.topServicos.forEach(servico => {
-        expect(servico.nome).toBeTruthy();
-        expect(typeof servico.vendas).toBe('number');
-        expect(servico.valor).toBeTruthy();
-        expect(typeof servico.percentual).toBe('number');
-        expect(servico.percentual).toBeGreaterThanOrEqual(0);
-        expect(servico.percentual).toBeLessThanOrEqual(100);
-      });
+    it('deve calcular o tempo médio', () => {
+      component.carregarDados();
+      // 90 / 5 = 18
+      expect(component.tempoMedio).toBe(18);
     });
   });
 
-  describe('Teste Antiviés (Validação de Estados)', () => {
-    it('não deve quebrar quando não houver dados', () => {
-      // Simula estado vazio
-      component.topServicos = [];
+  describe('Teste Antiviés (Validação de Estados API)', () => {
+    it('não deve quebrar quando ranking retornar vazio', () => {
+      mockDashboardService.getEficienciaEquipe.mockReturnValue(of([]));
+      component.carregarDados();
       
-      // Deve manter o array vazio sem erros
-      expect(component.topServicos.length).toBe(0);
-    });
-
-    it('deve ter estrutura de dados consistente', () => {
-      // Verifica se todos os campos necessários existem
-      component.topServicos.forEach(servico => {
-        expect(servico).toHaveProperty('nome');
-        expect(servico).toHaveProperty('vendas');
-        expect(servico).toHaveProperty('valor');
-        expect(servico).toHaveProperty('percentual');
-      });
+      expect(component.rankingEficiencia.length).toBe(0);
+      expect(component.tempoMedio).toBe(0);
     });
   });
 });
