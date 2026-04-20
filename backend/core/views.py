@@ -233,3 +233,65 @@ class DashboardAPIView(APIView):
             'totalOsFinalizadas': total_os,
             'receitaTotal': round(float(receita_total), 2)
         })
+
+class EficienciaAPIView(APIView):
+    """
+    GET /api/gestao/gestor/dashboard/eficiencia-equipe
+    RF-20: Relatório de Eficiência da Equipe
+    """
+    permission_classes = [IsAuthenticated, IsGestorOnly]
+
+    def get(self, request):
+        from operacao.models import OrdemServico
+        data_ini_str = request.query_params.get('dataInicio')
+        data_fim_str = request.query_params.get('dataFim')
+        
+        # Intervalo default: última semana caso não seja provido
+        data_fim = parse_date(data_fim_str) if data_fim_str else timezone.localtime().date()
+        data_ini = parse_date(data_ini_str) if data_ini_str else (data_fim - timezone.timedelta(days=7))
+        
+        if not data_fim or not data_ini:
+            return Response({'error': 'Datas fornecidas inválidas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        gestor = request.user.perfil_gestor
+        
+        ordens = OrdemServico.objects.filter(
+            estabelecimento=gestor.estabelecimento,
+            status='FINALIZADO',
+            horario_finalizacao__date__gte=data_ini,
+            horario_finalizacao__date__lte=data_fim
+        ).select_related('funcionario', 'servico')
+
+        # Agrupamento via Python Dictionary (Robusto para cross-db tests vs DurationField bugs)
+        dados_equipe = {}
+        
+        for os in ordens:
+            func_id = os.funcionario.id if os.funcionario else 0
+            if func_id not in dados_equipe:
+                # O ID pode ser None teoricamente (usuario deletado mas protected não deixa se tiver modelado correto),
+                nome = 'Sem Nome'
+                if os.funcionario:
+                    nome = getattr(os.funcionario, 'name', None) or os.funcionario.username
+                
+                dados_equipe[func_id] = {
+                    'funcionarioId': func_id,
+                    'nomeFuncionario': nome,
+                    'totalOs': 0,
+                    'tempoTotalEstimadoMinutos': 0,
+                    'tempoTotalRealMinutos': 0,
+                }
+            
+            duracao_real = 0
+            if os.horario_finalizacao and os.horario_lavagem:
+                duracao_real = round((os.horario_finalizacao - os.horario_lavagem).total_seconds() / 60)
+            
+            dados_equipe[func_id]['totalOs'] += 1
+            dados_equipe[func_id]['tempoTotalEstimadoMinutos'] += os.servico.duracao_estimada_minutos
+            dados_equipe[func_id]['tempoTotalRealMinutos'] += duracao_real
+            
+        resultados = []
+        for item in dados_equipe.values():
+            item['desvioTotalMinutos'] = item['tempoTotalRealMinutos'] - item['tempoTotalEstimadoMinutos']
+            resultados.append(item)
+            
+        return Response(resultados)

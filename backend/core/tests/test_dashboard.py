@@ -55,3 +55,37 @@ class TestDashboardEEficiencia(APITestCase):
         
         response = self.client.get(self.url_indicadores)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_eficiencia_equipe_rf20_sucesso(self):
+        """Teste 2: Consultar relatório de eficiência para o período corrente."""
+        hoje = timezone.localtime()
+        url_eficiencia = '/api/gestao/gestor/dashboard/eficiencia-equipe/'
+        
+        # Criação Funcionário A
+        func_a = UserFactory(username='func_a_efi')
+        
+        # OS para Funcionario A: Duração real (60min) vs Estimada (30min) -> Desvio: +30
+        os_a = OrdemServicoFactory(
+            estabelecimento=self.estabelecimento,
+            funcionario=func_a,
+            servico=self.servico_1,  # Duracao estimada = 30min
+            status='FINALIZADO'
+        )
+        os_a.horario_lavagem = hoje - timedelta(minutes=60)
+        os_a.horario_finalizacao = hoje
+        os_a.save()
+        
+        self.client.force_authenticate(user=self.user_gestor)
+        data_param = hoje.date().strftime('%Y-%m-%d')
+        response = self.client.get(f"{url_eficiencia}?dataInicio={data_param}&dataFim={data_param}")
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Deve retornar uma lista contendo os stats de func_a
+        self.assertEqual(len(response.data), 1)
+        data_a = response.data[0]
+        
+        self.assertEqual(data_a['funcionarioId'], func_a.id)
+        self.assertEqual(data_a['totalOs'], 1)
+        self.assertEqual(data_a['tempoTotalEstimadoMinutos'], 30)
+        self.assertEqual(data_a['tempoTotalRealMinutos'], 60)
+        self.assertEqual(data_a['desvioTotalMinutos'], 30)
