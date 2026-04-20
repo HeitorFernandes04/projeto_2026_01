@@ -22,7 +22,12 @@
   <div class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>{{ modoEdicao ? 'Editar Serviço' : 'Novo Serviço' }}</h3>
+        <h3>
+          {{ tipoModal === 'servico' ? 
+            (modoEdicao ? 'Editar Serviço' : 'Novo Serviço') : 
+            (modoEdicao ? 'Editar Funcionário' : 'Novo Funcionário') 
+          }}
+        </h3>
         <button class="modal-close" (click)="fecharModal()">&times;</button>
       </div>
       <div class="modal-body">
@@ -31,25 +36,65 @@
           {{ erroValidacao }}
         </div>
         }
-        <div class="form-group">
-          <label for="nome">Nome do Serviço *</label>
-          <input type="text" id="nome" [(ngModel)]="novoServico.nome" placeholder="Ex: Lavagem Completa" required>
-        </div>
-        <div class="form-group">
-          <label for="preco">Preço (R$) *</label>
-          <input type="number" id="preco" [(ngModel)]="novoServico.preco" step="0.01" placeholder="0.00" min="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="duracao">Duração Estimada (minutos) *</label>
-          <input type="number" id="duracao" [(ngModel)]="novoServico.duracao_estimada_minutos" placeholder="45" min="1" required>
-          <small class="form-hint">Obrigatório para cálculos de produtividade da equipe.</small>
-        </div>
+        
+        @if (tipoModal === 'servico') {
+          <div class="form-group">
+            <label for="nome">Nome do Serviço *</label>
+            <input type="text" id="nome" [(ngModel)]="novoServico.nome" placeholder="Ex: Lavagem Completa" required>
+          </div>
+          <div class="form-group">
+            <label for="preco">Preço (R$) *</label>
+            <input type="number" id="preco" [(ngModel)]="novoServico.preco" step="0.01" placeholder="0.00" min="0.01" required>
+          </div>
+          <div class="form-group">
+            <label for="duracao">Duração Estimada (minutos) *</label>
+            <input type="number" id="duracao" [(ngModel)]="novoServico.duracao_estimada_minutos" placeholder="45" min="1" required>
+            <small class="form-hint">Obrigatório para cálculos de produtividade da equipe.</small>
+          </div>
+        } @else {
+          <div class="form-group">
+            <label for="f-nome">Nome Completo *</label>
+            <input type="text" id="f-nome" [(ngModel)]="novoFuncionario.name" placeholder="Nome do colaborador" required>
+          </div>
+          <div class="form-group">
+            <label for="f-email">E-mail de Acesso *</label>
+            <input type="email" id="f-email" [(ngModel)]="novoFuncionario.email" placeholder="exemplo@lavame.com.br" required>
+          </div>
+          <div class="form-group" *ngIf="!modoEdicao">
+            <label for="f-pass">Senha Inicial *</label>
+            <input type="password" id="f-pass" [(ngModel)]="novoFuncionario.password" placeholder="Mínimo 6 caracteres" required>
+          </div>
+          <div class="form-group">
+            <label for="f-cargo">Cargo/Função *</label>
+            <div style="position: relative;">
+              <select id="f-cargo" [(ngModel)]="novoFuncionario.cargo" class="form-select-premium">
+                @for (cargo of cargosDisponiveis; track cargo) {
+                  <option [value]="cargo">{{ cargo }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="form-group" *ngIf="modoEdicao">
+            <label class="toggle-label-premium">
+              <span>Status da Conta</span>
+              <div class="switch-container-premium">
+                <span class="status-text" [class.ativo]="novoFuncionario.is_active">{{ novoFuncionario.is_active ? 'ATIVO' : 'INATIVO' }}</span>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="novoFuncionario.is_active">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </label>
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" (click)="fecharModal()">Cancelar</button>
-        <button class="btn-primary-blue" (click)="salvarServico()"
-                [disabled]="!novoServico.nome || novoServico.preco <= 0 || !novoServico.duracao_estimada_minutos">
-          {{ modoEdicao ? 'Atualizar Serviço' : 'Salvar Serviço' }}
+        <button class="btn-primary-blue" (click)="salvarGeral()">
+          {{ tipoModal === 'servico' ? 
+            (modoEdicao ? 'Atualizar Serviço' : 'Salvar Serviço') : 
+            (modoEdicao ? 'Salvar Alterações' : 'Cadastrar Funcionário') 
+          }}
         </button>
       </div>
     </div>
@@ -119,9 +164,18 @@
           <h3>Gestão de Funcionários</h3>
           <p>Gerencie a equipe de colaboradores e monitore a eficiência operacional</p>
         </div>
-        <button class="btn-primary-blue" (click)="abrirModal()">
-          <span class="material-symbols-outlined">add</span> Novo Funcionário
-        </button>
+        <div class="table-actions-header">
+           <div class="toggle-container" (click)="toggleExibirInativos()">
+             <span class="toggle-label">Mostrar desativados</span>
+             <label class="switch-small" (click)="$event.stopPropagation()">
+               <input type="checkbox" [(ngModel)]="exibirInativos" (ngModelChange)="onToggleChange($event)">
+               <span class="slider"></span>
+             </label>
+           </div>
+           <button class="btn-primary-blue" (click)="abrirModal('funcionario')">
+             <span class="material-symbols-outlined">add</span> Novo Funcionário
+           </button>
+        </div>
       </div>
       <div class="table-container">
         <table class="industrial-table">
@@ -130,39 +184,41 @@
               <th class="col-nome">NOME</th>
               <th class="col-email">E-MAIL</th>
               <th class="col-cargo">CARGO</th>
-              <th class="col-status">STATUS</th>
               <th class="col-acoes text-right">AÇÕES</th>
             </tr>
           </thead>
           <tbody>
-            @for (f of funcionarios; track f.nome) {
-              <tr>
+            @for (f of funcionariosFiltrados; track f.id) {
+              <tr [class.row-inactive]="!f.is_active">
                 <td class="col-nome">
                   <div class="user-row">
-                    <div class="avatar-circle">{{ f.nome.charAt(0) }}</div>
+                    <div class="avatar-circle">{{ f.name.charAt(0) }}</div>
                     <div class="user-data">
-                      <span class="user-name">{{ f.nome }}</span>
+                      <span class="user-name">{{ f.name }}</span>
                       <div class="user-metrics">
-                        <span class="time"><span class="material-symbols-outlined">schedule</span> {{ f.tempoMedio }}</span>
-                        <span class="efficiency" [class.up]="f.tendencia === 'up'" [class.down]="f.tendencia === 'down'">
-                          {{ f.tendencia === 'up' ? '↑' : '↓' }} {{ f.eficiencia }}%
-                        </span>
+                        <span class="activity-label">ATIVIDADE</span>
+                        <div class="activity-data">
+                          <span class="material-symbols-outlined">schedule</span>
+                          <span class="time-text">{{ getUltimaAtividade(f) }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </td>
                 <td class="col-email">{{ f.email }}</td>
-                <td class="col-cargo"><span class="cargo-pill">{{ f.cargo }}</span></td>
-                <td class="col-status">
-                  <label class="switch">
-                    <input type="checkbox" [checked]="f.ativo">
-                    <span class="slider"></span>
-                  </label>
+                <td class="col-cargo">
+                  <div style="display: flex; align-items: center;">
+                    <span class="cargo-pill" [ngClass]="f.cargo.toLowerCase()">{{ f.cargo }}</span>
+                    @if (!f.is_active) {
+                      <span class="cargo-pill inativo-tag">Inativo</span>
+                    }
+                  </div>
                 </td>
                 <td class="col-acoes text-right">
                   <div class="action-group">
-                    <button class="btn-action edit"><span class="material-symbols-outlined">edit</span>Editar</button>
-                    <button class="btn-action disable"><span class="material-symbols-outlined">person_remove</span>Desativar</button>
+                    <button class="btn-edit-action" (click)="editarFuncionario(f)">
+                      <span class="material-symbols-outlined">edit</span>Editar
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -170,9 +226,9 @@
           </tbody>
         </table>
         <div class="setup-footer-metrics">
-          <div class="metric-card"><span class="m-label">Total de Funcionários</span><span class="m-value white">{{ funcionarios.length }}</span></div>
-          <div class="metric-card"><span class="m-label">Funcionários Ativos</span><span class="m-value blue">4</span></div>
-          <div class="metric-card"><span class="m-label">Eficiência Média</span><span class="m-value blue-light">103%</span></div>
+          <div class="metric-card"><span class="m-label">Total de Equipe</span><span class="m-value white">{{ funcionarios.length }}</span></div>
+          <div class="metric-card"><span class="m-label">Ativos no Pátio</span><span class="m-value blue">{{ totalAtivos }}</span></div>
+          <div class="metric-card"><span class="m-label">Performance Unidade</span><span class="m-value blue-light">103%</span></div>
         </div>
       </div>
     </section>
@@ -206,8 +262,12 @@
         </div>
         <div class="form-group">
           <label for="cnpj">CNPJ *</label>
-          <input type="text" id="cnpj" [(ngModel)]="unidade.cnpj" placeholder="12.345.678/0001-90" maxlength="14" required>
-          <small class="form-hint">Apenas números (14 dígitos)</small>
+          <input type="text" id="cnpj" 
+                 [(ngModel)]="unidade.cnpj" 
+                 (input)="formatarEntradaCNPJ($event)"
+                 placeholder="00.000.000/0000-00" 
+                 maxlength="18" required>
+          <small class="form-hint">Formato: 00.000.000/0000-00</small>
         </div>
         <div class="form-group">
           <label for="endereco">Endereço Completo</label>
@@ -230,7 +290,9 @@
           </div>
         </div>
         <div class="form-actions-footer">
-          <button class="btn-save-large" (click)="salvarUnidade()">Salvar Alterações na Unidade</button>
+          <button class="btn-save-large" (click)="salvarUnidade()" [disabled]="salvandoUnidade">
+            {{ salvandoUnidade ? 'Salvando...' : 'Salvar Alterações na Unidade' }}
+          </button>
         </div>
       </div>
     </section>
