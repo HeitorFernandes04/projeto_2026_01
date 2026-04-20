@@ -211,6 +211,26 @@ class OrdemServicoService:
         return os
 
 
+class KanbanService:
+    """RF-14: Agrupa OS operacionais do dia por status para o quadro Kanban."""
+
+    COLUNAS = ['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO']
+
+    @staticmethod
+    def listar_por_estabelecimento(estabelecimento):
+        hoje = timezone.localdate()
+        return (
+            OrdemServico.objects
+            .filter(
+                estabelecimento=estabelecimento,
+                status__in=KanbanService.COLUNAS,
+                data_hora__date=hoje,
+            )
+            .select_related('veiculo', 'servico')
+            .order_by('data_hora')
+        )
+
+
 class IncidenteService:
     """Serviço para isolar o fluxo de erros e incidentes operacionais."""
 

@@ -174,6 +174,31 @@ class TagPecaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class KanbanCardSerializer(serializers.ModelSerializer):
+    """RF-14: Card do Kanban com campos exigidos pelo CA-02."""
+
+    placa = serializers.CharField(source='veiculo.placa')
+    modelo = serializers.CharField(source='veiculo.modelo')
+    servico = serializers.CharField(source='servico.nome')
+    duracao_estimada_minutos = serializers.IntegerField(source='servico.duracao_estimada_minutos')
+    tempo_decorrido_minutos = serializers.SerializerMethodField()
+    is_atrasado = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrdemServico
+        fields = ['id', 'placa', 'modelo', 'servico', 'duracao_estimada_minutos', 'tempo_decorrido_minutos', 'is_atrasado']
+
+    def get_tempo_decorrido_minutos(self, obj):
+        inicio = obj.horario_lavagem or obj.data_hora
+        delta = timezone.now() - inicio
+        return int(delta.total_seconds() / 60)
+
+    def get_is_atrasado(self, obj):
+        if obj.status != 'EM_EXECUCAO':
+            return False
+        return self.get_tempo_decorrido_minutos(obj) > obj.servico.duracao_estimada_minutos
+
+
 class IncidenteOSSerializer(serializers.ModelSerializer):
     class Meta:
         model = IncidenteOS

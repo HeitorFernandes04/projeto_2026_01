@@ -1,6 +1,6 @@
 import factory
 from django.utils import timezone
-from accounts.models import User, Estabelecimento, CargoChoices, Funcionario
+from accounts.models import User, Estabelecimento, CargoChoices, Funcionario, Gestor
 from core.models import Servico, Veiculo, TagPeca  # Ajuste de import conforme nova estrutura
 from operacao.models import OrdemServico, MidiaOrdemServico  # IncidenteOS não existe ainda
 
@@ -87,5 +87,13 @@ class TagPecaFactory(factory.django.DjangoModelFactory):
     
     nome = factory.Sequence(lambda n: f'Peça_{n}')
     categoria = 'frente'
+
+class GestorFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Gestor
+
+    user = factory.SubFactory(UserFactory)  # sem estabelecimento → sem Funcionario
+    estabelecimento = factory.SubFactory(EstabelecimentoFactory)
+
 
 # IncidenteOSFactory removido pois o modelo IncidenteOS não existe ainda em operacao.models

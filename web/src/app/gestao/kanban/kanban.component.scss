@@ -112,7 +112,7 @@
       .car-icon-box { width: 36px; height: 36px; background: rgba(0, 102, 255, 0.1); color: #0066ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
       .vehicle-info { .plate { color: #fff; font-weight: 800; font-size: 16px; display: block; } .model { color: #8b949e; font-size: 11px; } }
     }
-    .service-info { margin-bottom: 16px; label { color: #484f58; font-size: 10px; font-weight: 700; text-transform: uppercase; } p { color: #fff; font-size: 14px; font-weight: 700; margin: 2px 0 0; } }
+    .service-info { margin-bottom: 16px; .service-label { color: #484f58; font-size: 10px; font-weight: 700; text-transform: uppercase; display: block; } p { color: #fff; font-size: 14px; font-weight: 700; margin: 2px 0 0; } }
     .timer-row { display: flex; align-items: center; gap: 6px; color: #fff; font-size: 16px; margin-bottom: 12px; strong { font-weight: 900; } }
     .progress-container { height: 4px; background: #161b22; border-radius: 2px; overflow: hidden; .progress-bar { height: 100%; background: #0066ff; box-shadow: 0 0 10px rgba(0, 102, 255, 0.4); &.warning { background: #ff3b30; } } }
   }
@@ -138,6 +138,56 @@
       }
     }
   }
+
+  /* Coluna vazia */
+  .empty-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 0;
+    color: #484f58;
+    font-size: 12px;
+
+    .material-symbols-outlined { font-size: 28px; }
+  }
+
+  /* Estados de carregamento e erro */
+  .state-message {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 40px;
+    color: var(--lm-text-muted);
+    font-size: 14px;
+
+    .material-symbols-outlined { font-size: 40px; }
+
+    &.erro {
+      color: var(--lm-accent);
+      button {
+        margin-top: 8px;
+        background: transparent;
+        border: 1px solid var(--lm-accent);
+        color: var(--lm-accent);
+        padding: 8px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        &:hover { background: rgba(255, 59, 48, 0.1); }
+      }
+    }
+
+    .spin { animation: spin 1s linear infinite; }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 @keyframes orange-pulse {

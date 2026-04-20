@@ -15,8 +15,9 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .permissions import IsFuncionarioDaOS
+from .permissions import IsFuncionarioDaOS, IsGestor
 from .serializers import (
+    KanbanCardSerializer,
     OrdemServicoSerializer,
     CriarOrdemServicoSerializer,
     HistoricoOrdemServicoFiltroSerializer,
@@ -26,7 +27,7 @@ from .serializers import (
     ProximaEtapaSerializer,
     FinalizarIndustrialSerializer,
 )
-from .services import OrdemServicoService, MidiaOrdemServicoService
+from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService
 
 
 class OrdensServicoHojeView(APIView):
@@ -214,6 +215,26 @@ class HorariosLivresView(APIView):
             return Response({'horarios': horarios})
         except Exception as e:
             return Response({'detail': str(e)}, status=400)
+
+
+class KanbanAPIView(APIView):
+    """RF-14: GET /api/ordens-servico/kanban/ — OS do dia agrupadas por status."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+
+    def get(self, request):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+        ordens = KanbanService.listar_por_estabelecimento(estabelecimento)
+
+        kanban = {col: [] for col in KanbanService.COLUNAS}
+        for os in ordens:
+            kanban[os.status].append(os)
+
+        return Response({
+            col: KanbanCardSerializer(items, many=True).data
+            for col, items in kanban.items()
+        })
 
 
 class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
