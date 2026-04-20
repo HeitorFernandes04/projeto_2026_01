@@ -31,6 +31,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenObtainPair'
           description: ''
+  /api/auth/meu_perfil/:
+    get:
+      operationId: auth_meu_perfil_retrieve
+      description: Endpoint para o usuário logado consultar seu próprio perfil
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/auth/register/:
     post:
       operationId: auth_register_create
@@ -80,6 +93,85 @@ paths:
       description: |-
         GET /api/gestao/estabelecimento/ - Retorna dados do estabelecimento
         PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/funcionarios/:
+    get:
+      operationId: gestao_funcionarios_retrieve
+      description: |-
+        GET /api/gestao/funcionarios/ - Lista funcionários do estabelecimento
+        POST /api/gestao/funcionarios/ - Cadastra novo funcionário
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: gestao_funcionarios_create
+      description: |-
+        GET /api/gestao/funcionarios/ - Lista funcionários do estabelecimento
+        POST /api/gestao/funcionarios/ - Cadastra novo funcionário
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/funcionarios/{id}/:
+    patch:
+      operationId: gestao_funcionarios_partial_update
+      description: PATCH /api/gestao/funcionarios/<id>/ - Atualiza dados do funcionário
+        (Incluindo Status)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/gestor/dashboard/eficiencia-equipe/:
+    get:
+      operationId: gestao_gestor_dashboard_eficiencia_equipe_retrieve
+      description: |-
+        GET /api/gestao/gestor/dashboard/eficiencia-equipe
+        RF-20: Relatório de Eficiência da Equipe
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/gestor/dashboard/indicadores/:
+    get:
+      operationId: gestao_gestor_dashboard_indicadores_retrieve
+      description: |-
+        GET /api/gestao/gestor/dashboard/indicadores
+        RF-19: Dashboard Executivo Básico
       tags:
       - gestao
       security:
@@ -258,6 +350,54 @@ paths:
                 items:
                   $ref: '#/components/schemas/TagPeca'
           description: ''
+  /api/incidentes-os/{id}/auditoria/:
+    get:
+      operationId: incidentes_os_auditoria_retrieve
+      description: 'RF-15/RF-16: Central, auditoria e desbloqueio de incidentes pelo
+        gestor.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - incidentes-os
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/incidentes-os/{id}/resolver/:
+    patch:
+      operationId: incidentes_os_resolver_partial_update
+      description: 'RF-15/RF-16: Central, auditoria e desbloqueio de incidentes pelo
+        gestor.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - incidentes-os
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/incidentes-os/pendentes/:
+    get:
+      operationId: incidentes_os_pendentes_retrieve
+      description: 'RF-15/RF-16: Central, auditoria e desbloqueio de incidentes pelo
+        gestor.'
+      tags:
+      - incidentes-os
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/ordens-servico/{id}/:
     get:
       operationId: ordens_servico_retrieve
@@ -495,12 +635,27 @@ components:
           allOf:
           - $ref: '#/components/schemas/CargoEnum'
           default: LAVADOR
+        is_active:
+          type: boolean
+          title: Ativo
+          description: Indica que o usuário será tratado como ativo. Ao invés de excluir
+            contas de usuário, desmarque isso.
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Último login
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Data de registro
       required:
-      - email
-      - estabelecimento
+      - date_joined
       - id
+      - last_login
       - name
-      - password
       - username
     PatchedServico:
       type: object
