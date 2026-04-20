@@ -6,6 +6,7 @@ import { finalize } from 'rxjs';
 import { ServicoService, Servico } from '../../services/servico.service';
 import { EstabelecimentoService, Estabelecimento } from '../../services/estabelecimento.service';
 import { FuncionarioService, Funcionario } from '../../services/funcionario.service';
+import { DashboardService } from '../../services/dashboard.service';
 
 @Component({
   selector: 'app-setup',
@@ -63,11 +64,15 @@ export class SetupComponent implements OnInit {
   exibirInativos: boolean = false;
   funcionarioEmEdicao: Funcionario | null = null;
 
+  // Performance da Equipe (RF-20)
+  performanceGlobalMinutos: number = 0;
+  
   constructor(
     private router: Router,
     private servicoService: ServicoService,
     private estabelecimentoService: EstabelecimentoService,
     private funcionarioService: FuncionarioService,
+    private dashboardService: DashboardService,
     private cdRef: ChangeDetectorRef
   ) {}
 
@@ -75,6 +80,19 @@ export class SetupComponent implements OnInit {
     this.carregarServicos();
     this.carregarDadosUnidade();
     this.carregarFuncionarios();
+    this.carregarPerformanceEquipe();
+  }
+
+  carregarPerformanceEquipe() {
+    this.dashboardService.getEficienciaEquipe().subscribe({
+      next: (dados) => {
+        let desvioTotal = 0;
+        dados.forEach(d => desvioTotal += d.desvioTotalMinutos);
+        this.performanceGlobalMinutos = desvioTotal;
+        this.cdRef.detectChanges();
+      },
+      error: (err) => console.error('Erro performance', err)
+    });
   }
 
   /**

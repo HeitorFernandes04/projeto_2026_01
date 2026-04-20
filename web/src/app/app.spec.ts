@@ -10,6 +10,8 @@ describe('AppComponent - Fluxo de Gestão Protegido Unificado', () => {
   let mockRouter: any;
   let mockLocation: any;
 
+  let mockAuthService: any;
+
   beforeEach(() => {
     mockRouter = {
       events: of(new NavigationEnd(1, '/login', '/login')),
@@ -20,8 +22,13 @@ describe('AppComponent - Fluxo de Gestão Protegido Unificado', () => {
       path: () => '/login'
     };
 
+    mockAuthService = {
+      logout: vi.fn(),
+      estaLogado: vi.fn()
+    };
+
     // Criar componente manualmente sem TestBed
-    component = new App(mockRouter, mockLocation);
+    component = new App(mockRouter, mockLocation, mockAuthService);
   });
 
   it('should create', () => {
