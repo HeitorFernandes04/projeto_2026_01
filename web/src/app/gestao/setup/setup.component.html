@@ -228,7 +228,7 @@
         <div class="setup-footer-metrics">
           <div class="metric-card"><span class="m-label">Total de Equipe</span><span class="m-value white">{{ funcionarios.length }}</span></div>
           <div class="metric-card"><span class="m-label">Ativos no Pátio</span><span class="m-value blue">{{ totalAtivos }}</span></div>
-          <div class="metric-card"><span class="m-label">Performance Unidade</span><span class="m-value blue-light">103%</span></div>
+          <div class="metric-card"><span class="m-label">Performance Unidade</span><span class="m-value blue-light">{{ performanceGlobalMinutos > 0 ? '+' : '' }}{{ performanceGlobalMinutos }} min</span></div>
         </div>
       </div>
     </section>

@@ -11,7 +11,7 @@
       </button>
       <div class="date-selector">
         <span class="date-label">Data</span>
-        <span class="date-value">17 ABR 2026</span>
+        <span class="date-value">{{ hojeStr }}</span>
       </div>
     </div>
   </header>
@@ -22,9 +22,10 @@
         <div class="text-info">
           <div class="top-row">
             <div class="icon-circle"><span class="material-symbols-outlined">attach_money</span></div>
-            <span class="trend positive">↗ +12%</span>
+            <!-- Idealmente viria de uma API de Growth vs Ontem, está como style fixo -->
+            <span class="trend positive">Live</span> 
           </div>
-          <h2 class="value">R$ 4.890</h2>
+          <h2 class="value">{{ receitaHoje | currency:'BRL':'symbol':'1.2-2' }}</h2>
           <span class="label">Receita Hoje</span>
         </div>
       </div>
@@ -34,9 +35,9 @@
         <div class="text-info">
           <div class="top-row">
             <div class="icon-circle"><span class="material-symbols-outlined">directions_car</span></div>
-            <span class="trend positive">↗ +8%</span>
+            <span class="trend positive">Live</span>
           </div>
-          <h2 class="value">42</h2>
+          <h2 class="value">{{ veiculosHoje }}</h2>
           <span class="label">Veículos Hoje</span>
         </div>
       </div>
@@ -46,21 +47,21 @@
         <div class="text-info">
           <div class="top-row">
             <div class="icon-circle"><span class="material-symbols-outlined">schedule</span></div>
-            <span class="trend negative">↘ -5%</span>
+            <span class="trend neutral">Eficiência Geral</span>
           </div>
-          <h2 class="value">38 min</h2>
-          <span class="label">Tempo Médio</span>
+          <h2 class="value">{{ tempoMedio }} min</h2>
+          <span class="label">Tempo Médio Gasto</span>
         </div>
       </div>
     </div>
-    <div class="card-kpi alert-card">
+    <div class="card-kpi alert-card" (click)="irParaIncidentes()" style="cursor: pointer;">
       <div class="card-content">
         <div class="text-info">
           <div class="top-row">
             <div class="icon-circle"><span class="material-symbols-outlined">warning</span></div>
             <span class="status-text">Atenção</span>
           </div>
-          <h2 class="value">2</h2>
+          <h2 class="value">{{ incidentesAtivos }}</h2>
           <span class="label">Incidentes Ativos</span>
         </div>
       </div>
@@ -73,30 +74,17 @@
         <h3>Receita Semanal</h3>
         <p>Comparativo dos últimos 7 dias</p>
       </div>
-      <div class="chart-container">
-        <div class="area-chart-mock">
-          <div class="graph-canvas">
-            <div class="blue-wave-line"></div>
-            <div class="blue-gradient-fill"></div>
-          </div>
-        </div>
+      <div class="chart-container" style="position: relative; height: 180px;">
+         <canvas #receitaChart></canvas>
       </div>
     </div>
     <div class="chart-card">
       <div class="chart-header">
         <h3>Volume de Veículos</h3>
-        <p>Distribuição por hora do dia</p>
+        <p>Distribuição do dia (08h às 18h)</p>
       </div>
-      <div class="chart-container">
-        <div class="line-chart-mock">
-          <div class="graph-canvas">
-            <div class="green-dot-line">
-              <span class="dot" style="bottom: 10%; left: 10%"></span>
-              <span class="dot active" style="bottom: 85%; left: 50%"></span>
-              <span class="dot" style="bottom: 30%; left: 90%"></span>
-            </div>
-          </div>
-        </div>
+      <div class="chart-container" style="position: relative; height: 180px;">
+         <canvas #veiculosChart></canvas>
       </div>
     </div>
   </section>
@@ -104,48 +92,39 @@
   <section class="bottom-grid">
     <div class="list-card">
       <div class="card-header">
-        <h3>Top Serviços</h3>
-        <button class="view-all">Ver todos</button>
+        <h3>Ranking de Produtividade</h3>
+        <button class="view-all">Fechamento Mensal</button>
       </div>
-      <div class="ranking-list">
-        <div class="ranking-item">
+      <div class="ranking-list" *ngIf="rankingEficiencia.length > 0; else noRanking">
+        <div class="ranking-item" *ngFor="let prof of rankingEficiencia; let i = index">
           <div class="service-info">
-            <span class="rank-pos">1º</span>
-            <span class="service-name">Lavagem VIP</span>
+            <span class="rank-pos">{{ i + 1 }}º</span>
+            <span class="service-name">{{ prof.nomeFuncionario }}</span>
+            <span class="car-model" style="margin-left:8px; font-size:12px; color:#888;">{{ prof.totalOs }} OS's</span>
           </div>
-          <div class="service-stats">
-            <span class="count">142</span>
-            <span class="percentage p-high">45%</span>
-          </div>
-        </div>
-        <div class="ranking-item">
-          <div class="service-info">
-            <span class="rank-pos">2º</span>
-            <span class="service-name">Ducha Rápida</span>
-          </div>
-          <div class="service-stats">
-            <span class="count">89</span>
-            <span class="percentage p-med">28%</span>
-          </div>
-        </div>
-        <div class="ranking-item">
-          <div class="service-info">
-            <span class="rank-pos">3º</span>
-            <span class="service-name">Higienização Interna</span>
-          </div>
-          <div class="service-stats">
-            <span class="count">54</span>
-            <span class="percentage p-low">17%</span>
+          <div class="service-stats" style="display:flex; gap:10px; align-items:center;">
+             <!-- Desvio: se for negativo = superou meta (verde), se positivo = demorou mais (vermelho) -->
+             <span style="font-size: 13px;" [ngStyle]="{'color': prof.desvioTotalMinutos <= 0 ? '#2ECC71' : '#E74C3C'}">
+                 {{ prof.desvioTotalMinutos > 0 ? '+' : '' }}{{ prof.desvioTotalMinutos }} min
+             </span>
+             <span class="percentage" [ngClass]="{'p-high': prof.desvioTotalMinutos <= 0, 'p-low': prof.desvioTotalMinutos > 0}">OEE</span>
           </div>
         </div>
       </div>
+      <ng-template #noRanking>
+          <div style="padding: 20px; text-align: center; color: #888;">
+             Nenhum histórico de execução hoje.
+          </div>
+      </ng-template>
     </div>
 
+    <!-- Mantivemos a lista visual padrão que foi solicitada para manter a estética para outras sessões -->
     <div class="list-card">
       <div class="card-header">
         <h3>Entradas Recentes</h3>
         <span class="live-indicator">● Live</span>
       </div>
+      <!-- Esse painel poderia ser anexado via WebSockets no futuro (Fluxo de Patio) -->
       <div class="activity-list">
         <div class="activity-item">
           <div class="plate-box">BRA2E19</div>
