@@ -54,15 +54,14 @@
         </div>
       </div>
     </div>
-    <div class="card-kpi alert-card">
+    <div class="card-kpi alert-card" (click)="irParaIncidentes()" style="cursor: pointer;">
       <div class="card-content">
         <div class="text-info">
           <div class="top-row">
             <div class="icon-circle"><span class="material-symbols-outlined">warning</span></div>
             <span class="status-text">Atenção</span>
           </div>
-          <!-- TODO: Trazer isso do Endpoint de Incidentes depois -->
-          <h2 class="value">2</h2>
+          <h2 class="value">{{ incidentesAtivos }}</h2>
           <span class="label">Incidentes Ativos</span>
         </div>
       </div>

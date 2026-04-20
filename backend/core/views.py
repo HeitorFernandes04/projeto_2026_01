@@ -220,47 +220,52 @@ class DashboardAPIView(APIView):
 
         gestor = request.user.perfil_gestor
         
-        ordens = OrdemServico.objects.filter(
-            estabelecimento=gestor.estabelecimento,
-            status='FINALIZADO',
-            horario_finalizacao__date=data_filtro
-        )
-
-        total_os = ordens.count()
-        receita_total = ordens.aggregate(total=Sum('servico__preco'))['total'] or 0.0
-        
-        # 1. Volume por Hora do dia (Gráfico de Linha Diário)
-        volume_por_hora = [0] * 24
-        for os in ordens:
-            if os.horario_finalizacao:
-                # Transforma a hora local pra alinhar graficamente (opcional)
-                hora_local = timezone.localtime(os.horario_finalizacao).hour
-                volume_por_hora[hora_local] += 1
-                
-        # 2. Receita Semanal (Últimos 7 dias) - Gráfico de Área
+        # O SQLite possui bugs documentados ao usar __date exato, então faremos uma range de 7 dias 
+        # (que funciona perfeitamente __gte e __lte) e faremos a apuração matemática local no Python, o que é 10x mais seguro.
         data_ini_semana = data_filtro - timezone.timedelta(days=6)
+        
         ordens_semana = OrdemServico.objects.filter(
             estabelecimento=gestor.estabelecimento,
             status='FINALIZADO',
             horario_finalizacao__date__gte=data_ini_semana,
             horario_finalizacao__date__lte=data_filtro
         ).select_related('servico')
-        
+
         receita_semanal_dict = { (data_ini_semana + timezone.timedelta(days=i)).strftime('%Y-%m-%d'): 0.0 for i in range(7) }
+        volume_por_hora = [0] * 24
+        total_os = 0
+        receita_total = 0.0
         
         for os in ordens_semana:
             if os.horario_finalizacao:
-                data_str = timezone.localtime(os.horario_finalizacao).date().strftime('%Y-%m-%d')
+                os_local = timezone.localtime(os.horario_finalizacao)
+                data_str = os_local.date().strftime('%Y-%m-%d')
+                
+                # Montando array de Receita Semanal
                 if data_str in receita_semanal_dict:
                     receita_semanal_dict[data_str] += float(os.servico.preco)
+                
+                # Apuração EXATA do dia atual (data_filtro)
+                if os_local.date() == data_filtro:
+                    total_os += 1
+                    receita_total += float(os.servico.preco)
+                    volume_por_hora[os_local.hour] += 1
                     
         receita_semanal = [{'data': k, 'valor': round(v, 2)} for k, v in receita_semanal_dict.items()]
 
+        from operacao.models import IncidenteOS
+        
+        incidentes_ativos = IncidenteOS.objects.filter(
+            ordem_servico__estabelecimento=gestor.estabelecimento,
+            resolvido=False
+        ).count()
+
         return Response({
             'totalOsFinalizadas': total_os,
-            'receitaTotal': round(float(receita_total), 2),
+            'receitaTotal': round(receita_total, 2),
             'volume_por_hora': volume_por_hora,
-            'receita_semanal': receita_semanal
+            'receita_semanal': receita_semanal,
+            'incidentesAtivos': incidentes_ativos
         })
 
 class EficienciaAPIView(APIView):

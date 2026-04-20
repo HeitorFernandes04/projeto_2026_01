@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
@@ -24,11 +24,12 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
   receitaHoje: number = 0;
   veiculosHoje: number = 0;
   tempoMedio: number = 0;
-  
+  incidentesAtivos: number = 0;
+
   rankingEficiencia: EficienciaFuncionario[] = [];
   hojeStr = '';
 
-  constructor(private router: Router, private dashboardService: DashboardService) {
+  constructor(private router: Router, private dashboardService: DashboardService, private cdr: ChangeDetectorRef) {
     const dataObj = new Date();
     // Ex: "17 ABR 2026"
     this.hojeStr = dataObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace(' de ', ' ').toUpperCase();
@@ -45,10 +46,18 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
   carregarDados() {
     this.dashboardService.getIndicadores().subscribe({
       next: (res: Indicadores) => {
-        this.receitaHoje = res.receitaTotal;
-        this.veiculosHoje = res.totalOsFinalizadas;
-        this.reenderizarGraficoReceita(res.receita_semanal);
-        this.reenderizarGraficoVeiculos(res.volume_por_hora);
+        this.receitaHoje = res.receitaTotal || 0;
+        this.veiculosHoje = res.totalOsFinalizadas || 0;
+        this.incidentesAtivos = res.incidentesAtivos || 0;
+        
+        // Força o Angular a renderizar o DOM imediatamente
+        this.cdr.detectChanges();
+        
+        // Timeout zero garante que o viewChild (DOM target) já existe ou foi atualizado pelo ngIf caso houvesse
+        setTimeout(() => {
+            this.reenderizarGraficoReceita(res.receita_semanal);
+            this.reenderizarGraficoVeiculos(res.volume_por_hora);
+        }, 0);
       },
       error: (e) => console.error('Erro ao carregar indicadores', e)
     });
@@ -56,17 +65,20 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
     this.dashboardService.getEficienciaEquipe().subscribe({
       next: (res: EficienciaFuncionario[]) => {
         this.rankingEficiencia = res.sort((a, b) => b.totalOs - a.totalOs);
-        
+
         let somaTempos = 0;
         let totalServicos = 0;
         res.forEach(item => {
           somaTempos += item.tempoTotalRealMinutos;
           totalServicos += item.totalOs;
         });
-        
+
         if (totalServicos > 0) {
           this.tempoMedio = Math.round(somaTempos / totalServicos);
         }
+        
+        // Alerta o Angular das novidades na Eficiencia
+        this.cdr.detectChanges();
       },
       error: (e) => console.error('Erro ao carregar ranking', e)
     });
@@ -116,9 +128,9 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
     // Filtra horas do expediente (08h às 18h por padrão do lava-jato)
     const labels = [];
     const dados = [];
-    for(let i=8; i<=18; i++) {
-        labels.push(`${i}h`);
-        dados.push(volumePorHora[i] || 0);
+    for (let i = 8; i <= 18; i++) {
+      labels.push(`${i}h`);
+      dados.push(volumePorHora[i] || 0);
     }
 
     const config: ChartConfiguration = {

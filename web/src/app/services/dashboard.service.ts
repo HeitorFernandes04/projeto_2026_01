@@ -7,6 +7,7 @@ export interface Indicadores {
   receitaTotal: number;
   volume_por_hora: number[];
   receita_semanal: { data: string, valor: number }[];
+  incidentesAtivos: number;
 }
 
 export interface EficienciaFuncionario {
