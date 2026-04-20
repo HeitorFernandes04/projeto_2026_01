@@ -47,6 +47,12 @@ class TestDashboardEEficiencia(APITestCase):
         # Espera 2 OS finalizadas e soma de 170.00 de receita
         self.assertEqual(response.data['totalOsFinalizadas'], 2)
         self.assertEqual(response.data['receitaTotal'], 170.00)
+        
+        # Validar dados dos gráficos
+        self.assertIn('volume_por_hora', response.data)
+        self.assertIn('receita_semanal', response.data)
+        self.assertEqual(len(response.data['volume_por_hora']), 24)
+        self.assertEqual(len(response.data['receita_semanal']), 7)
 
     def test_dashboard_isolamento_idor(self):
         """Teste 3: Garantir erro de permissão caso não seja o gestor."""

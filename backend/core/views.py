@@ -228,10 +228,39 @@ class DashboardAPIView(APIView):
 
         total_os = ordens.count()
         receita_total = ordens.aggregate(total=Sum('servico__preco'))['total'] or 0.0
+        
+        # 1. Volume por Hora do dia (Gráfico de Linha Diário)
+        volume_por_hora = [0] * 24
+        for os in ordens:
+            if os.horario_finalizacao:
+                # Transforma a hora local pra alinhar graficamente (opcional)
+                hora_local = timezone.localtime(os.horario_finalizacao).hour
+                volume_por_hora[hora_local] += 1
+                
+        # 2. Receita Semanal (Últimos 7 dias) - Gráfico de Área
+        data_ini_semana = data_filtro - timezone.timedelta(days=6)
+        ordens_semana = OrdemServico.objects.filter(
+            estabelecimento=gestor.estabelecimento,
+            status='FINALIZADO',
+            horario_finalizacao__date__gte=data_ini_semana,
+            horario_finalizacao__date__lte=data_filtro
+        ).select_related('servico')
+        
+        receita_semanal_dict = { (data_ini_semana + timezone.timedelta(days=i)).strftime('%Y-%m-%d'): 0.0 for i in range(7) }
+        
+        for os in ordens_semana:
+            if os.horario_finalizacao:
+                data_str = timezone.localtime(os.horario_finalizacao).date().strftime('%Y-%m-%d')
+                if data_str in receita_semanal_dict:
+                    receita_semanal_dict[data_str] += float(os.servico.preco)
+                    
+        receita_semanal = [{'data': k, 'valor': round(v, 2)} for k, v in receita_semanal_dict.items()]
 
         return Response({
             'totalOsFinalizadas': total_os,
-            'receitaTotal': round(float(receita_total), 2)
+            'receitaTotal': round(float(receita_total), 2),
+            'volume_por_hora': volume_por_hora,
+            'receita_semanal': receita_semanal
         })
 
 class EficienciaAPIView(APIView):
