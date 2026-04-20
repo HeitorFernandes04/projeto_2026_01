@@ -16,10 +16,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .permissions import IsFuncionarioDaOS
+from accounts.permissions import IsGestor
 from .serializers import (
     OrdemServicoSerializer,
     CriarOrdemServicoSerializer,
     HistoricoOrdemServicoFiltroSerializer,
+    HistoricoGestorFiltroSerializer,
     MidiaOrdemServicoSerializer,
     MidiaOrdemServicoUploadSerializer,
     ServicoSerializer,
@@ -69,6 +71,56 @@ class HistoricoOrdemServicoView(APIView):
 
         serializer = OrdemServicoSerializer(ordens, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+from rest_framework.pagination import PageNumberPagination
+
+class HistoricoGestorListView(APIView):
+    """GET /api/ordens-servico/gestor/historico/"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+    
+    def get(self, request):
+        filtro_serializer = HistoricoGestorFiltroSerializer(data=request.query_params)
+        filtro_serializer.is_valid(raise_exception=True)
+        
+        try:
+            estabelecimento_id = request.user.perfil_gestor.estabelecimento_id
+            ordens = OrdemServicoService.listar_historico_gestor(
+                estabelecimento_id=estabelecimento_id,
+                filtros_validados=filtro_serializer.validated_data
+            )
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        pagina = paginator.paginate_queryset(ordens, request, view=self)
+        
+        serializer = OrdemServicoSerializer(pagina or ordens, many=True, context={'request': request})
+        if pagina is not None:
+            return paginator.get_paginated_response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class HistoricoGestorFotosView(APIView):
+    """GET /api/ordens-servico/gestor/historico/{id}/fotos/"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+    
+    def get(self, request, pk):
+        try:
+            estabelecimento_id = request.user.perfil_gestor.estabelecimento_id
+            resultado = MidiaOrdemServicoService.obter_midias_auditoria(
+                os_id=pk,
+                estabelecimento_id=estabelecimento_id
+            )
+            return Response(resultado, status=status.HTTP_200_OK)
+        except Exception as e:
+            from django.http import Http404
+            if isinstance(e, Http404):
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class OrdemServicoDetailView(APIView):

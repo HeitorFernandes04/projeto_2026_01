@@ -156,6 +156,31 @@ class HistoricoOrdemServicoFiltroSerializer(serializers.Serializer):
     )
 
 
+class HistoricoGestorFiltroSerializer(serializers.Serializer):
+    data_inicio = serializers.DateField(required=False)
+    data_fim = serializers.DateField(required=False)
+    placa = serializers.CharField(required=False, allow_blank=True)
+    status = serializers.ChoiceField(
+        choices=['todos', *[s for s, _ in OrdemServico.STATUS_CHOICES]],
+        required=False,
+        default='todos',
+    )
+    
+    def validate(self, data):
+        data_inicio = data.get('data_inicio')
+        data_fim = data.get('data_fim')
+        hoje = timezone.now().date()
+        
+        if data_inicio and data_fim:
+            if data_inicio > data_fim:
+                raise serializers.ValidationError("A data inicial não pode ser maior que a data final.")
+        
+        if data_fim and data_fim > hoje:
+            raise serializers.ValidationError("A data final não pode ser no futuro.")
+            
+        return data
+
+
 class ProximaEtapaSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrdemServico

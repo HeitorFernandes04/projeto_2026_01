@@ -65,6 +65,41 @@ class MidiaOrdemServicoService:
         return midias
 
     @staticmethod
+    def obter_midias_auditoria(os_id, estabelecimento_id):
+        from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
+        from django.shortcuts import get_object_or_404
+        
+        # Validação Multi-tenant (Axioma 5/RNF-02)
+        os = get_object_or_404(OrdemServico, id=os_id, estabelecimento_id=estabelecimento_id)
+        
+        midias = MidiaOrdemServico.objects.filter(ordem_servico=os)
+        incidentes = IncidenteOS.objects.filter(ordem_servico=os)
+        
+        resultado = {
+            'estado_inicial': [],
+            'estado_meio': [],
+            'estado_final': []
+        }
+        
+        for m in midias:
+            item = {'arquivo_url': m.arquivo.url, 'momento': m.momento}
+            if m.momento in ['VISTORIA_GERAL', 'AVARIA_PREVIA']:
+                resultado['estado_inicial'].append(item)
+            elif m.momento == 'FINALIZADO':
+                resultado['estado_final'].append(item)
+                
+        # Auditoria 360: Incidentes viram estado_meio (EXECUCAO)
+        for inc in incidentes:
+            if inc.foto_url:
+                resultado['estado_meio'].append({
+                    'arquivo_url': inc.foto_url.url,
+                    'momento': 'EXECUCAO',
+                    'descricao': inc.descricao
+                })
+                
+        return resultado
+
+    @staticmethod
     def _comprimir_imagem(arquivo):
         """Redimensiona e otimiza imagens via Pillow."""
         img = Image.open(arquivo)
@@ -105,6 +140,28 @@ class OrdemServicoService:
             filtros['status'] = status
 
         return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
+
+    @staticmethod
+    def listar_historico_gestor(estabelecimento_id, filtros_validados):
+        from operacao.models import OrdemServico
+        
+        queryset = OrdemServico.objects.filter(estabelecimento_id=estabelecimento_id)
+        
+        data_inicio = filtros_validados.get('data_inicio')
+        data_fim = filtros_validados.get('data_fim')
+        if data_inicio and data_fim:
+            queryset = queryset.filter(data_hora__date__gte=data_inicio, data_hora__date__lte=data_fim)
+            
+        status_os = filtros_validados.get('status')
+        if status_os and status_os != 'todos':
+            queryset = queryset.filter(status=status_os)
+            
+        placa = filtros_validados.get('placa')
+        if placa:
+            queryset = queryset.filter(veiculo__placa__icontains=placa)
+            
+        # Axioma 6: Anti N+1
+        return queryset.select_related('veiculo', 'funcionario', 'servico').order_by('-data_hora')
 
     @staticmethod
     def verificar_conflito(data_hora, duracao):

@@ -1,36 +1,57 @@
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { DatePipe } from '@angular/common';
 
 // Import Angular compiler for JIT compilation
 import '@angular/compiler';
 
 import { HistoricoComponent } from './historico.component';
+import { HistoricoService } from '../../services/historico.service';
 
 describe('HistoricoComponent - Histórico de Ordens de Serviço', () => {
   let component: HistoricoComponent;
   let routerSpy: any;
+  let historicoServiceSpy: any;
+  let datePipeSpy: any;
 
   beforeEach(() => {
     routerSpy = {
       navigate: vi.fn()
     };
+    
+    historicoServiceSpy = {
+      buscarHistorico: vi.fn().mockReturnValue(of({ results: [
+        {
+          id: 1234,
+          data_hora: '2026-04-14T14:30:00Z',
+          veiculo: { placa: 'ABC-1234' },
+          funcionario: { name: 'João Silva' },
+          servico: { nome: 'Lavagem Completa' },
+          status: 'FINALIZADO',
+          status_display: 'Finalizado'
+        }
+      ] }))
+    };
+
+    datePipeSpy = new DatePipe('en-US');
 
     // Create component instance manually without TestBed
-    component = new HistoricoComponent(routerSpy);
+    component = new HistoricoComponent(routerSpy, historicoServiceSpy, datePipeSpy);
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('Teste 1 (Dados Mockados)', () => {
-    it('deve ter dados mockados de ordens finalizadas', () => {
-      // Verifica se os dados mockados estão presentes
-      expect(component.ordensFinalizadas).toBeDefined();
+  describe('Teste 1 (Integração com API)', () => {
+    it('deve buscar dados da API ao inicializar', () => {
+      component.ngOnInit();
+      expect(historicoServiceSpy.buscarHistorico).toHaveBeenCalled();
       expect(component.ordensFinalizadas.length).toBeGreaterThan(0);
       
-      // Verifica dados da primeira ordem
-      expect(component.ordensFinalizadas[0].os).toBe('OS-001234');
-      expect(component.ordensFinalizadas[0].placa).toBe('ABC-1234');
+      // Verifica dados da primeira ordem vinda da API
+      expect(component.ordensFinalizadas[0].id).toBe(1234);
+      expect(component.ordensFinalizadas[0].veiculo.placa).toBe('ABC-1234');
       expect(component.ordensFinalizadas[0].status).toBe('FINALIZADO');
     });
 
@@ -47,25 +68,21 @@ describe('HistoricoComponent - Histórico de Ordens de Serviço', () => {
     });
   });
 
-  describe('Teste Antiviés (Validação de Estados)', () => {
-    it('não deve quebrar quando não houver ordens finalizadas', () => {
-      // Simula array vazio
-      component.ordensFinalizadas = [];
-      
-      // Verifica se o array está vazio
+  describe('Teste Antiviés (Validação de Estados da API)', () => {
+    it('não deve quebrar quando API retornar array vazio', () => {
+      historicoServiceSpy.buscarHistorico = vi.fn().mockReturnValue(of({ results: [] }));
+      component.aplicarFiltros();
       expect(component.ordensFinalizadas.length).toBe(0);
     });
 
-    it('deve manter integridade dos dados mockados', () => {
-      // Verifica se os dados mockados seguem o contrato esperado
-      component.ordensFinalizadas.forEach(ordem => {
-        expect(ordem.os).toBeTruthy();
-        expect(ordem.placa).toBeTruthy();
-        expect(ordem.cliente).toBeTruthy();
-        expect(ordem.servico).toBeTruthy();
-        expect(ordem.dataHora).toBeTruthy();
-        expect(ordem.status).toBeTruthy();
-      });
+    it('deve formatar dataFiltro corretamente antes da requisição', () => {
+      component.dataFiltro = '15/04/2026';
+      component.aplicarFiltros();
+      expect(historicoServiceSpy.buscarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data_inicio: '2026-04-15'
+        })
+      );
     });
   });
 });
