@@ -194,3 +194,42 @@ class GestaoViewSet(viewsets.ViewSet):
         except Exception as e:
             print(f"Erro ao atualizar funcionário: {e}")
             return Response({'error': 'Erro ao processar atualização do colaborador.'}, status=status.HTTP_400_BAD_REQUEST)
+
+from rest_framework.views import APIView
+from django.db.models import Sum
+from django.utils.dateparse import parse_date
+from django.utils import timezone
+
+class DashboardAPIView(APIView):
+    """
+    GET /api/gestao/gestor/dashboard/indicadores
+    RF-19: Dashboard Executivo Básico
+    """
+    permission_classes = [IsAuthenticated, IsGestorOnly]
+
+    def get(self, request):
+        from operacao.models import OrdemServico
+        data_str = request.query_params.get('data')
+        
+        if data_str:
+            data_filtro = parse_date(data_str)
+            if not data_filtro:
+                return Response({'error': 'Data inválida. Use YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            data_filtro = timezone.localtime().date()
+
+        gestor = request.user.perfil_gestor
+        
+        ordens = OrdemServico.objects.filter(
+            estabelecimento=gestor.estabelecimento,
+            status='FINALIZADO',
+            horario_finalizacao__date=data_filtro
+        )
+
+        total_os = ordens.count()
+        receita_total = ordens.aggregate(total=Sum('servico__preco'))['total'] or 0.0
+
+        return Response({
+            'totalOsFinalizadas': total_os,
+            'receitaTotal': round(float(receita_total), 2)
+        })

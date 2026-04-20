@@ -13,4 +13,5 @@ urlpatterns = [
     path('estabelecimento/', views.GestaoViewSet.as_view({'get': 'estabelecimento', 'patch': 'estabelecimento'}), name='gestao-estabelecimento'),
     path('funcionarios/', views.GestaoViewSet.as_view({'get': 'funcionarios', 'post': 'funcionarios'}), name='gestao-funcionarios-list'),
     path('funcionarios/<int:pk>/', views.GestaoViewSet.as_view({'patch': 'funcionarios_detalhe'}), name='gestao-funcionarios-detail'),
+    path('gestor/dashboard/indicadores/', views.DashboardAPIView.as_view(), name='dashboard-indicadores'),
 ]
