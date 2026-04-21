@@ -88,7 +88,7 @@ class CriarOrdemServicoSerializer(serializers.Serializer):
     def validate_placa(self, value):
         """RN: Aceita placas no formato Antigo (ABC1234) e Mercosul (ABC1D23)."""
         placa_normalizada = re.sub(r'[^A-Z0-9]', '', value.strip().upper())
-        padrao = r'^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$'
+        padrao = r'^[A-Z]{3}\d[\dA-Z]\d{2}$'
         if not re.match(padrao, placa_normalizada):
             raise serializers.ValidationError(
                 'Placa inválida. Use o formato antigo (ABC1234) ou Mercosul (ABC1D23).'
@@ -203,3 +203,62 @@ class IncidenteOSSerializer(serializers.ModelSerializer):
     class Meta:
         model = IncidenteOS
         fields = ['ordem_servico', 'tag_peca', 'descricao', 'foto_url']
+
+
+# ---------------------------------------------------------------------------
+#  RF-17 — Histórico do Gestor
+# ---------------------------------------------------------------------------
+
+class HistoricoGestorFiltroSerializer(serializers.Serializer):
+    data_inicio = serializers.DateField(required=False)
+    data_fim    = serializers.DateField(required=False)
+    placa       = serializers.CharField(required=False, allow_blank=True)
+    status      = serializers.ChoiceField(
+        choices=[s for s, _ in OrdemServico.STATUS_CHOICES],
+        required=False,
+    )
+
+
+class HistoricoGestorItemSerializer(serializers.ModelSerializer):
+    placa          = serializers.CharField(source='veiculo.placa')
+    modelo         = serializers.CharField(source='veiculo.modelo')
+    servico_nome   = serializers.CharField(source='servico.nome')
+    funcionario_nome = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrdemServico
+        fields = [
+            'id', 'placa', 'modelo', 'servico_nome', 'funcionario_nome',
+            'status', 'data_hora',
+            'horario_lavagem', 'horario_finalizacao',
+        ]
+
+    def get_funcionario_nome(self, obj):
+        if obj.funcionario and hasattr(obj.funcionario, 'name'):
+            return obj.funcionario.name
+        return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        placa = ret.get('placa', '')
+        if len(placa) == 7 and '-' not in placa:
+            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        return ret
+
+
+# ---------------------------------------------------------------------------
+#  RF-18 — Galeria/Dossiê da OS
+# ---------------------------------------------------------------------------
+
+class MidiaGaleriaSerializer(serializers.ModelSerializer):
+    arquivo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MidiaOrdemServico
+        fields = ['id', 'arquivo_url', 'momento']
+
+    def get_arquivo_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.arquivo:
+            return request.build_absolute_uri(obj.arquivo.url)
+        return None

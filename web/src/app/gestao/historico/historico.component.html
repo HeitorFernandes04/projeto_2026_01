@@ -8,19 +8,19 @@
     <div class="header-actions">
       <button class="notification-btn" (click)="irParaIncidentes()">
         <span class="material-symbols-outlined">notifications</span>
-        <span class="badge">2</span>
       </button>
 
       <div class="header-date-picker">
         <span class="material-symbols-outlined cal-icon">calendar_today</span>
         <div class="date-texts">
           <span class="label">Data</span>
-          <span class="value">14 ABR 2026</span>
+          <span class="value">{{ dataHoje }}</span>
         </div>
       </div>
     </div>
   </header>
 
+  <!-- MOTOR DE BUSCA -->
   <section class="search-engine-card">
     <div class="card-header-inner">
       <div class="icon-circle">
@@ -34,11 +34,18 @@
 
     <div class="search-controls-grid">
       <div class="control-item">
-        <label>Período</label>
+        <label>Data Início</label>
         <div class="input-box">
           <span class="material-symbols-outlined pre-icon">calendar_today</span>
-          <input type="text" placeholder="dd/mm/aaaa">
-          <span class="material-symbols-outlined post-icon">calendar_month</span>
+          <input type="date" [(ngModel)]="filtroDataInicio">
+        </div>
+      </div>
+
+      <div class="control-item">
+        <label>Data Fim</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined pre-icon">calendar_month</span>
+          <input type="date" [(ngModel)]="filtroDataFim">
         </div>
       </div>
 
@@ -46,7 +53,7 @@
         <label>Placa do Veículo</label>
         <div class="input-box">
           <span class="material-symbols-outlined pre-icon">search</span>
-          <input type="text" placeholder="Ex: ABC-1234">
+          <input type="text" placeholder="Ex: ABC-1234" [(ngModel)]="filtroPlaca">
         </div>
       </div>
 
@@ -57,7 +64,6 @@
             <span>{{ selectedStatus }}</span>
             <span class="material-symbols-outlined expand-icon" [class.rotated]="dropdownAberto">expand_more</span>
           </div>
-
           <div class="custom-options" *ngIf="dropdownAberto">
             @for (opt of statusOptions; track opt) {
               <div class="option-item"
@@ -73,41 +79,101 @@
         </div>
       </div>
     </div>
+
+    @if (erroDatas) {
+      <div class="erro-datas">
+        <span class="material-symbols-outlined">error</span>
+        {{ erroDatas }}
+      </div>
+    }
+
+    <div class="search-actions">
+      <button class="btn-limpar" (click)="limparFiltros()">Limpar</button>
+      <button class="btn-buscar" (click)="buscar()" [disabled]="carregando">
+        <span class="material-symbols-outlined">search</span>
+        Buscar
+      </button>
+    </div>
   </section>
 
+  <!-- RESULTADOS -->
   <section class="results-section">
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>ORDEM DE SERVIÇO</th>
-            <th>DATA / HORA</th>
-            <th>PLACA</th>
-            <th>CLIENTE</th>
-            <th>SERVIÇO</th>
-            <th>STATUS</th>
-            <th>AÇÕES</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of ordensFinalizadas; track item.os) {
+
+    <!-- Loading -->
+    @if (carregando) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Carregando histórico...</p>
+      </div>
+    }
+
+    <!-- Erro genérico -->
+    @else if (erro && !erroDatas) {
+      <div class="erro-state">
+        <span class="material-symbols-outlined">error_outline</span>
+        <p>Não foi possível carregar o histórico. Tente novamente.</p>
+        <button class="btn-buscar" (click)="buscar()">Tentar novamente</button>
+      </div>
+    }
+
+    <!-- Tabela -->
+    @else {
+      <div class="table-container">
+        <div class="table-meta">
+          <span class="total-label">{{ totalItens }} ordem(s) encontrada(s)</span>
+        </div>
+
+        <table>
+          <thead>
             <tr>
-              <td><span class="os-tag">{{ item.os }}</span></td>
-              <td>{{ item.dataHora }}</td>
-              <td class="bold-white">{{ item.placa }}</td>
-              <td>{{ item.cliente }}</td>
-              <td>{{ item.servico }}</td>
-              <td><span class="status-pill">{{ item.status }}</span></td>
-              <td>
-                <button class="btn-dossie" (click)="visualizarDossie(item.os)">
-                  <span class="material-symbols-outlined">description</span>
-                  Dossiê
-                </button>
-              </td>
+              <th>OS</th>
+              <th>DATA / HORA</th>
+              <th>PLACA</th>
+              <th>MODELO</th>
+              <th>SERVIÇO</th>
+              <th>STATUS</th>
+              <th>AÇÕES</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @if (ordens.length === 0) {
+              <tr>
+                <td colspan="7" class="empty-row">Nenhuma ordem encontrada para os filtros aplicados.</td>
+              </tr>
+            }
+            @for (item of ordens; track item.id) {
+              <tr>
+                <td><span class="os-tag">#{{ item.id }}</span></td>
+                <td>{{ formatarData(item.data_hora) }}</td>
+                <td class="bold-white">{{ item.placa }}</td>
+                <td>{{ item.modelo }}</td>
+                <td>{{ item.servico_nome }}</td>
+                <td><span class="status-pill" [ngClass]="statusClass(item.status)">{{ statusLabel(item.status) }}</span></td>
+                <td>
+                  <button class="btn-dossie" (click)="visualizarDossie(item.id)">
+                    <span class="material-symbols-outlined">description</span>
+                    Dossiê
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <!-- Paginação -->
+        @if (totalPaginas > 1) {
+          <div class="pagination">
+            <button class="pg-btn" (click)="mudarPagina(paginaAtual - 1)" [disabled]="paginaAtual === 1">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <span class="pg-info">Página {{ paginaAtual }} de {{ totalPaginas }}</span>
+            <button class="pg-btn" (click)="mudarPagina(paginaAtual + 1)" [disabled]="paginaAtual === totalPaginas">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
   </section>
 </div>

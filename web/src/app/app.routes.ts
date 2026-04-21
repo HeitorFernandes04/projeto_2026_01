@@ -32,7 +32,7 @@ export const routes: Routes = [
           import('./gestao/historico/historico.component').then(m => m.HistoricoComponent)
       },
       {
-        path: 'dossie',
+        path: 'dossie/:id',
         loadComponent: () =>
           import('./gestao/dossie/dossie.component').then(m => m.DossieComponent)
       },

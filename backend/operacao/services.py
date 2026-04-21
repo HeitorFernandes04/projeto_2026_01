@@ -157,8 +157,8 @@ class OrdemServicoService:
         status_atual = os.status
         agora = timezone.now()
 
-        # ETAPA 1: PATIO -> VISTORIA_INICIAL (Valida fotos obrigatórias de vistoria)
-        if status_atual == 'PATIO' or (status_atual == 'VISTORIA_INICIAL' and not os.horario_lavagem):
+        # ETAPA 1: PATIO → VISTORIA_INICIAL (valida 5 fotos de vistoria)
+        if status_atual == 'PATIO':
             contagem_fotos = MidiaOrdemServico.objects.filter(
                 ordem_servico=os,
                 momento='VISTORIA_GERAL'
@@ -169,18 +169,22 @@ class OrdemServicoService:
 
             os.status = 'VISTORIA_INICIAL'
             os.laudo_vistoria = dados.get('laudo_vistoria', '')
-            os.horario_lavagem = agora
             os.save()
 
-        # ETAPA 2: VISTORIA_INICIAL -> EM_EXECUCAO
-        elif os.horario_lavagem and not os.horario_acabamento:
-            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+        # ETAPA 2: VISTORIA_INICIAL → EM_EXECUCAO (operador inicia lavagem)
+        elif status_atual == 'VISTORIA_INICIAL':
             os.status = 'EM_EXECUCAO'
+            os.horario_lavagem = agora
+            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+            os.save()
+
+        # ETAPA 3: EM_EXECUCAO sub-fase lavagem → acabamento (status permanece EM_EXECUCAO)
+        elif status_atual == 'EM_EXECUCAO' and not os.horario_acabamento:
             os.horario_acabamento = agora
             os.save()
 
-        # ETAPA 3: EM_EXECUCAO -> LIBERACAO
-        elif os.horario_acabamento:
+        # ETAPA 4: EM_EXECUCAO (acabamento concluído) → LIBERACAO
+        elif status_atual == 'EM_EXECUCAO' and os.horario_acabamento:
             os.comentario_acabamento = dados.get('comentario_acabamento', '')
             os.status = 'LIBERACAO'
             os.save()
@@ -209,6 +213,56 @@ class OrdemServicoService:
         os.save()
 
         return os
+
+
+class HistoricoGestorService:
+    """RF-17/RF-18: Histórico e galeria de OS para o Gestor."""
+
+    @staticmethod
+    def listar_historico_gestor(estabelecimento, data_inicio=None, data_fim=None, placa=None, status=None):
+        """RF-17: Lista OS do estabelecimento com filtros opcionais e validações cronológicas."""
+        hoje = timezone.localdate()
+
+        if data_inicio and data_fim:
+            if data_inicio > data_fim:
+                raise ValidationError("A data inicial não pode ser maior que a data final.")
+            if data_fim > hoje:
+                raise ValidationError("A data final não pode ser uma data futura.")
+
+        filtros = {'estabelecimento': estabelecimento}
+
+        if data_inicio:
+            filtros['data_hora__date__gte'] = data_inicio
+        if data_fim:
+            filtros['data_hora__date__lte'] = data_fim
+        if placa:
+            filtros['veiculo__placa__icontains'] = placa.strip().upper()
+        if status:
+            filtros['status'] = status
+
+        return (
+            OrdemServico.objects
+            .filter(**filtros)
+            .select_related('veiculo', 'servico', 'funcionario')
+            .order_by('-data_hora')
+        )
+
+    @staticmethod
+    def montar_galeria_os(os_id, estabelecimento):
+        """RF-18: Retorna mídias da OS agrupadas por momento para auditoria visual."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+
+        if os.estabelecimento_id != estabelecimento.id:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Esta OS não pertence ao seu estabelecimento.")
+
+        midias = MidiaOrdemServico.objects.filter(ordem_servico=os).order_by('id')
+
+        return {
+            'estado_inicial': [m for m in midias if m.momento in ('VISTORIA_GERAL', 'AVARIA_PREVIA')],
+            'estado_meio':    [m for m in midias if m.momento == 'EXECUCAO'],
+            'estado_final':   [m for m in midias if m.momento == 'FINALIZADO'],
+        }
 
 
 class KanbanService:

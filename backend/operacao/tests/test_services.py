@@ -32,7 +32,40 @@ class TestOrdemServicoServiceEtapas:
 
         assert os_atualizada.status == 'VISTORIA_INICIAL'
         assert os_atualizada.laudo_vistoria == 'Veículo em bom estado'
+        assert os_atualizada.horario_lavagem is None  # horario_lavagem só é marcado ao iniciar lavagem (ETAPA 2)
+
+    def test_deve_avancar_vistoria_inicial_para_em_execucao(self):
+        """Kanban fix: VISTORIA_INICIAL → EM_EXECUCAO ao iniciar lavagem."""
+        os = OrdemServicoFactory(status='VISTORIA_INICIAL')
+
+        os_atualizada = OrdemServicoService.avancar_etapa(os.id, {})
+
+        assert os_atualizada.status == 'EM_EXECUCAO'
         assert os_atualizada.horario_lavagem is not None
+
+    def test_fluxo_completo_patio_ate_liberacao(self):
+        """Garante que o fluxo de 4 etapas finaliza em LIBERACAO sem pular status."""
+        os = OrdemServicoFactory(status='PATIO')
+        for _ in range(5):
+            MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
+
+        # ETAPA 1
+        os = OrdemServicoService.avancar_etapa(os.id, {})
+        assert os.status == 'VISTORIA_INICIAL'
+
+        # ETAPA 2
+        os = OrdemServicoService.avancar_etapa(os.id, {})
+        assert os.status == 'EM_EXECUCAO'
+        assert os.horario_lavagem is not None
+
+        # ETAPA 3 (sub-fase acabamento, status permanece EM_EXECUCAO)
+        os = OrdemServicoService.avancar_etapa(os.id, {})
+        assert os.status == 'EM_EXECUCAO'
+        assert os.horario_acabamento is not None
+
+        # ETAPA 4
+        os = OrdemServicoService.avancar_etapa(os.id, {'comentario_acabamento': 'OK'})
+        assert os.status == 'LIBERACAO'
 
     def test_nao_deve_avancar_vistoria_sem_cinco_fotos(self):
         """RN-09: Com menos de 5 fotos, deve recusar o avanço de etapa."""

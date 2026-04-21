@@ -6,221 +6,135 @@
       <h1>Dossiê da OS</h1>
       <p>Detalhamento técnico e registros fotográficos da ordem de serviço</p>
     </div>
-
     <div class="header-actions">
       <button class="notification-btn" (click)="irParaIncidentes()">
         <span class="material-symbols-outlined">notifications</span>
-        <span class="badge">2</span>
       </button>
-
-      <div class="header-date-picker">
-        <span class="material-symbols-outlined cal-icon">calendar_today</span>
-        <div class="date-texts">
-          <span class="label">Data</span>
-          <span class="value">14 ABR 2026</span>
-        </div>
-      </div>
     </div>
   </header>
 
   <!-- CARD PRINCIPAL -->
   <section class="dossie-main-card">
     <div class="dossie-header-row">
-      <button class="btn-back-circle">
+      <button class="btn-back-circle" (click)="voltar()">
         <span class="material-symbols-outlined">arrow_back</span>
       </button>
-
       <div class="dossie-title">
-        <h2>Dossiê Completo - <span>OS-001234</span></h2>
+        <h2>Dossiê Completo — <span>OS #{{ osId }}</span></h2>
         <p>Auditoria visual e registro de qualidade da Ordem de Serviço</p>
-      </div>
-    </div>
-
-    <div class="dossie-info-grid">
-      <div class="mini-card">
-        <div class="mini-header">
-          <span class="material-symbols-outlined">directions_car</span>
-          <label>Veículo</label>
-        </div>
-        <div class="mini-content">
-          <span class="main-val">ABC-1234</span>
-          <span class="sub-val">Hyundai HB20</span>
-        </div>
-      </div>
-
-      <div class="mini-card">
-        <div class="mini-header">
-          <span class="material-symbols-outlined">person</span>
-          <label>Cliente</label>
-        </div>
-        <div class="mini-content">
-          <span class="main-val">João Silva</span>
-          <span class="sub-val">(11) 98765-4321</span>
-        </div>
-      </div>
-
-      <div class="mini-card">
-        <div class="mini-header">
-          <span class="material-symbols-outlined">schedule</span>
-          <label>Duração Total</label>
-        </div>
-        <div class="mini-content">
-          <span class="main-val blue-text">42 min</span>
-          <span class="sub-val">Estimado: 45 min</span>
-        </div>
-      </div>
-
-      <div class="mini-card">
-        <div class="mini-header">
-          <span class="material-symbols-outlined">chat_bubble_outline</span>
-          <label>Serviço</label>
-        </div>
-        <div class="mini-content">
-          <span class="main-val">Lavagem Completa</span>
-          <span class="price-val">R$ 60,00</span>
-        </div>
       </div>
     </div>
   </section>
 
-  <!-- VISTORIAS + OBSERVAÇÕES -->
-  <div class="vistorias-container">
+  <!-- LOADING -->
+  @if (carregando) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Carregando galeria...</p>
+    </div>
+  }
 
-    <!-- VISTORIA INICIAL -->
-    <section class="vistoria-card">
-      <div class="card-header-inner">
-        <div class="icon-circle gold">
-          <span class="material-symbols-outlined">fact_check</span>
-        </div>
-        <div class="header-text">
-          <h3>Vistoria Inicial</h3>
-          <p>Registro do estado do veículo na entrada</p>
-        </div>
-      </div>
+  <!-- ERRO -->
+  @else if (erro) {
+    <div class="erro-state">
+      <span class="material-symbols-outlined">error_outline</span>
+      <p>Não foi possível carregar as fotos desta OS.</p>
+      <button class="btn-primary" (click)="carregarGaleria()">Tentar novamente</button>
+    </div>
+  }
 
-      <div class="fotos-grid">
-        <div class="foto-item"><div class="img-placeholder"></div><label>Frente</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Traseira</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Lat. Esquerda</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Lat. Direita</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Interior</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Painel / KM</label></div>
-      </div>
+  <!-- GALERIA -->
+  @else {
+    <div class="galeria-container">
 
-
-    </section>
-
-    <!-- VISTORIA FINAL -->
-    <section class="vistoria-card">
-      <div class="card-header-inner">
-        <div class="icon-circle green">
-          <span class="material-symbols-outlined">verified</span>
-        </div>
-        <div class="header-text">
-          <h3>Vistoria Final</h3>
-          <p>Conferência de entrega e qualidade final</p>
-        </div>
-      </div>
-
-      <div class="fotos-grid">
-        <div class="foto-item"><div class="img-placeholder"></div><label>Frente</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Traseira</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Lat. Esquerda</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Lat. Direita</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Interior</label></div>
-        <div class="foto-item"><div class="img-placeholder"></div><label>Roda / Pneu</label></div>
-      </div>
-
-    
-    </section>
-
-    <!-- OBSERVAÇÕES -->
-    <section class="observacoes-card">
-
-      <div class="observacoes-header">
-        <div class="icon-circle blue">
-          <span class="material-symbols-outlined">chat_bubble</span>
-        </div>
-
-        <div>
-          <h3>Registro de Observações</h3>
-          <p>Comentários e anotações dos funcionários em cada etapa do processo</p>
-        </div>
-      </div>
-
-      <div class="observacoes-list">
-
-        <div class="obs-item">
-          <div class="obs-icon">
-            <span class="material-symbols-outlined">chat</span>
+      <!-- ESTADO INICIAL -->
+      <section class="galeria-card">
+        <div class="card-header-inner">
+          <div class="icon-circle gold">
+            <span class="material-symbols-outlined">fact_check</span>
           </div>
-          <div class="obs-content">
-            <div class="obs-header">
-              <span class="tag vistoria">VISTORIA</span>
-              <strong>Carlos Silva</strong>
-              <span class="date">14 ABR 2026 - 14:32</span>
+          <div class="header-text">
+            <h3>Estado Inicial</h3>
+            <p>Vistoria de entrada e avarias prévias ({{ galeria.estado_inicial.length }} foto(s))</p>
+          </div>
+        </div>
+
+        @if (galeria.estado_inicial.length === 0) {
+          <p class="sem-fotos">Nenhuma foto registrada nesta etapa.</p>
+        } @else {
+          <div class="fotos-grid">
+            @for (foto of galeria.estado_inicial; track foto.id) {
+              <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
+                <img [src]="foto.arquivo_url" [alt]="foto.momento" loading="lazy">
+                <span class="foto-label">{{ foto.momento }}</span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- ESTADO MEIO (incidentes — só exibe se existir) -->
+      @if (galeria.estado_meio.length > 0) {
+        <section class="galeria-card incidente">
+          <div class="card-header-inner">
+            <div class="icon-circle red">
+              <span class="material-symbols-outlined">warning</span>
             </div>
-            <p>Veículo recebido com arranhão leve na porta traseira direita. Cliente ciente. Nível de combustível: 1/4.</p>
-          </div>
-        </div>
-
-        <div class="obs-item">
-          <div class="obs-icon">
-            <span class="material-symbols-outlined">chat</span>
-          </div>
-          <div class="obs-content">
-            <div class="obs-header">
-              <span class="tag lavagem">LAVAGEM</span>
-              <strong>João Santos</strong>
-              <span class="date">14 ABR 2026 - 14:45</span>
+            <div class="header-text">
+              <h3>Registro de Execução / Incidentes</h3>
+              <p>Fotos registradas durante o processo ({{ galeria.estado_meio.length }} foto(s))</p>
             </div>
-            <p>Lavagem externa completa realizada. Removidos resíduos de piche da lateral. Aplicado shampoo neutro e secagem manual.</p>
+          </div>
+          <div class="fotos-grid">
+            @for (foto of galeria.estado_meio; track foto.id) {
+              <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
+                <img [src]="foto.arquivo_url" [alt]="foto.momento" loading="lazy">
+                <span class="foto-label">{{ foto.momento }}</span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- ESTADO FINAL -->
+      <section class="galeria-card">
+        <div class="card-header-inner">
+          <div class="icon-circle green">
+            <span class="material-symbols-outlined">verified</span>
+          </div>
+          <div class="header-text">
+            <h3>Estado Final</h3>
+            <p>Fotos de entrega e conferência de qualidade ({{ galeria.estado_final.length }} foto(s))</p>
           </div>
         </div>
 
-        <div class="obs-item">
-          <div class="obs-icon">
-            <span class="material-symbols-outlined">chat</span>
+        @if (galeria.estado_final.length === 0) {
+          <p class="sem-fotos">Nenhuma foto registrada nesta etapa.</p>
+        } @else {
+          <div class="fotos-grid">
+            @for (foto of galeria.estado_final; track foto.id) {
+              <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
+                <img [src]="foto.arquivo_url" [alt]="foto.momento" loading="lazy">
+                <span class="foto-label">{{ foto.momento }}</span>
+              </button>
+            }
           </div>
-          <div class="obs-content">
-            <div class="obs-header">
-              <span class="tag acabamento">ACABAMENTO</span>
-              <strong>Maria Oliveira</strong>
-              <span class="date">14 ABR 2026 - 15:15</span>
-            </div>
-            <p>Limpeza interna completa. Aspiração dos bancos e porta-malas. Aplicação de silicone nos pneus e aromatizador.</p>
-          </div>
-        </div>
+        }
+      </section>
 
-        <div class="obs-item">
-          <div class="obs-icon">
-            <span class="material-symbols-outlined">chat</span>
-          </div>
-          <div class="obs-content">
-            <div class="obs-header">
-              <span class="tag liberacao">LIBERAÇÃO</span>
-              <strong>Ana Lima</strong>
-              <span class="date">14 ABR 2026 - 15:28</span>
-            </div>
-            <p>Veículo aprovado na vistoria final. Cliente satisfeito com o resultado. Orientado sobre os cuidados pós-lavagem.</p>
-          </div>
-        </div>
-
+      <!-- AÇÕES -->
+      <div class="dossie-actions">
+        <button class="btn-secondary" (click)="voltar()">Voltar ao Histórico</button>
       </div>
 
-      <!-- BOTÕES -->
-      <div class="observacoes-actions">
-        <button class="btn-secondary">
-          Voltar ao Histórico
-        </button>
+    </div>
+  }
 
-        <button class="btn-primary">
-          <span class="material-symbols-outlined">picture_as_pdf</span>
-          Exportar Dossiê PDF
-        </button>
-      </div>
+  <!-- LIGHTBOX -->
+  @if (fotoAmpliada) {
+    <button class="lightbox" (click)="fecharFoto()">
+      <img [src]="fotoAmpliada" alt="Foto ampliada">
+    </button>
+  }
 
-    </section>
-
-  </div>
 </div>
