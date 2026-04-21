@@ -6,8 +6,8 @@ from .views import (
     OrdemServicoDetailView, CriarOrdemServicoView,
     AvancarEtapaView, FinalizarIndustrialView,
     FotoUploadView, ServicoListView, HorariosLivresView,
-    registrar_incidente, TagPecaViewSet,
-    HistoricoGestorListView, HistoricoGestorFotosView
+    registrar_incidente, TagPecaViewSet, KanbanAPIView,
+    HistoricoGestorListView, HistoricoGestorFotosView,
 )
 
 router = DefaultRouter()
@@ -15,6 +15,7 @@ router.register(r'tags-peca', TagPecaViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('kanban/', KanbanAPIView.as_view(), name='os-kanban'),
     path('novo/', CriarOrdemServicoView.as_view(), name='os-criar'),
     path('hoje/', OrdensServicoHojeView.as_view(), name='os-hoje'),
     path('historico/', HistoricoOrdemServicoView.as_view(), name='os-historico'),
