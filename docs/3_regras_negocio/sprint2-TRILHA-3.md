@@ -24,10 +24,10 @@
 | **RNF-05** | Escalabilidade | O sistema deve suportar grande volume de registros históricos sem perda de desempenho. |
 
 ### 1.4 Endpoints RESTful
-**Endpoint:** `/api/ordens-servico/gestor/historico`
+**Endpoint:** `/api/ordens-servico`
 
 - **Método:** `GET`
-- **Camada:** `HistoricoGestorListView` (View)
+- **Camada:** `HistoricoViewSet` (View)
 - **Descrição:** Retorna lista paginada de Ordens de Serviço com filtros aplicáveis.
 - **Requisição:**
   - Query params opcionais:
@@ -42,10 +42,10 @@
   - Sucesso: `200 OK`
   - Falha: `4xx/5xx`
 
-**Endpoint:** `/api/ordens-servico/gestor/historico/{id}/fotos`
+**Endpoint:** `/api/ordens-servico/{id}/midias`
 
 - **Método:** `GET`
-- **Camada:** `HistoricoGestorFotosView` (View)
+- **Camada:** `HistoricoViewSet` (View)
 - **Descrição:** Retorna as mídias da Ordem de Serviço agrupadas para auditoria visual.
 - **Requisição:**
   - Path param: `id`

@@ -1,71 +1,41 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { HistoricoService } from '../../services/historico.service';
-import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-historico',
   standalone: true,
   imports: [CommonModule],
-  providers: [DatePipe],
   templateUrl: './historico.component.html',
   styleUrl: './historico.component.scss'
 })
-export class HistoricoComponent implements OnInit {
+export class HistoricoComponent {
   // Variáveis para controle do Custom Select
   dropdownAberto = false;
   selectedStatus = 'Todos';
   statusOptions = ['Todos', 'Finalizado', 'Cancelado'];
 
-  ordensFinalizadas: any[] = [];
-  
-  // Filtros
-  placaFiltro: string = '';
-  dataFiltro: string = '';
-
-  constructor(
-    private router: Router,
-    private historicoService: HistoricoService,
-    private datePipe: DatePipe
-  ) {}
-
-  ngOnInit() {
-    this.aplicarFiltros();
-  }
-
-  aplicarFiltros() {
-    let dataInicioStr = '';
-    
-    // Tratamento basico da data para YYYY-MM-DD
-    if (this.dataFiltro) {
-      const parts = this.dataFiltro.split('/');
-      if (parts.length === 3) {
-        dataInicioStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
+  // Mock de dados para a tabela conforme o protótipo
+  ordensFinalizadas = [
+    {
+      os: 'OS-001234',
+      dataHora: '14 ABR 2026 - 14:30',
+      placa: 'ABC-1234',
+      cliente: 'João Silva',
+      servico: 'Lavagem Completa',
+      status: 'FINALIZADO'
+    },
+    {
+      os: 'OS-001235',
+      dataHora: '14 ABR 2026 - 15:15',
+      placa: 'XYZ-5678',
+      cliente: 'Maria Souza',
+      servico: 'Lavagem + Polimento',
+      status: 'FINALIZADO'
     }
+  ];
 
-    const filtros = {
-      placa: this.placaFiltro,
-      status: this.selectedStatus,
-      data_inicio: dataInicioStr,
-      data_fim: dataInicioStr // usando a mesma data para o filtro simples do prototipo
-    };
-
-    this.historicoService.buscarHistorico(filtros).subscribe({
-      next: (res) => {
-        this.ordensFinalizadas = res.results || res; // Suporta paginação ou array direto
-      },
-      error: (err) => {
-        console.error('Erro ao buscar histórico', err);
-      }
-    });
-  }
-
-  onFiltroChange(campo: string, evento: any) {
-    if (campo === 'placa') this.placaFiltro = evento.target.value;
-    if (campo === 'data') this.dataFiltro = evento.target.value;
-  }
+  constructor(private router: Router) {}
 
   toggleDropdown() {
     this.dropdownAberto = !this.dropdownAberto;
@@ -74,7 +44,6 @@ export class HistoricoComponent implements OnInit {
   selectOption(option: string) {
     this.selectedStatus = option;
     this.dropdownAberto = false;
-    this.aplicarFiltros();
   }
 
   visualizarDossie(osId: string) {
