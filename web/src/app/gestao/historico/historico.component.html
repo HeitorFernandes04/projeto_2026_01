@@ -37,8 +37,8 @@
         <label>Período</label>
         <div class="input-box">
           <span class="material-symbols-outlined pre-icon">calendar_today</span>
-          <input type="text" placeholder="dd/mm/aaaa">
-          <span class="material-symbols-outlined post-icon">calendar_month</span>
+          <input type="text" placeholder="dd/mm/aaaa" (input)="onFiltroChange('data', $event)" (keyup.enter)="aplicarFiltros()">
+          <span class="material-symbols-outlined post-icon" (click)="aplicarFiltros()">calendar_month</span>
         </div>
       </div>
 
@@ -46,7 +46,7 @@
         <label>Placa do Veículo</label>
         <div class="input-box">
           <span class="material-symbols-outlined pre-icon">search</span>
-          <input type="text" placeholder="Ex: ABC-1234">
+          <input type="text" placeholder="Ex: ABC-1234" (input)="onFiltroChange('placa', $event)" (keyup.enter)="aplicarFiltros()">
         </div>
       </div>
 
@@ -90,16 +90,16 @@
           </tr>
         </thead>
         <tbody>
-          @for (item of ordensFinalizadas; track item.os) {
+          @for (item of ordensFinalizadas; track item.id) {
             <tr>
-              <td><span class="os-tag">{{ item.os }}</span></td>
-              <td>{{ item.dataHora }}</td>
-              <td class="bold-white">{{ item.placa }}</td>
-              <td>{{ item.cliente }}</td>
-              <td>{{ item.servico }}</td>
-              <td><span class="status-pill">{{ item.status }}</span></td>
+              <td><span class="os-tag">OS-{{ item.id.toString().padStart(6, '0') }}</span></td>
+              <td>{{ item.data_hora | date:'dd MMM yyyy - HH:mm' | uppercase }}</td>
+              <td class="bold-white">{{ item.veiculo?.placa }}</td>
+              <td>{{ item.funcionario?.name || '---' }}</td>
+              <td>{{ item.servico?.nome }}</td>
+              <td><span class="status-pill">{{ item.status_display }}</span></td>
               <td>
-                <button class="btn-dossie" (click)="visualizarDossie(item.os)">
+                <button class="btn-dossie" (click)="visualizarDossie(item.id)">
                   <span class="material-symbols-outlined">description</span>
                   Dossiê
                 </button>

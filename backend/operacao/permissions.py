@@ -10,19 +10,6 @@ from rest_framework.permissions import BasePermission
 from operacao.models import OrdemServico
 
 
-class IsGestor(BasePermission):
-    """Permite acesso apenas a usuários com perfil de Gestor."""
-
-    message = 'Apenas gestores podem acessar este recurso.'
-
-    def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and hasattr(request.user, 'perfil_gestor')
-        )
-
-
 class IsFuncionarioDaOS(BasePermission):
     """
     Permite acesso apenas se request.user for o funcionário

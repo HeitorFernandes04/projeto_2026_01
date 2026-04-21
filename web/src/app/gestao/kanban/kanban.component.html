@@ -13,98 +13,154 @@
 
       <button class="notification-btn" (click)="irParaIncidentes()">
         <span class="material-symbols-outlined">notifications</span>
+        <span class="badge">2</span>
       </button>
 
       <div class="date-selector">
         <span class="date-label">Data</span>
-        <span class="date-value">{{ dataHoje }}</span>
+        <span class="date-value">14 ABR 2026</span>
       </div>
     </div>
   </header>
 
-  <!-- Estado de erro -->
-  @if (erro) {
-    <div class="state-message erro">
-      <span class="material-symbols-outlined">error</span>
-      <p>Não foi possível carregar o Pátio. Verifique a conexão com o servidor.</p>
-      <button (click)="carregarKanban()">Tentar novamente</button>
-    </div>
-  }
+  <main class="kanban-scroll-area">
+    <div class="kanban-grid-background">
+      <div class="kanban-columns">
 
-  <!-- Estado de carregamento -->
-  @if (carregando && !erro) {
-    <div class="state-message carregando">
-      <span class="material-symbols-outlined spin">autorenew</span>
-      <p>Carregando operações do dia...</p>
-    </div>
-  }
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>PÁTIO</h3>
+              <span class="column-badge">2</span>
+            </div>
+            <div class="column-status-line gray"></div>
+          </div>
 
-  <!-- Kanban principal -->
-  @if (!carregando && !erro) {
-    <main class="kanban-scroll-area">
-      <div class="kanban-grid-background">
-        <div class="kanban-columns">
-
-          @for (coluna of COLUNAS_CONFIG; track coluna.chave) {
-            <div class="kanban-column">
-              <div class="column-header">
-                <div class="header-main">
-                  <h3>{{ coluna.nome }}</h3>
-                  <span class="column-badge">{{ cardsDeColuna(coluna.chave).length }}</span>
+          <div class="cards-list">
+            <div class="vehicle-card">
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">ABC-1234</span>
+                  <span class="model">Toyota Corolla</span>
                 </div>
-                <div class="column-status-line" [ngClass]="coluna.linhaClass"></div>
               </div>
-
-              <div class="cards-list">
-
-                @for (card of cardsDeColuna(coluna.chave); track card.id) {
-                  <div class="vehicle-card" [class.has-incident]="card.is_atrasado">
-                    @if (card.is_atrasado) {
-                      <span class="material-symbols-outlined alert-icon">warning</span>
-                    }
-                    <div class="card-row">
-                      <div class="car-icon-box">
-                        <span class="material-symbols-outlined">directions_car</span>
-                      </div>
-                      <div class="vehicle-info">
-                        <span class="plate">{{ card.placa }}</span>
-                        <span class="model">{{ card.modelo }}</span>
-                      </div>
-                    </div>
-                    <div class="service-info">
-                      <span class="service-label">Serviço</span>
-                      <p>{{ card.servico }}</p>
-                    </div>
-                    <div class="timer-row">
-                      <span class="material-symbols-outlined">schedule</span>
-                      <strong>{{ formatarTempo(card.tempo_decorrido_minutos) }}</strong>
-                      <small>/ {{ formatarTempo(card.duracao_estimada_minutos) }}</small>
-                    </div>
-                    <div class="progress-container">
-                      <div
-                        class="progress-bar"
-                        [class.warning]="card.is_atrasado"
-                        [style.width.%]="calcularProgresso(card)"
-                      ></div>
-                    </div>
-                  </div>
-                }
-
-                @if (cardsDeColuna(coluna.chave).length === 0) {
-                  <div class="empty-column">
-                    <span class="material-symbols-outlined">inbox</span>
-                    <span>Nenhuma OS aqui</span>
-                  </div>
-                }
-
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem Completa</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>00:39</strong> <small>/ 00:45</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar" style="width: 80%"></div>
               </div>
             </div>
-          }
-
+          </div>
         </div>
+
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>VISTORIA</h3>
+              <span class="column-badge">1</span>
+            </div>
+            <div class="column-status-line purple"></div>
+          </div>
+          <div class="cards-list">
+            <div class="vehicle-card">
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">XYZ-5678</span>
+                  <span class="model">Honda Civic</span>
+                </div>
+              </div>
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem + Polimento</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>00:49</strong> <small>/ 01:30</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar" style="width: 30%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>LAVAGEM / ACABAMENTO</h3>
+              <span class="column-badge">4</span>
+            </div>
+            <div class="column-status-line blue"></div>
+          </div>
+
+          <div class="cards-list">
+            <div class="vehicle-card has-incident">
+              <span class="material-symbols-outlined alert-icon">warning</span>
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">DEF-9012</span>
+                  <span class="model">Volkswagen Gol</span>
+                </div>
+              </div>
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem Expressa</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>00:59</strong> <small>/ 00:30</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar warning" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kanban-column">
+          <div class="column-header">
+            <div class="header-main">
+              <h3>LIBERAÇÃO</h3>
+              <span class="column-badge">1</span>
+            </div>
+            <div class="column-status-line cyan"></div>
+          </div>
+          <div class="cards-list">
+            <div class="vehicle-card">
+              <div class="card-row">
+                <div class="car-icon-box"><span class="material-symbols-outlined">directions_car</span></div>
+                <div class="vehicle-info">
+                  <span class="plate">MNO-2345</span>
+                  <span class="model">Hyundai HB20</span>
+                </div>
+              </div>
+              <div class="service-info">
+                <label>Serviço</label>
+                <p>Lavagem Completa</p>
+              </div>
+              <div class="timer-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <strong>01:04</strong> <small>/ 00:45</small>
+              </div>
+              <div class="progress-container">
+                <div class="progress-bar" style="width: 95%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-    </main>
-  }
+    </div>
+  </main>
 
   <footer class="patio-footer">
     <div class="footer-stats">
@@ -114,7 +170,7 @@
         </div>
         <div class="stat-details">
           <span class="stat-label">Em Operação</span>
-          <span class="stat-val">{{ totalEmOperacao }} veículo{{ totalEmOperacao !== 1 ? 's' : '' }}</span>
+          <span class="stat-val">8 veículos</span>
         </div>
       </div>
       <div class="stat-mini-card">
@@ -123,7 +179,7 @@
         </div>
         <div class="stat-details">
           <span class="stat-label">Tempo Médio</span>
-          <span class="stat-val">{{ formatarTempo(tempoMedioMinutos) }}</span>
+          <span class="stat-val">42 min</span>
         </div>
       </div>
       <div class="stat-mini-card">
@@ -132,7 +188,7 @@
         </div>
         <div class="stat-details">
           <span class="stat-label">Eficiência</span>
-          <span class="stat-val">{{ eficienciaPercent }}%</span>
+          <span class="stat-val">94%</span>
         </div>
       </div>
       <div class="stat-mini-card">
@@ -140,8 +196,8 @@
           <span class="material-symbols-outlined">group</span>
         </div>
         <div class="stat-details">
-          <span class="stat-label">OS Ativas</span>
-          <span class="stat-val">{{ totalEmOperacao }}</span>
+          <span class="stat-label">Funcionários</span>
+          <span class="stat-val">5 ativos</span>
         </div>
       </div>
     </div>
