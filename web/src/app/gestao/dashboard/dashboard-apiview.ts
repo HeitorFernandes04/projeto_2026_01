@@ -2,7 +2,7 @@ import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, ChangeDetector
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
-import { DashboardService, EficienciaFuncionario, Indicadores } from '../../services/dashboard.service';
+import { DashboardService, EficienciaFuncionario, EntradaRecente, Indicadores } from '../../services/dashboard.service';
 
 Chart.register(...registerables);
 
@@ -27,6 +27,7 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
   incidentesAtivos: number = 0;
 
   rankingEficiencia: EficienciaFuncionario[] = [];
+  entradasRecentes: EntradaRecente[] = [];
   hojeStr = '';
 
   constructor(private router: Router, private dashboardService: DashboardService, private cdr: ChangeDetectorRef) {
@@ -76,12 +77,25 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
         if (totalServicos > 0) {
           this.tempoMedio = Math.round(somaTempos / totalServicos);
         }
-        
-        // Alerta o Angular das novidades na Eficiencia
         this.cdr.detectChanges();
       },
       error: (e) => console.error('Erro ao carregar ranking', e)
     });
+
+    this.dashboardService.getEntradasRecentes().subscribe({
+      next: (res: EntradaRecente[]) => {
+        this.entradasRecentes = res;
+        this.cdr.detectChanges();
+      },
+      error: (e) => console.error('Erro ao carregar entradas recentes', e)
+    });
+  }
+
+  formatarTempoRelativo(isoStr: string): string {
+    const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
+    if (diff < 1) return 'Agora';
+    if (diff === 1) return '1 min';
+    return `${diff} min`;
   }
 
   reenderizarGraficoReceita(dadosSemanas: Array<{ data: string, valor: number }>) {

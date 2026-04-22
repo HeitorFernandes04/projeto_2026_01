@@ -103,11 +103,11 @@
             <span class="car-model" style="margin-left:8px; font-size:12px; color:#888;">{{ prof.totalOs }} OS's</span>
           </div>
           <div class="service-stats" style="display:flex; gap:10px; align-items:center;">
-             <!-- Desvio: se for negativo = superou meta (verde), se positivo = demorou mais (vermelho) -->
+             <!-- Desvio: negativo = adiantado (verde), positivo = atrasado (vermelho) -->
              <span style="font-size: 13px;" [ngStyle]="{'color': prof.desvioTotalMinutos <= 0 ? '#2ECC71' : '#E74C3C'}">
                  {{ prof.desvioTotalMinutos > 0 ? '+' : '' }}{{ prof.desvioTotalMinutos }} min
              </span>
-             <span class="percentage" [ngClass]="{'p-high': prof.desvioTotalMinutos <= 0, 'p-low': prof.desvioTotalMinutos > 0}">OEE</span>
+             <span class="percentage" [ngClass]="{'p-high': prof.desvioTotalMinutos <= 0, 'p-low': prof.desvioTotalMinutos > 0}">Eficiência</span>
           </div>
         </div>
       </div>
@@ -118,31 +118,26 @@
       </ng-template>
     </div>
 
-    <!-- Mantivemos a lista visual padrão que foi solicitada para manter a estética para outras sessões -->
     <div class="list-card">
       <div class="card-header">
         <h3>Entradas Recentes</h3>
         <span class="live-indicator">● Live</span>
       </div>
-      <!-- Esse painel poderia ser anexado via WebSockets no futuro (Fluxo de Patio) -->
-      <div class="activity-list">
-        <div class="activity-item">
-          <div class="plate-box">BRA2E19</div>
+      <div class="activity-list" *ngIf="entradasRecentes.length > 0; else semEntradas">
+        <div class="activity-item" *ngFor="let entrada of entradasRecentes">
+          <div class="plate-box">{{ entrada.placa }}</div>
           <div class="entry-info">
-            <span class="car-model">Toyota Corolla</span>
-            <span class="entry-service">Lavagem VIP</span>
+            <span class="car-model">{{ entrada.modelo }}</span>
+            <span class="entry-service">{{ entrada.servico }}</span>
           </div>
-          <span class="entry-time">Agora</span>
-        </div>
-        <div class="activity-item">
-          <div class="plate-box">KLA-5050</div>
-          <div class="entry-info">
-            <span class="car-model">VW Onix</span>
-            <span class="entry-service">Ducha Rápida</span>
-          </div>
-          <span class="entry-time">12 min</span>
+          <span class="entry-time">{{ formatarTempoRelativo(entrada.data_hora) }}</span>
         </div>
       </div>
+      <ng-template #semEntradas>
+        <div style="padding: 20px; text-align: center; color: #888;">
+          Nenhum veículo no pátio no momento.
+        </div>
+      </ng-template>
     </div>
   </section>
 </div>

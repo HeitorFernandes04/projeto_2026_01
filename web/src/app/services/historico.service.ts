@@ -27,6 +27,7 @@ export interface HistoricoFiltros {
   data_inicio?: string;
   data_fim?: string;
   page?: number;
+  com_incidente_resolvido?: boolean;
 }
 
 export interface MidiaGaleria {
@@ -56,11 +57,12 @@ export class HistoricoService {
 
   buscarHistorico(filtros: HistoricoFiltros = {}): Observable<HistoricoResponse> {
     let params = new HttpParams();
-    if (filtros.placa)       params = params.set('placa', filtros.placa);
-    if (filtros.status)      params = params.set('status', filtros.status);
-    if (filtros.data_inicio) params = params.set('data_inicio', filtros.data_inicio);
-    if (filtros.data_fim)    params = params.set('data_fim', filtros.data_fim);
-    if (filtros.page)        params = params.set('page', String(filtros.page));
+    if (filtros.placa)                    params = params.set('placa', filtros.placa);
+    if (filtros.status)                   params = params.set('status', filtros.status);
+    if (filtros.data_inicio)              params = params.set('data_inicio', filtros.data_inicio);
+    if (filtros.data_fim)                 params = params.set('data_fim', filtros.data_fim);
+    if (filtros.page)                     params = params.set('page', String(filtros.page));
+    if (filtros.com_incidente_resolvido)  params = params.set('com_incidente_resolvido', 'true');
 
     return this.http.get<HistoricoResponse>(this.urlHistorico, {
       headers: this.getHeaders(),

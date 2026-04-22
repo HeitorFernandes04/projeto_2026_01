@@ -8,6 +8,7 @@ from .views import (
     FotoUploadView, ServicoListView, HorariosLivresView,
     registrar_incidente, TagPecaViewSet, KanbanAPIView,
     HistoricoGestorListView, HistoricoGestorFotosView,
+    EntradasRecentesAPIView,
 )
 
 router = DefaultRouter()
@@ -19,6 +20,7 @@ urlpatterns = [
     path('gestor/historico/', HistoricoGestorListView.as_view(), name='gestor-historico'),
     path('gestor/historico/<int:pk>/fotos/', HistoricoGestorFotosView.as_view(), name='gestor-historico-fotos'),
     path('kanban/', KanbanAPIView.as_view(), name='os-kanban'),
+    path('entradas-recentes/', EntradasRecentesAPIView.as_view(), name='os-entradas-recentes'),
     path('novo/', CriarOrdemServicoView.as_view(), name='os-criar'),
     path('hoje/', OrdensServicoHojeView.as_view(), name='os-hoje'),
     path('historico/', HistoricoOrdemServicoView.as_view(), name='os-historico'),

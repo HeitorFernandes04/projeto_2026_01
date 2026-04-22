@@ -219,8 +219,11 @@ class HistoricoGestorService:
     """RF-17/RF-18: Histórico e galeria de OS para o Gestor."""
 
     @staticmethod
-    def listar_historico_gestor(estabelecimento, data_inicio=None, data_fim=None, placa=None, status=None):
-        """RF-17: Lista OS do estabelecimento com filtros opcionais e validações cronológicas."""
+    def listar_historico_gestor(
+        estabelecimento, data_inicio=None, data_fim=None,
+        placa=None, status=None, com_incidente_resolvido=False,
+    ):
+        """RF-17: Lista OS encerradas do estabelecimento com filtros opcionais."""
         hoje = timezone.localdate()
 
         if data_inicio and data_fim:
@@ -237,15 +240,24 @@ class HistoricoGestorService:
             filtros['data_hora__date__lte'] = data_fim
         if placa:
             filtros['veiculo__placa__icontains'] = placa.strip().upper()
+
+        # RN: histórico exibe apenas estados terminais; filtro explícito sobrescreve
         if status:
             filtros['status'] = status
+        else:
+            filtros['status__in'] = ['FINALIZADO', 'CANCELADO']
 
-        return (
+        queryset = (
             OrdemServico.objects
             .filter(**filtros)
             .select_related('veiculo', 'servico', 'funcionario')
             .order_by('-data_hora')
         )
+
+        if com_incidente_resolvido:
+            queryset = queryset.filter(incidentes__resolvido=True).distinct()
+
+        return queryset
 
     @staticmethod
     def montar_galeria_os(os_id, estabelecimento):
@@ -266,21 +278,26 @@ class HistoricoGestorService:
 
 
 class KanbanService:
-    """RF-14: Agrupa OS operacionais do dia por status para o quadro Kanban."""
+    """RF-14: Agrupa OS operacionais por status para o quadro Kanban."""
 
-    COLUNAS = ['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO']
+    COLUNAS = ['PATIO', 'LAVAGEM', 'FINALIZADO_HOJE', 'INCIDENTES']
+    STATUS_LAVAGEM = ['VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO']
 
     @staticmethod
     def listar_por_estabelecimento(estabelecimento):
+        from django.db.models import Q
+        from operacao.models import IncidenteOS
         hoje = timezone.localdate()
+        # OS ativas (qualquer data) + finalizadas somente hoje
         return (
             OrdemServico.objects
+            .filter(estabelecimento=estabelecimento)
             .filter(
-                estabelecimento=estabelecimento,
-                status__in=KanbanService.COLUNAS,
-                data_hora__date=hoje,
+                Q(status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                Q(status='FINALIZADO', horario_finalizacao__date=hoje)
             )
             .select_related('veiculo', 'servico')
+            .prefetch_related('incidentes')
             .order_by('data_hora')
         )
 

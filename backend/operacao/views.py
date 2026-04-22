@@ -221,7 +221,7 @@ class HorariosLivresView(APIView):
 
 
 class KanbanAPIView(APIView):
-    """RF-14: GET /api/ordens-servico/kanban/ — OS do dia agrupadas por status."""
+    """RF-14: GET /api/ordens-servico/kanban/ — OS operacionais agrupadas por coluna."""
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsGestor]
@@ -232,12 +232,49 @@ class KanbanAPIView(APIView):
 
         kanban = {col: [] for col in KanbanService.COLUNAS}
         for os in ordens:
-            kanban[os.status].append(os)
+            if os.status == 'PATIO':
+                kanban['PATIO'].append(os)
+            elif os.status in KanbanService.STATUS_LAVAGEM:
+                kanban['LAVAGEM'].append(os)
+            elif os.status == 'FINALIZADO':
+                kanban['FINALIZADO_HOJE'].append(os)
+            elif os.status == 'BLOQUEADO_INCIDENTE':
+                kanban['INCIDENTES'].append(os)
 
         return Response({
             col: KanbanCardSerializer(items, many=True).data
             for col, items in kanban.items()
         })
+
+
+class EntradasRecentesAPIView(APIView):
+    """GET /api/ordens-servico/entradas-recentes/ — Últimas entradas no pátio para o Dashboard."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+
+    def get(self, request):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+        ordens = (
+            OrdemServico.objects
+            .filter(
+                estabelecimento=estabelecimento,
+                status__in=['PATIO', 'VISTORIA_INICIAL'],
+            )
+            .select_related('veiculo', 'servico')
+            .order_by('-data_hora')[:8]
+        )
+        data = [
+            {
+                'id': os.id,
+                'placa': f"{os.veiculo.placa[:3]}-{os.veiculo.placa[3:]}" if len(os.veiculo.placa) == 7 else os.veiculo.placa,
+                'modelo': os.veiculo.modelo,
+                'servico': os.servico.nome,
+                'data_hora': os.data_hora,
+            }
+            for os in ordens
+        ]
+        return Response(data)
 
 
 class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
@@ -282,6 +319,7 @@ class HistoricoGestorListView(APIView):
                 data_fim=d.get('data_fim'),
                 placa=d.get('placa'),
                 status=d.get('status'),
+                com_incidente_resolvido=d.get('com_incidente_resolvido', False),
             )
         except ValidationError as e:
             return Response(

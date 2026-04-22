@@ -189,14 +189,30 @@ class KanbanCardSerializer(serializers.ModelSerializer):
         fields = ['id', 'placa', 'modelo', 'servico', 'duracao_estimada_minutos', 'tempo_decorrido_minutos', 'is_atrasado']
 
     def get_tempo_decorrido_minutos(self, obj):
-        inicio = obj.horario_lavagem or obj.data_hora
-        delta = timezone.now() - inicio
+        # RN: PATIO ainda não iniciou execução — tempo zero
+        if obj.status == 'PATIO' or not obj.horario_lavagem:
+            return 0
+        # RN: BLOQUEADO_INCIDENTE — congela o relógio no momento do incidente
+        if obj.status == 'BLOQUEADO_INCIDENTE':
+            incidentes = list(obj.incidentes.all())
+            if incidentes:
+                ultimo = max(incidentes, key=lambda i: i.data_registro)
+                delta = ultimo.data_registro - obj.horario_lavagem
+                return max(0, int(delta.total_seconds() / 60))
+        delta = timezone.now() - obj.horario_lavagem
         return int(delta.total_seconds() / 60)
 
     def get_is_atrasado(self, obj):
-        if obj.status != 'EM_EXECUCAO':
+        if obj.status not in ('EM_EXECUCAO', 'LIBERACAO'):
             return False
         return self.get_tempo_decorrido_minutos(obj) > obj.servico.duracao_estimada_minutos
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        placa = ret.get('placa', '')
+        if len(placa) == 7 and '-' not in placa:
+            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        return ret
 
 
 class IncidenteOSSerializer(serializers.ModelSerializer):
@@ -210,13 +226,14 @@ class IncidenteOSSerializer(serializers.ModelSerializer):
 # ---------------------------------------------------------------------------
 
 class HistoricoGestorFiltroSerializer(serializers.Serializer):
-    data_inicio = serializers.DateField(required=False)
-    data_fim    = serializers.DateField(required=False)
-    placa       = serializers.CharField(required=False, allow_blank=True)
-    status      = serializers.ChoiceField(
+    data_inicio           = serializers.DateField(required=False)
+    data_fim              = serializers.DateField(required=False)
+    placa                 = serializers.CharField(required=False, allow_blank=True)
+    status                = serializers.ChoiceField(
         choices=[s for s, _ in OrdemServico.STATUS_CHOICES],
         required=False,
     )
+    com_incidente_resolvido = serializers.BooleanField(required=False, default=False)
 
 
 class HistoricoGestorItemSerializer(serializers.ModelSerializer):

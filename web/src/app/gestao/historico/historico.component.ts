@@ -31,11 +31,12 @@ export class HistoricoComponent implements OnInit {
   filtroStatus = '';
   filtroDataInicio = '';
   filtroDataFim = '';
+  filtroComIncidenteResolvido = false;
 
-  // Custom select de status
+  // Custom select de status — apenas estados terminais (histórico = OS encerradas)
   dropdownAberto = false;
   selectedStatus = 'Todos';
-  readonly statusOptions = ['Todos', 'FINALIZADO', 'CANCELADO', 'PATIO', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE'];
+  readonly statusOptions = ['Todos', 'FINALIZADO', 'CANCELADO'];
 
   get totalPaginas(): number {
     return Math.ceil(this.totalItens / this.itensPorPagina);
@@ -64,10 +65,11 @@ export class HistoricoComponent implements OnInit {
     this.cdr.markForCheck();
 
     const filtros: HistoricoFiltros = { page: pagina };
-    if (this.filtroPlaca.trim())    filtros.placa       = this.filtroPlaca.trim();
-    if (this.filtroDataInicio)      filtros.data_inicio = this.filtroDataInicio;
-    if (this.filtroDataFim)         filtros.data_fim    = this.filtroDataFim;
-    if (this.filtroStatus)          filtros.status      = this.filtroStatus;
+    if (this.filtroPlaca.trim())          filtros.placa                    = this.filtroPlaca.replace('-', '').trim();
+    if (this.filtroDataInicio)            filtros.data_inicio               = this.filtroDataInicio;
+    if (this.filtroDataFim)               filtros.data_fim                  = this.filtroDataFim;
+    if (this.filtroStatus)                filtros.status                    = this.filtroStatus;
+    if (this.filtroComIncidenteResolvido) filtros.com_incidente_resolvido   = true;
 
     this.historicoService.buscarHistorico(filtros).subscribe({
       next: (res) => {
@@ -89,12 +91,21 @@ export class HistoricoComponent implements OnInit {
   }
 
   limparFiltros(): void {
-    this.filtroPlaca      = '';
-    this.filtroDataInicio = '';
-    this.filtroDataFim    = '';
-    this.filtroStatus     = '';
-    this.selectedStatus   = 'Todos';
+    this.filtroPlaca                  = '';
+    this.filtroDataInicio             = '';
+    this.filtroDataFim                = '';
+    this.filtroStatus                 = '';
+    this.selectedStatus               = 'Todos';
+    this.filtroComIncidenteResolvido  = false;
     this.buscar();
+  }
+
+  formatarPlacaInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let v = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 7);
+    if (v.length > 3) v = `${v.slice(0, 3)}-${v.slice(3)}`;
+    this.filtroPlaca = v;
+    input.value = v;
   }
 
   mudarPagina(pagina: number): void {

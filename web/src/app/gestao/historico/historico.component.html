@@ -53,7 +53,7 @@
         <label>Placa do Veículo</label>
         <div class="input-box">
           <span class="material-symbols-outlined pre-icon">search</span>
-          <input type="text" placeholder="Ex: ABC-1234" [(ngModel)]="filtroPlaca">
+          <input type="text" placeholder="Ex: ABC-1234" [value]="filtroPlaca" (input)="formatarPlacaInput($event)" maxlength="8">
         </div>
       </div>
 
@@ -86,6 +86,13 @@
         {{ erroDatas }}
       </div>
     }
+
+    <div class="filter-extras">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="filtroComIncidenteResolvido">
+        Apenas com incidente resolvido
+      </label>
+    </div>
 
     <div class="search-actions">
       <button class="btn-limpar" (click)="limparFiltros()">Limpar</button>
