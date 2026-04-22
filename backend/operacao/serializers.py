@@ -192,13 +192,21 @@ class KanbanCardSerializer(serializers.ModelSerializer):
         # RN: PATIO ainda não iniciou execução — tempo zero
         if obj.status == 'PATIO' or not obj.horario_lavagem:
             return 0
-        # RN: BLOQUEADO_INCIDENTE — congela o relógio no momento do incidente
+        # RN: BLOQUEADO_INCIDENTE — congela no momento do último incidente
         if obj.status == 'BLOQUEADO_INCIDENTE':
             incidentes = list(obj.incidentes.all())
             if incidentes:
                 ultimo = max(incidentes, key=lambda i: i.data_registro)
                 delta = ultimo.data_registro - obj.horario_lavagem
                 return max(0, int(delta.total_seconds() / 60))
+        # RN: LIBERACAO — execução encerrada, congela no fim do acabamento
+        if obj.status == 'LIBERACAO' and obj.horario_acabamento:
+            delta = obj.horario_acabamento - obj.horario_lavagem
+            return max(0, int(delta.total_seconds() / 60))
+        # RN: FINALIZADO — congela no horário de finalização real
+        if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
+            delta = obj.horario_finalizacao - obj.horario_lavagem
+            return max(0, int(delta.total_seconds() / 60))
         delta = timezone.now() - obj.horario_lavagem
         return int(delta.total_seconds() / 60)
 

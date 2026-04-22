@@ -8,14 +8,17 @@ import { of, throwError } from 'rxjs';
 
 const mockKanban: KanbanData = {
   PATIO: [
-    { id: 1, placa: 'ABC-1234', modelo: 'Gol', servico: 'Lavagem Completa', duracao_estimada_minutos: 45, tempo_decorrido_minutos: 15, is_atrasado: false },
-    { id: 2, placa: 'DEF-9012', modelo: 'Civic', servico: 'Higienização', duracao_estimada_minutos: 90, tempo_decorrido_minutos: 100, is_atrasado: true },
+    { id: 1, placa: 'ABC-1234', modelo: 'Gol', servico: 'Lavagem Completa', duracao_estimada_minutos: 45, tempo_decorrido_minutos: 0, is_atrasado: false },
+    { id: 2, placa: 'DEF-9012', modelo: 'Civic', servico: 'Higienização', duracao_estimada_minutos: 90, tempo_decorrido_minutos: 0, is_atrasado: false },
   ],
-  VISTORIA_INICIAL: [],
-  EM_EXECUCAO: [
+  LAVAGEM: [
     { id: 3, placa: 'GHI-3456', modelo: 'Corolla', servico: 'Polimento', duracao_estimada_minutos: 60, tempo_decorrido_minutos: 30, is_atrasado: false },
+    { id: 4, placa: 'JKL-7890', modelo: 'Onix', servico: 'Lavagem Simples', duracao_estimada_minutos: 30, tempo_decorrido_minutos: 45, is_atrasado: true },
   ],
-  LIBERACAO: [],
+  FINALIZADO_HOJE: [
+    { id: 5, placa: 'MNO-1111', modelo: 'HB20', servico: 'Lavagem Simples', duracao_estimada_minutos: 30, tempo_decorrido_minutos: 28, is_atrasado: false },
+  ],
+  INCIDENTES: [],
 };
 
 describe('KanbanComponent — RF-14', () => {
@@ -45,12 +48,19 @@ describe('KanbanComponent — RF-14', () => {
       expect(component.COLUNAS_CONFIG.length).toBe(4);
     });
 
-    it('deve conter as 4 chaves operacionais', () => {
+    it('deve conter as 4 novas chaves operacionais', () => {
       const chaves = component.COLUNAS_CONFIG.map(c => c.chave);
       expect(chaves).toContain('PATIO');
-      expect(chaves).toContain('VISTORIA_INICIAL');
-      expect(chaves).toContain('EM_EXECUCAO');
-      expect(chaves).toContain('LIBERACAO');
+      expect(chaves).toContain('LAVAGEM');
+      expect(chaves).toContain('FINALIZADO_HOJE');
+      expect(chaves).toContain('INCIDENTES');
+    });
+
+    it('não deve conter as chaves antigas de colunas individuais', () => {
+      const chaves = component.COLUNAS_CONFIG.map(c => c.chave);
+      expect(chaves).not.toContain('VISTORIA_INICIAL');
+      expect(chaves).not.toContain('EM_EXECUCAO');
+      expect(chaves).not.toContain('LIBERACAO');
     });
   });
 
@@ -77,8 +87,12 @@ describe('KanbanComponent — RF-14', () => {
       expect(component.cardsDeColuna('PATIO').length).toBe(2);
     });
 
+    it('deve retornar os cards da coluna LAVAGEM unificada', () => {
+      expect(component.cardsDeColuna('LAVAGEM').length).toBe(2);
+    });
+
     it('deve retornar array vazio para colunas sem cards', () => {
-      expect(component.cardsDeColuna('LIBERACAO').length).toBe(0);
+      expect(component.cardsDeColuna('INCIDENTES').length).toBe(0);
     });
   });
 
@@ -86,12 +100,13 @@ describe('KanbanComponent — RF-14', () => {
     beforeEach(() => component.carregarKanban());
 
     it('totalEmOperacao deve somar todos os cards', () => {
-      expect(component.totalEmOperacao).toBe(3);
+      // PATIO(2) + LAVAGEM(2) + FINALIZADO_HOJE(1) + INCIDENTES(0) = 5
+      expect(component.totalEmOperacao).toBe(5);
     });
 
     it('eficienciaPercent deve refletir proporção de cards no prazo', () => {
-      // 2 no prazo de 3 total = 66%
-      expect(component.eficienciaPercent).toBe(67);
+      // 4 no prazo de 5 total = 80%
+      expect(component.eficienciaPercent).toBe(80);
     });
   });
 
@@ -102,12 +117,17 @@ describe('KanbanComponent — RF-14', () => {
     });
 
     it('calcularProgresso não deve exceder 100', () => {
-      const card = mockKanban.PATIO[1]; // tempo_decorrido 100, estimado 90
+      const card = mockKanban.LAVAGEM[1]; // tempo_decorrido 45, estimado 30
       expect(component.calcularProgresso(card)).toBe(100);
     });
 
     it('calcularProgresso deve ser 0 para duracao_estimada_minutos = 0', () => {
       const card = { ...mockKanban.PATIO[0], duracao_estimada_minutos: 0 };
+      expect(component.calcularProgresso(card)).toBe(0);
+    });
+
+    it('calcularProgresso para PATIO deve ser 0 (tempo zero)', () => {
+      const card = mockKanban.PATIO[0]; // tempo_decorrido_minutos: 0
       expect(component.calcularProgresso(card)).toBe(0);
     });
   });

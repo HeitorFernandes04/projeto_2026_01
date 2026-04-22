@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca
-from operacao.models import OrdemServico, MidiaOrdemServico
+from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
 MAX_FOTOS_POR_MOMENTO = 5
@@ -286,7 +286,6 @@ class KanbanService:
     @staticmethod
     def listar_por_estabelecimento(estabelecimento):
         from django.db.models import Q
-        from operacao.models import IncidenteOS
         hoje = timezone.localdate()
         # OS ativas (qualquer data) + finalizadas somente hoje
         return (

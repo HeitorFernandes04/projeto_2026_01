@@ -23,6 +23,21 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'name']
 
+    @property
+    def estabelecimento(self):
+        """Resolve o estabelecimento via perfil (gestor ou funcionário)."""
+        if hasattr(self, 'perfil_gestor'):
+            return self.perfil_gestor.estabelecimento
+        if hasattr(self, 'perfil_funcionario'):
+            return self.perfil_funcionario.estabelecimento
+        return None
+
+    @estabelecimento.setter
+    def estabelecimento(self, value):
+        # A associação real ocorre via Gestor/Funcionario; setter existe apenas
+        # para compatibilidade com código que atribui diretamente à instância.
+        pass
+
     def __str__(self):
         return self.email
 
