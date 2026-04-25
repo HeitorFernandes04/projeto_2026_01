@@ -26,7 +26,7 @@ Com base na análise do código atual nos arquivos `models.py`, `services.py` e 
 ### 2. Restrições do Operacional e Fluxos do Funcionário
 *   **RN-05 (Bloqueio de Multitarefa em Andamento):** Um funcionário **não pode** ter mais de uma OS em estado `EM_EXECUCAO` simultaneamente. É exigida a finalização (ou transição para Liberação) da atual antes de iniciar outro processo.
 *   **RN-06 (Concorrência / Trava do Check-in):** Uma OS deve pertencer unicamente a um funcionário quando transita para execução.
-*   **RN-07 (Entrada Expressa):** Ao requisitar `iniciar_agora=True`, a OS é criada diretamente com status `PATIO` e o `horario_inicio` é registrado para o momento da criação.
+*   **RN-07 (Entrada Expressa):** Ao requisitar `iniciar_agora=True`, a OS é criada diretamente com status `VISTORIA_INICIAL` (pulando a fila do Pátio). Caso contrário, é criada com status `PATIO`.
 
 ### 3. Matriz de Permissões e Mídias (Evidências)
 *   **RN-08 (Matriz Status vs Momento):** O sistema valida rigorosamente a coerência entre o estágio da OS e o tipo de foto enviada:

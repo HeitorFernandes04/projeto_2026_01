@@ -12,11 +12,11 @@
 ---
 
 ### 1.2 Requisitos Funcionais (RFs)
-| Número | Requisito | Descrição |
-| :--- | :--- | :--- |
-| **RF-14** | Kanban de Pista | Exibir um quadro Kanban com todas as Ordens de Serviço do dia atual, agrupadas pelos status operacionais da pista. |
-| **RF-15** | Central de Incidentes Pendentes | Exibir uma listagem exclusiva de OS com status `BLOQUEADO_INCIDENTE`, com alerta visual quando houver pendências. |
-| **RF-16** | Auditoria e Desbloqueio | Permitir ao gestor analisar os dados do incidente, registrar nota de resolução e devolver a OS ao fluxo após a liberação. |
+| Número | Requisito | Status | Descrição |
+| :--- | :--- | :--- | :--- |
+| **RF-14** | Kanban de Pista | ✅ Implementado | Exibir um quadro Kanban com todas as Ordens de Serviço operacionais agrupadas em 4 colunas: `PATIO`, `LAVAGEM`, `FINALIZADO_HOJE` e `INCIDENTES`. |
+| **RF-15** | Central de Incidentes Pendentes | ❌ Pendente | Exibir uma listagem exclusiva de OS com status `BLOQUEADO_INCIDENTE`, com alerta visual quando houver pendências. |
+| **RF-16** | Auditoria e Desbloqueio | ❌ Pendente | Permitir ao gestor analisar os dados do incidente, registrar nota de resolução e devolver a OS ao fluxo após a liberação. |
 
 ---
 
@@ -30,55 +30,55 @@
 ---
 
 ### 1.4 Endpoints RESTful
-**Endpoint:** `/api/ordens-servico/kanban`
+**Endpoint:** `/api/ordens-servico/kanban/` ✅ Implementado
 
 - **Método:** `GET`
-- **Camada:** `KanbanAPIView` (View)
-- **Descrição:** Listagem das Ordens de Serviço do dia atual agrupadas por status da pista.
-- **Requisição:**
-  - Query params opcionais: `estabelecimento_id`.
-- **Resposta:**
-  - Sucesso: `200 OK`
-  - Falha: `4xx/5xx` + mensagem de erro
+- **Camada:** `KanbanAPIView`
+- **Descrição:** Retorna as OS agrupadas em 4 colunas operacionais. Inclui OS ativas de qualquer data + finalizadas somente hoje.
+- **Resposta (`200 OK`):**
+```json
+{
+  "PATIO": [...],
+  "LAVAGEM": [...],
+  "FINALIZADO_HOJE": [...],
+  "INCIDENTES": [...]
+}
+```
+- Cada card contém: `id`, `placa`, `modelo`, `servico`, `duracao_estimada_minutos`, `tempo_decorrido_minutos`, `is_atrasado`.
+- `LAVAGEM` agrupa os status `VISTORIA_INICIAL`, `EM_EXECUCAO` e `LIBERACAO`.
+- `INCIDENTES` agrupa OS com status `BLOQUEADO_INCIDENTE`.
+- Falha: `401/403`
 
 ---
 
-**Endpoint:** `/api/incidentes-os/pendentes`
+**Endpoint:** `/api/incidentes-os/pendentes/` ❌ Não implementado
 
 - **Método:** `GET`
-- **Camada:** `IncidenteViewSet` (View)
+- **Camada:** `IncidenteViewSet` (a criar)
 - **Descrição:** Listagem de incidentes pendentes vinculados a OS bloqueadas.
-- **Requisição:**
-  - Query params opcionais: `estabelecimento_id`.
-- **Resposta:**
-  - Sucesso: `200 OK`
-  - Falha: `4xx/5xx` + mensagem de erro
+- **Requisição:** autenticado como Gestor.
+- **Resposta:** `200 OK` / `403 Forbidden`
 
 ---
 
-**Endpoint:** `/api/incidentes-os/{id}/auditoria`
+**Endpoint:** `/api/incidentes-os/{id}/auditoria/` ❌ Não implementado
 
 - **Método:** `GET`
-- **Camada:** `IncidenteViewSet` (View)
+- **Camada:** `IncidenteViewSet` (a criar)
 - **Descrição:** Retorna os dados consolidados da OS, incidente e peça afetada para análise do gestor.
-- **Requisição:**
-  - Path param: `id`.
-- **Resposta:**
-  - Sucesso: `200 OK`
-  - Falha: `4xx/5xx` + mensagem de erro
+- **Requisição:** Path param `id`.
+- **Resposta:** `200 OK` / `403 Forbidden`
 
 ---
 
-**Endpoint:** `/api/incidentes-os/{id}/resolver`
+**Endpoint:** `/api/incidentes-os/{id}/resolver/` ❌ Não implementado
 
 - **Método:** `PATCH`
-- **Camada:** `IncidenteViewSet` (View)
-- **Descrição:** Resolve o incidente, registra a nota do gestor e desbloqueia a OS.
-- **Requisição:**
-  - JSON com campos: `nota_resolucao`.
-- **Resposta:**
-  - Sucesso: `200 OK`
-  - Falha: `4xx/5xx` + mensagem de erro
+- **Camada:** `IncidenteViewSet` (a criar)
+- **Descrição:** Resolve o incidente, registra a nota do gestor e restaura o status anterior da OS.
+- **Requisição:** JSON com `observacoes_resolucao`.
+- **Pré-requisito:** migration adicionando campo `status_anterior_os` em `IncidenteOS` (ver CA-08).
+- **Resposta:** `200 OK` / `400 Bad Request` / `403 Forbidden`
 
 ---
 
@@ -99,10 +99,13 @@
 ## 2. Testes Esperados
 
 ### 2.1 Teste 1: Listagem do Kanban do Dia
-**Descrição:** Consultar o Kanban com OS do dia atual distribuídas entre os status operacionais.  
+**Descrição:** Consultar o Kanban com OS distribuídas entre os status operacionais.  
 **Esperado:**
 - Resposta HTTP: `200 OK`
-- Retorno agrupado nas colunas `PATIO`, `VISTORIA_INICIAL`, `EM_EXECUCAO` e `LIBERACAO`.
+- Retorno com exatamente as 4 chaves: `PATIO`, `LAVAGEM`, `FINALIZADO_HOJE`, `INCIDENTES`.
+- OS com status `VISTORIA_INICIAL`, `EM_EXECUCAO` e `LIBERACAO` devem aparecer agrupadas em `LAVAGEM`.
+- OS com `BLOQUEADO_INCIDENTE` devem aparecer em `INCIDENTES`.
+- OS com status `FINALIZADO` e `horario_finalizacao` de data anterior ao dia atual **não** devem aparecer.
 
 ---
 
