@@ -84,9 +84,10 @@ class MidiaOrdemServicoFactory(factory.django.DjangoModelFactory):
 class TagPecaFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TagPeca
-    
+
+    estabelecimento = factory.SubFactory(EstabelecimentoFactory)
     nome = factory.Sequence(lambda n: f'Peça_{n}')
-    categoria = 'frente'
+    categoria = 'EXTERNO'
 
 class GestorFactory(factory.django.DjangoModelFactory):
     class Meta:

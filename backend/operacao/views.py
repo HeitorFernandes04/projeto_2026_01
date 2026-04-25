@@ -278,8 +278,15 @@ class EntradasRecentesAPIView(APIView):
 
 
 class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TagPeca.objects.all()
+    queryset = TagPeca.objects.none()  # basename inference; get_queryset sobrescreve
     serializer_class = TagPecaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        estabelecimento = self.request.user.estabelecimento
+        if not estabelecimento:
+            return TagPeca.objects.none()
+        return TagPeca.objects.filter(estabelecimento=estabelecimento).order_by('nome')
 
 
 @api_view(['POST'])
