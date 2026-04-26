@@ -21,13 +21,16 @@ from .serializers import (
     OrdemServicoSerializer,
     CriarOrdemServicoSerializer,
     HistoricoOrdemServicoFiltroSerializer,
+    HistoricoGestorFiltroSerializer,
+    HistoricoGestorItemSerializer,
+    MidiaGaleriaSerializer,
     MidiaOrdemServicoSerializer,
     MidiaOrdemServicoUploadSerializer,
     ServicoSerializer,
     ProximaEtapaSerializer,
     FinalizarIndustrialSerializer,
 )
-from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService
+from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService, HistoricoGestorService
 
 
 class OrdensServicoHojeView(APIView):
@@ -218,7 +221,7 @@ class HorariosLivresView(APIView):
 
 
 class KanbanAPIView(APIView):
-    """RF-14: GET /api/ordens-servico/kanban/ — OS do dia agrupadas por status."""
+    """RF-14: GET /api/ordens-servico/kanban/ — OS operacionais agrupadas por coluna."""
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsGestor]
@@ -229,7 +232,14 @@ class KanbanAPIView(APIView):
 
         kanban = {col: [] for col in KanbanService.COLUNAS}
         for os in ordens:
-            kanban[os.status].append(os)
+            if os.status == 'PATIO':
+                kanban['PATIO'].append(os)
+            elif os.status in KanbanService.STATUS_LAVAGEM:
+                kanban['LAVAGEM'].append(os)
+            elif os.status == 'FINALIZADO':
+                kanban['FINALIZADO_HOJE'].append(os)
+            elif os.status == 'BLOQUEADO_INCIDENTE':
+                kanban['INCIDENTES'].append(os)
 
         return Response({
             col: KanbanCardSerializer(items, many=True).data
@@ -237,16 +247,53 @@ class KanbanAPIView(APIView):
         })
 
 
+class EntradasRecentesAPIView(APIView):
+    """GET /api/ordens-servico/entradas-recentes/ — Últimas entradas no pátio para o Dashboard."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+
+    def get(self, request):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+        ordens = (
+            OrdemServico.objects
+            .filter(
+                estabelecimento=estabelecimento,
+                status__in=['PATIO', 'VISTORIA_INICIAL'],
+            )
+            .select_related('veiculo', 'servico')
+            .order_by('-data_hora')[:8]
+        )
+        data = [
+            {
+                'id': os.id,
+                'placa': f"{os.veiculo.placa[:3]}-{os.veiculo.placa[3:]}" if len(os.veiculo.placa) == 7 else os.veiculo.placa,
+                'modelo': os.veiculo.modelo,
+                'servico': os.servico.nome,
+                'data_hora': os.data_hora,
+            }
+            for os in ordens
+        ]
+        return Response(data)
+
+
 class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TagPeca.objects.all()
+    queryset = TagPeca.objects.none()  # basename inference; get_queryset sobrescreve
     serializer_class = TagPecaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        estabelecimento = self.request.user.estabelecimento
+        if not estabelecimento:
+            return TagPeca.objects.none()
+        return TagPeca.objects.filter(estabelecimento=estabelecimento).order_by('nome')
 
 
 @api_view(['POST'])
 def registrar_incidente(request, pk):
     """Endpoint para o operador relatar um dano e travar a OS."""
     try:
-        incidente = IncidenteService.registrar_incidente(
+        IncidenteService.registrar_incidente(
             os_id=pk,
             dados=request.data,
             arquivo_foto=request.FILES.get('foto_url')
@@ -254,3 +301,70 @@ def registrar_incidente(request, pk):
         return Response({'status': 'OS bloqueada por incidente'}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ---------------------------------------------------------------------------
+#  RF-17 — Histórico Consolidado de Atendimentos (Gestor)
+# ---------------------------------------------------------------------------
+
+class HistoricoGestorListView(APIView):
+    """GET /api/ordens-servico/gestor/historico/"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+
+    def get(self, request):
+        filtro = HistoricoGestorFiltroSerializer(data=request.query_params)
+        filtro.is_valid(raise_exception=True)
+        d = filtro.validated_data
+
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+
+        try:
+            queryset = HistoricoGestorService.listar_historico_gestor(
+                estabelecimento=estabelecimento,
+                data_inicio=d.get('data_inicio'),
+                data_fim=d.get('data_fim'),
+                placa=d.get('placa'),
+                status=d.get('status'),
+                com_incidente_resolvido=d.get('com_incidente_resolvido', False),
+            )
+        except ValidationError as e:
+            return Response(
+                {'detail': e.messages[0] if hasattr(e, 'messages') else str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from rest_framework.pagination import PageNumberPagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 15
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = HistoricoGestorItemSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+
+# ---------------------------------------------------------------------------
+#  RF-18 — Auditoria de Qualidade Visual / Galeria da OS (Gestor)
+# ---------------------------------------------------------------------------
+
+class HistoricoGestorFotosView(APIView):
+    """GET /api/ordens-servico/gestor/historico/{id}/fotos/"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+
+    def get(self, request, pk):
+        from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
+        from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+
+        try:
+            galeria = HistoricoGestorService.montar_galeria_os(pk, estabelecimento)
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+
+        ctx = {'request': request}
+        return Response({
+            'estado_inicial': MidiaGaleriaSerializer(galeria['estado_inicial'], many=True, context=ctx).data,
+            'estado_meio':    MidiaGaleriaSerializer(galeria['estado_meio'],    many=True, context=ctx).data,
+            'estado_final':   MidiaGaleriaSerializer(galeria['estado_final'],   many=True, context=ctx).data,
+        })

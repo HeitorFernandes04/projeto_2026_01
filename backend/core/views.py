@@ -73,8 +73,12 @@ class TagPecaListView(generics.ListAPIView):
     serializer_class = TagPecaSerializer
 
     def get_queryset(self):
+        estabelecimento = self.request.user.estabelecimento
+        if not estabelecimento:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Usuário sem estabelecimento vinculado.")
         return TagPeca.objects.filter(
-            estabelecimento=self.request.user.estabelecimento
+            estabelecimento=estabelecimento
         ).order_by('nome')
 
 

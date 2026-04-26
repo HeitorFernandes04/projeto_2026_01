@@ -57,7 +57,7 @@ class VeiculoFactory(factory.django.DjangoModelFactory):
         model = Veiculo
     
     estabelecimento = factory.SubFactory(EstabelecimentoFactory)
-    placa = factory.Sequence(lambda n: f'AAA0{n:02d}') # Garante placa válida no formato
+    placa = factory.Sequence(lambda n: f'TST{n:04d}')  # 7 chars: 3 letras + 4 dígitos
     modelo = 'Gol'
     marca = 'VW'
     cor = 'Branco'
@@ -84,9 +84,10 @@ class MidiaOrdemServicoFactory(factory.django.DjangoModelFactory):
 class TagPecaFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TagPeca
-    
+
+    estabelecimento = factory.SubFactory(EstabelecimentoFactory)
     nome = factory.Sequence(lambda n: f'Peça_{n}')
-    categoria = 'frente'
+    categoria = 'EXTERNO'
 
 class GestorFactory(factory.django.DjangoModelFactory):
     class Meta:

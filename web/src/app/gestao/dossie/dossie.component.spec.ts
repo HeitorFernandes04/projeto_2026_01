@@ -1,98 +1,109 @@
-import { Router } from '@angular/router';
-
-// Import Angular compiler for JIT compilation
+import { Router, ActivatedRoute } from '@angular/router';
+import { ChangeDetectorRef } from '@angular/core';
 import '@angular/compiler';
 
 import { DossieComponent } from './dossie.component';
+import { HistoricoService, GaleriaOS } from '../../services/historico.service';
+import { of, throwError } from 'rxjs';
 
-describe('DossieComponent - Dossiê da Ordem de Serviço', () => {
+const mockGaleria: GaleriaOS = {
+  estado_inicial: [
+    { id: 1, arquivo_url: 'http://api/fotos/1.jpg', momento: 'VISTORIA_GERAL' },
+    { id: 2, arquivo_url: 'http://api/fotos/2.jpg', momento: 'AVARIA_PREVIA' },
+  ],
+  estado_meio: [],
+  estado_final: [
+    { id: 3, arquivo_url: 'http://api/fotos/3.jpg', momento: 'FINALIZADO' },
+  ],
+};
+
+describe('DossieComponent — RF-18', () => {
   let component: DossieComponent;
   let routerSpy: any;
+  let routeSpy: any;
+  let serviceSpy: any;
+  let cdrSpy: any;
 
   beforeEach(() => {
-    routerSpy = {
-      navigate: vi.fn()
-    };
+    routerSpy  = { navigate: vi.fn() };
+    cdrSpy     = { markForCheck: vi.fn() };
+    routeSpy   = { snapshot: { paramMap: { get: vi.fn().mockReturnValue('42') } } };
+    serviceSpy = { buscarGaleria: vi.fn().mockReturnValue(of(mockGaleria)) };
 
-    // Create component instance manually without TestBed
-    component = new DossieComponent(routerSpy);
+    component = new DossieComponent(
+      routeSpy as ActivatedRoute,
+      routerSpy as Router,
+      serviceSpy as HistoricoService,
+      cdrSpy as ChangeDetectorRef,
+    );
   });
 
-  it('should create', () => {
+  it('deve criar o componente', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('Teste 1 (Dados Mockados)', () => {
-    it('deve ter dados mockados do dossiê configurados corretamente', () => {
-      // Verifica se os dados mockados estão presentes
-      expect(component.dossie).toBeDefined();
-      expect(component.dossie.os).toBe('OS-001234');
-      expect(component.dossie.placa).toBe('ABC-1234');
-      expect(component.dossie.modelo).toBe('Toyota Corolla - Prata');
-      expect(component.dossie.cliente).toBe('João Silva');
-      expect(component.dossie.total).toBe(120.00);
+  describe('Inicialização', () => {
+    it('deve extrair o osId da rota ao chamar ngOnInit', () => {
+      component.ngOnInit();
+      expect(component.osId).toBe(42);
     });
 
-    it('deve ter lista de serviços configurada', () => {
-      // Verifica se os serviços estão presentes
-      expect(component.dossie.servicos).toBeDefined();
-      expect(component.dossie.servicos.length).toBe(2);
-      expect(component.dossie.servicos[0].nome).toBe('Lavagem Completa');
-      expect(component.dossie.servicos[0].preco).toBe(80.00);
+    it('deve chamar buscarGaleria com o id correto', () => {
+      component.ngOnInit();
+      expect(serviceSpy.buscarGaleria).toHaveBeenCalledWith(42);
     });
 
-    it('deve ter fotos de entrada e saída configuradas', () => {
-      // Verifica se as fotos estão presentes
-      expect(component.dossie.fotosEntrada).toBeDefined();
-      expect(component.dossie.fotosSaida).toBeDefined();
-      expect(component.dossie.fotosEntrada.length).toBe(2);
-      expect(component.dossie.fotosSaida.length).toBe(1);
+    it('deve preencher galeria com dados da API', () => {
+      component.ngOnInit();
+      expect(component.galeria.estado_inicial.length).toBe(2);
+      expect(component.galeria.estado_final.length).toBe(1);
+      expect(component.carregando).toBe(false);
     });
   });
 
-  describe('Teste 2 (Métodos de Navegação)', () => {
-    it('deve ter método voltar funcional', () => {
-      // Mock window.history.back
-      const historyBackSpy = vi.fn();
-      Object.defineProperty(window.history, 'back', {
-        value: historyBackSpy,
-        writable: true
-      });
-      
-      component.voltar();
-      expect(historyBackSpy).toHaveBeenCalled();
+  describe('Tratamento de Erro', () => {
+    it('deve ativar flag de erro quando a API falha', () => {
+      serviceSpy.buscarGaleria.mockReturnValue(throwError(() => new Error('403')));
+      component.ngOnInit();
+      expect(component.erro).toBe(true);
+      expect(component.carregando).toBe(false);
+    });
+  });
+
+  describe('Lightbox', () => {
+    it('deve abrir a foto ao chamar ampliarFoto()', () => {
+      component.ampliarFoto('http://api/fotos/1.jpg');
+      expect(component.fotoAmpliada).toBe('http://api/fotos/1.jpg');
     });
 
-    it('deve ter método irParaIncidentes funcional', () => {
-      expect(component.irParaIncidentes).toBeDefined();
-      expect(typeof component.irParaIncidentes).toBe('function');
-      
+    it('deve fechar a foto ao chamar fecharFoto()', () => {
+      component.ampliarFoto('http://api/fotos/1.jpg');
+      component.fecharFoto();
+      expect(component.fotoAmpliada).toBeNull();
+    });
+  });
+
+  describe('totalFotos()', () => {
+    it('deve somar todas as fotos das três seções', () => {
+      component.ngOnInit();
+      expect(component.totalFotos(component.galeria)).toBe(3);
+    });
+
+    it('deve retornar 0 quando todas as seções estão vazias', () => {
+      const vazia: GaleriaOS = { estado_inicial: [], estado_meio: [], estado_final: [] };
+      expect(component.totalFotos(vazia)).toBe(0);
+    });
+  });
+
+  describe('Navegação', () => {
+    it('deve navegar para /gestao/historico ao chamar voltar()', () => {
+      component.voltar();
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/gestao/historico']);
+    });
+
+    it('deve navegar para /gestao/incidentes ao chamar irParaIncidentes()', () => {
       component.irParaIncidentes();
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/gestao/incidentes']);
-    });
-  });
-
-  describe('Teste Antiviés (Validação de Estados)', () => {
-    it('deve manter integridade dos dados mockados', () => {
-      // Verifica se os dados mockados seguem o contrato esperado
-      expect(component.dossie).toHaveProperty('os');
-      expect(component.dossie).toHaveProperty('data');
-      expect(component.dossie).toHaveProperty('placa');
-      expect(component.dossie).toHaveProperty('modelo');
-      expect(component.dossie).toHaveProperty('cliente');
-      expect(component.dossie).toHaveProperty('servicos');
-      expect(component.dossie).toHaveProperty('fotosEntrada');
-      expect(component.dossie).toHaveProperty('fotosSaida');
-      expect(component.dossie).toHaveProperty('total');
-    });
-
-    it('deve ter estrutura de dados consistente nos serviços', () => {
-      // Verifica se todos os serviços têm os campos necessários
-      component.dossie.servicos.forEach(servico => {
-        expect(servico).toHaveProperty('nome');
-        expect(servico).toHaveProperty('preco');
-        expect(typeof servico.preco).toBe('number');
-      });
     });
   });
 });

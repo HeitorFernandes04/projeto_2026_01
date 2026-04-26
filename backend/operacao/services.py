@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca
-from operacao.models import OrdemServico, MidiaOrdemServico
+from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
 MAX_FOTOS_POR_MOMENTO = 5
@@ -157,8 +157,8 @@ class OrdemServicoService:
         status_atual = os.status
         agora = timezone.now()
 
-        # ETAPA 1: PATIO -> VISTORIA_INICIAL (Valida fotos obrigatórias de vistoria)
-        if status_atual == 'PATIO' or (status_atual == 'VISTORIA_INICIAL' and not os.horario_lavagem):
+        # ETAPA 1: PATIO → VISTORIA_INICIAL (valida 5 fotos de vistoria)
+        if status_atual == 'PATIO':
             contagem_fotos = MidiaOrdemServico.objects.filter(
                 ordem_servico=os,
                 momento='VISTORIA_GERAL'
@@ -169,18 +169,22 @@ class OrdemServicoService:
 
             os.status = 'VISTORIA_INICIAL'
             os.laudo_vistoria = dados.get('laudo_vistoria', '')
-            os.horario_lavagem = agora
             os.save()
 
-        # ETAPA 2: VISTORIA_INICIAL -> EM_EXECUCAO
-        elif os.horario_lavagem and not os.horario_acabamento:
-            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+        # ETAPA 2: VISTORIA_INICIAL → EM_EXECUCAO (operador inicia lavagem)
+        elif status_atual == 'VISTORIA_INICIAL':
             os.status = 'EM_EXECUCAO'
+            os.horario_lavagem = agora
+            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+            os.save()
+
+        # ETAPA 3: EM_EXECUCAO sub-fase lavagem → acabamento (status permanece EM_EXECUCAO)
+        elif status_atual == 'EM_EXECUCAO' and not os.horario_acabamento:
             os.horario_acabamento = agora
             os.save()
 
-        # ETAPA 3: EM_EXECUCAO -> LIBERACAO
-        elif os.horario_acabamento:
+        # ETAPA 4: EM_EXECUCAO (acabamento concluído) → LIBERACAO
+        elif status_atual == 'EM_EXECUCAO' and os.horario_acabamento:
             os.comentario_acabamento = dados.get('comentario_acabamento', '')
             os.status = 'LIBERACAO'
             os.save()
@@ -211,22 +215,88 @@ class OrdemServicoService:
         return os
 
 
-class KanbanService:
-    """RF-14: Agrupa OS operacionais do dia por status para o quadro Kanban."""
+class HistoricoGestorService:
+    """RF-17/RF-18: Histórico e galeria de OS para o Gestor."""
 
-    COLUNAS = ['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO']
+    @staticmethod
+    def listar_historico_gestor(
+        estabelecimento, data_inicio=None, data_fim=None,
+        placa=None, status=None, com_incidente_resolvido=False,
+    ):
+        """RF-17: Lista OS encerradas do estabelecimento com filtros opcionais."""
+        hoje = timezone.localdate()
+
+        if data_inicio and data_fim:
+            if data_inicio > data_fim:
+                raise ValidationError("A data inicial não pode ser maior que a data final.")
+            if data_fim > hoje:
+                raise ValidationError("A data final não pode ser uma data futura.")
+
+        filtros = {'estabelecimento': estabelecimento}
+
+        if data_inicio:
+            filtros['data_hora__date__gte'] = data_inicio
+        if data_fim:
+            filtros['data_hora__date__lte'] = data_fim
+        if placa:
+            filtros['veiculo__placa__icontains'] = placa.strip().upper()
+
+        # RN: histórico exibe apenas estados terminais; filtro explícito sobrescreve
+        if status:
+            filtros['status'] = status
+        else:
+            filtros['status__in'] = ['FINALIZADO', 'CANCELADO']
+
+        queryset = (
+            OrdemServico.objects
+            .filter(**filtros)
+            .select_related('veiculo', 'servico', 'funcionario')
+            .order_by('-data_hora')
+        )
+
+        if com_incidente_resolvido:
+            queryset = queryset.filter(incidentes__resolvido=True).distinct()
+
+        return queryset
+
+    @staticmethod
+    def montar_galeria_os(os_id, estabelecimento):
+        """RF-18: Retorna mídias da OS agrupadas por momento para auditoria visual."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+
+        if os.estabelecimento_id != estabelecimento.id:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Esta OS não pertence ao seu estabelecimento.")
+
+        midias = MidiaOrdemServico.objects.filter(ordem_servico=os).order_by('id')
+
+        return {
+            'estado_inicial': [m for m in midias if m.momento in ('VISTORIA_GERAL', 'AVARIA_PREVIA')],
+            'estado_meio':    [m for m in midias if m.momento == 'EXECUCAO'],
+            'estado_final':   [m for m in midias if m.momento == 'FINALIZADO'],
+        }
+
+
+class KanbanService:
+    """RF-14: Agrupa OS operacionais por status para o quadro Kanban."""
+
+    COLUNAS = ['PATIO', 'LAVAGEM', 'FINALIZADO_HOJE', 'INCIDENTES']
+    STATUS_LAVAGEM = ['VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO']
 
     @staticmethod
     def listar_por_estabelecimento(estabelecimento):
+        from django.db.models import Q
         hoje = timezone.localdate()
+        # OS ativas (qualquer data) + finalizadas somente hoje
         return (
             OrdemServico.objects
+            .filter(estabelecimento=estabelecimento)
             .filter(
-                estabelecimento=estabelecimento,
-                status__in=KanbanService.COLUNAS,
-                data_hora__date=hoje,
+                Q(status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                Q(status='FINALIZADO', horario_finalizacao__date=hoje)
             )
             .select_related('veiculo', 'servico')
+            .prefetch_related('incidentes')
             .order_by('data_hora')
         )
 

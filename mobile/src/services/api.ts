@@ -60,7 +60,10 @@ async function request(endpoint: string, options: RequestInit = {}) {
     let erroDetalhado = '';
     try {
       const errJson = JSON.parse(errText);
-      erroDetalhado = errJson.detail || errJson.message || errJson[Object.keys(errJson)[0]][0] || errText;
+      const firstVal = errJson[Object.keys(errJson)[0]];
+      // Se o valor for array extrai o primeiro item; se for string usa direto (sem fatiamento)
+      const firstMsg = Array.isArray(firstVal) ? firstVal[0] : (typeof firstVal === 'string' ? firstVal : '');
+      erroDetalhado = errJson.detail || errJson.message || firstMsg || errText;
     } catch {
       erroDetalhado = errText || response.statusText;
     }

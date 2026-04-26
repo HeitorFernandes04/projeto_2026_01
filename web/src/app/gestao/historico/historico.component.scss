@@ -23,11 +23,6 @@
         background: #161b22; border: 1px solid #30363d; color: #8b949e;
         width: 48px; height: 48px; border-radius: 14px; position: relative;
         display: flex; align-items: center; justify-content: center;
-        .badge {
-          position: absolute; top: -5px; right: -5px; background: #ff3b30;
-          color: white; font-size: 10px; font-weight: 800; padding: 2px 6px;
-          border-radius: 10px; border: 2px solid #0b0e11;
-        }
       }
 
       .header-date-picker {
@@ -125,6 +120,70 @@
     }
   }
 
+  /* MOTOR DE BUSCA - AÇÕES */
+  .search-actions {
+    display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;
+
+    .btn-limpar {
+      background: transparent; border: 1px solid #30363d; color: #8b949e;
+      padding: 10px 24px; border-radius: 14px; font-weight: 700; cursor: pointer;
+      &:hover { background: #21262d; color: #fff; }
+    }
+
+    .btn-buscar {
+      background: #0066ff; border: none; color: #fff;
+      padding: 10px 24px; border-radius: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      &:hover:not(:disabled) { background: #0052cc; }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
+  }
+
+  .erro-datas {
+    display: flex; align-items: center; gap: 8px;
+    color: #ff3b30; font-size: 13px; margin-top: 16px;
+    span { font-size: 18px; }
+  }
+
+  /* LOADING / ERRO */
+  .loading-state, .erro-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 16px; padding: 80px 0; color: #8b949e;
+
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid #21262d;
+      border-top-color: #0066ff; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    span { font-size: 40px; color: #ff3b30; }
+    p { font-size: 15px; }
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TABELA - META */
+  .table-meta {
+    padding: 0 0 16px;
+    .total-label { color: #484f58; font-size: 13px; font-weight: 700; }
+  }
+
+  /* PAGINAÇÃO */
+  .pagination {
+    display: flex; justify-content: center; align-items: center;
+    gap: 16px; padding-top: 24px;
+
+    .pg-btn {
+      background: #21262d; border: 1px solid #30363d; color: #8b949e;
+      width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      &:hover:not(:disabled) { background: #30363d; color: #fff; }
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+
+    .pg-info { color: #8b949e; font-size: 13px; font-weight: 700; }
+  }
+
   /* TABELA DE RESULTADOS */
   .table-container {
     background: #161b22;
@@ -152,9 +211,14 @@
       .bold-white { color: #fff; font-weight: 700; }
 
       .status-pill {
-        background: rgba(0, 255, 136, 0.1); color: #00ff88;
         padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 900;
+        &.pill-green  { background: #052e16; color: #4ade80; }
+        &.pill-red    { background: #450a0a; color: #f87171; }
+        &.pill-orange { background: #431407; color: #fb923c; }
+        &.pill-gray   { background: #1e293b; color: #94a3b8; }
       }
+
+      .empty-row { text-align: center; color: #484f58; padding: 48px !important; }
 
       .btn-dossie {
         background: #21262d; border: none; color: #fff; padding: 8px 16px;

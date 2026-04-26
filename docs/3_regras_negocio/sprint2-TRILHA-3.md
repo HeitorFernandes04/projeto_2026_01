@@ -24,52 +24,56 @@
 | **RNF-05** | Escalabilidade | O sistema deve suportar grande volume de registros históricos sem perda de desempenho. |
 
 ### 1.4 Endpoints RESTful
-**Endpoint:** `/api/ordens-servico`
+
+**Endpoint:** `/api/ordens-servico/gestor/historico/` ✅ Implementado
 
 - **Método:** `GET`
-- **Camada:** `HistoricoViewSet` (View)
-- **Descrição:** Retorna lista paginada de Ordens de Serviço com filtros aplicáveis.
-- **Requisição:**
-  - Query params opcionais:
-    - `data_inicio`
-    - `data_fim`
-    - `placa`
-    - `status`
+- **Camada:** `HistoricoGestorListView`
+- **Descrição:** Retorna lista de OS encerradas do estabelecimento com filtros opcionais.
+- **Requisição — Query params opcionais:**
+  - `data_inicio` (date, formato YYYY-MM-DD)
+  - `data_fim` (date, formato YYYY-MM-DD)
+  - `placa` (string, busca parcial case-insensitive)
+  - `status` (enum — padrão filtra apenas `FINALIZADO` e `CANCELADO`)
+  - `com_incidente_resolvido` (boolean — filtra OS que tiveram incidente resolvido)
 - **Regras de Negócio:**
   - Filtrar obrigatoriamente pelo `estabelecimento_id` do gestor autenticado.
-  - Aplicar paginação obrigatória.
-- **Resposta:**
-  - Sucesso: `200 OK`
-  - Falha: `4xx/5xx`
+  - Por padrão, exibe apenas estados terminais (`FINALIZADO`, `CANCELADO`).
+  - `data_fim` não pode ser data futura.
+- **Resposta (`200 OK`):**
+  - Lista de OS com campos: `id`, `placa`, `modelo`, `servico_nome`, `funcionario_nome`, `status`, `data_hora`, `horario_lavagem`, `horario_finalizacao`.
+- **Falha:** `400 Bad Request` (datas inválidas) / `403 Forbidden`
 
-**Endpoint:** `/api/ordens-servico/{id}/midias`
+---
+
+**Endpoint:** `/api/ordens-servico/gestor/historico/{id}/fotos/` ✅ Implementado
 
 - **Método:** `GET`
-- **Camada:** `HistoricoViewSet` (View)
-- **Descrição:** Retorna as mídias da Ordem de Serviço agrupadas para auditoria visual.
-- **Requisição:**
-  - Path param: `id`
-- **Regras de Negócio:**
-  - Validar se a OS pertence ao `estabelecimento_id` do gestor.
-  - Agrupar mídias com base no campo `momento`.
-- **Resposta (exemplo):**
+- **Camada:** `HistoricoGestorFotosView`
+- **Descrição:** Retorna as mídias da OS agrupadas por momento para auditoria visual. Valida que a OS pertence ao estabelecimento do gestor.
+- **Requisição:** Path param `id`
+- **Resposta (`200 OK`):**
 ```json
 {
   "estado_inicial": [
-    { "arquivo_url": "...", "momento": "VISTORIA_GERAL" },
-    { "arquivo_url": "...", "momento": "AVARIA_PREVIA" }
+    { "id": 1, "arquivo_url": "...", "momento": "VISTORIA_GERAL" },
+    { "id": 2, "arquivo_url": "...", "momento": "AVARIA_PREVIA" }
+  ],
+  "estado_meio": [
+    { "id": 3, "arquivo_url": "...", "momento": "EXECUCAO" }
   ],
   "estado_final": [
-    { "arquivo_url": "...", "momento": "FINALIZADO" }
+    { "id": 4, "arquivo_url": "...", "momento": "FINALIZADO" }
   ]
 }
 ```
+- **Falha:** `403 Forbidden` (OS de outro estabelecimento) / `404 Not Found`
 
 ### 1.5 Critérios de Aceitação
 | Critério | Descrição |
 | :--- | :--- |
 | **CA-01** | O sistema deve retornar histórico de OS filtrado por período, placa e status para o gestor do estabelecimento. |
-| **CA-02** | As mídias da OS devem ser exibidas agrupadas por estado inicial e estado final, permitindo auditoria visual clara. |
+| **CA-02** | As mídias da OS devem ser exibidas agrupadas em três grupos: `estado_inicial` (VISTORIA_GERAL + AVARIA_PREVIA), `estado_meio` (EXECUCAO) e `estado_final` (FINALIZADO), permitindo auditoria visual em 360°. |
 
 ---
 
@@ -131,27 +135,52 @@
 | **RNF-02** | Segurança | O acesso deve ser permitido apenas para usuários com perfil de gestor e filtrar os dados pelo estabelecimento_id do gestor logado. |
 
 ### 1.4 Endpoints RESTful
-**Endpoint:** `/api/gestor/dashboard/indicadores`
+
+**Endpoint:** `/api/gestao/gestor/dashboard/indicadores/` ✅ Implementado
 
 - **Método:** `GET`
-- **Camada:** `DashboardAPIView` (View)
-- **Descrição:** Retorna os indicadores executivos do dia corrente, incluindo volume de OS finalizadas e receita total.
+- **Camada:** `DashboardAPIView`
+- **Descrição:** Retorna indicadores executivos do dia e histórico semanal de receita.
 - **Requisição:**
-  - Parâmetros de consulta: `data` (opcional, padrão data atual)
-- **Resposta:**
-  - Sucesso: `200 OK` + `{ totalOsFinalizadas, receitaTotal }`
-  - Falha: `401 Unauthorized` / `403 Forbidden` + mensagem de erro.
+  - Query param: `data` (opcional, padrão data atual, formato YYYY-MM-DD)
+- **Resposta (`200 OK`):**
+```json
+{
+  "totalOsFinalizadas": 12,
+  "receitaTotal": 960.00,
+  "incidentesAtivos": 2,
+  "volume_por_hora": [0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 1, 2, 0, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+  "receita_semanal": [
+    { "data": "2026-04-19", "valor": 480.00 },
+    { "data": "2026-04-20", "valor": 960.00 }
+  ]
+}
+```
+- **Falha:** `400 Bad Request` (data inválida) / `403 Forbidden`
 
-**Endpoint:** `/api/gestor/dashboard/eficiencia-equipe`
+---
+
+**Endpoint:** `/api/gestao/gestor/dashboard/eficiencia-equipe/` ✅ Implementado
 
 - **Método:** `GET`
-- **Camada:** `EficienciaAPIView` (View)
-- **Descrição:** Retorna o relatório de eficiência por funcionário para OS finalizadas, comparando tempo real de execução com a duração estimada do serviço.
+- **Camada:** `EficienciaAPIView`
+- **Descrição:** Retorna relatório de eficiência por funcionário para OS finalizadas no período.
 - **Requisição:**
-  - Parâmetros de consulta: `dataInicio`, `dataFim`
-- **Resposta:**
-  - Sucesso: `200 OK` + `[{ funcionarioId, nomeFuncionario, totalOs, tempoTotalEstimadoMinutos, tempoTotalRealMinutos, desvioTotalMinutos }]`
-  - Falha: `400 Bad Request` / `403 Forbidden` + mensagem de erro.
+  - Query params: `dataInicio`, `dataFim` (opcionais, padrão últimos 7 dias)
+- **Resposta (`200 OK`):**
+```json
+[
+  {
+    "funcionarioId": 3,
+    "nomeFuncionario": "João Silva",
+    "totalOs": 8,
+    "tempoTotalEstimadoMinutos": 320,
+    "tempoTotalRealMinutos": 290,
+    "desvioTotalMinutos": -30
+  }
+]
+```
+- **Falha:** `400 Bad Request` / `403 Forbidden`
 
 ### 1.5 Critérios de Aceitação
 | Critério | Descrição |

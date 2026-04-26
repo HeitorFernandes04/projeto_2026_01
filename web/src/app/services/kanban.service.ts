@@ -14,9 +14,9 @@ export interface KanbanCard {
 
 export interface KanbanData {
   PATIO: KanbanCard[];
-  VISTORIA_INICIAL: KanbanCard[];
-  EM_EXECUCAO: KanbanCard[];
-  LIBERACAO: KanbanCard[];
+  LAVAGEM: KanbanCard[];
+  FINALIZADO_HOJE: KanbanCard[];
+  INCIDENTES: KanbanCard[];
 }
 
 @Injectable({
@@ -25,7 +25,7 @@ export interface KanbanData {
 export class KanbanService {
   private readonly apiUrl = '/api/ordens-servico/kanban/';
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('access_token');

@@ -20,13 +20,13 @@ interface ColunaConfig {
 export class KanbanComponent implements OnInit, OnDestroy {
 
   readonly COLUNAS_CONFIG: ColunaConfig[] = [
-    { chave: 'PATIO',          nome: 'PÁTIO',               linhaClass: 'gray'   },
-    { chave: 'VISTORIA_INICIAL', nome: 'VISTORIA',           linhaClass: 'purple' },
-    { chave: 'EM_EXECUCAO',    nome: 'LAVAGEM / ACABAMENTO', linhaClass: 'blue'   },
-    { chave: 'LIBERACAO',      nome: 'LIBERAÇÃO',            linhaClass: 'cyan'   },
+    { chave: 'PATIO',           nome: 'PÁTIO',              linhaClass: 'gray'   },
+    { chave: 'LAVAGEM',         nome: 'LAVAGEM / AUDITORIA', linhaClass: 'blue'   },
+    { chave: 'FINALIZADO_HOJE', nome: 'FINALIZADOS HOJE',   linhaClass: 'green'  },
+    { chave: 'INCIDENTES',      nome: 'INCIDENTES',         linhaClass: 'red'    },
   ];
 
-  kanban: KanbanData = { PATIO: [], VISTORIA_INICIAL: [], EM_EXECUCAO: [], LIBERACAO: [] };
+  kanban: KanbanData = { PATIO: [], LAVAGEM: [], FINALIZADO_HOJE: [], INCIDENTES: [] };
   carregando = true;
   erro = false;
 

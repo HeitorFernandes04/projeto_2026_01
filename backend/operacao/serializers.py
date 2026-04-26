@@ -88,7 +88,7 @@ class CriarOrdemServicoSerializer(serializers.Serializer):
     def validate_placa(self, value):
         """RN: Aceita placas no formato Antigo (ABC1234) e Mercosul (ABC1D23)."""
         placa_normalizada = re.sub(r'[^A-Z0-9]', '', value.strip().upper())
-        padrao = r'^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$'
+        padrao = r'^[A-Z]{3}\d[\dA-Z]\d{2}$'
         if not re.match(padrao, placa_normalizada):
             raise serializers.ValidationError(
                 'Placa inválida. Use o formato antigo (ABC1234) ou Mercosul (ABC1D23).'
@@ -189,17 +189,101 @@ class KanbanCardSerializer(serializers.ModelSerializer):
         fields = ['id', 'placa', 'modelo', 'servico', 'duracao_estimada_minutos', 'tempo_decorrido_minutos', 'is_atrasado']
 
     def get_tempo_decorrido_minutos(self, obj):
-        inicio = obj.horario_lavagem or obj.data_hora
-        delta = timezone.now() - inicio
+        # RN: PATIO ainda não iniciou execução — tempo zero
+        if obj.status == 'PATIO' or not obj.horario_lavagem:
+            return 0
+        # RN: BLOQUEADO_INCIDENTE — congela no momento do último incidente
+        if obj.status == 'BLOQUEADO_INCIDENTE':
+            incidentes = list(obj.incidentes.all())
+            if incidentes:
+                ultimo = max(incidentes, key=lambda i: i.data_registro)
+                delta = ultimo.data_registro - obj.horario_lavagem
+                return max(0, int(delta.total_seconds() / 60))
+        # RN: LIBERACAO — execução encerrada, congela no fim do acabamento
+        if obj.status == 'LIBERACAO' and obj.horario_acabamento:
+            delta = obj.horario_acabamento - obj.horario_lavagem
+            return max(0, int(delta.total_seconds() / 60))
+        # RN: FINALIZADO — congela no horário de finalização real
+        if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
+            delta = obj.horario_finalizacao - obj.horario_lavagem
+            return max(0, int(delta.total_seconds() / 60))
+        delta = timezone.now() - obj.horario_lavagem
         return int(delta.total_seconds() / 60)
 
     def get_is_atrasado(self, obj):
-        if obj.status != 'EM_EXECUCAO':
+        if obj.status not in ('EM_EXECUCAO', 'LIBERACAO'):
             return False
         return self.get_tempo_decorrido_minutos(obj) > obj.servico.duracao_estimada_minutos
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        placa = ret.get('placa', '')
+        if len(placa) == 7 and '-' not in placa:
+            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        return ret
 
 
 class IncidenteOSSerializer(serializers.ModelSerializer):
     class Meta:
         model = IncidenteOS
         fields = ['ordem_servico', 'tag_peca', 'descricao', 'foto_url']
+
+
+# ---------------------------------------------------------------------------
+#  RF-17 — Histórico do Gestor
+# ---------------------------------------------------------------------------
+
+class HistoricoGestorFiltroSerializer(serializers.Serializer):
+    data_inicio           = serializers.DateField(required=False)
+    data_fim              = serializers.DateField(required=False)
+    placa                 = serializers.CharField(required=False, allow_blank=True)
+    status                = serializers.ChoiceField(
+        choices=[s for s, _ in OrdemServico.STATUS_CHOICES],
+        required=False,
+    )
+    com_incidente_resolvido = serializers.BooleanField(required=False, default=False)
+
+
+class HistoricoGestorItemSerializer(serializers.ModelSerializer):
+    placa          = serializers.CharField(source='veiculo.placa')
+    modelo         = serializers.CharField(source='veiculo.modelo')
+    servico_nome   = serializers.CharField(source='servico.nome')
+    funcionario_nome = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrdemServico
+        fields = [
+            'id', 'placa', 'modelo', 'servico_nome', 'funcionario_nome',
+            'status', 'data_hora',
+            'horario_lavagem', 'horario_finalizacao',
+        ]
+
+    def get_funcionario_nome(self, obj):
+        if obj.funcionario and hasattr(obj.funcionario, 'name'):
+            return obj.funcionario.name
+        return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        placa = ret.get('placa', '')
+        if len(placa) == 7 and '-' not in placa:
+            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        return ret
+
+
+# ---------------------------------------------------------------------------
+#  RF-18 — Galeria/Dossiê da OS
+# ---------------------------------------------------------------------------
+
+class MidiaGaleriaSerializer(serializers.ModelSerializer):
+    arquivo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MidiaOrdemServico
+        fields = ['id', 'arquivo_url', 'momento']
+
+    def get_arquivo_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.arquivo:
+            return request.build_absolute_uri(obj.arquivo.url)
+        return None

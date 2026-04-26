@@ -19,14 +19,22 @@ export interface EficienciaFuncionario {
   desvioTotalMinutos: number;
 }
 
+export interface EntradaRecente {
+  id: number;
+  placa: string;
+  modelo: string;
+  servico: string;
+  data_hora: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  // Retornando para o proxy relativo do Angular, evitando problemas de CORS diretos
-  private baseUrl = '/api/gestao/gestor/dashboard';
+  private readonly baseUrl = '/api/gestao/gestor/dashboard';
+  private readonly urlEntradas = '/api/ordens-servico/entradas-recentes/';
 
-  constructor(private http: HttpClient) { }
+  constructor(private readonly http: HttpClient) { }
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('access_token');
@@ -46,12 +54,12 @@ export class DashboardService {
 
   getEficienciaEquipe(dataInicio?: string, dataFim?: string): Observable<EficienciaFuncionario[]> {
     let params = new HttpParams();
-    if (dataInicio) {
-      params = params.set('dataInicio', dataInicio);
-    }
-    if (dataFim) {
-      params = params.set('dataFim', dataFim);
-    }
+    if (dataInicio) params = params.set('dataInicio', dataInicio);
+    if (dataFim)    params = params.set('dataFim', dataFim);
     return this.http.get<EficienciaFuncionario[]>(`${this.baseUrl}/eficiencia-equipe/`, { headers: this.getHeaders(), params });
+  }
+
+  getEntradasRecentes(): Observable<EntradaRecente[]> {
+    return this.http.get<EntradaRecente[]>(this.urlEntradas, { headers: this.getHeaders() });
   }
 }
