@@ -2,6 +2,7 @@ import datetime
 from io import BytesIO
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
@@ -323,18 +324,21 @@ class IncidenteService:
         """Registra o incidente, vincula a peça afetada e bloqueia a OS."""
         os = get_object_or_404(OrdemServico, id=os_id)
         tag_peca = get_object_or_404(TagPeca, id=dados.get('tag_peca_id'))
+        status_anterior_os = os.status
 
         foto_processada = MidiaOrdemServicoService._comprimir_imagem(arquivo_foto)
 
-        incidente = IncidenteOS.objects.create(
-            ordem_servico=os,
-            tag_peca=tag_peca,
-            descricao=dados.get('descricao'),
-            foto_url=foto_processada,
-            resolvido=False
-        )
+        with transaction.atomic():
+            incidente = IncidenteOS.objects.create(
+                ordem_servico=os,
+                tag_peca=tag_peca,
+                descricao=dados.get('descricao'),
+                foto_url=foto_processada,
+                status_anterior_os=status_anterior_os,
+                resolvido=False,
+            )
 
-        os.status = 'BLOQUEADO_INCIDENTE'
-        os.save()
+            os.status = 'BLOQUEADO_INCIDENTE'
+            os.save(update_fields=['status'])
 
         return incidente

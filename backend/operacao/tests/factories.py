@@ -114,3 +114,4 @@ class IncidenteOSFactory(factory.django.DjangoModelFactory):
     descricao = factory.Sequence(lambda n: f'Incidente operacional {n}')
     foto_url = factory.django.ImageField(color='red')
     resolvido = False
+    status_anterior_os = factory.LazyAttribute(lambda o: o.ordem_servico.status)

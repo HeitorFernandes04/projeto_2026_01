@@ -5,10 +5,10 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from io import BytesIO
 from PIL import Image
-from operacao.tests.factories import OrdemServicoFactory, UserFactory, MidiaOrdemServicoFactory, ServicoFactory
+from operacao.tests.factories import OrdemServicoFactory, UserFactory, MidiaOrdemServicoFactory, ServicoFactory, TagPecaFactory
 # Imports ajustados conforme nova estrutura
 from core.models import Servico, Veiculo
-from operacao.models import OrdemServico
+from operacao.models import IncidenteOS, OrdemServico
 
 
 def gerar_foto_valida(nome_arquivo='foto.jpg'):
@@ -132,6 +132,30 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         response_avancar = self.client.patch(url_avancar, data={'laudo_vistoria': 'OK'})
         self.assertEqual(response_avancar.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('mínimo de 5 fotos de vistoria exigidas', str(response_avancar.data))
+
+    def test_registrar_incidente_salva_status_anterior_e_bloqueia_os(self):
+        os = OrdemServicoFactory(funcionario=self.funcionario, status='EM_EXECUCAO')
+        tag_peca = TagPecaFactory(estabelecimento=os.estabelecimento)
+        buffer, nome = gerar_foto_valida('incidente.jpg')
+
+        url = reverse('os-incidente', kwargs={'pk': os.pk})
+        response = self.client.post(
+            url,
+            {
+                'descricao': 'Dano reportado durante a lavagem.',
+                'tag_peca_id': tag_peca.id,
+                'foto_url': buffer,
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        os.refresh_from_db()
+        incidente = IncidenteOS.objects.get(ordem_servico=os)
+
+        self.assertEqual(os.status, 'BLOQUEADO_INCIDENTE')
+        self.assertEqual(incidente.status_anterior_os, 'EM_EXECUCAO')
 
 class TestHistoricoAPI(APITestCase):
     def setUp(self):
