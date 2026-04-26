@@ -305,6 +305,20 @@ class IncidenteService:
     """Serviço para isolar o fluxo de erros e incidentes operacionais."""
 
     @staticmethod
+    def listar_pendentes(estabelecimento):
+        """RF-15: lista incidentes abertos de OS bloqueadas do estabelecimento."""
+        return (
+            IncidenteOS.objects
+            .filter(
+                ordem_servico__estabelecimento=estabelecimento,
+                ordem_servico__status='BLOQUEADO_INCIDENTE',
+                resolvido=False,
+            )
+            .select_related('ordem_servico__veiculo', 'ordem_servico__servico', 'tag_peca')
+            .order_by('-data_registro')
+        )
+
+    @staticmethod
     def registrar_incidente(os_id, dados, arquivo_foto):
         """Registra o incidente, vincula a peça afetada e bloqueia a OS."""
         os = get_object_or_404(OrdemServico, id=os_id)

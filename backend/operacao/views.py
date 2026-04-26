@@ -8,11 +8,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.models import TagPeca, Servico
-from operacao.models import OrdemServico, MidiaOrdemServico
+from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 from .serializers import TagPecaSerializer, IncidenteOSSerializer
 from .services import IncidenteService
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from .permissions import IsFuncionarioDaOS, IsGestor
@@ -29,6 +29,7 @@ from .serializers import (
     ServicoSerializer,
     ProximaEtapaSerializer,
     FinalizarIndustrialSerializer,
+    IncidentePendenteSerializer,
 )
 from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService, HistoricoGestorService
 
@@ -287,6 +288,20 @@ class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
         if not estabelecimento:
             return TagPeca.objects.none()
         return TagPeca.objects.filter(estabelecimento=estabelecimento).order_by('nome')
+
+
+class IncidenteViewSet(viewsets.GenericViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+    serializer_class = IncidentePendenteSerializer
+    queryset = IncidenteOS.objects.none()
+
+    @action(detail=False, methods=['get'], url_path='pendentes')
+    def pendentes(self, request):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+        incidentes = IncidenteService.listar_pendentes(estabelecimento)
+        serializer = self.get_serializer(incidentes, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

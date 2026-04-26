@@ -10,6 +10,11 @@ declare const fail: any;
 describe('ServicoService', () => {
   let service: ServicoService;
   let mockHttpClient: any;
+  let localStorageMock: {
+    getItem: ReturnType<typeof vi.fn>;
+    setItem: ReturnType<typeof vi.fn>;
+    clear: ReturnType<typeof vi.fn>;
+  };
 
   const mockServico: Servico = {
     id: 1,
@@ -42,12 +47,20 @@ describe('ServicoService', () => {
     // Criar service manualmente com mock
     service = new ServicoService(mockHttpClient);
 
-    // Mock do localStorage
-    localStorage.setItem('access_token', 'mock_token_123');
+    localStorageMock = {
+      getItem: vi.fn().mockReturnValue('mock_token_123'),
+      setItem: vi.fn(),
+      clear: vi.fn(),
+    };
+
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: localStorageMock,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
-    localStorage.clear();
+    vi.restoreAllMocks();
   });
 
   it('should be created', () => {

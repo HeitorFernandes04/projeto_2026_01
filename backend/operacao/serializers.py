@@ -229,6 +229,44 @@ class IncidenteOSSerializer(serializers.ModelSerializer):
         fields = ['ordem_servico', 'tag_peca', 'descricao', 'foto_url']
 
 
+class IncidentePendenteSerializer(serializers.ModelSerializer):
+    ordem_servico_id = serializers.IntegerField(source='ordem_servico.id', read_only=True)
+    status_ordem_servico = serializers.CharField(source='ordem_servico.status', read_only=True)
+    placa = serializers.CharField(source='ordem_servico.veiculo.placa', read_only=True)
+    modelo = serializers.CharField(source='ordem_servico.veiculo.modelo', read_only=True)
+    servico = serializers.CharField(source='ordem_servico.servico.nome', read_only=True)
+    tag_peca = serializers.CharField(source='tag_peca.nome', read_only=True)
+    foto_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = IncidenteOS
+        fields = [
+            'id',
+            'ordem_servico_id',
+            'status_ordem_servico',
+            'placa',
+            'modelo',
+            'servico',
+            'tag_peca',
+            'descricao',
+            'foto_url',
+            'data_registro',
+        ]
+
+    def get_foto_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.foto_url:
+            return request.build_absolute_uri(obj.foto_url.url)
+        return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        placa = ret.get('placa', '')
+        if len(placa) == 7 and '-' not in placa:
+            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        return ret
+
+
 # ---------------------------------------------------------------------------
 #  RF-17 — Histórico do Gestor
 # ---------------------------------------------------------------------------

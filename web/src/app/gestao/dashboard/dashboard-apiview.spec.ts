@@ -27,7 +27,8 @@ describe('DashboardAPIView', () => {
       })),
       getEficienciaEquipe: vi.fn().mockReturnValue(of([
         { funcionarioId: 1, nomeFuncionario: 'Lavador X', totalOs: 5, tempoTotalEstimadoMinutos: 100, tempoTotalRealMinutos: 90, desvioTotalMinutos: -10 }
-      ]))
+      ])),
+      getEntradasRecentes: vi.fn().mockReturnValue(of([]))
     };
     
     mockCdRef = {
