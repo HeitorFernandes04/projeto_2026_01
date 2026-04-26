@@ -2,7 +2,7 @@ import factory
 from django.utils import timezone
 
 from accounts.models import CargoChoices, Estabelecimento, Funcionario, Gestor, User
-from core.models import Servico, TagPeca, Veiculo
+from core.models import Servico, TagPeca, Veiculo, VistoriaItem
 from operacao.models import IncidenteOS, MidiaOrdemServico, OrdemServico
 
 
@@ -115,3 +115,16 @@ class IncidenteOSFactory(factory.django.DjangoModelFactory):
     foto_url = factory.django.ImageField(color='red')
     resolvido = False
     status_anterior_os = factory.LazyAttribute(lambda o: o.ordem_servico.status)
+
+
+class VistoriaItemFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VistoriaItem
+
+    ordem_servico = factory.SubFactory(OrdemServicoFactory)
+    tag_peca = factory.SubFactory(
+        TagPecaFactory,
+        estabelecimento=factory.SelfAttribute('..ordem_servico.estabelecimento'),
+    )
+    possui_avaria = True
+    foto_url = factory.django.ImageField(color='yellow')

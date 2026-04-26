@@ -1,8 +1,9 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied, ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -29,7 +30,9 @@ from .serializers import (
     ServicoSerializer,
     ProximaEtapaSerializer,
     FinalizarIndustrialSerializer,
+    IncidenteAuditoriaSerializer,
     IncidentePendenteSerializer,
+    ResolverIncidenteSerializer,
 )
 from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService, HistoricoGestorService
 
@@ -302,6 +305,51 @@ class IncidenteViewSet(viewsets.GenericViewSet):
         incidentes = IncidenteService.listar_pendentes(estabelecimento)
         serializer = self.get_serializer(incidentes, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='auditoria')
+    def auditoria(self, request, pk=None):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+
+        try:
+            incidente = IncidenteService.detalhar_auditoria(pk, estabelecimento)
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+
+        serializer = IncidenteAuditoriaSerializer(incidente, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['patch'], url_path='resolver')
+    def resolver(self, request, pk=None):
+        serializer = ResolverIncidenteSerializer(data=request.data)
+        if not serializer.is_valid():
+            first_error = next(iter(serializer.errors.values()))[0]
+            return Response({'detail': first_error}, status=status.HTTP_400_BAD_REQUEST)
+
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+
+        try:
+            incidente = IncidenteService.resolver_incidente(
+                incidente_id=pk,
+                estabelecimento=estabelecimento,
+                gestor_user=request.user,
+                observacoes_resolucao=serializer.validated_data['observacoes_resolucao'],
+            )
+        except ValidationError as exc:
+            detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+            return Response({'detail': detail}, status=status.HTTP_400_BAD_REQUEST)
+        except IncidenteService.IncidenteJaResolvidoError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_409_CONFLICT)
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+
+        return Response(
+            {
+                'detail': 'Incidente resolvido com sucesso.',
+                'id': incidente.id,
+                'ordem_servico_status': incidente.ordem_servico.status,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @api_view(['POST'])

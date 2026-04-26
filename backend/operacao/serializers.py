@@ -267,6 +267,113 @@ class IncidentePendenteSerializer(serializers.ModelSerializer):
         return ret
 
 
+class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
+    placa = serializers.CharField(source='veiculo.placa', read_only=True)
+    modelo = serializers.CharField(source='veiculo.modelo', read_only=True)
+    servico = serializers.CharField(source='servico.nome', read_only=True)
+
+    class Meta:
+        model = OrdemServico
+        fields = [
+            'id',
+            'status',
+            'placa',
+            'modelo',
+            'servico',
+            'horario_lavagem',
+            'horario_acabamento',
+            'horario_finalizacao',
+        ]
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        placa = ret.get('placa', '')
+        if len(placa) == 7 and '-' not in placa:
+            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        return ret
+
+
+class IncidenteAuditoriaTagPecaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TagPeca
+        fields = ['id', 'nome', 'categoria']
+
+
+class IncidenteAuditoriaVistoriaItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    possui_avaria = serializers.BooleanField()
+    foto_url = serializers.SerializerMethodField()
+
+    def get_foto_url(self, obj):
+        request = self.context.get('request')
+        if request and getattr(obj, 'foto_url', None):
+            return request.build_absolute_uri(obj.foto_url.url)
+        return None
+
+
+class IncidenteAuditoriaSerializer(serializers.ModelSerializer):
+    ordem_servico = IncidenteAuditoriaOrdemServicoSerializer(read_only=True)
+    tag_peca = IncidenteAuditoriaTagPecaSerializer(read_only=True)
+    foto_url = serializers.SerializerMethodField()
+    vistoria_item = serializers.SerializerMethodField()
+    vista_inicial_foto_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = IncidenteOS
+        fields = [
+            'id',
+            'descricao',
+            'foto_url',
+            'data_registro',
+            'resolvido',
+            'status_anterior_os',
+            'ordem_servico',
+            'tag_peca',
+            'vistoria_item',
+            'vista_inicial_foto_url',
+        ]
+
+    def get_foto_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.foto_url:
+            return request.build_absolute_uri(obj.foto_url.url)
+        return None
+
+    def get_vistoria_item(self, obj):
+        vistoria_item = getattr(obj, 'vistoria_item_auditavel', None)
+        if not vistoria_item:
+            return None
+        return IncidenteAuditoriaVistoriaItemSerializer(
+            vistoria_item,
+            context=self.context,
+        ).data
+
+    def get_vista_inicial_foto_url(self, obj):
+        vistoria_item = getattr(obj, 'vistoria_item_auditavel', None)
+        if not vistoria_item:
+            return None
+        request = self.context.get('request')
+        if request and getattr(vistoria_item, 'foto_url', None):
+            return request.build_absolute_uri(vistoria_item.foto_url.url)
+        return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if ret.get('ordem_servico'):
+            ret['ordem_servico']['status_anterior_os'] = ret.get('status_anterior_os')
+        return ret
+
+
+class ResolverIncidenteSerializer(serializers.Serializer):
+    observacoes_resolucao = serializers.CharField(
+        allow_blank=False,
+        error_messages={
+            'required': 'A nota de resolução é obrigatória.',
+            'blank': 'A nota de resolução é obrigatória.',
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 #  RF-17 — Histórico do Gestor
 # ---------------------------------------------------------------------------

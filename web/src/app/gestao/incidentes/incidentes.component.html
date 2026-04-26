@@ -50,6 +50,13 @@
       </div>
     </div>
 
+    @if (mensagemSucesso) {
+      <section class="success-banner" aria-live="polite">
+        <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+        <p>{{ mensagemSucesso }}</p>
+      </section>
+    }
+
     @if (carregando) {
       <section class="state-panel loading" role="status" aria-live="polite">
         <div class="loader" aria-hidden="true"></div>
@@ -131,69 +138,139 @@
         </header>
 
         <div class="modal-body custom-scrollbar">
-          <div class="details-grid">
-            <div class="detail-card">
-              <label>Ordem de servico</label>
-              <strong>#{{ incidenteSelecionado.ordem_servico_id }}</strong>
-            </div>
-            <div class="detail-card">
-              <label>Status da OS</label>
-              <strong>{{ incidenteSelecionado.status_ordem_servico }}</strong>
-            </div>
-            <div class="detail-card">
-              <label>Servico</label>
-              <strong>{{ incidenteSelecionado.servico }}</strong>
-            </div>
-            <div class="detail-card">
-              <label>Peca afetada</label>
-              <strong>{{ incidenteSelecionado.tag_peca }}</strong>
-            </div>
-          </div>
-
-          <div class="modal-incident-description">
-            <label>DESCRICAO DO INCIDENTE</label>
-            <p>{{ incidenteSelecionado.descricao }}</p>
-            <div class="report-meta">
-              <span>Registrado em: <strong>{{ formatarDataHora(incidenteSelecionado.data_registro) }}</strong></span>
-            </div>
-          </div>
-
-          <div class="photo-section">
-            <div class="label-row">
-              <span class="dot red"></span>
-              Evidencia fotografica do incidente
-            </div>
-
-            @if (incidenteSelecionado.foto_url) {
-              <div class="photo-card border-red">
-                <img
-                  [src]="incidenteSelecionado.foto_url"
-                  [alt]="'Foto do incidente da OS #' + incidenteSelecionado.ordem_servico_id"
-                  data-testid="incidente-foto"
-                >
+          @if (carregandoAuditoria) {
+            <section class="modal-state loading" role="status" aria-live="polite">
+              <div class="loader" aria-hidden="true"></div>
+              <h3>Carregando auditoria do incidente</h3>
+              <p>Aguarde enquanto consolidamos os dados da OS, peca e vistoria inicial.</p>
+            </section>
+          } @else if (erroAuditoria) {
+            <section class="modal-state error" aria-live="assertive">
+              <h3>Nao foi possivel carregar a auditoria deste incidente.</h3>
+              <p>Tente novamente para revisar os dados antes de liberar a OS.</p>
+              <button
+                class="state-button"
+                type="button"
+                (click)="carregarAuditoria(incidenteSelecionado.id)"
+              >
+                Recarregar auditoria
+              </button>
+            </section>
+          } @else if (auditoriaSelecionada) {
+            <div class="details-grid">
+              <div class="detail-card">
+                <label>Ordem de servico</label>
+                <strong>#{{ auditoriaSelecionada.ordem_servico.id }}</strong>
               </div>
-            } @else {
-              <div class="photo-card border-red placeholder">
-                <span class="material-symbols-outlined">image</span>
-                <span class="caption">Sem foto vinculada a este incidente.</span>
+              <div class="detail-card">
+                <label>Status da OS</label>
+                <strong>{{ auditoriaSelecionada.ordem_servico.status }}</strong>
               </div>
-            }
-          </div>
+              <div class="detail-card">
+                <label>Status anterior</label>
+                <strong>{{ auditoriaSelecionada.ordem_servico.status_anterior_os }}</strong>
+              </div>
+              <div class="detail-card">
+                <label>Servico</label>
+                <strong>{{ auditoriaSelecionada.ordem_servico.servico }}</strong>
+              </div>
+              <div class="detail-card">
+                <label>Peca afetada</label>
+                <strong>{{ auditoriaSelecionada.tag_peca.nome }}</strong>
+              </div>
+              <div class="detail-card">
+                <label>Categoria</label>
+                <strong>{{ auditoriaSelecionada.tag_peca.categoria }}</strong>
+              </div>
+            </div>
 
-          <div class="next-step-note">
-            A auditoria detalhada e o desbloqueio desta OS serao liberados na RF-16.
-          </div>
+            <div class="modal-incident-description">
+              <label>DESCRICAO DO INCIDENTE</label>
+              <p>{{ auditoriaSelecionada.descricao }}</p>
+              <div class="report-meta">
+                <span>Registrado em: <strong>{{ formatarDataHora(auditoriaSelecionada.data_registro) }}</strong></span>
+              </div>
+            </div>
+
+            <div class="photo-grid">
+              <div class="photo-section">
+                <div class="label-row">
+                  <span class="dot red"></span>
+                  Evidencia fotografica do incidente
+                </div>
+
+                @if (auditoriaSelecionada.foto_url) {
+                  <div class="photo-card border-red">
+                    <img
+                      [src]="auditoriaSelecionada.foto_url"
+                      [alt]="'Foto do incidente da OS #' + auditoriaSelecionada.ordem_servico.id"
+                      data-testid="incidente-foto"
+                    >
+                  </div>
+                } @else {
+                  <div class="photo-card border-red placeholder">
+                    <span class="material-symbols-outlined">image</span>
+                    <span class="caption">Sem foto vinculada a este incidente.</span>
+                  </div>
+                }
+              </div>
+
+              <div class="photo-section">
+                <div class="label-row">
+                  <span class="dot"></span>
+                  Evidencia da vistoria inicial
+                </div>
+
+                @if (auditoriaSelecionada.vistoria_item?.foto_url || auditoriaSelecionada.vista_inicial_foto_url) {
+                  <div class="photo-card">
+                    <img
+                      [src]="auditoriaSelecionada.vistoria_item?.foto_url || auditoriaSelecionada.vista_inicial_foto_url"
+                      [alt]="'Foto da vistoria inicial da OS #' + auditoriaSelecionada.ordem_servico.id"
+                      data-testid="vistoria-foto"
+                    >
+                  </div>
+                } @else {
+                  <div class="photo-card placeholder">
+                    <span class="material-symbols-outlined">photo_camera</span>
+                    <span class="caption">Sem foto registrada na vistoria inicial para esta peca.</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="resolution-panel">
+              <label for="nota-resolucao">Nota de resolucao</label>
+              <textarea
+                id="nota-resolucao"
+                data-testid="nota-resolucao"
+                [(ngModel)]="notaResolucao"
+                [disabled]="resolvendo"
+                placeholder="Registre a conclusao da auditoria para liberar a OS."
+                aria-label="Nota de resolucao do incidente"
+              ></textarea>
+
+              @if (erroResolucao) {
+                <p class="resolution-error" aria-live="assertive">{{ erroResolucao }}</p>
+              }
+            </div>
+          }
         </div>
 
         <footer class="modal-footer">
           <button
-            class="btn-resolver disabled"
+            class="btn-resolver"
             type="button"
-            disabled
+            [class.disabled]="!podeResolver"
+            [disabled]="!podeResolver"
             data-testid="resolver-button"
-            aria-label="Desbloqueio disponivel apenas na RF-16"
+            aria-label="Resolver incidente e desbloquear ordem de servico"
+            (click)="resolverIncidente()"
           >
-            Auditoria e desbloqueio na RF-16
+            @if (resolvendo) {
+              Salvando resolucao...
+            } @else {
+              Resolver e desbloquear OS
+            }
           </button>
           <button class="btn-cancelar" type="button" (click)="fecharModal()">Fechar</button>
         </footer>
