@@ -350,6 +350,57 @@ paths:
                 items:
                   $ref: '#/components/schemas/TagPeca'
           description: ''
+  /api/incidentes-os/{id}/auditoria/:
+    get:
+      operationId: incidentes_os_auditoria_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - incidentes-os
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentePendente'
+          description: ''
+  /api/incidentes-os/{id}/resolver/:
+    patch:
+      operationId: incidentes_os_resolver_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - incidentes-os
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentePendente'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentePendente'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentePendente'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentePendente'
+          description: ''
   /api/incidentes-os/pendentes/:
     get:
       operationId: incidentes_os_pendentes_retrieve
@@ -717,6 +768,39 @@ components:
       - servico
       - status_ordem_servico
       - tag_peca
+    PatchedIncidentePendente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        ordem_servico_id:
+          type: integer
+          readOnly: true
+        status_ordem_servico:
+          type: string
+          readOnly: true
+        placa:
+          type: string
+          readOnly: true
+        modelo:
+          type: string
+          readOnly: true
+        servico:
+          type: string
+          readOnly: true
+        tag_peca:
+          type: string
+          readOnly: true
+        descricao:
+          type: string
+        foto_url:
+          type: string
+          readOnly: true
+        data_registro:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedServico:
       type: object
       properties:

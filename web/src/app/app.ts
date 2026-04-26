@@ -1,75 +1,116 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
+
 import { AuthService } from './services/auth.service';
+import { IncidentesService } from './services/incidentes.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   title = 'Gestor';
-  exibirSidebar: boolean = true;
+  exibirSidebar = true;
   perfil: any = null;
+  totalIncidentesPendentes = 0;
 
-  constructor(private router: Router, private location: Location, private authService: AuthService) {
-    // Monitora as mudanças de rota futuras para esconder a sidebar no login
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      this.atualizarEstadoSidebar(event.url);
-      
-      // Se estamos entrando em uma área protegida e não temos perfil, tenta carregar
-      if (this.exibirSidebar && !this.perfil) {
-        this.carregarPerfil();
-      }
-    });
+  private intervaloIncidentes?: ReturnType<typeof setInterval>;
+
+  constructor(
+    private router: Router,
+    private location: Location,
+    private authService: AuthService,
+    private incidentesService: IncidentesService,
+  ) {
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        this.atualizarEstadoSidebar(event.url);
+
+        if (this.exibirSidebar && !this.perfil) {
+          this.carregarPerfil();
+        }
+
+        if (this.exibirSidebar) {
+          this.carregarTotalIncidentesPendentes();
+          this.iniciarAtualizacaoIncidentes();
+        } else {
+          this.pararAtualizacaoIncidentes();
+          this.totalIncidentesPendentes = 0;
+        }
+      });
   }
 
   ngOnInit() {
-    // CORREÇÃO: Verifica o estado da URL imediatamente no carregamento inicial.
-    // Isso evita que a sidebar apareça brevemente ao carregar o localhost:4200 diretamente no login.
     const urlInicial = this.location.path();
     this.atualizarEstadoSidebar(urlInicial);
 
     if (this.exibirSidebar) {
       this.carregarPerfil();
+      this.carregarTotalIncidentesPendentes();
+      this.iniciarAtualizacaoIncidentes();
+    } else {
+      this.pararAtualizacaoIncidentes();
     }
+  }
+
+  ngOnDestroy() {
+    this.pararAtualizacaoIncidentes();
   }
 
   carregarPerfil() {
     this.authService.obterPerfil().subscribe({
-      next: (p) => this.perfil = p,
-      error: () => console.warn('Usuário não autenticado ou sessão expirada.')
+      next: (perfil) => {
+        this.perfil = perfil;
+      },
+      error: () => console.warn('Usuario nao autenticado ou sessao expirada.'),
     });
   }
 
-  /**
-   * Lógica centralizada para decidir a visibilidade da sidebar.
-   * Baseada na lógica de logout para garantir que a tela de login esteja sempre limpa.
-   */
+  carregarTotalIncidentesPendentes() {
+    this.incidentesService.listarPendentes().subscribe({
+      next: (incidentes) => {
+        this.totalIncidentesPendentes = incidentes.length;
+      },
+      error: () => {
+        this.totalIncidentesPendentes = 0;
+      },
+    });
+  }
+
   private atualizarEstadoSidebar(url: string) {
-    // Se a URL contiver '/login' ou estiver vazia (redirecionamento inicial), oculta a sidebar
     this.exibirSidebar = !(url.includes('/login') || url === '');
   }
 
-  /**
-   * Atalho global para o sino de notificações.
-   * Redireciona o usuário diretamente para a aba de incidentes.
-   */
   irParaIncidentes() {
     this.router.navigate(['/gestao/incidentes']);
   }
 
-  /**
-   * Realiza o logout do sistema e redireciona para a tela de login sem a barra lateral.
-   */
   logout() {
-    // Aqui garantimos o redirecionamento limpo para o login
     this.router.navigate(['/login']);
+  }
+
+  private iniciarAtualizacaoIncidentes() {
+    if (this.intervaloIncidentes) {
+      return;
+    }
+
+    this.intervaloIncidentes = setInterval(() => {
+      if (this.exibirSidebar) {
+        this.carregarTotalIncidentesPendentes();
+      }
+    }, 30000);
+  }
+
+  private pararAtualizacaoIncidentes() {
+    if (this.intervaloIncidentes) {
+      clearInterval(this.intervaloIncidentes);
+      this.intervaloIncidentes = undefined;
+    }
   }
 }

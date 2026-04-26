@@ -18,7 +18,7 @@
       <a routerLink="/gestao/incidentes" routerLinkActive="active" class="nav-item">
         <span class="material-symbols-outlined icon">warning</span>
         <span class="label">Incidentes</span>
-        <span class="badge" (click)="irParaIncidentes()">2</span>
+        <span class="badge" (click)="irParaIncidentes()">{{ totalIncidentesPendentes }}</span>
       </a>
 
       <a routerLink="/gestao/historico" routerLinkActive="active" class="nav-item">
