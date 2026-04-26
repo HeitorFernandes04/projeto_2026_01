@@ -3,17 +3,25 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
 
 from operacao.services import IncidenteService
-from operacao.tests.factories import GestorFactory, IncidenteOSFactory, OrdemServicoFactory, VistoriaItemFactory
+from operacao.tests.factories import GestorFactory, IncidenteOSFactory, OrdemServicoFactory, UserFactory, VistoriaItemFactory
 
 
 @pytest.mark.django_db
 class TestIncidenteServiceAuditoria:
     def test_detalhar_auditoria_retorna_dados_consolidados(self):
         gestor = GestorFactory()
+        responsavel = UserFactory(
+            estabelecimento=gestor.estabelecimento,
+            name='Lavador Responsavel',
+        )
         os = OrdemServicoFactory(
             estabelecimento=gestor.estabelecimento,
             status='BLOQUEADO_INCIDENTE',
+            funcionario=responsavel,
         )
+        os.veiculo.nome_dono = 'Cliente Premium'
+        os.veiculo.celular_dono = '11999990000'
+        os.veiculo.save(update_fields=['nome_dono', 'celular_dono'])
         incidente = IncidenteOSFactory(
             ordem_servico=os,
             status_anterior_os='EM_EXECUCAO',
@@ -30,6 +38,9 @@ class TestIncidenteServiceAuditoria:
         assert auditoria.ordem_servico_id == os.id
         assert auditoria.status_anterior_os == 'EM_EXECUCAO'
         assert auditoria.vistoria_item_auditavel == vistoria_item
+        assert auditoria.ordem_servico.veiculo.nome_dono == 'Cliente Premium'
+        assert auditoria.ordem_servico.veiculo.celular_dono == '11999990000'
+        assert auditoria.ordem_servico.funcionario == responsavel
 
     def test_detalhar_auditoria_bloqueia_outro_estabelecimento(self):
         gestor = GestorFactory()

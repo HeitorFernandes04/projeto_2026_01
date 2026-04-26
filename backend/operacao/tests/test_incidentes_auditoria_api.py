@@ -15,10 +15,18 @@ class TestIncidentesAuditoriaAPI:
 
     def test_gestor_consulta_auditoria_com_dados_consolidados(self):
         gestor = GestorFactory()
+        responsavel = UserFactory(
+            estabelecimento=gestor.estabelecimento,
+            name='Lavador Responsavel',
+        )
         os = OrdemServicoFactory(
             estabelecimento=gestor.estabelecimento,
             status='BLOQUEADO_INCIDENTE',
+            funcionario=responsavel,
         )
+        os.veiculo.nome_dono = 'Cliente Premium'
+        os.veiculo.celular_dono = '11999990000'
+        os.veiculo.save(update_fields=['nome_dono', 'celular_dono'])
         incidente = IncidenteOSFactory(
             ordem_servico=os,
             status_anterior_os='EM_EXECUCAO',
@@ -35,7 +43,9 @@ class TestIncidentesAuditoriaAPI:
         assert data['id'] == incidente.id
         assert data['ordem_servico']['id'] == os.id
         assert data['ordem_servico']['status'] == 'BLOQUEADO_INCIDENTE'
-        assert data['ordem_servico']['status_anterior_os'] == 'EM_EXECUCAO'
+        assert data['ordem_servico']['nome_dono'] == 'Cliente Premium'
+        assert data['ordem_servico']['celular_dono'] == '11999990000'
+        assert data['ordem_servico']['funcionario_responsavel_nome'] == 'Lavador Responsavel'
         assert data['tag_peca']['id'] == incidente.tag_peca.id
         assert data['tag_peca']['nome'] == incidente.tag_peca.nome
         assert data['vistoria_item']['id'] == vistoria_item.id

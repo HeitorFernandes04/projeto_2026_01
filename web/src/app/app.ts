@@ -1,6 +1,7 @@
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 import { AuthService } from './services/auth.service';
@@ -19,7 +20,8 @@ export class App implements OnInit, OnDestroy {
   perfil: any = null;
   totalIncidentesPendentes = 0;
 
-  private intervaloIncidentes?: ReturnType<typeof setInterval>;
+  private readonly subscriptions = new Subscription();
+  private monitoramentoIncidentesAtivo = false;
 
   constructor(
     private router: Router,
@@ -27,23 +29,30 @@ export class App implements OnInit, OnDestroy {
     private authService: AuthService,
     private incidentesService: IncidentesService,
   ) {
-    this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe((event: any) => {
-        this.atualizarEstadoSidebar(event.url);
+    this.subscriptions.add(
+      this.incidentesService.totalPendentes$.subscribe((total) => {
+        this.totalIncidentesPendentes = total;
+      }),
+    );
 
-        if (this.exibirSidebar && !this.perfil) {
-          this.carregarPerfil();
-        }
+    this.subscriptions.add(
+      this.router.events
+        .pipe(filter((event) => event instanceof NavigationEnd))
+        .subscribe((event: any) => {
+          this.atualizarEstadoSidebar(event.url);
 
-        if (this.exibirSidebar) {
-          this.carregarTotalIncidentesPendentes();
-          this.iniciarAtualizacaoIncidentes();
-        } else {
-          this.pararAtualizacaoIncidentes();
-          this.totalIncidentesPendentes = 0;
-        }
-      });
+          if (this.exibirSidebar && !this.perfil) {
+            this.carregarPerfil();
+          }
+
+          if (this.exibirSidebar) {
+            this.iniciarMonitoramentoIncidentes();
+          } else {
+            this.pararMonitoramentoIncidentes();
+            this.totalIncidentesPendentes = 0;
+          }
+        }),
+    );
   }
 
   ngOnInit() {
@@ -52,15 +61,15 @@ export class App implements OnInit, OnDestroy {
 
     if (this.exibirSidebar) {
       this.carregarPerfil();
-      this.carregarTotalIncidentesPendentes();
-      this.iniciarAtualizacaoIncidentes();
+      this.iniciarMonitoramentoIncidentes();
     } else {
-      this.pararAtualizacaoIncidentes();
+      this.pararMonitoramentoIncidentes();
     }
   }
 
   ngOnDestroy() {
-    this.pararAtualizacaoIncidentes();
+    this.pararMonitoramentoIncidentes();
+    this.subscriptions.unsubscribe();
   }
 
   carregarPerfil() {
@@ -69,17 +78,6 @@ export class App implements OnInit, OnDestroy {
         this.perfil = perfil;
       },
       error: () => console.warn('Usuario nao autenticado ou sessao expirada.'),
-    });
-  }
-
-  carregarTotalIncidentesPendentes() {
-    this.incidentesService.listarPendentes().subscribe({
-      next: (incidentes) => {
-        this.totalIncidentesPendentes = incidentes.length;
-      },
-      error: () => {
-        this.totalIncidentesPendentes = 0;
-      },
     });
   }
 
@@ -95,22 +93,21 @@ export class App implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
-  private iniciarAtualizacaoIncidentes() {
-    if (this.intervaloIncidentes) {
+  private iniciarMonitoramentoIncidentes() {
+    if (this.monitoramentoIncidentesAtivo) {
       return;
     }
 
-    this.intervaloIncidentes = setInterval(() => {
-      if (this.exibirSidebar) {
-        this.carregarTotalIncidentesPendentes();
-      }
-    }, 30000);
+    this.monitoramentoIncidentesAtivo = true;
+    this.incidentesService.iniciarMonitoramentoPendentes();
   }
 
-  private pararAtualizacaoIncidentes() {
-    if (this.intervaloIncidentes) {
-      clearInterval(this.intervaloIncidentes);
-      this.intervaloIncidentes = undefined;
+  private pararMonitoramentoIncidentes() {
+    if (!this.monitoramentoIncidentesAtivo) {
+      return;
     }
+
+    this.monitoramentoIncidentesAtivo = false;
+    this.incidentesService.pararMonitoramentoPendentes();
   }
 }

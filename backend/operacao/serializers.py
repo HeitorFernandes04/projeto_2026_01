@@ -97,6 +97,8 @@ class CriarOrdemServicoSerializer(serializers.Serializer):
 
     marca        = serializers.CharField()
     cor          = serializers.CharField(required=False, allow_blank=True, default='')
+    nome_dono    = serializers.CharField(required=False, allow_blank=True, default='')
+    celular_dono = serializers.CharField(required=False, allow_blank=True, default='')
     servico_id   = serializers.IntegerField()
     data_hora    = serializers.DateTimeField()
     observacoes  = serializers.CharField(required=False, allow_blank=True, default='')
@@ -270,7 +272,12 @@ class IncidentePendenteSerializer(serializers.ModelSerializer):
 class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
     placa = serializers.CharField(source='veiculo.placa', read_only=True)
     modelo = serializers.CharField(source='veiculo.modelo', read_only=True)
+    marca = serializers.CharField(source='veiculo.marca', read_only=True)
+    cor = serializers.CharField(source='veiculo.cor', read_only=True)
+    nome_dono = serializers.CharField(source='veiculo.nome_dono', read_only=True)
+    celular_dono = serializers.CharField(source='veiculo.celular_dono', read_only=True)
     servico = serializers.CharField(source='servico.nome', read_only=True)
+    funcionario_responsavel_nome = serializers.SerializerMethodField()
 
     class Meta:
         model = OrdemServico
@@ -279,11 +286,21 @@ class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
             'status',
             'placa',
             'modelo',
+            'marca',
+            'cor',
+            'nome_dono',
+            'celular_dono',
+            'funcionario_responsavel_nome',
             'servico',
             'horario_lavagem',
             'horario_acabamento',
             'horario_finalizacao',
         ]
+
+    def get_funcionario_responsavel_nome(self, obj):
+        if obj.funcionario and getattr(obj.funcionario, 'name', None):
+            return obj.funcionario.name
+        return None
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)

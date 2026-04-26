@@ -1,7 +1,7 @@
 import '@angular/compiler';
 
+import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, Subject, throwError } from 'rxjs';
 
 import {
   IncidenteAuditoria,
@@ -9,7 +9,6 @@ import {
   IncidentesService,
 } from '../../services/incidentes.service';
 import { IncidentesComponent } from './incidentes.component';
-
 
 const mockIncidentes: IncidentePendente[] = [
   {
@@ -37,9 +36,13 @@ const mockAuditoria: IncidenteAuditoria = {
   ordem_servico: {
     id: 1024,
     status: 'BLOQUEADO_INCIDENTE',
-    status_anterior_os: 'EM_EXECUCAO',
     placa: 'BRA-2E19',
     modelo: 'Audi A3',
+    marca: 'Audi',
+    cor: 'Preto',
+    nome_dono: 'Marcos Cliente',
+    celular_dono: '11999990000',
+    funcionario_responsavel_nome: 'Lavador Responsavel',
     servico: 'Lavagem Premium',
     horario_lavagem: '2026-04-26T11:15:00Z',
     horario_acabamento: null,
@@ -57,12 +60,15 @@ const mockAuditoria: IncidenteAuditoria = {
   },
 };
 
-
 describe('IncidentesComponent - RF-16', () => {
   let fixture: ComponentFixture<IncidentesComponent>;
   let component: IncidentesComponent;
+  let pendentesSubject: BehaviorSubject<IncidentePendente[]>;
   let incidentesServiceSpy: {
-    listarPendentes: ReturnType<typeof vi.fn>;
+    pendentes$: ReturnType<BehaviorSubject<IncidentePendente[]>['asObservable']>;
+    iniciarMonitoramentoPendentes: ReturnType<typeof vi.fn>;
+    pararMonitoramentoPendentes: ReturnType<typeof vi.fn>;
+    recarregarPendentes: ReturnType<typeof vi.fn>;
     obterAuditoria: ReturnType<typeof vi.fn>;
     resolverIncidente: ReturnType<typeof vi.fn>;
   };
@@ -81,11 +87,18 @@ describe('IncidentesComponent - RF-16', () => {
     fixture = TestBed.createComponent(IncidentesComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
   }
 
   beforeEach(() => {
+    pendentesSubject = new BehaviorSubject<IncidentePendente[]>(mockIncidentes);
+
     incidentesServiceSpy = {
-      listarPendentes: vi.fn().mockReturnValue(of(mockIncidentes)),
+      pendentes$: pendentesSubject.asObservable(),
+      iniciarMonitoramentoPendentes: vi.fn(),
+      pararMonitoramentoPendentes: vi.fn(),
+      recarregarPendentes: vi.fn().mockImplementation(() => of(pendentesSubject.value)),
       obterAuditoria: vi.fn().mockReturnValue(of(mockAuditoria)),
       resolverIncidente: vi.fn().mockReturnValue(of({
         detail: 'Incidente resolvido com sucesso.',
@@ -96,31 +109,46 @@ describe('IncidentesComponent - RF-16', () => {
   });
 
   afterEach(() => {
+    fixture?.destroy();
     TestBed.resetTestingModule();
   });
 
-  it('deve carregar incidentes pendentes da API ao iniciar', async () => {
+  it('deve carregar incidentes pendentes da fonte reativa ao iniciar', async () => {
     await criarComponente();
 
-    expect(incidentesServiceSpy.listarPendentes).toHaveBeenCalledTimes(1);
+    expect(incidentesServiceSpy.iniciarMonitoramentoPendentes).toHaveBeenCalled();
+    expect(incidentesServiceSpy.recarregarPendentes).toHaveBeenCalledTimes(1);
     expect(component.incidentes).toEqual(mockIncidentes);
     expect(component.carregando).toBe(false);
-    expect(component.erro).toBe(false);
     expect(fixture.nativeElement.querySelectorAll('[data-testid="incidente-card"]').length).toBe(1);
   });
 
-  it('deve buscar auditoria ao abrir o modal e renderizar dados consolidados', async () => {
+  it('deve remover o botao manual de atualizar e evitar expor codigo interno no estado vazio', async () => {
+    pendentesSubject = new BehaviorSubject<IncidentePendente[]>([]);
+    incidentesServiceSpy.pendentes$ = pendentesSubject.asObservable();
+
+    await criarComponente();
+
+    expect(fixture.nativeElement.querySelector('[aria-label="Atualizar central de incidentes"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Nenhum incidente pendente no momento.');
+    expect(fixture.nativeElement.textContent).not.toContain('BLOQUEADO_INCIDENTE');
+  });
+
+  it('deve buscar auditoria ao abrir o modal e renderizar foco em cliente e responsavel', async () => {
     await criarComponente();
 
     fixture.nativeElement.querySelector('[data-testid="incidente-card"]').click();
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(incidentesServiceSpy.obterAuditoria).toHaveBeenCalledWith(11);
     expect(component.modalAberto).toBe(true);
-    expect(component.auditoriaSelecionada?.tag_peca.nome).toBe('Parachoque Dianteiro');
-    expect(fixture.nativeElement.textContent).toContain('Status anterior');
-    expect(fixture.nativeElement.textContent).toContain('EM_EXECUCAO');
+    expect(fixture.nativeElement.textContent).toContain('Marcos Cliente');
+    expect(fixture.nativeElement.textContent).toContain('11999990000');
+    expect(fixture.nativeElement.textContent).toContain('Lavador Responsavel');
     expect(fixture.nativeElement.textContent).toContain('Parachoque Dianteiro');
+    expect(fixture.nativeElement.textContent).not.toContain('Status anterior');
     expect(fixture.nativeElement.querySelector('[data-testid="vistoria-foto"]')?.getAttribute('src'))
       .toBe('https://cdn.lavame.test/vistoria/11.jpg');
   });
@@ -135,10 +163,13 @@ describe('IncidentesComponent - RF-16', () => {
     expect(resolverButton.disabled).toBe(true);
   });
 
-  it('deve resolver incidente, fechar modal e atualizar a lista', async () => {
-    incidentesServiceSpy.listarPendentes
-      .mockReturnValueOnce(of(mockIncidentes))
-      .mockReturnValueOnce(of([]));
+  it('deve resolver incidente, fechar modal e sincronizar a lista reativa', async () => {
+    incidentesServiceSpy.recarregarPendentes
+      .mockImplementationOnce(() => of(mockIncidentes))
+      .mockImplementationOnce(() => {
+        pendentesSubject.next([]);
+        return of([]);
+      });
 
     const resolver$ = new Subject<{ detail: string; id: number; ordem_servico_status: string }>();
     incidentesServiceSpy.resolverIncidente.mockReturnValue(resolver$);
@@ -171,12 +202,14 @@ describe('IncidentesComponent - RF-16', () => {
     });
     resolver$.complete();
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(component.resolvendo).toBe(false);
     expect(component.modalAberto).toBe(false);
     expect(component.incidentes.length).toBe(0);
     expect(component.mensagemSucesso).toContain('OS #1024 liberada com sucesso.');
-    expect(incidentesServiceSpy.listarPendentes).toHaveBeenCalledTimes(2);
+    expect(incidentesServiceSpy.recarregarPendentes).toHaveBeenCalledTimes(2);
   });
 
   it('deve exibir erro da auditoria quando o detalhamento falhar', async () => {
@@ -195,7 +228,7 @@ describe('IncidentesComponent - RF-16', () => {
 
   it('deve exibir erro retornado pelo backend ao falhar a resolucao', async () => {
     incidentesServiceSpy.resolverIncidente.mockReturnValue(
-      throwError(() => ({ error: { detail: 'O incidente informado já foi resolvido.' } })),
+      throwError(() => ({ error: { detail: 'O incidente informado ja foi resolvido.' } })),
     );
 
     await criarComponente();
@@ -212,7 +245,7 @@ describe('IncidentesComponent - RF-16', () => {
     fixture.detectChanges();
 
     expect(component.modalAberto).toBe(true);
-    expect(component.erroResolucao).toBe('O incidente informado já foi resolvido.');
-    expect(fixture.nativeElement.textContent).toContain('O incidente informado já foi resolvido.');
+    expect(component.erroResolucao).toBe('O incidente informado ja foi resolvido.');
+    expect(fixture.nativeElement.textContent).toContain('O incidente informado ja foi resolvido.');
   });
 });

@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
 import {
   IncidenteAuditoria,
   IncidentePendente,
   IncidentesService,
 } from '../../services/incidentes.service';
-
 
 @Component({
   selector: 'app-incidentes',
@@ -31,7 +31,7 @@ export class IncidentesComponent implements OnInit, OnDestroy {
   incidenteSelecionado: IncidentePendente | null = null;
   auditoriaSelecionada: IncidenteAuditoria | null = null;
 
-  private intervalo?: ReturnType<typeof setInterval>;
+  private readonly subscriptions = new Subscription();
 
   get hojeStr(): string {
     const data = new Date();
@@ -45,22 +45,30 @@ export class IncidentesComponent implements OnInit, OnDestroy {
     return this.incidentes.length;
   }
 
+  get podeResolver(): boolean {
+    return !!this.incidenteSelecionado && this.notaResolucao.trim().length > 0 && !this.resolvendo;
+  }
+
   constructor(
     private readonly incidentesService: IncidentesService,
     private readonly cdr: ChangeDetectorRef,
   ) {}
 
-  get podeResolver(): boolean {
-    return !!this.incidenteSelecionado && this.notaResolucao.trim().length > 0 && !this.resolvendo;
-  }
-
   ngOnInit(): void {
+    this.subscriptions.add(
+      this.incidentesService.pendentes$.subscribe((incidentes) => {
+        this.incidentes = incidentes;
+        this.cdr.markForCheck();
+      }),
+    );
+
+    this.incidentesService.iniciarMonitoramentoPendentes();
     this.carregarIncidentes(true);
-    this.intervalo = setInterval(() => this.carregarIncidentes(false), 30000);
   }
 
   ngOnDestroy(): void {
-    clearInterval(this.intervalo);
+    this.incidentesService.pararMonitoramentoPendentes();
+    this.subscriptions.unsubscribe();
   }
 
   carregarIncidentes(exibirLoading = true): void {
@@ -68,9 +76,8 @@ export class IncidentesComponent implements OnInit, OnDestroy {
       this.carregando = true;
     }
 
-    this.incidentesService.listarPendentes().subscribe({
-      next: (incidentes) => {
-        this.incidentes = incidentes;
+    this.incidentesService.recarregarPendentes().subscribe({
+      next: () => {
         this.carregando = false;
         this.erro = false;
         this.cdr.markForCheck();
@@ -163,5 +170,19 @@ export class IncidentesComponent implements OnInit, OnDestroy {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  formatarStatusOrdem(status: string): string {
+    const mapa: Record<string, string> = {
+      BLOQUEADO_INCIDENTE: 'Em analise',
+      EM_EXECUCAO: 'Em execucao',
+      LIBERACAO: 'Liberacao',
+      PATIO: 'Patio',
+      VISTORIA_INICIAL: 'Vistoria inicial',
+      FINALIZADO: 'Finalizado',
+      CANCELADO: 'Cancelado',
+    };
+
+    return mapa[status] ?? status;
   }
 }

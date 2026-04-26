@@ -1,6 +1,6 @@
 import '@angular/compiler';
 import { NavigationEnd } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { App } from './app';
 
@@ -9,17 +9,20 @@ describe('AppComponent - Fluxo de Gestao Protegido Unificado', () => {
   let mockRouter: any;
   let mockLocation: any;
   let mockAuthService: any;
+  let totalPendentesSubject: BehaviorSubject<number>;
   let mockIncidentesService: any;
 
-  beforeEach(() => {
+  function criarComponenteEm(url: string) {
     mockRouter = {
-      events: of(new NavigationEnd(1, '/login', '/login')),
+      events: of(new NavigationEnd(1, url, url)),
       navigate: vi.fn(),
     };
 
     mockLocation = {
-      path: () => '/login',
+      path: () => url,
     };
+
+    totalPendentesSubject = new BehaviorSubject<number>(0);
 
     mockAuthService = {
       logout: vi.fn(),
@@ -28,10 +31,16 @@ describe('AppComponent - Fluxo de Gestao Protegido Unificado', () => {
     };
 
     mockIncidentesService = {
-      listarPendentes: vi.fn().mockReturnValue(of([])),
+      totalPendentes$: totalPendentesSubject.asObservable(),
+      iniciarMonitoramentoPendentes: vi.fn(),
+      pararMonitoramentoPendentes: vi.fn(),
     };
 
     component = new App(mockRouter, mockLocation, mockAuthService, mockIncidentesService);
+  }
+
+  beforeEach(() => {
+    criarComponenteEm('/login');
   });
 
   it('should create', () => {
@@ -52,44 +61,29 @@ describe('AppComponent - Fluxo de Gestao Protegido Unificado', () => {
     expect(component.totalIncidentesPendentes).toBe(0);
   });
 
-  it('deve carregar o total dinamico de incidentes pendentes em area protegida', () => {
-    mockRouter = {
-      events: of(new NavigationEnd(1, '/gestao/dashboard', '/gestao/dashboard')),
-      navigate: vi.fn(),
-    };
-
-    mockLocation = {
-      path: () => '/gestao/dashboard',
-    };
-
-    mockIncidentesService = {
-      listarPendentes: vi.fn().mockReturnValue(of([{ id: 1 }, { id: 2 }, { id: 3 }])),
-    };
-
-    component = new App(mockRouter, mockLocation, mockAuthService, mockIncidentesService);
+  it('deve iniciar o monitoramento compartilhado em area protegida e refletir o total dinamico', () => {
+    criarComponenteEm('/gestao/dashboard');
     component.ngOnInit();
 
-    expect(mockIncidentesService.listarPendentes).toHaveBeenCalled();
+    totalPendentesSubject.next(3);
+
+    expect(mockIncidentesService.iniciarMonitoramentoPendentes).toHaveBeenCalled();
     expect(component.totalIncidentesPendentes).toBe(3);
   });
 
-  it('deve manter o badge em zero quando a consulta de incidentes falhar', () => {
-    mockRouter = {
-      events: of(new NavigationEnd(1, '/gestao/dashboard', '/gestao/dashboard')),
-      navigate: vi.fn(),
-    };
-
-    mockLocation = {
-      path: () => '/gestao/dashboard',
-    };
-
-    mockIncidentesService = {
-      listarPendentes: vi.fn().mockReturnValue(throwError(() => new Error('falha api'))),
-    };
-
-    component = new App(mockRouter, mockLocation, mockAuthService, mockIncidentesService);
+  it('deve zerar o badge e parar o monitoramento ao sair da area protegida', () => {
+    criarComponenteEm('/gestao/dashboard');
     component.ngOnInit();
+    totalPendentesSubject.next(2);
 
+    const eventoLogin = new NavigationEnd(2, '/login', '/login');
+    mockRouter.events = of(eventoLogin);
+    component['atualizarEstadoSidebar']('/login');
+    component['pararMonitoramentoIncidentes']();
+    component.totalIncidentesPendentes = 0;
+
+    expect(component.exibirSidebar).toBe(false);
+    expect(mockIncidentesService.pararMonitoramentoPendentes).toHaveBeenCalled();
     expect(component.totalIncidentesPendentes).toBe(0);
   });
 });

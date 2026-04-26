@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
+import { catchError, distinctUntilChanged, map, tap } from 'rxjs/operators';
 
 export interface IncidentePendente {
   id: number;
@@ -19,9 +19,13 @@ export interface IncidentePendente {
 export interface IncidenteAuditoriaOrdemServico {
   id: number;
   status: string;
-  status_anterior_os: string;
   placa: string;
   modelo: string;
+  marca: string;
+  cor: string;
+  nome_dono: string | null;
+  celular_dono: string | null;
+  funcionario_responsavel_nome: string | null;
   servico: string;
   horario_lavagem: string | null;
   horario_acabamento: string | null;
@@ -59,12 +63,20 @@ export interface ResolverIncidenteResponse {
   ordem_servico_status: string;
 }
 
-
 @Injectable({
   providedIn: 'root',
 })
 export class IncidentesService {
   private readonly apiUrl = '/api/incidentes-os/';
+  private readonly pendentesSubject = new BehaviorSubject<IncidentePendente[]>([]);
+  private pollingHandle?: ReturnType<typeof setInterval>;
+  private monitoramentosAtivos = 0;
+
+  readonly pendentes$ = this.pendentesSubject.asObservable();
+  readonly totalPendentes$ = this.pendentes$.pipe(
+    map((incidentes) => incidentes.length),
+    distinctUntilChanged(),
+  );
 
   constructor(private readonly http: HttpClient) {}
 
@@ -79,6 +91,45 @@ export class IncidentesService {
     return this.http.get<IncidentePendente[]>(`${this.apiUrl}pendentes/`, {
       headers: this.getHeaders(),
     });
+  }
+
+  recarregarPendentes(): Observable<IncidentePendente[]> {
+    return this.listarPendentes().pipe(
+      tap((incidentes) => this.pendentesSubject.next(incidentes)),
+    );
+  }
+
+  snapshotPendentes(): IncidentePendente[] {
+    return this.pendentesSubject.value;
+  }
+
+  iniciarMonitoramentoPendentes(intervaloMs = 30000): void {
+    this.monitoramentosAtivos += 1;
+
+    if (this.pollingHandle) {
+      return;
+    }
+
+    this.recarregarPendentes()
+      .pipe(catchError(() => EMPTY))
+      .subscribe();
+
+    this.pollingHandle = setInterval(() => {
+      this.recarregarPendentes()
+        .pipe(catchError(() => EMPTY))
+        .subscribe();
+    }, intervaloMs);
+  }
+
+  pararMonitoramentoPendentes(): void {
+    if (this.monitoramentosAtivos > 0) {
+      this.monitoramentosAtivos -= 1;
+    }
+
+    if (this.monitoramentosAtivos === 0 && this.pollingHandle) {
+      clearInterval(this.pollingHandle);
+      this.pollingHandle = undefined;
+    }
   }
 
   obterAuditoria(id: number): Observable<IncidenteAuditoria> {

@@ -5,7 +5,14 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from io import BytesIO
 from PIL import Image
-from operacao.tests.factories import OrdemServicoFactory, UserFactory, MidiaOrdemServicoFactory, ServicoFactory, TagPecaFactory
+from operacao.tests.factories import (
+    EstabelecimentoFactory,
+    MidiaOrdemServicoFactory,
+    OrdemServicoFactory,
+    ServicoFactory,
+    TagPecaFactory,
+    UserFactory,
+)
 # Imports ajustados conforme nova estrutura
 from core.models import Servico, Veiculo
 from operacao.models import IncidenteOS, OrdemServico
@@ -31,12 +38,16 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         url = reverse('os-criar')
         dados = {
             'placa': 'WWW1234', 'modelo': 'Polo', 'marca': 'VW',
-            'cor': 'Branco', 'servico_id': self.servico.id, 
+            'cor': 'Branco', 'nome_dono': 'Marcos Cliente', 'celular_dono': '11999990000',
+            'servico_id': self.servico.id, 
             'data_hora': timezone.now().isoformat(),
             'iniciar_agora': True
         }
         response = self.client.post(url, dados)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        os = OrdemServico.objects.get(id=response.data['id'])
+        self.assertEqual(os.veiculo.nome_dono, 'Marcos Cliente')
+        self.assertEqual(os.veiculo.celular_dono, '11999990000')
 
     def test_bloqueio_agendamento_duplicado_hoje(self):
         """RN: Impede dois carros em andamento para o mesmo funcionário hoje."""
@@ -156,6 +167,31 @@ class TestOrdemServicoFluxoAPI(APITestCase):
 
         self.assertEqual(os.status, 'BLOQUEADO_INCIDENTE')
         self.assertEqual(incidente.status_anterior_os, 'EM_EXECUCAO')
+
+    def test_listar_ordens_hoje_restringe_patio_ao_estabelecimento_do_funcionario(self):
+        estabelecimento = EstabelecimentoFactory()
+        funcionario = UserFactory(estabelecimento=estabelecimento)
+        client = APIClient()
+        client.force_authenticate(user=funcionario)
+
+        outro_estabelecimento = EstabelecimentoFactory()
+        os_mesmo_estabelecimento = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=None,
+            status='PATIO',
+        )
+        os_outro_estabelecimento = OrdemServicoFactory(
+            estabelecimento=outro_estabelecimento,
+            funcionario=None,
+            status='PATIO',
+        )
+
+        response = client.get(reverse('os-hoje'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ids = [item['id'] for item in response.data]
+        self.assertIn(os_mesmo_estabelecimento.id, ids)
+        self.assertNotIn(os_outro_estabelecimento.id, ids)
 
 class TestHistoricoAPI(APITestCase):
     def setUp(self):

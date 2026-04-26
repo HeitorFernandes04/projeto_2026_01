@@ -1,9 +1,8 @@
 import '@angular/compiler';
 
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 
 import { IncidentesService } from './incidentes.service';
-
 
 describe('IncidentesService', () => {
   let service: IncidentesService;
@@ -16,6 +15,8 @@ describe('IncidentesService', () => {
   };
 
   beforeEach(() => {
+    vi.useFakeTimers();
+
     mockHttpClient = {
       get: vi.fn().mockReturnValue(of([])),
       patch: vi.fn().mockReturnValue(of({})),
@@ -34,6 +35,8 @@ describe('IncidentesService', () => {
   });
 
   afterEach(() => {
+    service.pararMonitoramentoPendentes();
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -43,6 +46,29 @@ describe('IncidentesService', () => {
     const [url, options] = mockHttpClient.get.mock.calls[0];
     expect(url).toBe('/api/incidentes-os/pendentes/');
     expect(options.headers.get('Authorization')).toBe('Bearer token_web_teste');
+  });
+
+  it('deve atualizar a fonte reativa ao recarregar os pendentes', async () => {
+    mockHttpClient.get.mockReturnValueOnce(of([{ id: 1 }, { id: 2 }] as any));
+
+    const valores: number[] = [];
+    const subscription = service.totalPendentes$.subscribe((total) => valores.push(total));
+
+    await firstValueFrom(service.recarregarPendentes());
+
+    expect(service.snapshotPendentes().length).toBe(2);
+    expect(valores.at(-1)).toBe(2);
+    subscription.unsubscribe();
+  });
+
+  it('deve iniciar apenas um polling compartilhado mesmo com chamadas repetidas', () => {
+    mockHttpClient.get.mockReturnValue(of([{ id: 1 }] as any));
+
+    service.iniciarMonitoramentoPendentes(1000);
+    service.iniciarMonitoramentoPendentes(1000);
+    vi.advanceTimersByTime(2100);
+
+    expect(mockHttpClient.get).toHaveBeenCalledTimes(3);
   });
 
   it('deve consultar o endpoint de auditoria do incidente', () => {

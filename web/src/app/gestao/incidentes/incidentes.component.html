@@ -19,15 +19,6 @@
         <span class="date-label">Data</span>
         <span class="date-value">{{ hojeStr }}</span>
       </div>
-
-      <button
-        class="refresh-btn"
-        type="button"
-        aria-label="Atualizar central de incidentes"
-        (click)="carregarIncidentes(false)"
-      >
-        Atualizar
-      </button>
     </div>
   </header>
 
@@ -79,7 +70,7 @@
     } @else if (incidentes.length === 0) {
       <section class="state-panel empty">
         <h3>Nenhum incidente pendente no momento.</h3>
-        <p>Quando uma OS entrar em BLOQUEADO_INCIDENTE, ela aparecera nesta central.</p>
+        <p>Quando uma OS for pausada para analise, ela aparecera nesta central automaticamente.</p>
       </section>
     } @else {
       <div class="incidentes-list">
@@ -96,7 +87,7 @@
                 <h3>{{ item.placa }}</h3>
                 <span class="model">{{ item.modelo }} • {{ item.servico }}</span>
               </div>
-              <span class="status-badge">{{ item.status_ordem_servico }}</span>
+              <span class="status-badge">{{ formatarStatusOrdem(item.status_ordem_servico) }}</span>
             </div>
 
             <p class="description">{{ item.descricao }}</p>
@@ -121,9 +112,9 @@
       <div class="modal-container">
         <header class="modal-header">
           <div class="header-main">
-            <h2 id="incident-modal-title">Detalhes do incidente</h2>
+            <h2 id="incident-modal-title">Auditoria do incidente</h2>
             <span class="subtitle">
-              {{ incidenteSelecionado.placa }} • {{ incidenteSelecionado.modelo }}
+              OS #{{ incidenteSelecionado.ordem_servico_id }} • {{ incidenteSelecionado.placa }}
             </span>
           </div>
 
@@ -142,7 +133,7 @@
             <section class="modal-state loading" role="status" aria-live="polite">
               <div class="loader" aria-hidden="true"></div>
               <h3>Carregando auditoria do incidente</h3>
-              <p>Aguarde enquanto consolidamos os dados da OS, peca e vistoria inicial.</p>
+              <p>Aguarde enquanto consolidamos os dados da OS, do cliente e das evidencias visuais.</p>
             </section>
           } @else if (erroAuditoria) {
             <section class="modal-state error" aria-live="assertive">
@@ -158,45 +149,50 @@
             </section>
           } @else if (auditoriaSelecionada) {
             <div class="details-grid">
-              <div class="detail-card">
-                <label>Ordem de servico</label>
-                <strong>#{{ auditoriaSelecionada.ordem_servico.id }}</strong>
+              <div class="detail-card emphasis">
+                <label>Cliente</label>
+                <strong>{{ auditoriaSelecionada.ordem_servico.nome_dono || 'Nao informado' }}</strong>
+                <span class="detail-subtitle">Contato: {{ auditoriaSelecionada.ordem_servico.celular_dono || 'Nao informado' }}</span>
+              </div>
+              <div class="detail-card emphasis">
+                <label>Lavador responsavel</label>
+                <strong>{{ auditoriaSelecionada.ordem_servico.funcionario_responsavel_nome || 'Nao atribuido' }}</strong>
+                <span class="detail-subtitle">Status atual: {{ formatarStatusOrdem(auditoriaSelecionada.ordem_servico.status) }}</span>
               </div>
               <div class="detail-card">
-                <label>Status da OS</label>
-                <strong>{{ auditoriaSelecionada.ordem_servico.status }}</strong>
-              </div>
-              <div class="detail-card">
-                <label>Status anterior</label>
-                <strong>{{ auditoriaSelecionada.ordem_servico.status_anterior_os }}</strong>
+                <label>Veiculo</label>
+                <strong>{{ auditoriaSelecionada.ordem_servico.placa }}</strong>
+                <span class="detail-subtitle">
+                  {{ auditoriaSelecionada.ordem_servico.marca }} • {{ auditoriaSelecionada.ordem_servico.modelo }} • {{ auditoriaSelecionada.ordem_servico.cor }}
+                </span>
               </div>
               <div class="detail-card">
                 <label>Servico</label>
                 <strong>{{ auditoriaSelecionada.ordem_servico.servico }}</strong>
+                <span class="detail-subtitle">OS #{{ auditoriaSelecionada.ordem_servico.id }}</span>
               </div>
               <div class="detail-card">
                 <label>Peca afetada</label>
                 <strong>{{ auditoriaSelecionada.tag_peca.nome }}</strong>
+                <span class="detail-subtitle">{{ auditoriaSelecionada.tag_peca.categoria }}</span>
               </div>
               <div class="detail-card">
-                <label>Categoria</label>
-                <strong>{{ auditoriaSelecionada.tag_peca.categoria }}</strong>
+                <label>Registrado em</label>
+                <strong>{{ formatarDataHora(auditoriaSelecionada.data_registro) }}</strong>
+                <span class="detail-subtitle">Incidente em analise gestora</span>
               </div>
             </div>
 
             <div class="modal-incident-description">
-              <label>DESCRICAO DO INCIDENTE</label>
+              <label>Descricao do incidente</label>
               <p>{{ auditoriaSelecionada.descricao }}</p>
-              <div class="report-meta">
-                <span>Registrado em: <strong>{{ formatarDataHora(auditoriaSelecionada.data_registro) }}</strong></span>
-              </div>
             </div>
 
             <div class="photo-grid">
               <div class="photo-section">
                 <div class="label-row">
                   <span class="dot red"></span>
-                  Evidencia fotografica do incidente
+                  Evidencia do incidente
                 </div>
 
                 @if (auditoriaSelecionada.foto_url) {
@@ -218,7 +214,7 @@
               <div class="photo-section">
                 <div class="label-row">
                   <span class="dot"></span>
-                  Evidencia da vistoria inicial
+                  Comparativo com a vistoria inicial
                 </div>
 
                 @if (auditoriaSelecionada.vistoria_item?.foto_url || auditoriaSelecionada.vista_inicial_foto_url) {
@@ -245,7 +241,7 @@
                 data-testid="nota-resolucao"
                 [(ngModel)]="notaResolucao"
                 [disabled]="resolvendo"
-                placeholder="Registre a conclusao da auditoria para liberar a OS."
+                placeholder="Descreva a decisao da auditoria para liberar a OS."
                 aria-label="Nota de resolucao do incidente"
               ></textarea>
 

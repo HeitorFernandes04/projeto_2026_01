@@ -134,6 +134,8 @@ class OrdemServicoService:
                 'modelo': dados['modelo'],
                 'marca': dados.get('marca', 'Não informada'),
                 'cor': dados.get('cor', 'Não informada'),
+                'nome_dono': dados.get('nome_dono', ''),
+                'celular_dono': dados.get('celular_dono', ''),
                 'estabelecimento': servico.estabelecimento
             }
         )
@@ -328,6 +330,7 @@ class IncidenteService:
             IncidenteOS.objects.select_related(
                 'ordem_servico__veiculo',
                 'ordem_servico__servico',
+                'ordem_servico__funcionario',
                 'tag_peca',
             ),
             id=incidente_id,

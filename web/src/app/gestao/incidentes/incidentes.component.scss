@@ -410,8 +410,7 @@
 
     .detail-card,
     .modal-incident-description,
-    .photo-card,
-    .next-step-note {
+    .photo-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 24px;
@@ -419,6 +418,11 @@
 
     .detail-card {
       padding: 20px;
+
+      &.emphasis {
+        border-color: rgba(27, 148, 224, 0.22);
+        background: linear-gradient(180deg, rgba(27, 148, 224, 0.08), rgba(255, 255, 255, 0.03));
+      }
 
       label {
         display: block;
@@ -432,6 +436,14 @@
       strong {
         color: var(--lm-text);
         font-size: 16px;
+      }
+
+      .detail-subtitle {
+        display: block;
+        color: var(--lm-text-muted);
+        font-size: 13px;
+        margin-top: 8px;
+        line-height: 1.5;
       }
     }
 
@@ -477,6 +489,7 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
+        background: var(--lm-primary);
 
         &.red {
           background: var(--lm-accent);

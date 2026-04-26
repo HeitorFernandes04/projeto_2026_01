@@ -42,10 +42,15 @@ class OrdensServicoHojeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        if not hasattr(request.user, 'perfil_funcionario'):
+            raise DRFPermissionDenied('Usuário sem vínculo operacional para consultar o pátio.')
+
+        estabelecimento = request.user.perfil_funcionario.estabelecimento
         hoje = timezone.localdate()
         # Exibe OS sem funcionário ou do próprio usuário (fila do pátio)
         ordens = OrdemServico.objects.filter(
             Q(funcionario__isnull=True) | Q(funcionario=request.user),
+            estabelecimento=estabelecimento,
             data_hora__date=hoje,
         ).select_related('veiculo', 'servico').prefetch_related('midias').order_by('data_hora')
 
