@@ -23,8 +23,12 @@ def ingest_documents():
     # Inicializa o cliente persistente local
     client = chromadb.PersistentClient(path=str(CHROMA_PATH))
     
-    # Coleção "regras_projeto", re-criada dinamicamente
-    collection = client.get_or_create_collection(name="regras_projeto")
+    # Recria a coleção para remover chunks de documentos deletados/renomeados.
+    try:
+        client.delete_collection(name="regras_projeto")
+    except Exception:
+        pass
+    collection = client.create_collection(name="regras_projeto")
     
     # rglob varre as subpastas em docs/
     md_files = list(DOCS_DIR.rglob("*.md"))
