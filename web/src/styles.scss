@@ -26,3 +26,72 @@ body {
 /* Scrollbar fina do protótipo */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+
+.page-header .header-actions {
+  .notification-btn {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 14px;
+    border: 1px solid var(--lm-border);
+    background: var(--lm-card);
+    color: var(--lm-text-muted);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background: var(--lm-card-hover);
+      border-color: #30363d;
+      color: var(--lm-text);
+    }
+
+    .badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      min-width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      border-radius: 999px;
+      border: 2px solid var(--lm-bg);
+      background: var(--lm-accent);
+      color: var(--lm-text);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+    }
+  }
+
+  .date-selector {
+    min-height: 48px;
+    padding: 8px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--lm-border);
+    background: var(--lm-card);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .date-label {
+      color: var(--lm-text-muted);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .date-value {
+      color: var(--lm-text);
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+  }
+}

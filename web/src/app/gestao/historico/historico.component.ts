@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import {
   HistoricoService,
   HistoricoItem,
   HistoricoFiltros,
 } from '../../services/historico.service';
+import { IncidentesService } from '../../services/incidentes.service';
 
 @Component({
   selector: 'app-historico',
@@ -16,7 +18,7 @@ import {
   styleUrl: './historico.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoricoComponent implements OnInit {
+export class HistoricoComponent implements OnInit, OnDestroy {
   ordens: HistoricoItem[] = [];
   carregando = true;
   erro = false;
@@ -32,30 +34,50 @@ export class HistoricoComponent implements OnInit {
   filtroDataInicio = '';
   filtroDataFim = '';
   filtroComIncidenteResolvido = false;
+  totalIncidentesPendentes = 0;
 
   // Custom select de status — apenas estados terminais (histórico = OS encerradas)
   dropdownAberto = false;
   selectedStatus = 'Todos';
   readonly statusOptions = ['Todos', 'FINALIZADO', 'CANCELADO'];
+  private readonly subscriptions = new Subscription();
 
   get totalPaginas(): number {
     return Math.ceil(this.totalItens / this.itensPorPagina);
   }
 
   get dataHoje(): string {
-    const d = new Date();
-    const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-    return `${String(d.getDate()).padStart(2,'0')} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+    return new Date()
+      .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replaceAll('.', '')
+      .toUpperCase();
   }
 
   constructor(
     private readonly router: Router,
     private readonly historicoService: HistoricoService,
+    private readonly incidentesService: IncidentesService,
     private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.monitorarIncidentesPendentes();
     this.buscar();
+  }
+
+  ngOnDestroy(): void {
+    this.incidentesService.pararMonitoramentoPendentes();
+    this.subscriptions.unsubscribe();
+  }
+
+  private monitorarIncidentesPendentes(): void {
+    this.subscriptions.add(
+      this.incidentesService.totalPendentes$.subscribe((total) => {
+        this.totalIncidentesPendentes = total;
+        this.cdr.markForCheck();
+      }),
+    );
+    this.incidentesService.iniciarMonitoramentoPendentes();
   }
 
   buscar(pagina = 1): void {

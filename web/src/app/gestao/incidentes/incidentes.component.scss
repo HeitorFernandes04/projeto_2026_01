@@ -36,7 +36,6 @@
     }
   }
 
-  .notification-btn,
   .refresh-btn,
   .close-btn,
   .btn-cancelar,
@@ -44,52 +43,6 @@
     border: 1px solid var(--lm-border);
     background: var(--lm-card);
     color: var(--lm-text);
-  }
-
-  .notification-btn {
-    padding: 12px;
-    border-radius: 14px;
-    position: relative;
-    cursor: default;
-
-    .badge {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      min-width: 20px;
-      height: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--lm-accent);
-      color: var(--lm-text);
-      font-size: 10px;
-      font-weight: 800;
-      padding: 0 6px;
-      border-radius: 999px;
-      border: 2px solid var(--lm-bg);
-    }
-  }
-
-  .date-selector {
-    background: var(--lm-card);
-    border: 1px solid var(--lm-border);
-    padding: 10px 24px;
-    border-radius: 14px;
-
-    .date-label {
-      color: var(--lm-text-muted);
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      display: block;
-    }
-
-    .date-value {
-      color: var(--lm-text);
-      font-size: 14px;
-      font-weight: 800;
-    }
   }
 
   .refresh-btn,

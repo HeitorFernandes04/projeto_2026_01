@@ -6,6 +6,7 @@ import '@angular/compiler';
 
 import { ServicoService, Servico } from '../../services/servico.service';
 import { EstabelecimentoService, Estabelecimento } from '../../services/estabelecimento.service';
+import { IncidentesService } from '../../services/incidentes.service';
 
 // Import the component class only for testing logic
 import { SetupComponent } from './setup.component';
@@ -16,6 +17,7 @@ describe('SetupComponent - Configurações do Sistema', () => {
   let estabelecimentoServiceSpy: any;
   let funcionarioServiceSpy: any;
   let dashboardServiceSpy: any;
+  let incidentesServiceSpy: any;
   let routerSpy: any;
 
   // Mock data
@@ -67,6 +69,12 @@ describe('SetupComponent - Configurações do Sistema', () => {
       getEficienciaEquipe: vi.fn().mockReturnValue(of([]))
     };
 
+    incidentesServiceSpy = {
+      totalPendentes$: of(5),
+      iniciarMonitoramentoPendentes: vi.fn(),
+      pararMonitoramentoPendentes: vi.fn(),
+    };
+
     routerSpy = {
       navigate: vi.fn()
     };
@@ -76,7 +84,15 @@ describe('SetupComponent - Configurações do Sistema', () => {
     };
 
     // Create component instance manually without TestBed
-    component = new SetupComponent(routerSpy, servicoServiceSpy, estabelecimentoServiceSpy, funcionarioServiceSpy, dashboardServiceSpy, mockCdRef as any);
+    component = new SetupComponent(
+      routerSpy,
+      servicoServiceSpy,
+      estabelecimentoServiceSpy,
+      funcionarioServiceSpy,
+      dashboardServiceSpy,
+      incidentesServiceSpy as IncidentesService,
+      mockCdRef as any
+    );
     
     // Call ngOnInit to trigger service calls
     component.ngOnInit();
@@ -95,6 +111,11 @@ describe('SetupComponent - Configurações do Sistema', () => {
   });
 
   describe('Teste 1 (Navegação e Estado - Abas)', () => {
+    it('deve monitorar incidentes pendentes para o badge do header', () => {
+      expect(component.totalIncidentesPendentes).toBe(5);
+      expect(incidentesServiceSpy.iniciarMonitoramentoPendentes).toHaveBeenCalled();
+    });
+
     it('deve ter aba inicial ativa como "servicos"', () => {
       expect(component.abaAtiva).toBe('servicos');
     });

@@ -19,22 +19,6 @@
     .header-actions {
       display: flex; gap: 16px; align-items: center;
 
-      .notification-btn {
-        background: #161b22; border: 1px solid #30363d; color: #8b949e;
-        width: 48px; height: 48px; border-radius: 14px; position: relative;
-        display: flex; align-items: center; justify-content: center;
-      }
-
-      .header-date-picker {
-        background: #161b22; border: 1px solid #30363d; padding: 8px 18px;
-        border-radius: 14px; display: flex; align-items: center; gap: 12px;
-        .cal-icon { color: #8b949e; font-size: 20px; }
-        .date-texts {
-          display: flex; flex-direction: column;
-          .label { color: #8b949e; font-size: 10px; font-weight: 800; text-transform: uppercase; line-height: 1; }
-          .value { color: #fff; font-size: 14px; font-weight: 800; margin-top: 2px; }
-        }
-      }
     }
   }
 

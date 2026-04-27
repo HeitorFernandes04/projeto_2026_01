@@ -1,12 +1,13 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, Subscription } from 'rxjs';
 import { ServicoService, Servico } from '../../services/servico.service';
 import { EstabelecimentoService, Estabelecimento } from '../../services/estabelecimento.service';
 import { FuncionarioService, Funcionario } from '../../services/funcionario.service';
 import { DashboardService } from '../../services/dashboard.service';
+import { IncidentesService } from '../../services/incidentes.service';
 
 @Component({
   selector: 'app-setup',
@@ -15,7 +16,7 @@ import { DashboardService } from '../../services/dashboard.service';
   templateUrl: './setup.component.html',
   styleUrl: './setup.component.scss'
 })
-export class SetupComponent implements OnInit {
+export class SetupComponent implements OnInit, OnDestroy {
   // Estado da Lista de Serviços (Dados Reais do Banco)
   servicos: Servico[] = [];
 
@@ -66,6 +67,16 @@ export class SetupComponent implements OnInit {
 
   // Performance da Equipe (RF-20)
   performanceGlobalMinutos: number = 0;
+  totalIncidentesPendentes: number = 0;
+  private readonly subscriptions = new Subscription();
+
+  get dataHoje(): string {
+    const data = new Date();
+    return data
+      .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replaceAll('.', '')
+      .toUpperCase();
+  }
   
   constructor(
     private router: Router,
@@ -73,14 +84,31 @@ export class SetupComponent implements OnInit {
     private estabelecimentoService: EstabelecimentoService,
     private funcionarioService: FuncionarioService,
     private dashboardService: DashboardService,
+    private incidentesService: IncidentesService,
     private cdRef: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
+    this.monitorarIncidentesPendentes();
     this.carregarServicos();
     this.carregarDadosUnidade();
     this.carregarFuncionarios();
     this.carregarPerformanceEquipe();
+  }
+
+  ngOnDestroy() {
+    this.incidentesService.pararMonitoramentoPendentes();
+    this.subscriptions.unsubscribe();
+  }
+
+  private monitorarIncidentesPendentes() {
+    this.subscriptions.add(
+      this.incidentesService.totalPendentes$.subscribe((total) => {
+        this.totalIncidentesPendentes = total;
+        this.cdRef.detectChanges();
+      }),
+    );
+    this.incidentesService.iniciarMonitoramentoPendentes();
   }
 
   carregarPerformanceEquipe() {

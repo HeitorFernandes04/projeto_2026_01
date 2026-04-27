@@ -35,53 +35,19 @@
   .page-header {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 40px;
 
-    .title-group h1 { font-size: 32px; font-weight: 800; color: #fff; margin: 0; }
+    .title-group {
+      h1 { font-size: 34px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -1px; }
+      p { color: #8b949e; font-size: 16px; margin-top: 6px; }
+    }
 
     .header-actions {
       display: flex;
       gap: 16px;
       align-items: center;
 
-      .notification-btn {
-        background: #161b22;
-        border: 1px solid #30363d;
-        color: #8b949e;
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-
-        .badge {
-          position: absolute;
-          top: -5px;
-          right: -5px;
-          background: #ff3b30;
-          color: white;
-          font-size: 10px;
-          padding: 2px 6px;
-          border-radius: 10px;
-        }
-      }
-
-      .header-date-picker {
-        background: #161b22;
-        border: 1px solid #30363d;
-        padding: 8px 18px;
-        border-radius: 14px;
-
-        .date-texts {
-          display: flex;
-          flex-direction: column;
-          .label { color: #8b949e; font-size: 10px; font-weight: 800; }
-          .value { color: #fff; font-size: 14px; font-weight: 800; }
-        }
-      }
     }
   }
 

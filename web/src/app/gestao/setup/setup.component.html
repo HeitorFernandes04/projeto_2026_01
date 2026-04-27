@@ -5,15 +5,13 @@
       <p>Gestão de Serviços, Funcionários e Unidade</p>
     </div>
     <div class="header-actions">
-      <button class="notification-btn" (click)="irParaIncidentes()">
+      <button class="notification-btn" type="button" aria-label="Abrir incidentes" (click)="irParaIncidentes()">
         <span class="material-symbols-outlined">notifications</span>
-        <span class="badge">2</span>
+        <span class="badge" *ngIf="totalIncidentesPendentes > 0">{{ totalIncidentesPendentes }}</span>
       </button>
-      <div class="header-date-picker">
-        <div class="date-texts">
-          <span class="label">Data</span>
-          <span class="value">17 ABR 2026</span>
-        </div>
+      <div class="date-selector">
+        <span class="date-label">Data</span>
+        <span class="date-value">{{ dataHoje }}</span>
       </div>
     </div>
   </header>
