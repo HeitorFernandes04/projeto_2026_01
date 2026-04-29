@@ -1,18 +1,18 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied, ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.models import TagPeca, Servico
-from operacao.models import OrdemServico, MidiaOrdemServico
+from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 from .serializers import TagPecaSerializer, IncidenteOSSerializer
 from .services import IncidenteService
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from .permissions import IsFuncionarioDaOS, IsGestor
@@ -29,6 +29,9 @@ from .serializers import (
     ServicoSerializer,
     ProximaEtapaSerializer,
     FinalizarIndustrialSerializer,
+    IncidenteAuditoriaSerializer,
+    IncidentePendenteSerializer,
+    ResolverIncidenteSerializer,
 )
 from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService, HistoricoGestorService
 
@@ -38,12 +41,22 @@ class OrdensServicoHojeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        hoje = timezone.localdate()
+        if not hasattr(request.user, 'perfil_funcionario'):
+            raise DRFPermissionDenied('Usuário sem vínculo operacional para consultar o pátio.')
+
+        estabelecimento = request.user.perfil_funcionario.estabelecimento
         # Exibe OS sem funcionário ou do próprio usuário (fila do pátio)
-        ordens = OrdemServico.objects.filter(
-            Q(funcionario__isnull=True) | Q(funcionario=request.user),
-            data_hora__date=hoje,
-        ).select_related('veiculo', 'servico').prefetch_related('midias').order_by('data_hora')
+        ordens = (
+            OrdemServico.objects
+            .filter(
+                Q(funcionario__isnull=True) | Q(funcionario=request.user),
+                estabelecimento=estabelecimento,
+            )
+            .exclude(status__in=['FINALIZADO', 'CANCELADO'])
+            .select_related('veiculo', 'servico')
+            .prefetch_related('midias')
+            .order_by('data_hora')
+        )
 
         serializer = OrdemServicoSerializer(ordens, many=True, context={'request': request})
         return Response(serializer.data)
@@ -287,6 +300,65 @@ class TagPecaViewSet(viewsets.ReadOnlyModelViewSet):
         if not estabelecimento:
             return TagPeca.objects.none()
         return TagPeca.objects.filter(estabelecimento=estabelecimento).order_by('nome')
+
+
+class IncidenteViewSet(viewsets.GenericViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+    serializer_class = IncidentePendenteSerializer
+    queryset = IncidenteOS.objects.none()
+
+    @action(detail=False, methods=['get'], url_path='pendentes')
+    def pendentes(self, request):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+        incidentes = IncidenteService.listar_pendentes(estabelecimento)
+        serializer = self.get_serializer(incidentes, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='auditoria')
+    def auditoria(self, request, pk=None):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+
+        try:
+            incidente = IncidenteService.detalhar_auditoria(pk, estabelecimento)
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+
+        serializer = IncidenteAuditoriaSerializer(incidente, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['patch'], url_path='resolver')
+    def resolver(self, request, pk=None):
+        serializer = ResolverIncidenteSerializer(data=request.data)
+        if not serializer.is_valid():
+            first_error = next(iter(serializer.errors.values()))[0]
+            return Response({'detail': first_error}, status=status.HTTP_400_BAD_REQUEST)
+
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+
+        try:
+            incidente = IncidenteService.resolver_incidente(
+                incidente_id=pk,
+                estabelecimento=estabelecimento,
+                gestor_user=request.user,
+                observacoes_resolucao=serializer.validated_data['observacoes_resolucao'],
+            )
+        except ValidationError as exc:
+            detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+            return Response({'detail': detail}, status=status.HTTP_400_BAD_REQUEST)
+        except IncidenteService.IncidenteJaResolvidoError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_409_CONFLICT)
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+
+        return Response(
+            {
+                'detail': 'Incidente resolvido com sucesso.',
+                'id': incidente.id,
+                'ordem_servico_status': incidente.ordem_servico.status,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @api_view(['POST'])

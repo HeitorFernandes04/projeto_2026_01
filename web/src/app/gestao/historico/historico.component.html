@@ -6,16 +6,14 @@
     </div>
 
     <div class="header-actions">
-      <button class="notification-btn" (click)="irParaIncidentes()">
+      <button class="notification-btn" type="button" aria-label="Abrir incidentes" (click)="irParaIncidentes()">
         <span class="material-symbols-outlined">notifications</span>
+        <span class="badge" *ngIf="totalIncidentesPendentes > 0">{{ totalIncidentesPendentes }}</span>
       </button>
 
-      <div class="header-date-picker">
-        <span class="material-symbols-outlined cal-icon">calendar_today</span>
-        <div class="date-texts">
-          <span class="label">Data</span>
-          <span class="value">{{ dataHoje }}</span>
-        </div>
+      <div class="date-selector">
+        <span class="date-label">Data</span>
+        <span class="date-value">{{ dataHoje }}</span>
       </div>
     </div>
   </header>

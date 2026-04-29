@@ -4,6 +4,7 @@ import '@angular/compiler';
 
 import { HistoricoComponent } from './historico.component';
 import { HistoricoService } from '../../services/historico.service';
+import { IncidentesService } from '../../services/incidentes.service';
 import { of, throwError } from 'rxjs';
 
 const mockResponse = {
@@ -40,14 +41,25 @@ describe('HistoricoComponent — RF-17', () => {
   let component: HistoricoComponent;
   let routerSpy: any;
   let serviceSpy: any;
+  let incidentesServiceSpy: any;
   let cdrSpy: any;
 
   beforeEach(() => {
     routerSpy  = { navigate: vi.fn() };
     cdrSpy     = { markForCheck: vi.fn() };
     serviceSpy = { buscarHistorico: vi.fn().mockReturnValue(of(mockResponse)) };
+    incidentesServiceSpy = {
+      totalPendentes$: of(4),
+      iniciarMonitoramentoPendentes: vi.fn(),
+      pararMonitoramentoPendentes: vi.fn(),
+    };
 
-    component = new HistoricoComponent(routerSpy as Router, serviceSpy as HistoricoService, cdrSpy as ChangeDetectorRef);
+    component = new HistoricoComponent(
+      routerSpy as Router,
+      serviceSpy as HistoricoService,
+      incidentesServiceSpy as IncidentesService,
+      cdrSpy as ChangeDetectorRef,
+    );
   });
 
   it('deve criar o componente', () => {
@@ -55,6 +67,12 @@ describe('HistoricoComponent — RF-17', () => {
   });
 
   describe('Inicialização', () => {
+    it('deve monitorar incidentes pendentes para o badge do header', () => {
+      component.ngOnInit();
+      expect(component.totalIncidentesPendentes).toBe(4);
+      expect(incidentesServiceSpy.iniciarMonitoramentoPendentes).toHaveBeenCalled();
+    });
+
     it('deve chamar buscar() no ngOnInit', () => {
       const spy = vi.spyOn(component, 'buscar');
       component.ngOnInit();

@@ -15,8 +15,8 @@
 | Número | Requisito | Status | Descrição |
 | :--- | :--- | :--- | :--- |
 | **RF-14** | Kanban de Pista | ✅ Implementado | Exibir um quadro Kanban com todas as Ordens de Serviço operacionais agrupadas em 4 colunas: `PATIO`, `LAVAGEM`, `FINALIZADO_HOJE` e `INCIDENTES`. |
-| **RF-15** | Central de Incidentes Pendentes | ❌ Pendente | Exibir uma listagem exclusiva de OS com status `BLOQUEADO_INCIDENTE`, com alerta visual quando houver pendências. |
-| **RF-16** | Auditoria e Desbloqueio | ❌ Pendente | Permitir ao gestor analisar os dados do incidente, registrar nota de resolução e devolver a OS ao fluxo após a liberação. |
+| **RF-15** | Central de Incidentes Pendentes | ✅ Implementado | Exibir uma listagem exclusiva de OS com status `BLOQUEADO_INCIDENTE`, com alerta visual quando houver pendências. |
+| **RF-16** | Auditoria e Desbloqueio | ✅ Implementado | Permitir ao gestor analisar os dados do incidente, registrar nota de resolução e devolver a OS ao fluxo após a liberação. |
 
 ---
 
@@ -51,33 +51,33 @@
 
 ---
 
-**Endpoint:** `/api/incidentes-os/pendentes/` ❌ Não implementado
+**Endpoint:** `/api/incidentes-os/pendentes/` ✅ Implementado
 
 - **Método:** `GET`
-- **Camada:** `IncidenteViewSet` (a criar)
+- **Camada:** `IncidenteViewSet`
 - **Descrição:** Listagem de incidentes pendentes vinculados a OS bloqueadas.
 - **Requisição:** autenticado como Gestor.
 - **Resposta:** `200 OK` / `403 Forbidden`
 
 ---
 
-**Endpoint:** `/api/incidentes-os/{id}/auditoria/` ❌ Não implementado
+**Endpoint:** `/api/incidentes-os/{id}/auditoria/` ✅ Implementado
 
 - **Método:** `GET`
-- **Camada:** `IncidenteViewSet` (a criar)
+- **Camada:** `IncidenteViewSet`
 - **Descrição:** Retorna os dados consolidados da OS, incidente e peça afetada para análise do gestor.
 - **Requisição:** Path param `id`.
 - **Resposta:** `200 OK` / `403 Forbidden`
 
 ---
 
-**Endpoint:** `/api/incidentes-os/{id}/resolver/` ❌ Não implementado
+**Endpoint:** `/api/incidentes-os/{id}/resolver/` ✅ Implementado
 
 - **Método:** `PATCH`
-- **Camada:** `IncidenteViewSet` (a criar)
+- **Camada:** `IncidenteViewSet`
 - **Descrição:** Resolve o incidente, registra a nota do gestor e restaura o status anterior da OS.
 - **Requisição:** JSON com `observacoes_resolucao`.
-- **Pré-requisito:** migration adicionando campo `status_anterior_os` em `IncidenteOS` (ver CA-08).
+- **Pré-requisito:** migration do campo `status_anterior_os` aplicada em `IncidenteOS` (ver CA-08).
 - **Resposta:** `200 OK` / `400 Bad Request` / `403 Forbidden`
 
 ---

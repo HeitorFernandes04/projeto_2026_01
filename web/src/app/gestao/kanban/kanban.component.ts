@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestro
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { KanbanService, KanbanCard, KanbanData } from '../../services/kanban.service';
+import { IncidentesService } from '../../services/incidentes.service';
+import { Subscription } from 'rxjs';
 
 interface ColunaConfig {
   chave: keyof KanbanData;
@@ -29,13 +31,16 @@ export class KanbanComponent implements OnInit, OnDestroy {
   kanban: KanbanData = { PATIO: [], LAVAGEM: [], FINALIZADO_HOJE: [], INCIDENTES: [] };
   carregando = true;
   erro = false;
+  totalIncidentesPendentes = 0;
 
   private intervalo?: ReturnType<typeof setInterval>;
+  private readonly subscriptions = new Subscription();
 
   get dataHoje(): string {
-    const d = new Date();
-    const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-    return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+    return new Date()
+      .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replaceAll('.', '')
+      .toUpperCase();
   }
 
   get totalEmOperacao(): number {
@@ -57,16 +62,30 @@ export class KanbanComponent implements OnInit, OnDestroy {
   constructor(
     private readonly router: Router,
     private readonly kanbanService: KanbanService,
+    private readonly incidentesService: IncidentesService,
     private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.monitorarIncidentesPendentes();
     this.carregarKanban();
     this.intervalo = setInterval(() => this.carregarKanban(), 30000);
   }
 
   ngOnDestroy(): void {
     clearInterval(this.intervalo);
+    this.incidentesService.pararMonitoramentoPendentes();
+    this.subscriptions.unsubscribe();
+  }
+
+  private monitorarIncidentesPendentes(): void {
+    this.subscriptions.add(
+      this.incidentesService.totalPendentes$.subscribe((total) => {
+        this.totalIncidentesPendentes = total;
+        this.cdr.markForCheck();
+      }),
+    );
+    this.incidentesService.iniciarMonitoramentoPendentes();
   }
 
   carregarKanban(): void {

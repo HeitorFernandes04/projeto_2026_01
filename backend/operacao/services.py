@@ -1,11 +1,12 @@
 import datetime
 from io import BytesIO
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
-from core.models import Servico, Veiculo, TagPeca
+from core.models import Servico, Veiculo, TagPeca, VistoriaItem
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
@@ -133,6 +134,8 @@ class OrdemServicoService:
                 'modelo': dados['modelo'],
                 'marca': dados.get('marca', 'Não informada'),
                 'cor': dados.get('cor', 'Não informada'),
+                'nome_dono': dados.get('nome_dono', ''),
+                'celular_dono': dados.get('celular_dono', ''),
                 'estabelecimento': servico.estabelecimento
             }
         )
@@ -304,23 +307,105 @@ class KanbanService:
 class IncidenteService:
     """Serviço para isolar o fluxo de erros e incidentes operacionais."""
 
+    class IncidenteJaResolvidoError(Exception):
+        """Conflito de domínio para resolução duplicada."""
+
+    @staticmethod
+    def listar_pendentes(estabelecimento):
+        """RF-15: lista incidentes abertos de OS bloqueadas do estabelecimento."""
+        return (
+            IncidenteOS.objects
+            .filter(
+                ordem_servico__estabelecimento=estabelecimento,
+                ordem_servico__status='BLOQUEADO_INCIDENTE',
+                resolvido=False,
+            )
+            .select_related('ordem_servico__veiculo', 'ordem_servico__servico', 'tag_peca')
+            .order_by('-data_registro')
+        )
+
+    @staticmethod
+    def detalhar_auditoria(incidente_id, estabelecimento):
+        incidente = get_object_or_404(
+            IncidenteOS.objects.select_related(
+                'ordem_servico__veiculo',
+                'ordem_servico__servico',
+                'ordem_servico__funcionario',
+                'tag_peca',
+            ),
+            id=incidente_id,
+        )
+
+        if incidente.ordem_servico.estabelecimento_id != estabelecimento.id:
+            raise PermissionDenied("Este incidente não pertence ao seu estabelecimento.")
+
+        incidente.vistoria_item_auditavel = (
+            VistoriaItem.objects
+            .filter(ordem_servico=incidente.ordem_servico, tag_peca=incidente.tag_peca)
+            .first()
+        )
+        return incidente
+
+    @staticmethod
+    def resolver_incidente(incidente_id, estabelecimento, gestor_user, observacoes_resolucao):
+        nota = (observacoes_resolucao or '').strip()
+        if not nota:
+            raise ValidationError("A nota de resolução é obrigatória.")
+
+        with transaction.atomic():
+            incidente = get_object_or_404(
+                IncidenteOS.objects.select_related('ordem_servico').select_for_update(),
+                id=incidente_id,
+            )
+
+            if incidente.ordem_servico.estabelecimento_id != estabelecimento.id:
+                raise PermissionDenied("Este incidente não pertence ao seu estabelecimento.")
+
+            if incidente.resolvido:
+                raise IncidenteService.IncidenteJaResolvidoError(
+                    "O incidente informado já foi resolvido."
+                )
+
+            incidente.resolvido = True
+            incidente.observacoes_resolucao = nota
+            incidente.gestor_resolucao = gestor_user
+            incidente.data_resolucao = timezone.now()
+            incidente.save(
+                update_fields=[
+                    'resolvido',
+                    'observacoes_resolucao',
+                    'gestor_resolucao',
+                    'data_resolucao',
+                ]
+            )
+
+            ordem_servico = incidente.ordem_servico
+            ordem_servico.status = incidente.status_anterior_os
+            ordem_servico.save(update_fields=['status'])
+
+        incidente.refresh_from_db()
+        return incidente
+
     @staticmethod
     def registrar_incidente(os_id, dados, arquivo_foto):
         """Registra o incidente, vincula a peça afetada e bloqueia a OS."""
         os = get_object_or_404(OrdemServico, id=os_id)
         tag_peca = get_object_or_404(TagPeca, id=dados.get('tag_peca_id'))
+        status_anterior_os = os.status
 
         foto_processada = MidiaOrdemServicoService._comprimir_imagem(arquivo_foto)
 
-        incidente = IncidenteOS.objects.create(
-            ordem_servico=os,
-            tag_peca=tag_peca,
-            descricao=dados.get('descricao'),
-            foto_url=foto_processada,
-            resolvido=False
-        )
+        with transaction.atomic():
+            incidente = IncidenteOS.objects.create(
+                ordem_servico=os,
+                tag_peca=tag_peca,
+                descricao=dados.get('descricao'),
+                foto_url=foto_processada,
+                status_anterior_os=status_anterior_os,
+                resolvido=False,
+            )
 
-        os.status = 'BLOQUEADO_INCIDENTE'
-        os.save()
+            os.status = 'BLOQUEADO_INCIDENTE'
+            os.save(update_fields=['status'])
 
         return incidente

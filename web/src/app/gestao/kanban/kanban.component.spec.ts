@@ -4,6 +4,7 @@ import '@angular/compiler';
 
 import { KanbanComponent } from './kanban.component';
 import { KanbanService, KanbanData } from '../../services/kanban.service';
+import { IncidentesService } from '../../services/incidentes.service';
 import { of, throwError } from 'rxjs';
 
 const mockKanban: KanbanData = {
@@ -25,16 +26,23 @@ describe('KanbanComponent — RF-14', () => {
   let component: KanbanComponent;
   let routerSpy: any;
   let kanbanServiceSpy: any;
+  let incidentesServiceSpy: any;
   let cdrSpy: any;
 
   beforeEach(() => {
     routerSpy        = { navigate: vi.fn() };
     cdrSpy           = { markForCheck: vi.fn() };
     kanbanServiceSpy = { obterKanban: vi.fn().mockReturnValue(of(mockKanban)) };
+    incidentesServiceSpy = {
+      totalPendentes$: of(3),
+      iniciarMonitoramentoPendentes: vi.fn(),
+      pararMonitoramentoPendentes: vi.fn(),
+    };
 
     component = new KanbanComponent(
       routerSpy as Router,
       kanbanServiceSpy as KanbanService,
+      incidentesServiceSpy as IncidentesService,
       cdrSpy as ChangeDetectorRef,
     );
   });
@@ -65,6 +73,13 @@ describe('KanbanComponent — RF-14', () => {
   });
 
   describe('Carregamento via API', () => {
+    it('deve monitorar incidentes pendentes para o badge do header', () => {
+      component.ngOnInit();
+      expect(component.totalIncidentesPendentes).toBe(3);
+      expect(incidentesServiceSpy.iniciarMonitoramentoPendentes).toHaveBeenCalled();
+      component.ngOnDestroy();
+    });
+
     it('deve carregar dados do kanban ao chamar carregarKanban()', () => {
       component.carregarKanban();
       expect(component.kanban).toEqual(mockKanban);

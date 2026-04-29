@@ -1,76 +1,185 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+
+import {
+  IncidenteAuditoria,
+  IncidentePendente,
+  IncidentesService,
+} from '../../services/incidentes.service';
 
 @Component({
   selector: 'app-incidentes',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './incidentes.component.html',
-  styleUrl: './incidentes.component.scss'
+  styleUrl: './incidentes.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class IncidentesComponent {
-  // Controle de visibilidade do modal
-  modalAberto: boolean = false;
-  incidenteSelecionado: any = null;
+export class IncidentesComponent implements OnInit, OnDestroy {
+  carregando = true;
+  erro = false;
+  modalAberto = false;
+  carregandoAuditoria = false;
+  erroAuditoria = false;
+  resolvendo = false;
+  erroResolucao = '';
+  mensagemSucesso = '';
+  notaResolucao = '';
+  incidentes: IncidentePendente[] = [];
+  incidenteSelecionado: IncidentePendente | null = null;
+  auditoriaSelecionada: IncidenteAuditoria | null = null;
 
-  // Simulação de OS bloqueadas que requerem atenção do Gestor (RF-15/16)
-  incidentes = [
-    {
-      os: '1024',
-      placa: 'BRA-2E19',
-      modelo: 'Audi A3',
-      motivo: 'Divergência de Valor',
-      descricao: 'O valor do serviço selecionado é inferior ao preço de tabela configurado.',
-      criticidade: 'alta',
-      relato: 'Valor inserido manualmente pelo operador abaixo da margem permitida.',
-      status: 'Bloqueado na Vistoria',
-      reportadoPor: 'Carlos Silva',
-      data: '2026-04-14 14:35'
-    },
-    {
-      os: '1028',
-      placa: 'KLT-4412',
-      modelo: 'Toyota Hilux',
-      motivo: 'Tempo de Execução Excedido',
-      descricao: 'Veículo parado na Lavagem há mais de 120 minutos sem atualização.',
-      criticidade: 'media',
-      relato: 'Atraso devido à alta demanda no setor de secagem.',
-      status: 'Atrasado na Lavagem',
-      reportadoPor: 'João Santos',
-      data: '2026-04-14 13:20'
-    }
-  ];
+  private readonly incidentesService = inject(IncidentesService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly subscriptions = new Subscription();
 
-  /**
-   * Abre o modal com as informações do incidente clicado
-   */
-  abrirModal(incidente?: any) {
-    this.incidenteSelecionado = incidente || {
-      os: '8829',
-      placa: 'JKL-7890',
-      modelo: 'Fiat Uno',
-      status: 'Bloqueado na Vistoria',
-      relato: 'Arranhão profundo detectado no lado direito do para-choque. O cliente alega que o veículo não tinha essa avaria. Aguardando verificação das câmeras de entrada.',
-      reportadoPor: 'Carlos Silva',
-      data: 'Hoje às 14:35'
-    };
-    this.modalAberto = true;
+  get hojeStr(): string {
+    const data = new Date();
+    return data
+      .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replaceAll('.', '')
+      .toUpperCase();
   }
 
-  /**
-   * Fecha o modal de detalhes
-   */
-  fecharModal() {
+  get totalPendentes(): number {
+    return this.incidentes.length;
+  }
+
+  get podeResolver(): boolean {
+    return !!this.incidenteSelecionado && this.notaResolucao.trim().length > 0 && !this.resolvendo;
+  }
+
+  ngOnInit(): void {
+    this.subscriptions.add(
+      this.incidentesService.pendentes$.subscribe((incidentes) => {
+        this.incidentes = incidentes;
+        this.cdr.markForCheck();
+      }),
+    );
+
+    this.incidentesService.iniciarMonitoramentoPendentes();
+    this.carregarIncidentes(true);
+  }
+
+  ngOnDestroy(): void {
+    this.incidentesService.pararMonitoramentoPendentes();
+    this.subscriptions.unsubscribe();
+  }
+
+  carregarIncidentes(exibirLoading = true): void {
+    if (exibirLoading) {
+      this.carregando = true;
+    }
+
+    this.incidentesService.recarregarPendentes().subscribe({
+      next: () => {
+        this.carregando = false;
+        this.erro = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.carregando = false;
+        this.erro = true;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  abrirModal(incidente: IncidentePendente): void {
+    this.incidenteSelecionado = incidente;
+    this.modalAberto = true;
+    this.carregandoAuditoria = true;
+    this.erroAuditoria = false;
+    this.erroResolucao = '';
+    this.notaResolucao = '';
+    this.auditoriaSelecionada = null;
+    this.mensagemSucesso = '';
+    this.carregarAuditoria(incidente.id);
+    this.cdr.markForCheck();
+  }
+
+  fecharModal(): void {
     this.modalAberto = false;
     this.incidenteSelecionado = null;
+    this.auditoriaSelecionada = null;
+    this.carregandoAuditoria = false;
+    this.erroAuditoria = false;
+    this.resolvendo = false;
+    this.erroResolucao = '';
+    this.notaResolucao = '';
+    this.cdr.markForCheck();
   }
 
-  /**
-   * Lógica para liberar a Ordem de Serviço bloqueada
-   */
-  liberarOS(osId: string) {
-    console.log(`Solicitando senha de gestor para liberar OS: ${osId}`);
-    this.fecharModal();
-    // Futura implementação de modal de senha para auditoria
+  carregarAuditoria(incidenteId: number): void {
+    this.carregandoAuditoria = true;
+    this.erroAuditoria = false;
+
+    this.incidentesService.obterAuditoria(incidenteId).subscribe({
+      next: (auditoria) => {
+        this.auditoriaSelecionada = auditoria;
+        this.carregandoAuditoria = false;
+        this.erroAuditoria = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.auditoriaSelecionada = null;
+        this.carregandoAuditoria = false;
+        this.erroAuditoria = true;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  resolverIncidente(): void {
+    if (!this.incidenteSelecionado || !this.notaResolucao.trim()) {
+      return;
+    }
+
+    this.resolvendo = true;
+    this.erroResolucao = '';
+
+    this.incidentesService
+      .resolverIncidente(this.incidenteSelecionado.id, this.notaResolucao.trim())
+      .subscribe({
+        next: () => {
+          const ordemServicoId = this.incidenteSelecionado?.ordem_servico_id;
+          this.resolvendo = false;
+          this.mensagemSucesso = `Incidente resolvido e OS #${ordemServicoId} liberada com sucesso.`;
+          this.fecharModal();
+          this.carregarIncidentes(false);
+          this.cdr.markForCheck();
+        },
+        error: (error: { error?: { detail?: string } }) => {
+          this.resolvendo = false;
+          this.erroResolucao = error.error?.detail ?? 'Nao foi possivel resolver o incidente.';
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  formatarDataHora(dataIso: string): string {
+    return new Date(dataIso).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  formatarStatusOrdem(status: string): string {
+    const mapa: Record<string, string> = {
+      BLOQUEADO_INCIDENTE: 'Em analise',
+      EM_EXECUCAO: 'Em execucao',
+      LIBERACAO: 'Liberacao',
+      PATIO: 'Patio',
+      VISTORIA_INICIAL: 'Vistoria inicial',
+      FINALIZADO: 'Finalizado',
+      CANCELADO: 'Cancelado',
+    };
+
+    return mapa[status] ?? status;
   }
 }

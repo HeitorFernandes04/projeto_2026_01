@@ -5,10 +5,17 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from io import BytesIO
 from PIL import Image
-from operacao.tests.factories import OrdemServicoFactory, UserFactory, MidiaOrdemServicoFactory, ServicoFactory
+from operacao.tests.factories import (
+    EstabelecimentoFactory,
+    MidiaOrdemServicoFactory,
+    OrdemServicoFactory,
+    ServicoFactory,
+    TagPecaFactory,
+    UserFactory,
+)
 # Imports ajustados conforme nova estrutura
 from core.models import Servico, Veiculo
-from operacao.models import OrdemServico
+from operacao.models import IncidenteOS, OrdemServico
 
 
 def gerar_foto_valida(nome_arquivo='foto.jpg'):
@@ -31,12 +38,16 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         url = reverse('os-criar')
         dados = {
             'placa': 'WWW1234', 'modelo': 'Polo', 'marca': 'VW',
-            'cor': 'Branco', 'servico_id': self.servico.id, 
+            'cor': 'Branco', 'nome_dono': 'Marcos Cliente', 'celular_dono': '11999990000',
+            'servico_id': self.servico.id, 
             'data_hora': timezone.now().isoformat(),
             'iniciar_agora': True
         }
         response = self.client.post(url, dados)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        os = OrdemServico.objects.get(id=response.data['id'])
+        self.assertEqual(os.veiculo.nome_dono, 'Marcos Cliente')
+        self.assertEqual(os.veiculo.celular_dono, '11999990000')
 
     def test_bloqueio_agendamento_duplicado_hoje(self):
         """RN: Impede dois carros em andamento para o mesmo funcionário hoje."""
@@ -132,6 +143,88 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         response_avancar = self.client.patch(url_avancar, data={'laudo_vistoria': 'OK'})
         self.assertEqual(response_avancar.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('mínimo de 5 fotos de vistoria exigidas', str(response_avancar.data))
+
+    def test_registrar_incidente_salva_status_anterior_e_bloqueia_os(self):
+        os = OrdemServicoFactory(funcionario=self.funcionario, status='EM_EXECUCAO')
+        tag_peca = TagPecaFactory(estabelecimento=os.estabelecimento)
+        buffer, nome = gerar_foto_valida('incidente.jpg')
+
+        url = reverse('os-incidente', kwargs={'pk': os.pk})
+        response = self.client.post(
+            url,
+            {
+                'descricao': 'Dano reportado durante a lavagem.',
+                'tag_peca_id': tag_peca.id,
+                'foto_url': buffer,
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        os.refresh_from_db()
+        incidente = IncidenteOS.objects.get(ordem_servico=os)
+
+        self.assertEqual(os.status, 'BLOQUEADO_INCIDENTE')
+        self.assertEqual(incidente.status_anterior_os, 'EM_EXECUCAO')
+
+    def test_listar_ordens_hoje_restringe_patio_ao_estabelecimento_do_funcionario(self):
+        estabelecimento = EstabelecimentoFactory()
+        funcionario = UserFactory(estabelecimento=estabelecimento)
+        client = APIClient()
+        client.force_authenticate(user=funcionario)
+
+        outro_estabelecimento = EstabelecimentoFactory()
+        os_mesmo_estabelecimento = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=None,
+            status='PATIO',
+        )
+        os_outro_estabelecimento = OrdemServicoFactory(
+            estabelecimento=outro_estabelecimento,
+            funcionario=None,
+            status='PATIO',
+        )
+
+        response = client.get(reverse('os-hoje'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ids = [item['id'] for item in response.data]
+        self.assertIn(os_mesmo_estabelecimento.id, ids)
+        self.assertNotIn(os_outro_estabelecimento.id, ids)
+
+    def test_listar_ordens_hoje_inclui_pendentes_que_viraram_o_dia(self):
+        estabelecimento = EstabelecimentoFactory()
+        funcionario = UserFactory(estabelecimento=estabelecimento)
+        client = APIClient()
+        client.force_authenticate(user=funcionario)
+
+        os_ontem_pendente = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=funcionario,
+            status='EM_EXECUCAO',
+            data_hora=timezone.now() - timedelta(days=1),
+        )
+        os_finalizada_ontem = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=funcionario,
+            status='FINALIZADO',
+            data_hora=timezone.now() - timedelta(days=1),
+        )
+        os_cancelada_ontem = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=funcionario,
+            status='CANCELADO',
+            data_hora=timezone.now() - timedelta(days=1),
+        )
+
+        response = client.get(reverse('os-hoje'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ids = [item['id'] for item in response.data]
+        self.assertIn(os_ontem_pendente.id, ids)
+        self.assertNotIn(os_finalizada_ontem.id, ids)
+        self.assertNotIn(os_cancelada_ontem.id, ids)
 
 class TestHistoricoAPI(APITestCase):
     def setUp(self):

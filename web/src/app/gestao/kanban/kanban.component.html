@@ -6,18 +6,19 @@
     </div>
 
     <div class="header-actions">
-      <div class="live-indicator">
-        <span class="dot"></span>
-        <span class="text">AO VIVO</span>
-      </div>
-
-      <button class="notification-btn" (click)="irParaIncidentes()">
+      <button class="notification-btn" type="button" aria-label="Abrir incidentes" (click)="irParaIncidentes()">
         <span class="material-symbols-outlined">notifications</span>
+        <span class="badge" *ngIf="totalIncidentesPendentes > 0">{{ totalIncidentesPendentes }}</span>
       </button>
 
       <div class="date-selector">
         <span class="date-label">Data</span>
         <span class="date-value">{{ dataHoje }}</span>
+      </div>
+
+      <div class="live-indicator">
+        <span class="dot"></span>
+        <span class="text">AO VIVO</span>
       </div>
     </div>
   </header>

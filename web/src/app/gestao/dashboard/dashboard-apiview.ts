@@ -33,7 +33,10 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
   constructor(private router: Router, private dashboardService: DashboardService, private cdr: ChangeDetectorRef) {
     const dataObj = new Date();
     // Ex: "17 ABR 2026"
-    this.hojeStr = dataObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace(' de ', ' ').toUpperCase();
+    this.hojeStr = dataObj
+      .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replaceAll('.', '')
+      .toUpperCase();
   }
 
   ngOnInit() {
