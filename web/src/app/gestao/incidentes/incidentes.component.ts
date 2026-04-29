@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
@@ -31,6 +31,8 @@ export class IncidentesComponent implements OnInit, OnDestroy {
   incidenteSelecionado: IncidentePendente | null = null;
   auditoriaSelecionada: IncidenteAuditoria | null = null;
 
+  private readonly incidentesService = inject(IncidentesService);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly subscriptions = new Subscription();
 
   get hojeStr(): string {
@@ -48,11 +50,6 @@ export class IncidentesComponent implements OnInit, OnDestroy {
   get podeResolver(): boolean {
     return !!this.incidenteSelecionado && this.notaResolucao.trim().length > 0 && !this.resolvendo;
   }
-
-  constructor(
-    private readonly incidentesService: IncidentesService,
-    private readonly cdr: ChangeDetectorRef,
-  ) {}
 
   ngOnInit(): void {
     this.subscriptions.add(

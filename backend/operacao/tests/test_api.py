@@ -193,6 +193,39 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         self.assertIn(os_mesmo_estabelecimento.id, ids)
         self.assertNotIn(os_outro_estabelecimento.id, ids)
 
+    def test_listar_ordens_hoje_inclui_pendentes_que_viraram_o_dia(self):
+        estabelecimento = EstabelecimentoFactory()
+        funcionario = UserFactory(estabelecimento=estabelecimento)
+        client = APIClient()
+        client.force_authenticate(user=funcionario)
+
+        os_ontem_pendente = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=funcionario,
+            status='EM_EXECUCAO',
+            data_hora=timezone.now() - timedelta(days=1),
+        )
+        os_finalizada_ontem = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=funcionario,
+            status='FINALIZADO',
+            data_hora=timezone.now() - timedelta(days=1),
+        )
+        os_cancelada_ontem = OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            funcionario=funcionario,
+            status='CANCELADO',
+            data_hora=timezone.now() - timedelta(days=1),
+        )
+
+        response = client.get(reverse('os-hoje'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ids = [item['id'] for item in response.data]
+        self.assertIn(os_ontem_pendente.id, ids)
+        self.assertNotIn(os_finalizada_ontem.id, ids)
+        self.assertNotIn(os_cancelada_ontem.id, ids)
+
 class TestHistoricoAPI(APITestCase):
     def setUp(self):
         self.funcionario = UserFactory()
