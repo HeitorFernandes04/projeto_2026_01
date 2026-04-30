@@ -5,18 +5,15 @@ description: Realiza a auditoria técnica e semântica de uma Pull Request, cruz
 Este workflow deve ser acionado para avaliar qualquer Pull Request no projeto Lava-Me. Siga estritamente estes passos na ordem exata. Não tire conclusões sem antes executar os comandos.
 
 ## 1. Contexto e Git Diff
-1. Utilize a tool `run_command` para puxar alterações pendentes (se houver): `git fetch origin`.
-2. Utilize a tool `run_command` para listar arquivos modificados pela PR/Branch atual (ex: `git diff --name-only develop`).
-3. Anote internamente as camadas arquiteturais tocadas (Backend? Mobile? Banco de Vagas?).
+1. Utilize a ferramenta MCP `fetch_github_pr_diff` passando o número da PR que o usuário pediu para revisar.
+2. O retorno dessa ferramenta te dará os arquivos modificados. Anote internamente as camadas arquiteturais tocadas (Backend? Angular Web? Ionic Mobile?).
 
-## 2. Limpeza e Auditoria Técnica Total
-Execute as ferramentas de teste para garantir que o código base compila e roda.
+## 2. Auditoria Técnica e Qualidade (Uso do MCP)
+Execute as ferramentas de teste diretamente pelo MCP para garantir que o código base compila, roda e é seguro.
 
-// turbo-all
-1. Limpe o cache do backend: `rm -rf backend/core/tests/__pycache__ backend/operacao/tests/__pycache__ backend/.pytest_cache`
-2. Rode a suite total do Backend: `cd backend && ../venv/bin/python -m pytest`
-3. Rode (se os arquivos `.cy.ts` foram alterados) os testes E2E básicos: `cd mobile && npx cypress run --browser chromium` (Pode pular se o Diff não tocou no mobile).
-4. Rode a verificação de front-web: `cd web && npx vitest run --passWithNoTests`
+1. **Qualidade Backend**: Utilize `run_backend_tests` e depois `generate_backend_coverage`. Verifique se a PR derrubou a cobertura geral ou se os testes falharam.
+2. **Qualidade Web**: Se o Angular foi tocado, utilize `run_web_tests` e `run_web_linter`.
+3. **Auditoria de Segurança (SAST)**: Utilize `run_security_audit` (passando target="all") para buscar dependências vulneráveis ou falhas inseridas pela PR.
 
 *Nota: Colete todos os retornos de erro.*
 
