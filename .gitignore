@@ -140,3 +140,20 @@ GitHub.sublime-settings
 
 # Documentação e Logs de IA IA-Generated #
 documentos\ de\ organização\ desenvolvimento/
+.chroma_db/
+.agents/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Angular
+.angular/
+dist/
+out-tsc/
+
+# Ionic / Mobile
+.capacitor/
+android/
+ios/

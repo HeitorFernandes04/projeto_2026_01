@@ -3,12 +3,13 @@
 > **Plataforma inteligente de gestão e agendamento para lava-jatos e estéticas automotivas**
 
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
-![Versão](https://img.shields.io/badge/versão-0.1.0-blue)
+![Versão](https://img.shields.io/badge/versão-2.0.0-blue)
 ![Licença](https://img.shields.io/badge/licença-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![Django](https://img.shields.io/badge/Django-5.x-green?logo=django)
-![React](https://img.shields.io/badge/React-18.x-blue?logo=react)
-![Ionic](https://img.shields.io/badge/Ionic-7.x-purple?logo=ionic)
+![Angular](https://img.shields.io/badge/Angular-21.x-dd0031?logo=angular)
+![Ionic](https://img.shields.io/badge/Ionic-8.x-purple?logo=ionic)
+![React](https://img.shields.io/badge/React-19.x-blue?logo=react)
 
 ---
 
@@ -38,7 +39,7 @@ O **Lava-Me** é uma plataforma completa que conecta proprietários de lava-jato
 
 **Para o cliente:** Encontrar um lava-jato de confiança, verificar disponibilidade de horários e fazer um agendamento ainda exige ligações telefônicas ou deslocamento físico até o estabelecimento.
 
-O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um **painel de gestão web** para o estabelecimento e um **aplicativo mobile** para o cliente final.
+O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um **painel de gestão web** para a gerência, um **aplicativo mobile** focado exclusivamente na operação do **funcionário** (lavadores, atendentes), e um **portal de autoagendamento via link** para o cliente final, dispensando a necessidade de instalação de aplicativos.
 
 > 📌 Projeto desenvolvido na disciplina de **Projeto de Sistemas** — Curso de Ciência da Computação, Universidade Federal do Tocantins (UFT), sob orientação do Prof. Dr. Edeilson Milhomem da Silva.
 
@@ -55,19 +56,35 @@ O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um *
 | Gestão de Clientes | Histórico de veículos e atendimentos por cliente | Alta |
 | Dashboard Financeiro | Faturamento diário, semanal e mensal com gráficos | Alta |
 | Controle de Status | Atualização do status do serviço em tempo real (Aguardando / Em andamento / Finalizado) | Média |
+| Gestão de Incidentes | Registro, auditoria com evidências e aprovação de avarias e retrabalhos | Alta |
 | Notificações | Alertas de novos agendamentos e confirmações automáticas | Média |
 | Avaliações | Visualização e resposta às avaliações recebidas dos clientes | Baixa |
 
-### 📱 Módulo do Cliente (Mobile)
+### 📱 Módulo do Funcionário (Mobile)
 
 | Funcionalidade | Descrição | Prioridade |
 |---|---|---|
-| Mapa Interativo | Localização de estabelecimentos próximos via geolocalização | Alta |
-| Perfil do Estabelecimento | Informações, serviços disponíveis, avaliações e fotos | Alta |
-| Agendamento Online | Seleção de serviço, data e horário disponível | Alta |
-| Histórico de Serviços | Registro de todos os agendamentos anteriores do usuário | Média |
-| Avaliação Pós-Serviço | Nota e comentário após a conclusão do atendimento | Média |
-| Notificações Push | Lembretes de agendamento e confirmação de serviço | Média |
+| Execução de Serviços | Acesso às ordens de serviço designadas, com checklist de tarefas | Alta |
+| Apontamento e Avarias | Registro fotográfico do veículo antes e durante o serviço | Alta |
+| Status Operacional | Alteração de status (Iniciado, Pausado, Concluído) em tempo real | Alta |
+
+### 🌐 Módulo do Cliente (Portal Web B2C)
+
+| Funcionalidade | Descrição | Prioridade |
+|---|---|---|
+| Autoagendamento | Interface acessível via link (ex: `/agendar/meu-lava-jato`) para marcar serviços | Alta |
+| Perfil do Estabelecimento | Visualização dos serviços disponíveis, preços e informações do local | Alta |
+| Acompanhamento | Verificação do status do agendamento (Confirmado, Finalizado) | Média |
+
+---
+
+## 🤖 Engenharia de Software Assistida por IA
+
+Este projeto adota práticas avançadas de desenvolvimento auxiliado por agentes de Inteligência Artificial, utilizando tecnologias modernas para garantir escala e qualidade:
+
+- **Agentes Autônomos de IA**: Utilizamos agentes (como o *Antigravity*) atuando como engenheiros de software autônomos dentro da IDE, auxiliando em code reviews complexos, auditorias de segurança e implementação de código.
+- **RAG (Retrieval-Augmented Generation)**: Um banco de conhecimento vetorial (ChromaDB) é mantido localmente com as regras de negócio, glossário e documentação do projeto. Os agentes de IA consultam esse banco para tomarem decisões contextuais precisas antes de gerar código.
+- **MCP (Model Context Protocol)**: Uma camada de servidores (como o `lava-me-context-server`) que expõe de forma padronizada os recursos do projeto (como o schema do banco de dados, logs e padrões CSS/UI) diretamente para a IA, conectando o raciocínio do modelo ao estado real da aplicação em tempo de execução.
 
 ---
 
@@ -78,7 +95,7 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      CLIENTES                           │
-│         App Mobile (Ionic)   │   Painel Web (React)     │
+│         App Mobile (Ionic)   │   Painel Web (Angular)   │
 └──────────────────┬──────────────────────┬───────────────┘
                    │                      │
                    └──────────┬───────────┘
@@ -109,12 +126,13 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
  - **SQlite3** - Bando de dados relacional (desenvolvimento)
 
 ### Frontend Web
-- **React 18** — Interface do painel de gestão
+- **Angular 21** — Framework principal e interface do painel de gestão
 - **HTML5 / CSS3** — Estrutura e estilização
-- **Axios** — Consumo da API
+- **RxJS** — Programação reativa e consumo da API
 
 ### Mobile
-- **Ionic 7** — Framework mobile multiplataforma (iOS/Android)
+- **Ionic 8** — Framework mobile multiplataforma (iOS/Android)
+- **React 19** — Biblioteca principal do app mobile
 - **Google Maps API** — Mapa interativo de estabelecimentos
 
 ### DevOps & Ferramentas
@@ -136,29 +154,31 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 lava-me/
 ├── backend/                  # API Django
 │   ├── core/                 # Configurações do projeto
-│   ├── accounts/             # Autenticação e usuários
-│   ├── establishments/       # Módulo de estabelecimentos
-│   ├── scheduling/           # Módulo de agendamentos
-│   ├── financial/            # Módulo financeiro
+│   ├── accounts/             # Autenticação e multitenant
+│   ├── operacao/             # Ordens de serviço e incidentes
+│   ├── mensageria/           # Notificações e comunicação
+│   ├── agendamento_publico/  # Módulo de autoagendamento
 │   └── requirements.txt
 │
-├── frontend/                 # Painel Web React
+├── web/                      # Painel Web Angular
 │   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── services/
+│   │   ├── app/              # Componentes, serviços e páginas
+│   │   └── assets/           # Imagens e arquivos estáticos
 │   └── package.json
 │
-├── mobile/                   # App Ionic
+├── mobile/                   # App Ionic (React)
 │   ├── src/
 │   │   ├── pages/
-│   │   └── services/
+│   │   └── components/
 │   └── package.json
 │
 ├── docs/                     # Documentação do projeto
-│   ├── requisitos/
-│   ├── diagramas/
-│   └── sprints/
+│   ├── 3_regras_negocio/     # RFs, glossário e especificações
+│   │   ├── sprint_1/         # Planejamentos da Sprint 1
+│   │   ├── sprint_2/         # Planejamentos da Sprint 2
+│   │   └── sprint_3/         # Planejamentos da Sprint 3
+│   ├── 6_banco_dados/        # Diagramas e schemas
+│   └── templates/            # Templates Markdown para RFs e PRs
 │
 └── README.md
 ```
@@ -182,16 +202,21 @@ lava-me/
 
 ## 📐 Metodologia
 
-O projeto adota **metodologia ágil com Scrum**, seguindo as diretrizes da disciplina:
+O projeto adota **metodologia ágil com Scrum** e práticas modernas de Engenharia de Software, seguindo as diretrizes da disciplina de Projeto de Sistemas (UFT):
 
-- **Sprints** de 1 a 2 semanas com entregas incrementais
-- **Reuniões semanais** de acompanhamento com o professor
-- **Retrospectivas** ao final de cada sprint
-- **GitFlow** para controle do fluxo de trabalho no repositório
-- **GitHub Projects** para gestão do backlog e kanban das tarefas
-- Ciclo **PDCA** mantido durante todo o desenvolvimento
+- **Sprints** de 1 a 2 semanas com entregas incrementais.
+- **Reuniões semanais** de acompanhamento com o professor.
+- **GitFlow** para controle do fluxo de trabalho no repositório.
 
-### Fluxo de Branches (GitFlow)
+### 📚 Abordagem "Documentation-First"
+
+Para garantir a qualidade em um ambiente com uso de IA, adotamos o método **Documentation-First**:
+1. **Especificação**: Antes de qualquer linha de código, os Requisitos Funcionais (RFs) são descritos usando um template padrão (`TEMPLATE_FUNCIONALIDADE.md`).
+2. **Validação e Auditoria**: A especificação é validada (frequentemente com auxílio de agentes IA via RAG) para encontrar lacunas de arquitetura e UX.
+3. **Integração na Base de Conhecimento**: O requisito finalizado é alimentado no repositório, garantindo que o banco vetorial RAG aprenda as novas regras.
+4. **Implementação**: Apenas após o processo acima o código começa a ser gerado e testado.
+
+### 🔀 Fluxo de Branches (GitFlow)
 
 ```
 main          ← versão de produção
@@ -233,7 +258,7 @@ python manage.py runserver
 
 ### Frontend Web
 ```bash
-cd frontend
+cd web
 npm install
 npm start
 ```
@@ -250,7 +275,7 @@ ionic serve
 ## 🗺️ Roadmap
 
 - [x] **Sprint 1** — Experiência do Funcionário
-- [ ] **Sprint 2** — Gestão e Controle Operacional
+- [x] **Sprint 2** — Gestão e Controle Operacional
 - [ ] **Sprint 3** — Experiência do Cliente
 - [ ] **Sprint 4** — Comunicação, Relatórios e Recursos Avançados
 - [ ] **Evento Final** — Apresentação pública do produto
