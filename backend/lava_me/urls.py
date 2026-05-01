@@ -25,6 +25,8 @@ urlpatterns = [
     path('api/gestao/', include('core.urls')),
     path('api/ordens-servico/', include('operacao.urls')),
     path('api/incidentes-os/', include('operacao.incidentes_urls')),
+    # RF-21: Portal de Autoagendamento — rotas públicas (sem autenticação)
+    path('api/publico/', include('agendamento_publico.urls')),
 ]
 
 # Servir arquivos de mídia (uploads) em desenvolvimento

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.text import slugify
 
 
 class Estabelecimento(models.Model):
@@ -7,6 +8,10 @@ class Estabelecimento(models.Model):
     cnpj = models.CharField(max_length=14, unique=True)
     endereco_completo = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
+    # RF-21: Identificador público amigável para URL.
+    # null/blank=True mantém a migration segura para dados existentes.
+    # A geração é automática via save() — nenhum preenchimento manual necessário.
+    slug = models.SlugField(max_length=150, unique=True, null=True, blank=True)
 
     class Meta:
         verbose_name = "Estabelecimento"
@@ -14,6 +19,28 @@ class Estabelecimento(models.Model):
 
     def __str__(self):
         return self.nome_fantasia
+
+    def _gerar_slug_unico(self):
+        """Gera um slug único a partir do nome_fantasia.
+        Usa uuid4 curto como sufixo em caso de colisão para garantir
+        unicidade de forma atômica (sem necessidade de dois saves).
+        """
+        import uuid
+        base = slugify(self.nome_fantasia)
+        slug_candidato = base
+        qs = Estabelecimento.objects.filter(slug=slug_candidato)
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        if qs.exists():
+            sufixo = uuid.uuid4().hex[:6]
+            slug_candidato = f"{base}-{sufixo}"
+        return slug_candidato
+
+    def save(self, *args, **kwargs):
+        """Auto-gera o slug a partir do nome_fantasia se ainda não tiver sido definido."""
+        if not self.slug:
+            self.slug = self._gerar_slug_unico()
+        super().save(*args, **kwargs)
 
 
 class User(AbstractUser):
