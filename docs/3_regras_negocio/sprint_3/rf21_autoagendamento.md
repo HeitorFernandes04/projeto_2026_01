@@ -17,48 +17,33 @@
 | **RF-21.1** | Resgate de Informações do Estabelecimento | A API deve buscar os dados via um identificador único (`slug` ou `uuid`) na URL. **Nota Técnica:** Será necessária uma *migration* no backend para adicionar este campo ao model `Estabelecimento` (evitando uso de `id` público). Retornar apenas `nome_fantasia` e `endereco_completo`. |
 | **RF-21.2** | Listagem Segura de Serviços | A API deve retornar apenas os serviços com `is_active=True`, expondo estritamente o `id`, `nome`, `preco` e `duracao_estimada_minutos`. |
 | **RF-21.3** | Interface Mobile-First | O desenvolvimento no frontend Angular deve focar primordialmente na visualização em dispositivos móveis (responsividade, touch-friendly), consumindo as diretrizes do `styles.scss` padrão do projeto. |
+| **RF-21.4** | Configuração de Identidade (Web) | O Gestor deve ser capaz de realizar o upload e a alteração da logo da unidade na tela de "Configurações da Unidade". A logo deve ser servida via CDN/Media e refletida automaticamente no Portal Público. |
+| **RF-21.5** | Gestão de Tags de Peças (Admin) | Interface administrativa para inclusão, edição e exclusão de Tags de Peças (ex: Parachoque Dianteiro, Capô). Estas tags são dependências obrigatórias para a Vistoria que será exibida ao cliente na RF-26. |
 
 ### 1.3 Requisitos Não Funcionais (RNFs)
 | Número | Requisito | Descrição |
 | :--- | :--- | :--- |
 | **RNF-01** | Isolamento de Dados (Segurança) | O endpoint público nunca deve expor dados internos do tenant (ex: faturamento, lista de funcionários ou e-mails administrativos). |
 | **RNF-02** | Proteção contra Abuso (Rate Limiting) | A rota pública deve possuir limitação de requisições por IP para evitar scrapers e sobrecarga no banco de dados. |
-| **RNF-03** | Usabilidade Web (Acessibilidade) | O carregamento da página deve ser rápido (< 2s) e os componentes visuais devem seguir práticas de acessibilidade (contraste alto e `aria-labels`). |
+| **RNF-03** | Gerenciamento de Imagens | O sistema deve redimensionar e otimizar logos enviadas pelo gestor para garantir carregamento rápido no mobile (máximo 200kb). |
 
-### 1.4 Endpoints RESTful
-**Endpoint:** `/api/agendamento/estabelecimento/{slug}/`
+### 1.4 Endpoints RESTful e Dependências de Backend
+**Endpoint Público:** `/api/agendamento/estabelecimento/{slug}/` (GET)
 
-- **Método:** `GET`
-- **Camada:** `agendamento_publico.views.EstabelecimentoPublicoView` (Módulo dedicado ao portal de autoagendamento B2C)
-- **Descrição:** Recupera os dados públicos do estabelecimento e seus serviços ativos para renderização do autoagendamento.
-- **Requisição:** N/A (Path variable `slug`)
-- **Resposta:**
-  - Sucesso: `200 OK`
-    ```json
-    {
-      "id": "uuid",
-      "nome_fantasia": "Lava-Me Premium",
-      "endereco": "Rua das Flores, 123",
-      "servicos": [
-        {
-          "id": 1,
-          "nome": "Lavagem Completa",
-          "preco": 80.00,
-          "duracao_estimada_minutos": 90
-        }
-      ]
-    }
-    ```
-  - Falha: `404 Not Found` se o slug for inválido ou estabelecimento estiver inativo.
+**Endpoint Administrativo (Novo):** `/api/gestao/estabelecimento/configuracoes/` (PATCH)
+- Permite atualização de `nome_fantasia`, `endereco_completo` e `logo_url`.
+
+**Endpoint Administrativo (Novo):** `/api/gestao/tags-pecas/` (CRUD)
+- Gerenciamento do catálogo de peças para vistoria.
 
 ### 1.5 Critérios de Aceitação
 | Critério | Descrição |
 | :--- | :--- |
-| **CA-01** | O acesso ao link `/agendar/:slug` carrega corretamente os dados do lava-jato específico. |
-| **CA-02** | Serviços inativos (`is_active=False`) não são retornados na chamada à API pública. |
-| **CA-03** | Nenhum dado sensível do gestor, como e-mail ou dados de faturamento, é vazado na payload de resposta. |
-| **CA-04** | A interface se adapta sem quebras visuais em telas com menos de `400px` de largura. |
-| **CA-05** | Rate Limiting configurado no endpoint público, limitando requisições contínuas por IP (evitando sobrecarga). |
+| **CA-01** | O acesso ao link `/agendar/:slug` carrega corretamente os dados e a LOGO do lava-jato específico. |
+| **CA-02** | O gestor consegue alterar a logo no Painel Web e a mudança é refletida instantaneamente no Portal Público. |
+| **CA-03** | É possível cadastrar novas peças (Tags) que estarão disponíveis para os operadores no app mobile durante a vistoria. |
+| **CA-04** | Se o estabelecimento não possuir logo, o portal deve exibir um placeholder elegante e neutro. |
+| **CA-05** | Rate Limiting configurado no endpoint público, limitando requisições contínuas por IP. |
 | **CA-06** | Se o estabelecimento não possuir serviços ativos, a API deve retornar a lista vazia `[]` e a interface deve exibir um *Empty State* amigável. |
 | **CA-07** | O botão de "Continuar" no frontend (CTA) deve iniciar estritamente desabilitado, sendo habilitado apenas após a seleção de um serviço. |
 

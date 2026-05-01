@@ -22,12 +22,26 @@ class EstabelecimentoPublicoSerializer(serializers.ModelSerializer):
     CA-02: servicos filtrados para is_active=True via ServicoPublicoSerializer.
     """
     servicos = serializers.SerializerMethodField()
+    logo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Estabelecimento
         # Expor APENAS nome_fantasia, endereco_completo e servicos ativos.
         # id incluído para uso interno do frontend (sem IDOR pois a busca é via slug).
         fields = ['id', 'nome_fantasia', 'endereco_completo', 'logo_url', 'servicos']
+
+    def get_logo_url(self, obj):
+        request = self.context.get('request')
+        if obj.logo:
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        
+        # Fallback para logo oficial com URL absoluta
+        path_default = "/static/assets/logo-lavame.png"
+        if request:
+            return request.build_absolute_uri(path_default)
+        return path_default
 
     def get_servicos(self, obj):
         # CA-02 / Cenário 1: filtrar somente serviços ativos do estabelecimento

@@ -160,15 +160,34 @@ def run_backend_tests(test_path: str = "") -> str:
 
 @mcp.tool()
 def run_frontend_tests(test_file: str = "") -> str:
-    """Executa os testes unitários (Vitest) no frontend/mobile. Retorna o output de sucesso ou falha."""
+    """Executa os testes unitários (Vitest/Jest) no frontend. Detecta automaticamente se é Mobile ou Web."""
+    cwd = MOBILE_DIR
     cmd = ["npm", "run", "test.unit", "--", "--run"]
+    
+    # Inteligência de detecção de diretório
     if test_file:
-        cmd.append(test_file)
+        if "web/" in test_file:
+            cwd = WEB_DIR
+            # No Angular (Web), usamos npx vitest para testes isolados de spec.ts
+            cmd = ["npx", "vitest", "run", test_file.replace("web/", "")]
+        elif "mobile/" in test_file:
+            cwd = MOBILE_DIR
+            test_file = test_file.replace("mobile/", "")
+            cmd = ["npm", "run", "test.unit", "--", "--run", test_file]
+        else:
+            # Tenta inferir se o arquivo existe em algum dos dois
+            if (WEB_DIR / test_file).exists():
+                cwd = WEB_DIR
+                cmd = ["npx", "vitest", "run", test_file]
+            elif (MOBILE_DIR / test_file).exists():
+                cwd = MOBILE_DIR
+                cmd = ["npm", "run", "test.unit", "--", "--run", test_file]
+
     try:
-        proc = subprocess.run(cmd, cwd=str(MOBILE_DIR), capture_output=True, text=True)
-        return proc.stdout if proc.stdout else proc.stderr
+        proc = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True)
+        return f"Executando em: {cwd.name}\nComando: {' '.join(cmd)}\n\n{proc.stdout if proc.stdout else proc.stderr}"
     except Exception as e:
-        return f"Erro ao rodar vitest: {str(e)}"
+        return f"Erro ao rodar testes: {str(e)}"
 
 @mcp.tool()
 def run_frontend_linter() -> str:
@@ -351,8 +370,11 @@ def stop_development_environment(target: str = "all") -> str:
 # ======== Ferramentas de Manutenção e Testes (Frontend / Web) ========
 
 @mcp.tool()
-def run_web_tests() -> str:
-    """Executa os testes unitários no projeto Web (Angular)."""
+def run_web_tests(test_file: str = "") -> str:
+    """Executa os testes unitários no projeto Web (Angular). Se um arquivo for passado, usa Vitest para rapidez."""
+    if test_file:
+        return run_frontend_tests(test_file) # Reutiliza a lógica inteligente
+        
     try:
         proc = subprocess.run(["npm", "run", "test", "--", "--watch=false"], cwd=str(WEB_DIR), capture_output=True, text=True)
         return proc.stdout if proc.stdout else proc.stderr

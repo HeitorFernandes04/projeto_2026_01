@@ -5,9 +5,12 @@ import { Observable } from 'rxjs';
 export interface Estabelecimento {
   id: number;
   nome_fantasia: string;
+  slug: string;
   cnpj: string;
   endereco_completo: string;
   is_active: boolean;
+  logo_url?: string;
+  logo?: File | string | null;
 }
 
 @Injectable({
@@ -46,10 +49,20 @@ export class EstabelecimentoService {
   /**
    * PATCH /api/gestao/estabelecimento/
    * Atualiza os dados cadastrais da unidade (RF-13)
+   * Suporta FormData para upload de arquivos
    */
-  atualizarDadosEstabelecimento(dados: Partial<Estabelecimento>): Observable<Estabelecimento> {
-    return this.http.patch<Estabelecimento>(this.apiUrl, dados, {
-      headers: this.getHeaders()
+  atualizarDadosEstabelecimento(dados: FormData | Partial<Estabelecimento>): Observable<Estabelecimento> {
+    const token = localStorage.getItem('access_token');
+    let headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
     });
+
+    // Se NÃO for FormData, adicionamos o Content-Type: application/json
+    // Se FOR FormData, o navegador cuida de setar o boundary correto.
+    if (!(dados instanceof FormData)) {
+      headers = headers.set('Content-Type', 'application/json');
+    }
+
+    return this.http.patch<Estabelecimento>(this.apiUrl, dados, { headers });
   }
 }

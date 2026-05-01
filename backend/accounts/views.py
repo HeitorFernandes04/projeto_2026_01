@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
 from accounts.models import User, Estabelecimento, Cliente, Funcionario, Gestor, CargoChoices
-from accounts.serializers import RegisterSerializer
+from accounts.serializers import RegisterSerializer, EstabelecimentoSerializer, EstabelecimentoUpdateSerializer
 
 
 class RegisterView(generics.CreateAPIView):
@@ -121,3 +121,21 @@ def meu_perfil(request):
         })
     
     return Response(data)
+class EstabelecimentoMeView(generics.RetrieveUpdateAPIView):
+    """
+    Endpoint para o Gestor consultar e atualizar dados do seu estabelecimento.
+    """
+    serializer_class = EstabelecimentoUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        user = self.request.user
+        if hasattr(user, 'perfil_gestor'):
+            return user.perfil_gestor.estabelecimento
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied("Apenas gestores podem acessar as configurações da unidade.")
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return EstabelecimentoSerializer
+        return EstabelecimentoUpdateSerializer

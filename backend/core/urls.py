@@ -4,12 +4,12 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'servicos', views.ServicoViewSet, basename='servico')
+router.register(r'tags-peca', views.TagPecaViewSet, basename='tag-peca')
 
 app_name = 'core'
 
 urlpatterns = [
-    path('', include(router.urls)), # Serviços
-    path('tags-peca/', views.TagPecaListView.as_view(), name='tag-peca-list'),
+    path('', include(router.urls)), 
     path('estabelecimento/', views.GestaoViewSet.as_view({'get': 'estabelecimento', 'patch': 'estabelecimento'}), name='gestao-estabelecimento'),
     path('funcionarios/', views.GestaoViewSet.as_view({'get': 'funcionarios', 'post': 'funcionarios'}), name='gestao-funcionarios-list'),
     path('funcionarios/<int:pk>/', views.GestaoViewSet.as_view({'patch': 'funcionarios_detalhe'}), name='gestao-funcionarios-detail'),

@@ -4,6 +4,78 @@ info:
   version: 1.0.0
   description: Documentação oficial da API do projeto Lava-me.
 paths:
+  /api/auth/estabelecimento/me/:
+    get:
+      operationId: auth_estabelecimento_me_retrieve
+      description: Endpoint para o Gestor consultar e atualizar dados do seu estabelecimento.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estabelecimento'
+          description: ''
+    put:
+      operationId: auth_estabelecimento_me_update
+      description: Endpoint para o Gestor consultar e atualizar dados do seu estabelecimento.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstabelecimentoUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EstabelecimentoUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EstabelecimentoUpdate'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstabelecimentoUpdate'
+          description: ''
+    patch:
+      operationId: auth_estabelecimento_me_partial_update
+      description: Endpoint para o Gestor consultar e atualizar dados do seu estabelecimento.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEstabelecimentoUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEstabelecimentoUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEstabelecimentoUpdate'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstabelecimentoUpdate'
+          description: ''
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -334,7 +406,7 @@ paths:
   /api/gestao/tags-peca/:
     get:
       operationId: gestao_tags_peca_list
-      description: Lista tags de peça do estabelecimento do usuário.
+      description: CRUD de tags de peça do estabelecimento do usuário.
       tags:
       - gestao
       security:
@@ -350,6 +422,142 @@ paths:
                 items:
                   $ref: '#/components/schemas/TagPeca'
           description: ''
+    post:
+      operationId: gestao_tags_peca_create
+      description: CRUD de tags de peça do estabelecimento do usuário.
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+  /api/gestao/tags-peca/{id}/:
+    get:
+      operationId: gestao_tags_peca_retrieve
+      description: CRUD de tags de peça do estabelecimento do usuário.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+    put:
+      operationId: gestao_tags_peca_update
+      description: CRUD de tags de peça do estabelecimento do usuário.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+    patch:
+      operationId: gestao_tags_peca_partial_update
+      description: CRUD de tags de peça do estabelecimento do usuário.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTagPeca'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTagPeca'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTagPeca'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+    delete:
+      operationId: gestao_tags_peca_destroy
+      description: CRUD de tags de peça do estabelecimento do usuário.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/incidentes-os/{id}/auditoria/:
     get:
       operationId: incidentes_os_auditoria_retrieve
@@ -652,6 +860,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/TagPeca'
           description: ''
+  /api/publico/estabelecimento/{slug}/:
+    get:
+      operationId: publico_estabelecimento_retrieve
+      description: |-
+        RF-21: Endpoint público (sem autenticação) que retorna os dados básicos
+        de um Estabelecimento e seus serviços ativos via slug.
+
+        Segurança:
+          - AllowAny: Acesso público, sem JWT.
+          - Throttle: 60 req/min por IP (previne scraping — CA-05).
+          - Lookup via slug (não expõe IDs sequenciais — evita IDOR reverso).
+          - Serializer expõe apenas campos seguros (CA-03).
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstabelecimentoPublico'
+          description: ''
 components:
   schemas:
     CargoEnum:
@@ -672,6 +912,86 @@ components:
       description: |-
         * `INTERNO` - Interno
         * `EXTERNO` - Externo
+    Estabelecimento:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        cnpj:
+          type: string
+          maxLength: 14
+        endereco_completo:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+        slug:
+          type: string
+          nullable: true
+          maxLength: 150
+          pattern: ^[-a-zA-Z0-9_]+$
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        logo_url:
+          type: string
+          readOnly: true
+      required:
+      - cnpj
+      - endereco_completo
+      - id
+      - logo_url
+      - nome_fantasia
+    EstabelecimentoPublico:
+      type: object
+      description: |-
+        Exposição pública e segura do Estabelecimento para o Portal de Autoagendamento.
+        CA-03: cnpj, faturamento e dados do gestor são omitidos por design (não incluídos em fields).
+        CA-02: servicos filtrados para is_active=True via ServicoPublicoSerializer.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        endereco_completo:
+          type: string
+          maxLength: 255
+        logo_url:
+          type: string
+          readOnly: true
+        servicos:
+          type: string
+          readOnly: true
+      required:
+      - endereco_completo
+      - id
+      - logo_url
+      - nome_fantasia
+      - servicos
+    EstabelecimentoUpdate:
+      type: object
+      description: Serializer restrito para atualização de configurações pelo Gestor.
+      properties:
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        endereco_completo:
+          type: string
+          maxLength: 255
+        logo:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - endereco_completo
+      - nome_fantasia
     Funcionario:
       type: object
       properties:
@@ -768,6 +1088,20 @@ components:
       - servico
       - status_ordem_servico
       - tag_peca
+    PatchedEstabelecimentoUpdate:
+      type: object
+      description: Serializer restrito para atualização de configurações pelo Gestor.
+      properties:
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        endereco_completo:
+          type: string
+          maxLength: 255
+        logo:
+          type: string
+          format: uri
+          nullable: true
     PatchedIncidentePendente:
       type: object
       properties:
@@ -822,6 +1156,20 @@ components:
           description: Tempo médio em minutos
         is_active:
           type: boolean
+        estabelecimento:
+          type: integer
+          readOnly: true
+    PatchedTagPeca:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 50
+        categoria:
+          $ref: '#/components/schemas/CategoriaEnum'
         estabelecimento:
           type: integer
           readOnly: true

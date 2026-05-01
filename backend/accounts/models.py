@@ -1,6 +1,9 @@
+import os
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.text import slugify
+from django.dispatch import receiver
+from django.db.models.signals import pre_save, post_delete
 
 
 class Estabelecimento(models.Model):
@@ -10,8 +13,8 @@ class Estabelecimento(models.Model):
     is_active = models.BooleanField(default=True)
     # RF-21: Identificador público amigável para URL.
     slug = models.SlugField(max_length=150, unique=True, null=True, blank=True)
-    # Identidade visual do estabelecimento
-    logo_url = models.URLField(max_length=500, null=True, blank=True)
+    # Identidade visual do estabelecimento (Upload de arquivo)
+    logo = models.ImageField(upload_to='logos/', null=True, blank=True)
 
     class Meta:
         verbose_name = "Estabelecimento"
@@ -37,9 +40,15 @@ class Estabelecimento(models.Model):
         return slug_candidato
 
     def save(self, *args, **kwargs):
-        """Auto-gera o slug a partir do nome_fantasia se ainda não tiver sido definido."""
+        """Auto-gera ou atualiza o slug a partir do nome_fantasia."""
+        if self.pk:
+            old_instance = Estabelecimento.objects.get(pk=self.pk)
+            if old_instance.nome_fantasia != self.nome_fantasia:
+                self.slug = self._gerar_slug_unico()
+        
         if not self.slug:
             self.slug = self._gerar_slug_unico()
+            
         super().save(*args, **kwargs)
 
 
@@ -135,3 +144,28 @@ class Gestor(models.Model):
 
     def __str__(self):
         return f"Gestor: {self.user.email} @ {self.estabelecimento.nome_fantasia}"
+
+
+@receiver(post_delete, sender=Estabelecimento)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """Deleta o arquivo físico da logo quando o Estabelecimento é removido."""
+    if instance.logo:
+        if os.path.isfile(instance.logo.path):
+            os.remove(instance.logo.path)
+
+
+@receiver(pre_save, sender=Estabelecimento)
+def auto_delete_file_on_change(sender, instance, **kwargs):
+    """Deleta o arquivo físico antigo quando a logo é atualizada ou removida."""
+    if not instance.pk:
+        return False
+
+    try:
+        old_file = sender.objects.get(pk=instance.pk).logo
+    except sender.DoesNotExist:
+        return False
+
+    new_file = instance.logo
+    if not old_file == new_file:
+        if old_file and os.path.isfile(old_file.path):
+            os.remove(old_file.path)

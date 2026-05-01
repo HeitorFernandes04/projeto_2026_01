@@ -4,7 +4,7 @@
 dev:
 	@echo "🚀 Iniciando os 3 servidores do Lava-Me simultaneamente..."
 	@trap 'kill %1 %2 %3 2>/dev/null || true' EXIT; \
-	(cd backend && python manage.py runserver) & \
+	(cd backend && ../venv/bin/python manage.py runserver) & \
 	(cd web && npm start) & \
 	(cd mobile && npm run dev) & \
 	wait
@@ -14,7 +14,7 @@ install:
 	@echo "📦 Instalando todas as dependências..."
 	cd web && npm install
 	cd mobile && npm install
-	cd backend && pip install -r requirements.txt
+	cd backend && ../venv/bin/pip install -r requirements.txt
 
 # Automação do GitFlow: Fecha a sprint, faz merge e publica no GitHub sozinho!
 release:
