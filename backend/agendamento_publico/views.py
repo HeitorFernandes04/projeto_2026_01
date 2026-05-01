@@ -8,9 +8,10 @@ from .serializers import EstabelecimentoPublicoSerializer
 
 class EstabelecimentoPublicoRateThrottle(AnonRateThrottle):
     """
-    Cenário 3 (BDD): Limite de 60 requisições por minuto por IP.
-    Rate configurada aqui para isolamento; pode ser sobrescrita via DEFAULT_THROTTLE_RATES no settings.
+    Define um escopo específico para o portal público.
+    A taxa de 60/min será configurada via escopo 'publico' no settings ou fallback.
     """
+    scope = 'publico'
     rate = '60/min'
 
 

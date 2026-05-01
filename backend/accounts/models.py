@@ -9,9 +9,9 @@ class Estabelecimento(models.Model):
     endereco_completo = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     # RF-21: Identificador público amigável para URL.
-    # null/blank=True mantém a migration segura para dados existentes.
-    # A geração é automática via save() — nenhum preenchimento manual necessário.
     slug = models.SlugField(max_length=150, unique=True, null=True, blank=True)
+    # Identidade visual do estabelecimento
+    logo_url = models.URLField(max_length=500, null=True, blank=True)
 
     class Meta:
         verbose_name = "Estabelecimento"

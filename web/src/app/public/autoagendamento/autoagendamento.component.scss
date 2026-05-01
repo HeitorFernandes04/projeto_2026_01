@@ -1,0 +1,320 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Portal de Autoagendamento (RF-21) — Design System "Premium Industrial"
+// Mobile-First: base para mobile, media queries expandem para desktop.
+// Tokens de cor herdados do sistema global (app.scss / styles.scss).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Tokens locais (espelham o Design System global) ──────────────────────
+$bg:          #0b0e11;
+$card:        #161b22;
+$card-hover:  #1c2128;
+$border:      #21262d;
+$primary:     #0066ff;
+$primary-glow:rgba(0, 102, 255, 0.35);
+$text:        #f0f6fc;
+$text-muted:  #8b949e;
+$success:     #3fb950;
+$font:        'Inter', sans-serif;
+
+// ── Wrapper principal ────────────────────────────────────────────────────
+.portal-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 520px;         // Mobile-First: centralizado em desktop
+  margin: 0 auto;
+  background: $bg;
+  display: flex;
+  flex-direction: column;
+  font-family: $font;
+  padding-bottom: 100px;    // Espaço para o footer fixo
+}
+
+// ── Cabeçalho do Estabelecimento ─────────────────────────────────────────
+.portal-header {
+  padding: 80px 20px 32px; // Respiro superior generoso para a logo
+  background: linear-gradient(180deg, #161b22 0%, $bg 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .logo-wrapper {
+    margin-bottom: 24px;
+    filter: drop-shadow(0 4px 12px rgba(0, 102, 255, 0.2));
+
+    .brand-logo {
+      height: 64px; // Tamanho mais harmônico
+      width: 64px;
+      object-fit: contain;
+      border-radius: 16px; // Quadrado arredondado (estilo app)
+      border: 1px solid rgba(0, 102, 255, 0.3);
+      padding: 8px;
+      background: #ffffff; // Fundo branco para logos coloridas
+    }
+
+    .brand-logo-placeholder {
+      height: 64px;
+      width: 64px;
+      background: $card;
+      border: 1px solid $border;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: $primary;
+    }
+  }
+
+  .header-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $primary;
+    background: rgba(0, 102, 255, 0.1);
+    border: 1px solid rgba(0, 102, 255, 0.2);
+    border-radius: 8px;
+    padding: 4px 12px;
+    margin-bottom: 12px;
+  }
+
+  .estabelecimento-nome {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 8px;
+    text-align: center;
+    letter-spacing: -0.02em;
+  }
+
+  .estabelecimento-endereco {
+    font-size: 13px;
+    color: $text-muted;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    max-width: 80%;
+    text-align: center;
+
+    .icon-pin { font-size: 14px; color: $primary; }
+  }
+}
+
+// ── Corpo da tela ────────────────────────────────────────────────────────
+.portal-body {
+  flex: 1;
+  padding: 32px 24px;
+}
+
+.secao-titulo {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 20px;
+}
+
+// ── Cards de Serviço ─────────────────────────────────────────────────────
+.servicos-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.servico-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: $card;
+  border: 1px solid $border;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  .servico-radio {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .servico-info {
+    flex: 1;
+    .servico-nome {
+      display: block;
+      font-size: 16px;
+      font-weight: 600;
+      color: $text;
+      margin-bottom: 4px;
+    }
+    .servico-meta {
+      .servico-duracao { font-size: 12px; color: $text-muted; }
+    }
+  }
+
+  .servico-preco {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .servico-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid $border;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: transparent;
+    transition: all 0.2s ease;
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    background: $card-hover;
+  }
+
+  &.selecionado {
+    border-color: $primary;
+    background: rgba(0, 102, 255, 0.05);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+    .servico-check {
+      background: $primary;
+      border-color: $primary;
+      color: #fff;
+    }
+  }
+}
+
+// ── Rodapé Fixo (CTA) ────────────────────────────────────────────────────
+.portal-footer {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 520px;
+  padding: 24px 20px 32px;
+  background: linear-gradient(0deg, $bg 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 100;
+
+  .footer-resumo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 6px 16px;
+    border-radius: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+
+    .footer-resumo-label { color: $text-muted; }
+    .footer-resumo-nome  { color: #fff; font-weight: 600; }
+    .footer-resumo-preco { color: $primary; font-weight: 700; }
+  }
+}
+
+.btn-cta {
+  width: 85%; // 80-85% conforme solicitado
+  height: 56px; // Altura fixa para manter proporção
+  border: none;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: $font;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Estado DESABILITADO
+  background: #1c2128;
+  color: #484f58;
+  cursor: not-allowed;
+
+  // Estado ATIVO
+  &.ativo {
+    background: $primary;
+    color: #ffffff;
+    box-shadow: 0 8px 24px rgba(0, 102, 255, 0.4);
+
+    &:hover {
+      background: #1a7fff;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0, 102, 255, 0.5);
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+}
+
+
+// ── Estados Vazios / Erro ────────────────────────────────────────────────
+.estado-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 32px;
+  gap: 12px;
+
+  .estado-icone {
+    font-size: 52px;
+    margin-bottom: 4px;
+  }
+
+  .estado-titulo {
+    font-size: 20px;
+    font-weight: 700;
+    color: $text;
+    margin: 0;
+  }
+
+  .estado-descricao {
+    font-size: 14px;
+    color: $text-muted;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 320px;
+  }
+}
+
+// ── Skeleton Loading ─────────────────────────────────────────────────────
+.skeleton-header {
+  background: linear-gradient(180deg, #0d1117 0%, $bg 100%);
+  border-bottom: 1px solid $border;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, $card 25%, $card-hover 50%, $card 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 8px;
+}
+
+.skeleton-title    { height: 28px; width: 70%; margin-bottom: 12px; }
+.skeleton-subtitle { height: 14px; width: 50%; }
+.skeleton-label    { height: 20px; width: 55%; margin-bottom: 16px; }
+.skeleton-card     { height: 80px; width: 100%; }

@@ -82,7 +82,11 @@ export class App implements OnInit, OnDestroy {
   }
 
   private atualizarEstadoSidebar(url: string) {
-    this.exibirSidebar = !(url.includes('/login') || url === '');
+    this.exibirSidebar = !(
+      url.includes('/login') ||
+      url.includes('/agendar/') ||
+      url === ''
+    );
   }
 
   irParaIncidentes() {
