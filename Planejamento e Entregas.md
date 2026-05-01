@@ -200,12 +200,14 @@ Responsáveis: ---
 ### RF-13 · Configurações do Estabelecimento
 
 **Como** gestor,
-**quero** editar os dados do meu lava-jato,
-**para** manter as informações operacionais atualizadas.
+**quero** editar os dados do meu lava-jato, incluindo a identidade visual (logo),
+**para** manter as informações operacionais atualizadas e personalizadas em todos os canais.
 
 **Critérios de Aceitação:**
 
 * [x] Formulário para alteração na tabela de Estabelecimento (Nome Fantasia, CNPJ, Endereço).
+* [x] Upload e gestão de Logotipo com suporte a formatos JPG/PNG/WEBP.
+* [x] Sincronização Reativa: A alteração da logo reflete instantaneamente no Dashboard Web e no App Mobile sem necessidade de novo login.
 * [x] Exibição da URL pública de autoagendamento (`link_autoagendamento`).
 
 Responsáveis: Letícia Gomes Lopes
@@ -324,9 +326,9 @@ Responsáveis: ---
 
 **Critérios de Aceitação:**
 
-* [ ] Endpoint público (`AllowAny`) que recebe a referência do estabelecimento e retorna dados de contato e serviços ativos.
+* [x] Endpoint público (`AllowAny`) que recebe a referência do estabelecimento e retorna dados de contato, logo e serviços ativos.
 * [ ] O endpoint nunca deve expor dados financeiros ou de funcionários do local.
-* [ ] Interface mobile-first desenvolvida para rodar diretamente via navegador.
+* [x] Interface mobile-first desenvolvida para rodar diretamente via navegador.
 
 Responsáveis: ---
 

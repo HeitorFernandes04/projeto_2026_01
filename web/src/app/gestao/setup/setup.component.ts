@@ -9,6 +9,7 @@ import { FuncionarioService, Funcionario } from '../../services/funcionario.serv
 import { DashboardService } from '../../services/dashboard.service';
 import { IncidentesService } from '../../services/incidentes.service';
 import { TagPecaService, TagPeca } from '../../services/tag-peca.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-setup',
@@ -100,6 +101,7 @@ export class SetupComponent implements OnInit, OnDestroy {
     private dashboardService: DashboardService,
     private incidentesService: IncidentesService,
     private tagPecaService: TagPecaService,
+    private authService: AuthService,
     private cdRef: ChangeDetectorRef
   ) {}
 
@@ -366,6 +368,8 @@ export class SetupComponent implements OnInit, OnDestroy {
           }
           this.logoParaUpload = null; // Limpa o arquivo pendente
           this.atualizarLinkAgendamento();
+          // Dispara atualização reativa da sidebar (logo, nome)
+          this.authService.recarregarPerfil();
           this.sucessoUnidade = 'Dados da unidade salvos com sucesso! ✓';
           setTimeout(() => { this.sucessoUnidade = ''; this.cdRef.detectChanges(); }, 4000);
         },

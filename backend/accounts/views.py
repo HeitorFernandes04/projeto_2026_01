@@ -102,22 +102,18 @@ def meu_perfil(request):
         })
     elif hasattr(user, 'perfil_funcionario'):
         funcionario = user.perfil_funcionario
+        est_serializer = EstabelecimentoSerializer(funcionario.estabelecimento, context={'request': request})
         data.update({
             'tipo_perfil': 'FUNCIONARIO',
             'cargo': funcionario.cargo,
-            'estabelecimento': {
-                'id': funcionario.estabelecimento.id,
-                'nome_fantasia': funcionario.estabelecimento.nome_fantasia,
-            }
+            'estabelecimento': est_serializer.data
         })
     elif hasattr(user, 'perfil_gestor'):
         gestor = user.perfil_gestor
+        est_serializer = EstabelecimentoSerializer(gestor.estabelecimento, context={'request': request})
         data.update({
             'tipo_perfil': 'GESTOR',
-            'estabelecimento': {
-                'id': gestor.estabelecimento.id,
-                'nome_fantasia': gestor.estabelecimento.nome_fantasia,
-            }
+            'estabelecimento': est_serializer.data
         })
     
     return Response(data)

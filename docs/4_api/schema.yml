@@ -406,7 +406,11 @@ paths:
   /api/gestao/tags-peca/:
     get:
       operationId: gestao_tags_peca_list
-      description: CRUD de tags de peça do estabelecimento do usuário.
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
       tags:
       - gestao
       security:
@@ -424,7 +428,11 @@ paths:
           description: ''
     post:
       operationId: gestao_tags_peca_create
-      description: CRUD de tags de peça do estabelecimento do usuário.
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
       tags:
       - gestao
       requestBody:
@@ -453,7 +461,11 @@ paths:
   /api/gestao/tags-peca/{id}/:
     get:
       operationId: gestao_tags_peca_retrieve
-      description: CRUD de tags de peça do estabelecimento do usuário.
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
       parameters:
       - in: path
         name: id
@@ -475,7 +487,11 @@ paths:
           description: ''
     put:
       operationId: gestao_tags_peca_update
-      description: CRUD de tags de peça do estabelecimento do usuário.
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
       parameters:
       - in: path
         name: id
@@ -509,7 +525,11 @@ paths:
           description: ''
     patch:
       operationId: gestao_tags_peca_partial_update
-      description: CRUD de tags de peça do estabelecimento do usuário.
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
       parameters:
       - in: path
         name: id
@@ -542,7 +562,11 @@ paths:
           description: ''
     delete:
       operationId: gestao_tags_peca_destroy
-      description: CRUD de tags de peça do estabelecimento do usuário.
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
       parameters:
       - in: path
         name: id

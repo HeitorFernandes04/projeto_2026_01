@@ -58,6 +58,7 @@ export class App implements OnInit, OnDestroy {
   ngOnInit() {
     const urlInicial = this.location.path();
     this.atualizarEstadoSidebar(urlInicial);
+    this.ouvirAtualizacoesPerfil();
 
     if (this.exibirSidebar) {
       this.carregarPerfil();
@@ -79,6 +80,17 @@ export class App implements OnInit, OnDestroy {
       },
       error: () => console.warn('Usuario nao autenticado ou sessao expirada.'),
     });
+  }
+
+  /** Inscreve-se nas atualizações reativas do perfil (logo, nome, etc.) */
+  private ouvirAtualizacoesPerfil() {
+    this.subscriptions.add(
+      this.authService.perfil$.subscribe((perfil) => {
+        if (perfil) {
+          this.perfil = perfil;
+        }
+      })
+    );
   }
 
   private atualizarEstadoSidebar(url: string) {

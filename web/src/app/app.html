@@ -1,7 +1,7 @@
 <div class="app-layout" [class.no-sidebar]="!exibirSidebar">
   <aside class="main-sidebar" *ngIf="exibirSidebar">
     <div class="logo-container">
-      <img src="logo.jpeg" alt="Lava-Me Logo" class="brand-logo">
+      <img [src]="perfil?.estabelecimento?.logo_url || 'logo.jpeg'" alt="Lava-Me Logo" class="brand-logo">
     </div>
 
     <nav class="nav-container">
