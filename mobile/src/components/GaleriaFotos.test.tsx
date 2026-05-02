@@ -20,7 +20,7 @@ vi.mock('../services/api', () => ({
 describe('GaleriaFotos', () => {
   const defaultProps = {
     ordemServicoId: 1,
-    momento: 'VISTORIA_GERAL' as const,
+    momento: 'ENTRADA' as const,
     fotosIniciais: [],
     onUploadSuccess: vi.fn(),
   };

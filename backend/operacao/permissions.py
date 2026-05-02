@@ -44,3 +44,27 @@ class IsFuncionarioDaOS(BasePermission):
         # Permite acesso quando a OS ainda não tem dono (fila livre)
         # ou quando o usuário logado já é o funcionário vinculado.
         return os.funcionario is None or os.funcionario == request.user
+
+
+class IsOwnerOrStaff(BasePermission):
+    """
+    Permissão para garantir que apenas o proprietário do veículo (cliente)
+    ou a equipe do estabelecimento possam acessar os dados da OS.
+    """
+    def has_permission(self, request, view):
+        pk = view.kwargs.get('pk')
+        if pk is None:
+            return False
+            
+        os = get_object_or_404(OrdemServico, pk=pk)
+        request.ordem_servico = os
+        
+        # Staff (Gestor/Funcionário) sempre tem acesso
+        if hasattr(request.user, 'perfil_gestor') or hasattr(request.user, 'perfil_funcionario'):
+            return True
+        
+        # Cliente só acessa se for o dono do veículo da OS
+        if hasattr(request.user, 'perfil_cliente'):
+            return os.veiculo.cliente == request.user.perfil_cliente
+        
+        return False

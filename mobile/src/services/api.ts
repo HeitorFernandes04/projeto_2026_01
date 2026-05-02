@@ -136,7 +136,7 @@ export async function getOrdemServico(id: number) {
 /** RF-05/06 — Envia múltiplas fotos de uma só vez */
 export async function uploadFotos(
   id: number,
-  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO',
+  momento: 'ENTRADA' | 'FINALIZACAO' | 'PROCESSO' | 'INCIDENTE' | 'ACABAMENTO',
   fotoBlobs: Blob[]
 ) {
   const formData = new FormData();

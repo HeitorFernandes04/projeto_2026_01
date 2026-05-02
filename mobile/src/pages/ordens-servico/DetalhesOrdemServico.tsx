@@ -16,7 +16,7 @@ import '../../theme/lava-me.css';
 interface MidiaOrdemServico {
   id: number;
   arquivo: string;
-  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
+  momento: 'ENTRADA' | 'FINALIZACAO' | 'PROCESSO' | 'INCIDENTE' | 'ACABAMENTO';
 }
 
 interface OrdemServico {
@@ -95,8 +95,8 @@ const DetalhesOrdemServico: React.FC = () => {
               <div slot="content" style={styles.accordionContent}>
                 <GaleriaFotos 
                   ordemServicoId={ordemServico.id} 
-                  momento="VISTORIA_GERAL" 
-                  fotosIniciais={ordemServico.midias?.filter(m => m.momento === 'VISTORIA_GERAL') || []} 
+                  momento="ENTRADA" 
+                  fotosIniciais={ordemServico.midias?.filter(m => m.momento === 'ENTRADA') || []} 
                   somenteLeitura 
                 />
                 <div style={styles.statusBox}>
@@ -153,8 +153,8 @@ const DetalhesOrdemServico: React.FC = () => {
                 </div>
                 <GaleriaFotos 
                   ordemServicoId={ordemServico.id} 
-                  momento="FINALIZADO" 
-                  fotosIniciais={ordemServico.midias?.filter(m => m.momento === 'FINALIZADO') || []} 
+                  momento="FINALIZACAO" 
+                  fotosIniciais={ordemServico.midias?.filter(m => m.momento === 'FINALIZACAO') || []} 
                   somenteLeitura 
                 />
               </div>
