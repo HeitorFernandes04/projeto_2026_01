@@ -21,10 +21,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>
-          {{ tipoModal === 'servico' ? 
-            (modoEdicao ? 'Editar Serviço' : 'Novo Serviço') : 
-            (modoEdicao ? 'Editar Funcionário' : 'Novo Funcionário') 
-          }}
+          @if (tipoModal === 'servico') {
+            {{ modoEdicao ? 'Editar Serviço' : 'Novo Serviço' }}
+          } @else if (tipoModal === 'funcionario') {
+            {{ modoEdicao ? 'Editar Funcionário' : 'Novo Funcionário' }}
+          } @else {
+            {{ modoEdicao ? 'Editar Peça' : 'Nova Peça para Vistoria' }}
+          }
         </h3>
         <button class="modal-close" (click)="fecharModal()">&times;</button>
       </div>
@@ -49,7 +52,7 @@
             <input type="number" id="duracao" [(ngModel)]="novoServico.duracao_estimada_minutos" placeholder="45" min="1" required>
             <small class="form-hint">Obrigatório para cálculos de produtividade da equipe.</small>
           </div>
-        } @else {
+        } @else if (tipoModal === 'funcionario') {
           <div class="form-group">
             <label for="f-nome">Nome Completo *</label>
             <input type="text" id="f-nome" [(ngModel)]="novoFuncionario.name" placeholder="Nome do colaborador" required>
@@ -84,15 +87,30 @@
               </div>
             </label>
           </div>
+        } @else {
+          <div class="form-group">
+            <label for="t-nome">Nome da Peça/Item *</label>
+            <input type="text" id="t-nome" [(ngModel)]="novaTag.nome" placeholder="Ex: Capô, Estofamento Dianteiro" required>
+          </div>
+          <div class="form-group">
+            <label for="t-cat">Categoria de Inspeção *</label>
+            <select id="t-cat" [(ngModel)]="novaTag.categoria" class="form-select-premium">
+              <option value="EXTERNO">Exterior / Lataria</option>
+              <option value="INTERNO">Interior / Cabine</option>
+            </select>
+          </div>
         }
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" (click)="fecharModal()">Cancelar</button>
         <button class="btn-primary-blue" (click)="salvarGeral()">
-          {{ tipoModal === 'servico' ? 
-            (modoEdicao ? 'Atualizar Serviço' : 'Salvar Serviço') : 
-            (modoEdicao ? 'Salvar Alterações' : 'Cadastrar Funcionário') 
-          }}
+          @if (tipoModal === 'servico') {
+            {{ modoEdicao ? 'Atualizar Serviço' : 'Salvar Serviço' }}
+          } @else if (tipoModal === 'funcionario') {
+            {{ modoEdicao ? 'Salvar Alterações' : 'Cadastrar Funcionário' }}
+          } @else {
+            {{ modoEdicao ? 'Atualizar Peça' : 'Adicionar ao Catálogo' }}
+          }
         </button>
       </div>
     </div>
@@ -103,6 +121,7 @@
     <div class="tabs-pill">
       <button [class.active]="abaAtiva === 'servicos'" (click)="setAba('servicos')">Serviços</button>
       <button [class.active]="abaAtiva === 'funcionarios'" (click)="setAba('funcionarios')">Funcionários</button>
+      <button [class.active]="abaAtiva === 'tags'" (click)="setAba('tags')">Vistorias</button>
       <button [class.active]="abaAtiva === 'unidade'" (click)="setAba('unidade')">Unidade</button>
     </div>
   </nav>
@@ -118,40 +137,53 @@
           <span class="material-symbols-outlined">add</span> Novo Serviço
         </button>
       </div>
-      <div class="table-container">
-        <table class="industrial-table">
-          <thead>
-            <tr>
-              <th class="col-servico">SERVIÇO</th>
-              <th class="col-preco">PREÇO</th>
-              <th class="col-duracao">DURAÇÃO ESTIMADA</th>
-              <th class="col-acoes text-right">AÇÕES</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of servicos; track s.id) {
+      @if (servicos.length > 0) {
+        <div class="table-container">
+          <table class="industrial-table">
+            <thead>
               <tr>
-                <td class="col-servico font-bold-white">{{ s.nome }}</td>
-                <td class="col-preco font-blue-price">{{ s.preco | currency:'BRL':'symbol':'1.2-2' }}</td>
-                <td class="col-duracao">
-                  <div class="duration-box">
-                    <span class="material-symbols-outlined">schedule</span>
-                    {{ s.duracao_estimada_minutos || 0 }} min
-                  </div>
-                </td>
-                <td class="col-acoes text-right">
-                  <button class="btn-edit-action" (click)="editarServico(s)">
-                    <span class="material-symbols-outlined">edit</span>Editar
-                  </button>
-                  <button class="btn-delete-action" (click)="excluirServico(s.id!)">
-                    <span class="material-symbols-outlined">delete</span>Excluir
-                  </button>
-                </td>
+                <th class="col-servico">SERVIÇO</th>
+                <th class="col-preco">PREÇO</th>
+                <th class="col-duracao">DURAÇÃO ESTIMADA</th>
+                <th class="col-acoes text-right">AÇÕES</th>
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              @for (s of servicos; track s.id) {
+                <tr>
+                  <td class="col-servico font-bold-white">{{ s.nome }}</td>
+                  <td class="col-preco font-blue-price">{{ s.preco | currency:'BRL':'symbol':'1.2-2' }}</td>
+                  <td class="col-duracao">
+                    <div class="duration-box">
+                      <span class="material-symbols-outlined">schedule</span>
+                      {{ s.duracao_estimada_minutos || 0 }} min
+                    </div>
+                  </td>
+                  <td class="col-acoes text-right">
+                    <button class="btn-edit-action" (click)="editarServico(s)">
+                      <span class="material-symbols-outlined">edit</span>Editar
+                    </button>
+                    <button class="btn-delete-action" (click)="excluirServico(s.id!)">
+                      <span class="material-symbols-outlined">delete</span>Excluir
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state-container">
+          <div class="empty-icon">
+            <span class="material-symbols-outlined">dry_cleaning</span>
+          </div>
+          <h4>Nenhum serviço cadastrado</h4>
+          <p>Comece adicionando os serviços que sua unidade oferece para habilitar o agendamento.</p>
+          <button class="btn-primary-blue" (click)="abrirModal('servico')">
+            <span class="material-symbols-outlined">add</span> Cadastrar Primeiro Serviço
+          </button>
+        </div>
+      }
     </section>
   }
 
@@ -175,60 +207,73 @@
            </button>
         </div>
       </div>
-      <div class="table-container">
-        <table class="industrial-table">
-          <thead>
-            <tr>
-              <th class="col-nome">NOME</th>
-              <th class="col-email">E-MAIL</th>
-              <th class="col-cargo">CARGO</th>
-              <th class="col-acoes text-right">AÇÕES</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (f of funcionariosFiltrados; track f.id) {
-              <tr [class.row-inactive]="!f.is_active">
-                <td class="col-nome">
-                  <div class="user-row">
-                    <div class="avatar-circle">{{ f.name.charAt(0) }}</div>
-                    <div class="user-data">
-                      <span class="user-name">{{ f.name }}</span>
-                      <div class="user-metrics">
-                        <span class="activity-label">ATIVIDADE</span>
-                        <div class="activity-data">
-                          <span class="material-symbols-outlined">schedule</span>
-                          <span class="time-text">{{ getUltimaAtividade(f) }}</span>
+      @if (funcionariosFiltrados.length > 0) {
+        <div class="table-container">
+          <table class="industrial-table">
+            <thead>
+              <tr>
+                <th class="col-nome">NOME</th>
+                <th class="col-email">E-MAIL</th>
+                <th class="col-cargo">CARGO</th>
+                <th class="col-acoes text-right">AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (f of funcionariosFiltrados; track f.id) {
+                <tr [class.row-inactive]="!f.is_active">
+                  <td class="col-nome">
+                    <div class="user-row">
+                      <div class="avatar-circle">{{ f.name.charAt(0) }}</div>
+                      <div class="user-data">
+                        <span class="user-name">{{ f.name }}</span>
+                        <div class="user-metrics">
+                          <span class="activity-label">ATIVIDADE</span>
+                          <div class="activity-data">
+                            <span class="material-symbols-outlined">schedule</span>
+                            <span class="time-text">{{ getUltimaAtividade(f) }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td class="col-email">{{ f.email }}</td>
-                <td class="col-cargo">
-                  <div style="display: flex; align-items: center;">
-                    <span class="cargo-pill" [ngClass]="f.cargo.toLowerCase()">{{ f.cargo }}</span>
-                    @if (!f.is_active) {
-                      <span class="cargo-pill inativo-tag">Inativo</span>
-                    }
-                  </div>
-                </td>
-                <td class="col-acoes text-right">
-                  <div class="action-group">
-                    <button class="btn-edit-action" (click)="editarFuncionario(f)">
-                      <span class="material-symbols-outlined">edit</span>Editar
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-        <div class="setup-footer-metrics">
-          <div class="metric-card"><span class="m-label">Total de Equipe</span><span class="m-value white">{{ funcionarios.length }}</span></div>
-          <div class="metric-card"><span class="m-label">Ativos no Pátio</span><span class="m-value blue">{{ totalAtivos }}</span></div>
-          <div class="metric-card"><span class="m-label">Performance Unidade</span><span class="m-value blue-light">{{ performanceGlobalMinutos > 0 ? '+' : '' }}{{ performanceGlobalMinutos }} min</span></div>
+                  </td>
+                  <td class="col-email">{{ f.email }}</td>
+                  <td class="col-cargo">
+                    <div style="display: flex; align-items: center;">
+                      <span class="cargo-pill" [ngClass]="f.cargo.toLowerCase()">{{ f.cargo }}</span>
+                      @if (!f.is_active) {
+                        <span class="cargo-pill inativo-tag">Inativo</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="col-acoes text-right">
+                    <div class="action-group">
+                      <button class="btn-edit-action" (click)="editarFuncionario(f)">
+                        <span class="material-symbols-outlined">edit</span>Editar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <div class="setup-footer-metrics">
+            <div class="metric-card"><span class="m-label">Total de Equipe</span><span class="m-value white">{{ funcionarios.length }}</span></div>
+            <div class="metric-card"><span class="m-label">Ativos no Pátio</span><span class="m-value blue">{{ totalAtivos }}</span></div>
+            <div class="metric-card"><span class="m-label">Performance Unidade</span><span class="m-value blue-light">{{ performanceGlobalMinutos > 0 ? '+' : '' }}{{ performanceGlobalMinutos }} min</span></div>
+          </div>
         </div>
-      </div>
+      } @else {
+        <div class="empty-state-container">
+          <div class="empty-icon">
+            <span class="material-symbols-outlined">badge</span>
+          </div>
+          <h4>{{ funcionarios.length === 0 ? 'Sua equipe está vazia' : 'Nenhum funcionário inativo' }}</h4>
+          <p>{{ funcionarios.length === 0 ? 'Cadastre seus colaboradores para gerenciar a operação do pátio.' : 'Todos os seus colaboradores estão com a conta ativa no momento.' }}</p>
+          <button *ngIf="funcionarios.length === 0" class="btn-primary-blue" (click)="abrirModal('funcionario')">
+            <span class="material-symbols-outlined">add</span> Adicionar Colaborador
+          </button>
+        </div>
+      }
     </section>
   }
 
@@ -271,6 +316,46 @@
           <label for="endereco">Endereço Completo</label>
           <input type="text" id="endereco" [(ngModel)]="unidade.endereco_completo" placeholder="Rua das Flores, 123 - Centro - São Paulo - SP">
         </div>
+        <!-- Logo Management (Side-by-Side Professional Layout) -->
+        <div class="form-group">
+          <label class="industrial-label">Identidade Visual da Unidade</label>
+          <div class="logo-studio-grid">
+            
+            <!-- Lado Esquerdo: Preview Real-time -->
+            <div class="studio-preview-side">
+              <span class="studio-label">VISUALIZAÇÃO ATUAL</span>
+              <div class="preview-frame-premium">
+                <img [src]="logoPreview || unidade.logo_url || defaultLogo" alt="Logo Preview" class="studio-img">
+                @if (!!logoParaUpload || (unidade.logo_url && !logoPreview && !logoRemovida)) {
+                  <div class="badge-overlay" [class.pending]="!!logoParaUpload">
+                    {{ logoParaUpload ? 'Pendente' : 'Ativa' }}
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Lado Direito: Ações e Upload -->
+            <div class="studio-controls-side">
+              <span class="studio-label">ALTERAR LOGOMARCA</span>
+              <div class="mini-upload-zone" (click)="fileInput.click()" (drop)="onFileDropped($event)" (dragover)="onDragOver($event)">
+                <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
+                <span class="material-symbols-outlined">add_a_photo</span>
+                <p>Clique ou arraste nova logo</p>
+                <small>PNG, JPG ou WEBP (Máx 2MB)</small>
+              </div>
+              
+              <div class="studio-actions">
+                <button type="button" class="btn-studio-secondary" (click)="removerLogo()" [disabled]="!unidade.logo_url && !logoPreview">
+                  <span class="material-symbols-outlined">delete</span> Remover
+                </button>
+                <button type="button" class="btn-studio-primary" (click)="fileInput.click()">
+                  <span class="material-symbols-outlined">sync</span> Trocar
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
 
         <div class="booking-link-card">
           <div class="link-header">
@@ -293,6 +378,64 @@
           </button>
         </div>
       </div>
+    </section>
+  }
+
+  @if (abaAtiva === 'tags') {
+    <section class="setup-card-industrial">
+      <div class="card-header">
+        <div class="header-left">
+          <h3>Catálogo de Vistorias</h3>
+          <p>Defina quais peças e itens devem ser checados na entrada e saída</p>
+        </div>
+        <button class="btn-primary-blue" (click)="abrirModal('tag')">
+          <span class="material-symbols-outlined">add</span> Nova Peça
+        </button>
+      </div>
+      @if (tags.length > 0) {
+        <div class="table-container">
+          <table class="industrial-table">
+            <thead>
+              <tr>
+                <th class="col-nome">PEÇA / ITEM</th>
+                <th class="col-categoria">CATEGORIA</th>
+                <th class="col-acoes text-right">AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of tags; track t.id) {
+                <tr>
+                  <td class="col-nome font-bold-white">{{ t.nome }}</td>
+                  <td class="col-categoria">
+                    <span class="cargo-pill" [ngClass]="t.categoria === 'INTERNO' ? 'detalhista' : 'lavador'">
+                      {{ t.categoria === 'INTERNO' ? 'INTERIOR' : 'EXTERIOR' }}
+                    </span>
+                  </td>
+                  <td class="col-acoes text-right">
+                    <button class="btn-edit-action" (click)="editarTag(t)">
+                      <span class="material-symbols-outlined">edit</span>Editar
+                    </button>
+                    <button class="btn-delete-action" (click)="excluirTag(t.id)">
+                      <span class="material-symbols-outlined">delete</span>Excluir
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state-container">
+          <div class="empty-icon">
+            <span class="material-symbols-outlined">fact_check</span>
+          </div>
+          <h4>Catálogo de vistorias vazio</h4>
+          <p>Defina as peças e itens que devem ser inspecionados para garantir a qualidade do serviço.</p>
+          <button class="btn-primary-blue" (click)="abrirModal('tag')">
+            <span class="material-symbols-outlined">add</span> Criar Catálogo de Inspeção
+          </button>
+        </div>
+      }
     </section>
   }
 </div>

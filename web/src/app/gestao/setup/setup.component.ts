@@ -8,6 +8,8 @@ import { EstabelecimentoService, Estabelecimento } from '../../services/estabele
 import { FuncionarioService, Funcionario } from '../../services/funcionario.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { IncidentesService } from '../../services/incidentes.service';
+import { TagPecaService, TagPeca } from '../../services/tag-peca.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-setup',
@@ -32,21 +34,29 @@ export class SetupComponent implements OnInit, OnDestroy {
   erroUnidade: string = '';
   sucessoUnidade: string = '';
   salvandoUnidade: boolean = false;
-  abaAtiva: 'servicos' | 'funcionarios' | 'unidade' = 'servicos';
+  abaAtiva: 'servicos' | 'funcionarios' | 'unidade' | 'tags' = 'servicos';
   exibirModal: boolean = false;
-  tipoModal: 'servico' | 'funcionario' = 'servico';
+  tipoModal: 'servico' | 'funcionario' | 'tag' = 'servico';
   
   // Controle de edição
   servicoEmEdicao: Servico | null = null;
   modoEdicao: boolean = false;
 
+  // Gestão de Logo (RF-21)
+  logoParaUpload: File | null = null;
+  logoPreview: string | null = null;
+  logoRemovida: boolean = false;
+  defaultLogo = '/logo.jpeg';
+
   // Estado da Unidade (RF-13 - Dados Reais do Banco)
   unidade: Estabelecimento = {
     id: 0,
     nome_fantasia: '',
+    slug: '',
     cnpj: '',
     endereco_completo: '',
-    is_active: true
+    is_active: true,
+    logo_url: ''
   };
 
   // Dados complementares para UI
@@ -64,6 +74,11 @@ export class SetupComponent implements OnInit, OnDestroy {
   cargosDisponiveis = ['LAVADOR', 'DETALHISTA'];
   exibirInativos: boolean = false;
   funcionarioEmEdicao: Funcionario | null = null;
+
+  // Tags de Peças (RF-21.5)
+  tags: TagPeca[] = [];
+  novaTag: TagPeca = { nome: '', categoria: 'EXTERNO' };
+  tagEmEdicao: TagPeca | null = null;
 
   // Performance da Equipe (RF-20)
   performanceGlobalMinutos: number = 0;
@@ -85,6 +100,8 @@ export class SetupComponent implements OnInit, OnDestroy {
     private funcionarioService: FuncionarioService,
     private dashboardService: DashboardService,
     private incidentesService: IncidentesService,
+    private tagPecaService: TagPecaService,
+    private authService: AuthService,
     private cdRef: ChangeDetectorRef
   ) {}
 
@@ -93,6 +110,7 @@ export class SetupComponent implements OnInit, OnDestroy {
     this.carregarServicos();
     this.carregarDadosUnidade();
     this.carregarFuncionarios();
+    this.carregarTags();
     this.carregarPerformanceEquipe();
   }
 
@@ -166,6 +184,7 @@ export class SetupComponent implements OnInit, OnDestroy {
             ...dados,
             cnpj: this.aplicarMascaraCNPJ(dados.cnpj)
           };
+          this.atualizarLinkAgendamento();
         }
         this.cdRef.detectChanges();
       },
@@ -177,35 +196,35 @@ export class SetupComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Atualiza URL de agendamento baseada no nome da unidade (CA-05)
+   * Atualiza URL de agendamento baseada no slug da unidade (RF-21)
    */
   private atualizarLinkAgendamento() {
-    if (this.unidade.nome_fantasia) {
-      const nomeFormatado = this.unidade.nome_fantasia
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-      this.linkAgendamento = `https://lavame.com.br/agendar/${nomeFormatado}`;
+    const slug = this.unidade.slug || '';
+    if (slug) {
+      const host = window.location.origin;
+      this.linkAgendamento = `${host}/agendar/${slug}`;
+    } else {
+      this.linkAgendamento = 'Slug não definido';
     }
   }
 
   // Navegação e UI
-  setAba(aba: 'servicos' | 'funcionarios' | 'unidade') { 
+  setAba(aba: 'servicos' | 'funcionarios' | 'unidade' | 'tags') { 
     this.abaAtiva = aba; 
     // Recarrega dados ao trocar de aba para garantir atualização
     if (aba === 'servicos') this.carregarServicos();
     if (aba === 'funcionarios') this.carregarFuncionarios();
     if (aba === 'unidade') this.carregarDadosUnidade();
+    if (aba === 'tags') this.carregarTags();
   }
 
-  abrirModal(tipo: 'servico' | 'funcionario' = 'servico') {
+  abrirModal(tipo: 'servico' | 'funcionario' | 'tag' = 'servico') {
     this.resetarFormulario();
     this.tipoModal = tipo;
     this.modoEdicao = false;
     this.servicoEmEdicao = null;
     this.funcionarioEmEdicao = null;
+    this.tagEmEdicao = null;
     this.exibirModal = true;
   }
 
@@ -240,44 +259,102 @@ export class SetupComponent implements OnInit, OnDestroy {
     this.modoEdicao = false;
     this.servicoEmEdicao = null;
     this.funcionarioEmEdicao = null;
+    this.tagEmEdicao = null;
+    this.novaTag = { nome: '', categoria: 'EXTERNO' };
   }
 
   copiarLink() {
     navigator.clipboard.writeText(this.linkAgendamento);
   }
 
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  onFileDropped(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.onFileSelected({ target: { files: files } });
+    }
+  }
+
+  onFileSelected(event: any) {
+    const file: File = event.target.files[0];
+    if (!file) return;
+
+    // Validação de tipo de arquivo
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!tiposPermitidos.includes(file.type)) {
+      this.erroUnidade = 'Formato inválido. Use apenas JPG, PNG ou WEBP.';
+      return;
+    }
+
+    // Validação de tamanho (máx. 2MB)
+    const maxSizeBytes = 2 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      this.erroUnidade = 'A imagem é muito grande. O tamanho máximo permitido é 2MB.';
+      return;
+    }
+
+    this.erroUnidade = '';
+    this.logoParaUpload = file;
+    this.logoRemovida = false;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.logoPreview = reader.result as string;
+      this.cdRef.detectChanges();
+    };
+    reader.readAsDataURL(file);
+    
+    // Reseta o valor do input para permitir selecionar o mesmo arquivo novamente
+    event.target.value = '';
+  }
+
+  removerLogo() {
+    this.logoParaUpload = null;
+    this.logoPreview = null;
+    this.unidade.logo_url = '';
+    this.logoRemovida = true;
+    this.cdRef.detectChanges();
+  }
+
   /**
-   * Salva dados da unidade (RF-13)
-   * CORREÇÃO: Envio limpo sem ID na URL para evitar erro 404
+   * Salva dados da unidade (RF-13 + RF-21)
+   * Usa FormData para suportar upload de logo junto com os dados cadastrais.
    */
   salvarUnidade() {
     this.erroUnidade = '';
     this.sucessoUnidade = '';
 
-    // Validações básicas (CA-01 Adaptado)
-    if (!this.unidade.nome_fantasia.trim()) {
+    if (!this.unidade.nome_fantasia?.trim()) {
       this.erroUnidade = 'O nome fantasia é obrigatório.';
       return;
     }
 
     const cnpjLimpo = this.unidade.cnpj.replace(/\D/g, '');
     if (!cnpjLimpo || cnpjLimpo.length !== 14) {
-      this.erroUnidade = 'O CNPJ deve conter 14 dígitos.';
+      this.erroUnidade = 'CNPJ inválido. Verifique se o número contém exatamente 14 dígitos.';
       return;
     }
 
-    // Inicia estado de carregamento apenas se passar na validação
     this.salvandoUnidade = true;
 
-    // Prepara payload conforme RF-13
-    const dadosAtualizacao: Partial<Estabelecimento> = {
-      nome_fantasia: this.unidade.nome_fantasia.trim(),
-      cnpj: cnpjLimpo,
-      endereco_completo: this.unidade.endereco_completo.trim()
-    };
+    const formData = new FormData();
+    formData.append('nome_fantasia', this.unidade.nome_fantasia.trim());
+    formData.append('cnpj', cnpjLimpo);
+    formData.append('endereco_completo', this.unidade.endereco_completo?.trim() ?? '');
+    
+    if (this.logoParaUpload) {
+      formData.append('logo', this.logoParaUpload);
+    } else if (this.logoRemovida) {
+      // Enviar string vazia sinaliza ao Django para remover o arquivo
+      formData.append('logo', '');
+    }
 
-    // Chamada ao serviço com finalize para garantir que o botão destrave sempre
-    this.estabelecimentoService.atualizarDadosEstabelecimento(dadosAtualizacao)
+    this.estabelecimentoService.atualizarDadosEstabelecimento(formData)
       .pipe(
         finalize(() => {
           this.salvandoUnidade = false;
@@ -286,21 +363,23 @@ export class SetupComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (res) => {
-          this.unidade = {
-            ...res,
-            cnpj: this.aplicarMascaraCNPJ(res.cnpj)
-          };
+          this.unidade = { ...res, cnpj: this.aplicarMascaraCNPJ(res.cnpj) };
+          this.logoRemovida = false;
+          // Preview persiste com a URL real devolvida pela API
+          if (res.logo_url) {
+            this.logoPreview = res.logo_url;
+          }
+          this.logoParaUpload = null; // Limpa o arquivo pendente
           this.atualizarLinkAgendamento();
-          this.sucessoUnidade = 'Dados da unidade atualizados com sucesso!';
-
-          setTimeout(() => {
-            this.sucessoUnidade = '';
-            this.cdRef.detectChanges();
-          }, 3000);
+          // Dispara atualização reativa da sidebar (logo, nome)
+          this.authService.recarregarPerfil();
+          this.sucessoUnidade = 'Dados da unidade salvos com sucesso! ✓';
+          setTimeout(() => { this.sucessoUnidade = ''; this.cdRef.detectChanges(); }, 4000);
         },
         error: (err) => {
-          console.error('Erro ao salvar unidade:', err);
-          this.erroUnidade = 'Não foi possível salvar os dados. Tente novamente.';
+          // Usa mensagem do backend se disponível, senão exibe mensagem genérica amigável
+          this.erroUnidade = err?.error?.error
+            || 'Não foi possível salvar. Verifique sua conexão e tente novamente.';
         }
       });
   }
@@ -382,16 +461,6 @@ export class SetupComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Lógica de Funcionários (RF-12)
-   */
-  salvarGeral() {
-    if (this.tipoModal === 'servico') {
-      this.salvarServico();
-    } else {
-      this.salvarFuncionario();
-    }
-  }
 
   validarFormFuncionario(): boolean {
     if (!this.novoFuncionario.name || !this.novoFuncionario.email) {
@@ -527,5 +596,69 @@ export class SetupComponent implements OnInit, OnDestroy {
     if (v.length <= 8) return v.replace(/^(\d{2})(\d{3})(\d)/, '$1.$2.$3');
     if (v.length <= 12) return v.replace(/^(\d{2})(\d{3})(\d{3})(\d)/, '$1.$2.$3/$4');
     return v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d)/, '$1.$2.$3/$4-$5');
+  }
+
+  // Lógica de Tags de Peças
+  carregarTags() {
+    this.tagPecaService.listarTags().subscribe({
+      next: (dados) => {
+        this.tags = dados;
+        this.cdRef.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar tags:', err)
+    });
+  }
+
+  editarTag(tag: TagPeca) {
+    this.tipoModal = 'tag';
+    this.tagEmEdicao = tag;
+    this.modoEdicao = true;
+    this.novaTag = { ...tag };
+    this.exibirModal = true;
+  }
+
+  salvarTag() {
+    if (!this.novaTag.nome.trim()) {
+      this.erroValidacao = 'O nome da peça é obrigatório.';
+      return;
+    }
+
+    if (this.modoEdicao && this.tagEmEdicao?.id) {
+      this.tagPecaService.atualizarTag(this.tagEmEdicao.id, this.novaTag).subscribe({
+        next: () => {
+          this.fecharModal();
+          this.carregarTags();
+        },
+        error: () => this.erroValidacao = 'Erro ao atualizar tag.'
+      });
+    } else {
+      this.tagPecaService.criarTag(this.novaTag).subscribe({
+        next: () => {
+          this.fecharModal();
+          this.carregarTags();
+        },
+        error: () => this.erroValidacao = 'Erro ao criar tag.'
+      });
+    }
+  }
+
+  excluirTag(id: number | undefined) {
+    if (!id) return;
+    if (confirm('Deseja excluir esta peça do catálogo de vistorias?')) {
+      this.tagPecaService.deletarTag(id).subscribe({
+        next: () => this.carregarTags(),
+        error: (err) => console.error('Erro ao excluir tag', err)
+      });
+    }
+  }
+
+  salvarGeral() {
+    if (this.tipoModal === 'servico') {
+      this.salvarServico();
+    } else if (this.tipoModal === 'funcionario') {
+      this.salvarFuncionario();
+    } else if (this.tipoModal === 'tag') {
+      this.salvarTag();
+    }
   }
 }

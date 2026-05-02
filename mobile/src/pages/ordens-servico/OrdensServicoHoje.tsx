@@ -22,6 +22,7 @@ const OrdemServicosHoje: React.FC = () => {
   const [ordensServico, setOrdemServicos] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
   const [nomeUsuario, setNomeUsuario] = useState('Colaborador');
+  const [logoUnidade, setLogoUnidade] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Relógio em tempo real
@@ -36,8 +37,15 @@ const OrdemServicosHoje: React.FC = () => {
       setLoading(true);
     }
 
-    // Busca Perfil para o Header
-    getMeuPerfil().then(p => setNomeUsuario(p.name)).catch(() => {});
+    // Busca Perfil para o Header (Agora com logo dinâmica)
+    getMeuPerfil().then(p => {
+      setNomeUsuario(p.name);
+      if (p.estabelecimento?.logo_url) {
+        setLogoUnidade(p.estabelecimento.logo_url);
+      } else {
+        setLogoUnidade(null);
+      }
+    }).catch(() => {});
 
     getOrdensServicoHoje()
       .then((dados) => {
@@ -70,7 +78,7 @@ const OrdemServicosHoje: React.FC = () => {
           <div style={styles.headerRow}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={styles.logoWrapper}>
-                <img src={logoLavaMe} alt="Lava-Me" style={styles.logoImg} />
+                <img src={logoUnidade || logoLavaMe} alt="Lava-Me" style={styles.logoImg} />
               </div>
               <div>
                 <h1 style={styles.headerTitle}>Lava-Me</h1>

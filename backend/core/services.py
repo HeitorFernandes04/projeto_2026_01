@@ -48,11 +48,15 @@ class EstabelecimentoService:
             if Estabelecimento.objects.filter(cnpj=novo_cnpj).exclude(id=estabelecimento.id).exists():
                 raise ValidationError("CNPJ já está em uso por outro estabelecimento.")
         
-        # Atualiza apenas os campos permitidos
-        campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo']
+        # Atualiza apenas os campos permitidos (RF-13 + RF-21)
+        campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo', 'logo']
         for campo, valor in dados_atualizacao.items():
             if campo in campos_permitidos:
-                setattr(estabelecimento, campo, valor)
+                # Tratamento especial para remoção de logo (string vazia via FormData)
+                if campo == 'logo' and valor == '':
+                    estabelecimento.logo = None
+                else:
+                    setattr(estabelecimento, campo, valor)
         
         estabelecimento.save()
         return estabelecimento

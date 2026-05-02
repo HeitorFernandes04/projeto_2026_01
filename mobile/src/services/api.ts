@@ -112,7 +112,9 @@ export async function registerUsuario(dados: {
 
 /** RF-03 — Lista Ordens de Serviço do dia (Pátio) */
 export async function getOrdensServicoHoje() {
-  return request('/api/ordens-servico/hoje/');
+  return request('/api/ordens-servico/hoje/', {
+    cache: 'no-store'
+  });
 }
 
 /** RF-10 — Lista histórico por período */
@@ -150,7 +152,9 @@ export async function uploadFotos(
 }
 
 export async function getMeuPerfil() {
-  return request('/api/auth/meu_perfil/');
+  return request('/api/auth/meu_perfil/', {
+    cache: 'no-store'
+  });
 }
 
 /** RF-04 — Cria uma nova Ordem de Serviço */

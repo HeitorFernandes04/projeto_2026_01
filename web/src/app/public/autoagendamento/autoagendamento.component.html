@@ -1,0 +1,184 @@
+<!-- Portal de Autoagendamento (RF-21) — Mobile-First -->
+<div class="portal-wrapper">
+
+  <!-- ── ESTADO: CARREGANDO ── -->
+  <ng-container *ngIf="carregando">
+    <div class="portal-header skeleton-header">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-subtitle"></div>
+    </div>
+    <div class="portal-body">
+      <div class="skeleton skeleton-label"></div>
+      <div class="servicos-grid">
+        <div class="skeleton skeleton-card" *ngFor="let i of [1,2,3]"></div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── ESTADO: 404 / NÃO ENCONTRADO ── -->
+  <ng-container *ngIf="!carregando && naoEncontrado">
+    <div class="estado-vazio" id="estado-nao-encontrado">
+      <div class="estado-icone">🔍</div>
+      <h2 class="estado-titulo">Lava-jato não encontrado</h2>
+      <p class="estado-descricao">
+        O link que você acessou pode estar desatualizado ou o estabelecimento foi desativado.
+        Verifique o endereço com quem te enviou.
+      </p>
+    </div>
+  </ng-container>
+
+  <!-- ── ESTADO: ERRO GENÉRICO ── -->
+  <ng-container *ngIf="!carregando && erro && !naoEncontrado">
+    <div class="estado-vazio" id="estado-erro">
+      <div class="estado-icone">⚠️</div>
+      <h2 class="estado-titulo">Algo deu errado</h2>
+      <p class="estado-descricao">
+        Não conseguimos carregar as informações do lava-jato. Tente novamente em instantes.
+      </p>
+    </div>
+  </ng-container>
+
+  <!-- ── ESTADO: SUCESSO ── -->
+  <ng-container *ngIf="!carregando && !erro && estabelecimento">
+
+    <!-- Cabeçalho do estabelecimento -->
+    <div class="portal-header">
+      <div class="header-logo-wrapper">
+        <img [src]="estabelecimento!.logo_url || '/logo.jpeg'" [alt]="estabelecimento!.nome_fantasia" class="header-logo" />
+      </div>
+      <div class="badge-portal">Portal de Agendamento</div>
+      <h1 class="estabelecimento-nome" id="nome-estabelecimento">
+        {{ estabelecimento!.nome_fantasia }}
+      </h1>
+      <div class="estabelecimento-info">
+        <span class="icon-pin">📍</span>
+        {{ estabelecimento!.endereco_completo }}
+      </div>
+    </div>
+
+    <div class="portal-body">
+      
+      <!-- ── PASSO 1: SELEÇÃO DE SERVIÇO (RF-21) ── -->
+      <ng-container *ngIf="passo === 1">
+        <!-- ESTADO: EMPTY STATE (sem serviços) -->
+        <ng-container *ngIf="servicos.length === 0">
+          <div class="estado-vazio" id="estado-sem-servicos">
+            <div class="estado-icone">🚿</div>
+            <h2 class="estado-titulo">Nenhum serviço disponível no momento</h2>
+            <p class="estado-descricao">Este lava-jato ainda não cadastrou serviços ativos.</p>
+          </div>
+        </ng-container>
+
+        <!-- LISTA DE SERVIÇOS -->
+        <ng-container *ngIf="servicos.length > 0">
+          <h2 class="secao-titulo">O que seu veículo precisa hoje?</h2>
+          <div class="servicos-grid" id="lista-servicos">
+            <label *ngFor="let servico of servicos" class="servico-card" [class.selecionado]="servicoSelecionado?.id === servico.id">
+              <input type="radio" name="servico" (change)="selecionarServico(servico)" class="servico-radio" [checked]="servicoSelecionado?.id === servico.id" />
+              <div class="servico-info">
+                <span class="servico-nome">{{ servico.nome }}</span>
+                <div class="servico-meta">
+                  <span class="servico-duracao">⏱ {{ formatarDuracao(servico.duracao_estimada_minutos) }}</span>
+                </div>
+              </div>
+              <div class="servico-preco">{{ formatarPreco(servico.preco) }}</div>
+            </label>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- ── PASSO 2: SELEÇÃO DE HORÁRIO (RF-22) ── -->
+      <ng-container *ngIf="passo === 2">
+        <h2 class="secao-titulo">Escolha um horário</h2>
+        
+        <div class="data-carrossel">
+          <div *ngFor="let d of datasDisponiveis" class="data-card" [class.ativa]="dataSelecionada === d" (click)="dataSelecionada = d">
+            <span class="data-semana">{{ d.semana }}</span>
+            <span class="data-dia">{{ d.dia }}</span>
+            <span class="data-mes">{{ d.mes }}</span>
+          </div>
+        </div>
+
+        <div class="horarios-grid">
+          <button *ngFor="let h of horariosDisponiveis" class="chip-horario" [class.selecionado]="horarioSelecionado === h" (click)="horarioSelecionado = h">
+            {{ h }}
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- ── PASSO 3: CHECKOUT INTEGRADO (RF-23) ── -->
+      <ng-container *ngIf="passo === 3">
+        <h2 class="secao-titulo">Dados para o check-in</h2>
+        
+        <div class="form-row">
+          <div class="form-grupo flex-1">
+            <label>Placa do Veículo</label>
+            <input type="text" (input)="onInputPlaca($event)" placeholder="AAA-0000" class="input-moderno placa-input" maxlength="8" />
+          </div>
+
+          <div class="form-grupo flex-2">
+            <label>Modelo do Veículo</label>
+            <input type="text" [(ngModel)]="dadosAgendamento.modelo" placeholder="Ex: Civic, Corolla..." class="input-moderno" />
+          </div>
+        </div>
+
+        <div class="form-grupo">
+          <label>Cor Predominante</label>
+          <select [(ngModel)]="dadosAgendamento.cor" class="input-moderno">
+            <option value="" disabled selected>Selecione a cor...</option>
+            <option *ngFor="let cor of coresDisponiveis" [value]="cor">{{ cor }}</option>
+          </select>
+        </div>
+
+        <div class="form-grupo">
+          <label>Seu WhatsApp (Para avisarmos quando estiver pronto)</label>
+          <input type="text" (input)="onInputWhatsApp($event)" placeholder="(00) 00000-0000" class="input-moderno" maxlength="15" />
+        </div>
+
+        <div class="checkout-resumo">
+          <div class="resumo-item"><span>Serviço:</span> <strong>{{ servicoSelecionado?.nome }}</strong></div>
+          <div class="resumo-item"><span>Data:</span> <strong>{{ dataSelecionada.objeto | date:'dd/MM' }} às {{ horarioSelecionado }}</strong></div>
+        </div>
+      </ng-container>
+
+      <!-- ── PASSO 4: STATUS E TRANSPARÊNCIA (RF-24/25/26) ── -->
+      <ng-container *ngIf="passo === 4">
+        <div class="sucesso-card">
+          <div class="sucesso-icone">✓</div>
+          <h2 class="sucesso-titulo">Agendamento Confirmado!</h2>
+          <p class="sucesso-sub">Agora é só levar seu veículo no horário marcado.</p>
+          
+          <div class="ticket-status">
+            <div class="ticket-row"><span>Status:</span> <span class="badge-status">{{ statusAgendamento }}</span></div>
+            <div class="ticket-row"><span>Veículo:</span> <strong>{{ dadosAgendamento.placa }}</strong></div>
+            <div class="ticket-divider"></div>
+            <div class="ticket-footer">
+              <button class="btn-cancelar" *ngIf="statusAgendamento === 'PATIO'">Cancelar Agendamento</button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+    </div><!-- /portal-body -->
+
+    <!-- ── RODAPÉ FIXO (CTA) ── -->
+    <div class="portal-footer" *ngIf="servicos.length > 0 && passo < 4">
+      <div class="footer-btns">
+        <button *ngIf="passo > 1" class="btn-voltar" (click)="voltar()">Voltar</button>
+        
+        <button
+          class="btn-cta"
+          [disabled]="!podeAvancar"
+          [class.ativo]="podeAvancar"
+          (click)="passo === 3 ? finalizarAgendamento() : avancar()"
+        >
+          {{ passo === 3 ? 'Confirmar Agendamento' : 'Continuar' }}
+        </button>
+      </div>
+    </div>
+
+  </ng-container>
+  <!-- /sucesso -->
+
+</div>
+<!-- /portal-wrapper -->

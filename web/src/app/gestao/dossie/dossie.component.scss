@@ -1,151 +1,118 @@
+// Variáveis de Design System (Sincronizadas)
+$bg: #0d1117;
+$card: #161b22;
+$card-hover: #1c2128;
+$primary: #0066ff;
+$border: #30363d;
+$text: #e6edf3;
+$text-muted: #8b949e;
+$success: #3fb950;
+$danger: #f87171;
+$font: 'Inter', system-ui, -apple-system, sans-serif;
+
 .dossie-wrapper {
-  padding: 40px;
-  background-color: #0b0e11;
+  padding: 16px;
+  background-color: $bg;
   min-height: 100vh;
-  font-family: 'Inter', sans-serif;
-  color: #e6edf3;
+  font-family: $font;
+  color: $text;
+  box-sizing: border-box;
+
+  @media (min-width: 768px) {
+    padding: 40px;
+  }
 
   /* HEADER */
   .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 32px;
 
     .title-group {
       h1 {
-        font-size: 32px;
+        font-size: 24px;
         font-weight: 800;
         color: #fff;
         margin: 0;
+        letter-spacing: -0.02em;
+        @media (min-width: 768px) { font-size: 32px; }
       }
 
       p {
-        color: #8b949e;
-        font-size: 14px;
+        color: $text-muted;
+        font-size: 13px;
         margin-top: 4px;
       }
     }
 
     .header-actions {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-
       .notification-btn {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 12px;
-        padding: 10px;
+        background: $card;
+        border: 1px solid $border;
+        border-radius: 14px;
+        height: 44px; width: 44px;
+        display: flex; align-items: center; justify-content: center;
         cursor: pointer;
-
-        span { color: #fff; }
-
-        &:hover { background: #21262d; }
+        span { color: #fff; font-size: 20px; }
+        &:hover { background: $card-hover; }
       }
     }
   }
 
   /* CARD PRINCIPAL */
   .dossie-main-card {
-    background-color: #161b22;
-    border-radius: 32px;
-    padding: 40px;
-    border: 1px solid #21262d;
-    margin-bottom: 32px;
+    background-color: $card;
+    border-radius: 24px;
+    padding: 24px;
+    border: 1px solid $border;
+    margin-bottom: 24px;
+
+    @media (min-width: 768px) {
+      padding: 40px;
+      border-radius: 32px;
+    }
 
     .dossie-header-row {
       display: flex;
       align-items: flex-start;
-      gap: 24px;
+      gap: 16px;
+
+      @media (min-width: 768px) { gap: 24px; }
 
       .btn-back-circle {
         flex-shrink: 0;
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: #21262d;
-        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: $bg;
+        border: 1px solid $border;
         color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-
-        &:hover { background: #30363d; }
+        transition: all 0.2s;
+        &:hover { border-color: $primary; color: $primary; }
       }
 
       .dossie-title {
         h2 {
-          font-size: 24px;
+          font-size: 18px;
           font-weight: 800;
           color: #fff;
           margin: 0;
+          @media (min-width: 768px) { font-size: 24px; }
 
-          span {
-            color: #8b949e;
-            font-weight: 400;
-          }
+          span { color: $text-muted; font-weight: 400; }
         }
 
         p {
-          color: #8b949e;
-          font-size: 14px;
+          color: $text-muted;
+          font-size: 13px;
           margin-top: 6px;
         }
       }
-    }
-  }
-
-  /* LOADING */
-  .loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding: 80px 0;
-    color: #8b949e;
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #21262d;
-      border-top-color: #0066ff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* ERRO */
-  .erro-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding: 80px 0;
-    color: #8b949e;
-    text-align: center;
-
-    span {
-      font-size: 48px;
-      color: #f87171;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #0066ff, #0052cc);
-      color: #fff;
-      border: none;
-      border-radius: 999px;
-      padding: 12px 24px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-
-      &:hover { opacity: 0.9; }
     }
   }
 
@@ -153,126 +120,123 @@
   .galeria-container {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
   }
 
   .galeria-card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 24px;
-    padding: 28px;
+    background: $card;
+    border: 1px solid $border;
+    border-radius: 20px;
+    padding: 20px;
+
+    @media (min-width: 768px) { padding: 28px; }
 
     &.incidente {
-      border-color: #7f1d1d;
-      background: #1a0f0f;
+      border-color: rgba($danger, 0.3);
+      background: linear-gradient(180deg, rgba($danger, 0.05) 0%, transparent 100%);
     }
 
     .card-header-inner {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
 
       .icon-circle {
         flex-shrink: 0;
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
 
-        &.gold  { background: rgba(255,179,0,.12); span { color: #ffb300; } }
-        &.green { background: rgba(0,255,136,.12); span { color: #00ff88; } }
-        &.red   { background: rgba(248,113,113,.12); span { color: #f87171; } }
+        &.gold  { background: rgba(255,179,0,.1); span { color: #ffb300; } }
+        &.green { background: rgba($success,.1); span { color: $success; } }
+        &.red   { background: rgba($danger,.1); span { color: $danger; } }
       }
 
       .header-text {
-        h3 {
-          font-size: 17px;
-          font-weight: 700;
-          color: #fff;
-          margin: 0;
-        }
-
-        p {
-          font-size: 13px;
-          color: #8b949e;
-          margin: 4px 0 0;
-        }
+        h3 { font-size: 16px; font-weight: 700; color: #fff; margin: 0; }
+        p { font-size: 12px; color: $text-muted; margin: 2px 0 0; }
       }
     }
 
     .sem-fotos {
-      color: #484f58;
-      font-size: 13px;
+      color: $text-muted;
+      font-size: 12px;
       font-style: italic;
-      padding: 8px 0;
+      padding: 12px;
+      background: $bg;
+      border-radius: 12px;
+      text-align: center;
     }
   }
 
-  /* GRID DE THUMBNAILS */
+  /* GRID DE FOTOS */
   .fotos-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
   }
 
   .foto-item {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: 1px solid #21262d;
-    border-radius: 12px;
+    background: $bg;
+    border: 1px solid $border;
+    border-radius: 14px;
     padding: 6px;
     cursor: zoom-in;
-    transition: border-color 0.15s, transform 0.15s;
+    transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0066ff;
-      transform: translateY(-2px);
-
-      img { opacity: 0.85; }
+      border-color: $primary;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
     img {
       width: 100%;
-      aspect-ratio: 4 / 3;
+      aspect-ratio: 1 / 1;
       object-fit: cover;
-      border-radius: 8px;
+      border-radius: 10px;
       display: block;
-      transition: opacity 0.15s;
     }
 
     .foto-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: #484f58;
+      font-size: 9px;
+      font-weight: 800;
+      color: $text-muted;
       text-transform: uppercase;
       text-align: center;
-      line-height: 1.3;
+      padding: 8px 4px 4px;
+      letter-spacing: 0.05em;
     }
   }
 
   /* AÇÕES */
   .dossie-actions {
     display: flex;
-    justify-content: flex-start;
-    padding-top: 8px;
+    justify-content: center;
+    padding: 20px 0 40px;
 
     .btn-secondary {
-      background: #21262d;
-      color: #c9d1d9;
-      border: none;
-      border-radius: 999px;
-      padding: 12px 24px;
+      background: $card;
+      color: #fff;
+      border: 1px solid $border;
+      border-radius: 14px;
+      height: 48px;
+      padding: 0 32px;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-
-      &:hover { background: #30363d; }
+      transition: all 0.2s;
+      &:hover { border-color: $text-muted; background: $card-hover; }
     }
   }
 
@@ -280,22 +244,22 @@
   .lightbox {
     position: fixed;
     inset: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.92);
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: zoom-out;
     border: none;
-    padding: 24px;
-    animation: fadeIn 0.15s ease;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
 
     img {
-      max-width: min(92vw, 1100px);
-      max-height: 88vh;
+      max-width: 100%;
+      max-height: 90vh;
       object-fit: contain;
-      border-radius: 12px;
-      box-shadow: 0 24px 80px rgba(0,0,0,.8);
+      border-radius: 16px;
+      box-shadow: 0 32px 100px rgba(0,0,0,.8);
     }
   }
 
@@ -304,12 +268,24 @@
     to   { opacity: 1; }
   }
 
-  /* RESPONSIVO */
-  @media (max-width: 768px) {
-    padding: 20px;
+  /* LOADING & ERRO */
+  .loading-state, .erro-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 100px 20px;
+    text-align: center;
+    color: $text-muted;
 
-    .fotos-grid {
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid $card;
+      border-top-color: $primary;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
   }
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }

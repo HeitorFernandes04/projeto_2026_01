@@ -44,5 +44,13 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-  { path: '', redirectTo: 'login', pathMatch: 'full' }
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  // RF-21: Rota pública do Portal de Autoagendamento — SEM canActivate (sem autenticação)
+  {
+    path: 'agendar/:slug',
+    loadComponent: () =>
+      import('./public/autoagendamento/autoagendamento.component').then(
+        m => m.AutoagendamentoComponent
+      )
+  }
 ];

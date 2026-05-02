@@ -143,6 +143,10 @@ documentos\ de\ organização\ desenvolvimento/
 .chroma_db/
 .agents/
 
+# Documentação privada do gestor (dívidas técnicas, memórias de sprint)
+# Nunca commitada — apenas local e acessível à IA
+docs/_privado/
+
 # Node.js
 node_modules/
 npm-debug.log

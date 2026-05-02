@@ -67,19 +67,47 @@ class ServicoListView(generics.ListAPIView):
         ).order_by('nome')
 
 
-class TagPecaListView(generics.ListAPIView):
-    """Lista tags de peça do estabelecimento do usuário."""
+class TagPecaViewSet(viewsets.ModelViewSet):
+    """CRUD de tags de peça do estabelecimento do usuário.
+    
+    Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+    Escrita (create/update/delete): apenas gestores.
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = TagPecaSerializer
 
+    def _obter_estabelecimento(self, user):
+        """Resolve o estabelecimento do usuário (gestor ou funcionário)."""
+        if hasattr(user, 'perfil_gestor'):
+            return user.perfil_gestor.estabelecimento
+        if hasattr(user, 'perfil_funcionario'):
+            return user.perfil_funcionario.estabelecimento
+        return None
+
     def get_queryset(self):
-        estabelecimento = self.request.user.estabelecimento
+        estabelecimento = self._obter_estabelecimento(self.request.user)
         if not estabelecimento:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Usuário sem estabelecimento vinculado.")
-        return TagPeca.objects.filter(
-            estabelecimento=estabelecimento
-        ).order_by('nome')
+        return TagPeca.objects.filter(estabelecimento=estabelecimento).order_by('nome')
+
+    def _verificar_gestor(self):
+        """Garante que apenas gestores executem operações de escrita."""
+        if not hasattr(self.request.user, 'perfil_gestor'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Apenas gestores podem gerenciar tags.")
+
+    def perform_create(self, serializer):
+        self._verificar_gestor()
+        serializer.save(estabelecimento=self.request.user.perfil_gestor.estabelecimento)
+
+    def perform_update(self, serializer):
+        self._verificar_gestor()
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        self._verificar_gestor()
+        instance.delete()
 
 
 class GestaoViewSet(viewsets.ViewSet):
@@ -98,38 +126,39 @@ class GestaoViewSet(viewsets.ViewSet):
         if request.method == 'GET':
             # Retorna dados do estabelecimento do usuário logado
             estabelecimento = EstabelecimentoService.obter_estabelecimento_usuario(request.user)
-            
+
             data = {
                 'id': estabelecimento.id,
                 'nome_fantasia': estabelecimento.nome_fantasia,
                 'cnpj': estabelecimento.cnpj,
                 'endereco_completo': estabelecimento.endereco_completo,
-                'is_active': estabelecimento.is_active
+                'is_active': estabelecimento.is_active,
+                # RF-21: Logo retornada no GET para o frontend exibir imediatamente
+                'logo_url': request.build_absolute_uri(estabelecimento.logo.url) if estabelecimento.logo else None,
+                'slug': estabelecimento.slug,
             }
             return Response(data)
-        
+
         elif request.method == 'PATCH':
-            # Atualiza dados do estabelecimento (RF-13)
+            # Atualiza dados do estabelecimento (RF-13 + RF-21)
             try:
-                dados_atualizacao = request.data
-                
-                # Validação de campos permitidos
-                campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo']
+                # Validação de campos permitidos (incluindo upload de logo)
+                campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo', 'logo']
                 dados_filtrados = {
-                    k: v for k, v in dados_atualizacao.items() 
+                    k: v for k, v in request.data.items()
                     if k in campos_permitidos
                 }
-                
+
                 if not dados_filtrados:
                     return Response(
                         {'error': 'Nenhum campo válido fornecido para atualização.'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+
                 estabelecimento = EstabelecimentoService.atualizar_dados_estabelecimento(
                     request.user, dados_filtrados
                 )
-                
+
                 # CA-05: Dados refletidos imediatamente na resposta
                 data = {
                     'id': estabelecimento.id,
@@ -137,23 +166,27 @@ class GestaoViewSet(viewsets.ViewSet):
                     'cnpj': estabelecimento.cnpj,
                     'endereco_completo': estabelecimento.endereco_completo,
                     'is_active': estabelecimento.is_active,
-                    'message': 'Dados atualizados com sucesso.'
+                    'logo_url': request.build_absolute_uri(estabelecimento.logo.url) if estabelecimento.logo else None,
+                    'slug': estabelecimento.slug,
+                    'message': 'Dados da unidade atualizados com sucesso!'
                 }
                 return Response(data)
-                
+
             except ValidationError as e:
-                return Response(
-                    {'error': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                # Mapeia erros técnicos para mensagens legíveis ao gestor
+                mensagem = str(e)
+                if 'CNPJ' in mensagem and 'em uso' in mensagem:
+                    mensagem = 'Este CNPJ já está vinculado a outra unidade cadastrada no sistema.'
+                elif 'CNPJ' in mensagem:
+                    mensagem = 'CNPJ inválido. Verifique se o número contém exatamente 14 dígitos.'
+                return Response({'error': mensagem}, status=status.HTTP_400_BAD_REQUEST)
+
             except PermissionDenied as e:
-                return Response(
-                    {'error': str(e)},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+
             except Exception as e:
                 return Response(
-                    {'error': 'Erro interno do servidor.'},
+                    {'error': 'Não foi possível salvar as alterações. Tente novamente em instantes.'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 

@@ -28,6 +28,7 @@ describe('AppComponent - Fluxo de Gestao Protegido Unificado', () => {
       logout: vi.fn(),
       estaLogado: vi.fn(),
       obterPerfil: vi.fn().mockReturnValue(of(null)),
+      perfil$: of(null),
     };
 
     mockIncidentesService = {

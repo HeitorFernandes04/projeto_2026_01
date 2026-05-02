@@ -18,6 +18,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,6 +26,13 @@ urlpatterns = [
     path('api/gestao/', include('core.urls')),
     path('api/ordens-servico/', include('operacao.urls')),
     path('api/incidentes-os/', include('operacao.incidentes_urls')),
+    # RF-21: Portal de Autoagendamento — rotas públicas (sem autenticação)
+    path('api/publico/', include('agendamento_publico.urls')),
+    
+    # Documentação da API (drf-spectacular)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 # Servir arquivos de mídia (uploads) em desenvolvimento

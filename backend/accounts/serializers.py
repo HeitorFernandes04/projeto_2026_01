@@ -4,9 +4,37 @@ from accounts.models import User, Estabelecimento, Cliente, Funcionario, Gestor,
 
 
 class EstabelecimentoSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Estabelecimento
-        fields = ['id', 'nome_fantasia', 'cnpj', 'endereco_completo', 'is_active']
+        fields = ['id', 'nome_fantasia', 'cnpj', 'endereco_completo', 'is_active', 'slug', 'logo', 'logo_url']
+
+    def get_logo_url(self, obj):
+        if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        return None
+
+
+class EstabelecimentoUpdateSerializer(serializers.ModelSerializer):
+    """Serializer restrito para atualização de configurações pelo Gestor."""
+    logo_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Estabelecimento
+        fields = ['nome_fantasia', 'cnpj', 'endereco_completo', 'slug', 'logo', 'logo_url']
+        read_only_fields = ['slug']
+
+    def get_logo_url(self, obj):
+        if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        return None
 
 
 class ClienteSerializer(serializers.ModelSerializer):
