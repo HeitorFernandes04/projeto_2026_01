@@ -46,7 +46,7 @@ export class SetupComponent implements OnInit, OnDestroy {
   logoParaUpload: File | null = null;
   logoPreview: string | null = null;
   logoRemovida: boolean = false;
-  defaultLogo = '/static/assets/logo-lavame.png';
+  defaultLogo = '/logo.jpeg';
 
   // Estado da Unidade (RF-13 - Dados Reais do Banco)
   unidade: Estabelecimento = {
@@ -308,6 +308,9 @@ export class SetupComponent implements OnInit, OnDestroy {
       this.cdRef.detectChanges();
     };
     reader.readAsDataURL(file);
+    
+    // Reseta o valor do input para permitir selecionar o mesmo arquivo novamente
+    event.target.value = '';
   }
 
   removerLogo() {

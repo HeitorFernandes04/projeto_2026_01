@@ -16,14 +16,25 @@ class EstabelecimentoSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.logo.url)
             return obj.logo.url
-        return "/static/assets/logo-lavame.png"
+        return None
 
 
 class EstabelecimentoUpdateSerializer(serializers.ModelSerializer):
     """Serializer restrito para atualização de configurações pelo Gestor."""
+    logo_url = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Estabelecimento
-        fields = ['nome_fantasia', 'endereco_completo', 'logo']
+        fields = ['nome_fantasia', 'cnpj', 'endereco_completo', 'slug', 'logo', 'logo_url']
+        read_only_fields = ['slug']
+
+    def get_logo_url(self, obj):
+        if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        return None
 
 
 class ClienteSerializer(serializers.ModelSerializer):

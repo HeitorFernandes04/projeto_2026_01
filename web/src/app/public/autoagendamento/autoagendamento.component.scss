@@ -1,312 +1,415 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// Portal de Autoagendamento (RF-21) — Design System "Premium Industrial"
-// Mobile-First: base para mobile, media queries expandem para desktop.
-// Tokens de cor herdados do sistema global (app.scss / styles.scss).
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ── Tokens locais (espelham o Design System global) ──────────────────────
-$bg:          #0b0e11;
-$card:        #161b22;
-$card-hover:  #1c2128;
-$border:      #21262d;
-$primary:     #0066ff;
-$primary-glow:rgba(0, 102, 255, 0.35);
-$text:        #f0f6fc;
-$text-muted:  #8b949e;
-$success:     #3fb950;
-$font:        'Inter', sans-serif;
+// Variáveis de Design System
+$bg: #0d1117;
+$card: #161b22;
+$card-hover: #1c2128;
+$primary: #0066ff;
+$border: #30363d;
+$text: #e6edf3;
+$text-muted: #8b949e;
+$success: #3fb950;
+$font: 'Inter', system-ui, -apple-system, sans-serif;
 
 // ── Wrapper principal ────────────────────────────────────────────────────
 .portal-wrapper {
   min-height: 100vh;
   width: 100%;
-  max-width: 520px;         // Mobile-First: centralizado em desktop
+  max-width: 100%; 
   margin: 0 auto;
   background: $bg;
   display: flex;
   flex-direction: column;
   font-family: $font;
-  padding-bottom: 100px;    // Espaço para o footer fixo
+  padding-top: 20px;
+  padding-bottom: 110px;
+  position: relative;
+  box-sizing: border-box;
+
+  @media (min-width: 768px) {
+    max-width: 850px; // Largura confortável para Desktop
+    padding-top: 40px;
+    box-shadow: 0 0 100px rgba(0,0,0,0.5);
+    margin: 20px auto;
+    border-radius: 24px;
+    min-height: calc(100vh - 40px);
+  }
 }
 
 // ── Cabeçalho do Estabelecimento ─────────────────────────────────────────
 .portal-header {
-  padding: 80px 20px 32px; // Respiro superior generoso para a logo
-  background: linear-gradient(180deg, #161b22 0%, $bg 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 32px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-bottom: 1px solid $border;
+  text-align: center;
 
-  .logo-wrapper {
-    margin-bottom: 24px;
-    filter: drop-shadow(0 4px 12px rgba(0, 102, 255, 0.2));
+  .header-logo-wrapper {
+    width: 70px;
+    height: 70px;
+    background: $card;
+    border-radius: 18px;
+    padding: 3px;
+    border: 1px solid $border;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 
-    .brand-logo {
-      height: 64px; // Tamanho mais harmônico
-      width: 64px;
-      object-fit: contain;
-      border-radius: 16px; // Quadrado arredondado (estilo app)
-      border: 1px solid rgba(0, 102, 255, 0.3);
-      padding: 8px;
-      background: #ffffff; // Fundo branco para logos coloridas
-    }
-
-    .brand-logo-placeholder {
-      height: 64px;
-      width: 64px;
-      background: $card;
-      border: 1px solid $border;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      color: $primary;
+    .header-logo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 14px;
     }
   }
 
-  .header-badge {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: $primary;
+  .badge-portal {
     background: rgba(0, 102, 255, 0.1);
-    border: 1px solid rgba(0, 102, 255, 0.2);
-    border-radius: 8px;
+    color: $primary;
     padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
     margin-bottom: 12px;
   }
 
   .estabelecimento-nome {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
-    color: #ffffff;
+    color: #fff;
     margin: 0 0 8px;
-    text-align: center;
-    letter-spacing: -0.02em;
   }
 
-  .estabelecimento-endereco {
+  .estabelecimento-info {
     font-size: 13px;
     color: $text-muted;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    max-width: 80%;
-    text-align: center;
-
-    .icon-pin { font-size: 14px; color: $primary; }
   }
 }
 
 // ── Corpo da tela ────────────────────────────────────────────────────────
 .portal-body {
   flex: 1;
-  padding: 32px 24px;
+  padding: 24px 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .secao-titulo {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: $text-muted;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin: 0 0 20px;
+  margin-bottom: 24px;
 }
 
-// ── Cards de Serviço ─────────────────────────────────────────────────────
+// ── Cards de Serviço (GRID RESPONSIVO) ──────────────────────────────────
 .servicos-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr; // Mobile: 1 coluna
   gap: 12px;
+
+  @media (min-width: 600px) {
+    grid-template-columns: 1fr 1fr; // Tablet/Desktop: 2 colunas
+  }
 }
 
 .servico-card {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
+  padding: 16px;
   background: $card;
   border: 1px solid $border;
   border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-
-  .servico-radio {
-    position: absolute;
-    opacity: 0;
-  }
+  transition: all 0.2s ease;
 
   .servico-info {
     flex: 1;
-    .servico-nome {
-      display: block;
-      font-size: 16px;
-      font-weight: 600;
-      color: $text;
-      margin-bottom: 4px;
-    }
-    .servico-meta {
-      .servico-duracao { font-size: 12px; color: $text-muted; }
-    }
+    .servico-nome { display: block; font-size: 15px; font-weight: 600; color: #fff; }
+    .servico-meta { font-size: 12px; color: $text-muted; }
   }
 
-  .servico-preco {
-    font-size: 16px;
-    font-weight: 700;
-    color: #ffffff;
-  }
-
-  .servico-check {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 2px solid $border;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    color: transparent;
-    transition: all 0.2s ease;
-  }
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-    background: $card-hover;
-  }
+  .servico-preco { font-weight: 700; color: #fff; }
 
   &.selecionado {
     border-color: $primary;
     background: rgba(0, 102, 255, 0.05);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+}
 
-    .servico-check {
-      background: $primary;
+// ── Carrossel e Horários ────────────────────────────────────────────────
+.data-carrossel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+
+  .data-card {
+    flex: 0 0 80px;
+    height: 100px;
+    background: $card;
+    border: 1px solid $border;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    .data-semana { font-size: 9px; font-weight: 800; color: $text-muted; text-transform: uppercase; }
+    .data-dia    { font-size: 22px; font-weight: 800; color: #fff; }
+
+    &.ativa {
       border-color: $primary;
-      color: #fff;
+      background: rgba(0, 102, 255, 0.1);
+      .data-semana, .data-dia { color: $primary; }
     }
   }
 }
 
-// ── Rodapé Fixo (CTA) ────────────────────────────────────────────────────
-.portal-footer {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 520px;
-  padding: 24px 20px 32px;
-  background: linear-gradient(0deg, $bg 60%, transparent 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  z-index: 100;
+.horarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 24px;
 
-  .footer-resumo {
+  .chip-horario {
+    height: 48px;
+    background: $card;
+    border: 1px solid $border;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 6px 16px;
-    border-radius: 100px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
 
-    .footer-resumo-label { color: $text-muted; }
-    .footer-resumo-nome  { color: #fff; font-weight: 600; }
-    .footer-resumo-preco { color: $primary; font-weight: 700; }
+    &.selecionado {
+      background: $primary;
+      border-color: $primary;
+    }
   }
 }
 
-.btn-cta {
-  width: 85%; // 80-85% conforme solicitado
-  height: 56px; // Altura fixa para manter proporção
-  border: none;
-  border-radius: 16px;
-  font-size: 16px;
-  font-weight: 800;
-  font-family: $font;
-  letter-spacing: 0.02em;
-  cursor: pointer;
+// ── Checkout (FORMULÁRIO RESPONSIVO) ───────────────────────────────────
+.form-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (min-width: 600px) {
+    flex-direction: row; // Desktop: Lado a lado
+  }
+
+  .form-grupo {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+.form-grupo {
+  margin-bottom: 20px;
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: $text-muted;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+}
+
+.input-moderno {
+  width: 100%;
+  height: 48px;
+  background: $card;
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 0 16px;
+  color: #fff;
+  font-family: $font;
+  box-sizing: border-box;
+
+  &:focus { outline: none; border-color: $primary; }
+}
+
+.placa-input {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.checkout-resumo {
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed $border;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 24px;
+
+  .resumo-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 8px;
+    span { color: $text-muted; }
+    strong { color: #fff; }
+  }
+}
+
+// ── Footer Navegação (PADRONIZADO UI/UX) ────────────────────────────────
+.portal-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(0deg, $bg 85%, transparent 100%);
+  z-index: 1000;
+  display: flex;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 
-  // Estado DESABILITADO
-  background: #1c2128;
-  color: #484f58;
-  cursor: not-allowed;
+  @media (min-width: 768px) {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: 850px;
+    padding: 24px;
+    border-radius: 0 0 24px 24px;
+  }
+}
 
-  // Estado ATIVO
-  &.ativo {
-    background: $primary;
-    color: #ffffff;
-    box-shadow: 0 8px 24px rgba(0, 102, 255, 0.4);
+.footer-btns {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px; // Largura máxima confortável para os botões
+  margin: 0 auto;
 
-    &:hover {
-      background: #1a7fff;
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(0, 102, 255, 0.5);
-    }
+  .btn-voltar {
+    flex: 1; // 33% do espaço aproximadamente
+    height: 52px;
+    background: transparent;
+    border: 1px solid $border;
+    border-radius: 14px;
+    color: #fff;
+    font-weight: 700;
+    font-family: $font;
+    cursor: pointer;
+    transition: all 0.2s;
+    &:active { transform: scale(0.98); }
+  }
 
-    &:active {
-      transform: scale(0.97);
+  .btn-cta {
+    flex: 2; // 66% do espaço para destaque da ação principal
+    height: 52px;
+    border: none;
+    border-radius: 14px;
+    font-weight: 800;
+    font-family: $font;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    
+    background: #1c2128;
+    color: #484f58;
+
+    &:disabled { cursor: not-allowed; }
+    &:active:not(:disabled) { transform: scale(0.98); }
+
+    &.ativo {
+      background: $primary;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0, 102, 255, 0.3);
     }
   }
 }
 
-
-// ── Estados Vazios / Erro ────────────────────────────────────────────────
-.estado-vazio {
+// ── Passo 4: Sucesso e Status (RESPONSIVO) ────────────────────────────────
+.sucesso-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   text-align: center;
-  padding: 60px 32px;
-  gap: 12px;
+  padding: 20px 0;
 
-  .estado-icone {
-    font-size: 52px;
-    margin-bottom: 4px;
+  .sucesso-icone {
+    width: 56px;
+    height: 56px;
+    background: $success;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #fff;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(63, 185, 80, 0.3);
   }
 
-  .estado-titulo {
-    font-size: 20px;
+  .sucesso-titulo { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .sucesso-sub { font-size: 13px; color: $text-muted; margin-bottom: 32px; }
+}
+
+.ticket-status {
+  width: 100%;
+  max-width: 400px;
+  background: $card;
+  border: 1px solid $border;
+  border-radius: 20px;
+  padding: 24px;
+  margin: 0 auto;
+
+  .ticket-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 13px;
+    span { color: $text-muted; }
+    strong { color: #fff; }
+  }
+
+  .badge-status {
+    background: rgba(0, 102, 255, 0.1);
+    color: $primary;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 10px;
     font-weight: 700;
-    color: $text;
-    margin: 0;
   }
 
-  .estado-descricao {
-    font-size: 14px;
-    color: $text-muted;
-    line-height: 1.6;
-    margin: 0;
-    max-width: 320px;
+  .ticket-divider {
+    height: 1px;
+    border-top: 1px dashed $border;
+    margin: 16px 0;
+  }
+
+  .btn-cancelar {
+    width: 100%;
+    height: 44px;
+    background: transparent;
+    border: 1px solid rgba(235, 87, 87, 0.3);
+    color: #eb5757;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
   }
 }
 
 // ── Skeleton Loading ─────────────────────────────────────────────────────
-.skeleton-header {
-  background: linear-gradient(180deg, #0d1117 0%, $bg 100%);
-  border-bottom: 1px solid $border;
-}
-
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-
 .skeleton {
   background: linear-gradient(90deg, $card 25%, $card-hover 50%, $card 75%);
   background-size: 800px 100%;
@@ -314,7 +417,11 @@ $font:        'Inter', sans-serif;
   border-radius: 8px;
 }
 
-.skeleton-title    { height: 28px; width: 70%; margin-bottom: 12px; }
-.skeleton-subtitle { height: 14px; width: 50%; }
-.skeleton-label    { height: 20px; width: 55%; margin-bottom: 16px; }
-.skeleton-card     { height: 80px; width: 100%; }
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-title    { height: 24px; width: 60%; margin-bottom: 12px; }
+.skeleton-subtitle { height: 14px; width: 40%; }
+.skeleton-card     { height: 80px; width: 100%; margin-bottom: 12px; }

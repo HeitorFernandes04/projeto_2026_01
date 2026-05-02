@@ -37,11 +37,7 @@ class EstabelecimentoPublicoSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.logo.url)
             return obj.logo.url
         
-        # Fallback para logo oficial com URL absoluta
-        path_default = "/static/assets/logo-lavame.png"
-        if request:
-            return request.build_absolute_uri(path_default)
-        return path_default
+        return None
 
     def get_servicos(self, obj):
         # CA-02 / Cenário 1: filtrar somente serviços ativos do estabelecimento

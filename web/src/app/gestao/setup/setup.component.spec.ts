@@ -8,6 +8,9 @@ import { ServicoService, Servico } from '../../services/servico.service';
 import { EstabelecimentoService, Estabelecimento } from '../../services/estabelecimento.service';
 import { IncidentesService } from '../../services/incidentes.service';
 
+import { TagPecaService } from '../../services/tag-peca.service';
+import { AuthService } from '../../services/auth.service';
+
 // Import the component class only for testing logic
 import { SetupComponent } from './setup.component';
 
@@ -18,6 +21,8 @@ describe('SetupComponent - Configurações do Sistema', () => {
   let funcionarioServiceSpy: any;
   let dashboardServiceSpy: any;
   let incidentesServiceSpy: any;
+  let tagPecaServiceSpy: any;
+  let authServiceSpy: any;
   let routerSpy: any;
 
   // Mock data
@@ -42,7 +47,8 @@ describe('SetupComponent - Configurações do Sistema', () => {
     nome_fantasia: 'Lava-Me Centro',
     cnpj: '12.345.678/9012-34',
     endereco_completo: 'Rua das Flores, 123 - Centro, São Paulo - SP',
-    is_active: true
+    is_active: true,
+    slug: 'lava-me-centro'
   };
 
   beforeEach(() => {
@@ -79,6 +85,14 @@ describe('SetupComponent - Configurações do Sistema', () => {
       navigate: vi.fn()
     };
 
+    tagPecaServiceSpy = {
+      listarTags: vi.fn().mockReturnValue(of([]))
+    };
+
+    authServiceSpy = {
+      recarregarPerfil: vi.fn()
+    };
+
     const mockCdRef = {
       detectChanges: vi.fn()
     };
@@ -90,7 +104,9 @@ describe('SetupComponent - Configurações do Sistema', () => {
       estabelecimentoServiceSpy,
       funcionarioServiceSpy,
       dashboardServiceSpy,
-      incidentesServiceSpy as IncidentesService,
+      incidentesServiceSpy as any,
+      tagPecaServiceSpy as any,
+      authServiceSpy as any,
       mockCdRef as any
     );
     
@@ -284,8 +300,8 @@ describe('SetupComponent - Configurações do Sistema', () => {
     });
 
     it('deve exibir link de agendamento corretamente', () => {
-      // Ajustado com link fictício do component.ts
-      expect(component.linkAgendamento).toContain('https://lavame.com.br/agendar/');
+      expect(component.linkAgendamento).toContain('/agendar/');
+      expect(component.linkAgendamento).toContain(mockEstabelecimento.slug);
     });
 
     it('deve ter botão copiarLink funcional', () => {

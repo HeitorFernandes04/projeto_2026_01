@@ -42,6 +42,8 @@ const OrdemServicosHoje: React.FC = () => {
       setNomeUsuario(p.name);
       if (p.estabelecimento?.logo_url) {
         setLogoUnidade(p.estabelecimento.logo_url);
+      } else {
+        setLogoUnidade(null);
       }
     }).catch(() => {});
 
