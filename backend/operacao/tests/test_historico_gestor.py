@@ -172,8 +172,8 @@ class TestHistoricoGestorFotosView:
     def test_galeria_retorna_as_tres_secoes(self):
         gestor = GestorFactory()
         os = OrdemServicoFactory(estabelecimento=gestor.estabelecimento, status='FINALIZADO')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='ENTRADA')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZACAO')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZADO')
 
         response = self._client(gestor.user).get(self._url(os.id))
 
@@ -183,12 +183,12 @@ class TestHistoricoGestorFotosView:
         assert 'estado_meio' in data
         assert 'estado_final' in data
 
-    # Teste 2 (CA-02): estado_inicial agrupa ENTRADA e AVARIA_PREVIA
+    # Teste 2 (CA-02): estado_inicial agrupa VISTORIA_GERAL e AVARIA_PREVIA
     def test_estado_inicial_agrupa_vistoria_e_avarias(self):
         gestor = GestorFactory()
         os = OrdemServicoFactory(estabelecimento=gestor.estabelecimento, status='FINALIZADO')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='ENTRADA')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='ENTRADA')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
         MidiaOrdemServicoFactory(ordem_servico=os, momento='AVARIA_PREVIA')
 
         response = self._client(gestor.user).get(self._url(os.id))
@@ -199,8 +199,8 @@ class TestHistoricoGestorFotosView:
     def test_estado_final_agrupa_fotos_finalizado(self):
         gestor = GestorFactory()
         os = OrdemServicoFactory(estabelecimento=gestor.estabelecimento, status='FINALIZADO')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZACAO')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZACAO')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZADO')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZADO')
 
         response = self._client(gestor.user).get(self._url(os.id))
 
@@ -210,7 +210,7 @@ class TestHistoricoGestorFotosView:
     def test_estado_meio_inclui_fotos_de_execucao(self):
         gestor = GestorFactory()
         os = OrdemServicoFactory(estabelecimento=gestor.estabelecimento, status='FINALIZADO')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='PROCESSO')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='EXECUCAO')
 
         response = self._client(gestor.user).get(self._url(os.id))
 

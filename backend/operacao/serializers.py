@@ -140,27 +140,12 @@ def validar_extensao_imagem(arquivo):
 
 
 class MidiaOrdemServicoUploadSerializer(serializers.Serializer):
-    momento = serializers.ChoiceField(choices=[c for c, _ in MidiaOrdemServico.MOMENTO_CHOICES])
+    momento = serializers.ChoiceField(choices=['VISTORIA_GERAL', 'FINALIZADO', 'AVARIA_PREVIA', 'EXECUCAO'])
     arquivos = serializers.ListField(
         child=serializers.ImageField(validators=[validar_extensao_imagem]),
         allow_empty=False,
         max_length=5,
     )
-
-
-class GaleriaClienteSerializer(serializers.ModelSerializer):
-    """Serializer para a galeria do cliente - RF-26."""
-    arquivo_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = MidiaOrdemServico
-        fields = ['id', 'arquivo_url', 'momento']
-
-    def get_arquivo_url(self, obj):
-        request = self.context.get('request')
-        if request and obj.arquivo:
-            return request.build_absolute_uri(obj.arquivo.url)
-        return None
 
 
 class HistoricoOrdemServicoFiltroSerializer(serializers.Serializer):

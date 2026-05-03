@@ -15,7 +15,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
-from .permissions import IsFuncionarioDaOS, IsGestor, IsOwnerOrStaff
+from .permissions import IsFuncionarioDaOS, IsGestor
 from .serializers import (
     KanbanCardSerializer,
     OrdemServicoSerializer,
@@ -24,7 +24,6 @@ from .serializers import (
     HistoricoGestorFiltroSerializer,
     HistoricoGestorItemSerializer,
     MidiaGaleriaSerializer,
-    GaleriaClienteSerializer,
     MidiaOrdemServicoSerializer,
     MidiaOrdemServicoUploadSerializer,
     ServicoSerializer,
@@ -441,29 +440,3 @@ class HistoricoGestorFotosView(APIView):
             'estado_meio':    MidiaGaleriaSerializer(galeria['estado_meio'],    many=True, context=ctx).data,
             'estado_final':   MidiaGaleriaSerializer(galeria['estado_final'],   many=True, context=ctx).data,
         })
-
-
-# ---------------------------------------------------------------------------
-#  RF-26 — Galeria Pós-Venda (Transparência Limitada para o Cliente)
-# ---------------------------------------------------------------------------
-
-class GaleriaClienteView(APIView):
-    """GET /api/publico/galeria/{id}/"""
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsOwnerOrStaff]
-
-    def get(self, request, pk):
-        os = request.ordem_servico
-        
-        # RN: Galeria liberada apenas quando FINALIZADO
-        if os.status != 'FINALIZADO':
-            return Response(
-                {'detail': 'A galeria só estará disponível após a finalização do serviço.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        # Filtra apenas ENTRADA e FINALIZACAO (RF-26.1)
-        midias = os.midias.filter(momento__in=['ENTRADA', 'FINALIZACAO'])
-        
-        serializer = GaleriaClienteSerializer(midias, many=True, context={'request': request})
-        return Response(serializer.data)

@@ -8,7 +8,7 @@ import './EstadoVistoria.css';
 interface Midia {
   id?: number;
   arquivo: string;
-  momento: 'ENTRADA' | 'FINALIZACAO' | 'PROCESSO' | 'INCIDENTE' | 'ACABAMENTO';
+  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
 }
 
 interface OrdemServicoVistoria {
@@ -38,7 +38,7 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
 
   useEffect(() => { carregarDados(); }, [carregarDados]);
 
-  const fotosExistentes = ordemServico?.midias?.filter((m: Midia) => m.momento === 'ENTRADA') || [];
+  const fotosExistentes = ordemServico?.midias?.filter((m: Midia) => m.momento === 'VISTORIA_GERAL') || [];
   const podeConcluir = fotosExistentes.length >= 5;
 
   const handleFinalizar = async (e?: React.MouseEvent) => {
@@ -74,7 +74,7 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
 
       <GaleriaFotos
         ordemServicoId={ordemServicoId}
-        momento="ENTRADA"
+        momento="VISTORIA_GERAL"
         fotosIniciais={ordemServico?.midias || []}
         onUploadSuccess={carregarDados}
       />

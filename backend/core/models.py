@@ -23,23 +23,11 @@ class Servico(models.Model):
 
 class Veiculo(models.Model):
     """Cadastro base de veículos consumido pela Operação."""
-    COR_CHOICES = [
-        ('BRANCO', 'Branco'),
-        ('PRETO', 'Preto'),
-        ('CINZA', 'Cinza'),
-        ('PRATA', 'Prata'),
-        ('VERMELHO', 'Vermelho'),
-        ('AZUL', 'Azul'),
-        ('VERDE', 'Verde'),
-        ('AMARELO', 'Amarelo'),
-        ('OUTRO', 'Outro'),
-    ]
     estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
-    cliente = models.ForeignKey('accounts.Cliente', on_delete=models.SET_NULL, null=True, blank=True, related_name='veiculos')
     placa = models.CharField(max_length=10, unique=True)
     modelo = models.CharField(max_length=50)
     marca = models.CharField(max_length=50)
-    cor = models.CharField(max_length=30, choices=COR_CHOICES, default='OUTRO')
+    cor = models.CharField(max_length=30)
     nome_dono = models.CharField(max_length=100, null=True, blank=True)
     celular_dono = models.CharField(max_length=20, null=True, blank=True)
 

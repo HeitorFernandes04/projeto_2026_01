@@ -82,7 +82,7 @@ class MidiaOrdemServicoFactory(factory.django.DjangoModelFactory):
 
     ordem_servico = factory.SubFactory(OrdemServicoFactory)
     arquivo = factory.django.ImageField(color='blue')
-    momento = 'ENTRADA'
+    momento = 'VISTORIA_GERAL'
 
 
 class TagPecaFactory(factory.django.DjangoModelFactory):

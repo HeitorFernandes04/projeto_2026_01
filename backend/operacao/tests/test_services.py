@@ -21,10 +21,10 @@ def gerar_foto_valida(nome='foto.jpg'):
 @pytest.mark.django_db
 class TestOrdemServicoServiceEtapas:
     def test_deve_avancar_vistoria_para_execucao_com_fotos_obrigatorias(self):
-        """RN-09: Com 5 fotos ENTRADA, deve avancar de PATIO para VISTORIA_INICIAL."""
+        """RN-09: Com 5 fotos VISTORIA_GERAL, deve avancar de PATIO para VISTORIA_INICIAL."""
         os = OrdemServicoFactory(status='PATIO')
         for _ in range(5):
-            MidiaOrdemServicoFactory(ordem_servico=os, momento='ENTRADA')
+            MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
 
         dados = {'laudo_vistoria': 'Veiculo em bom estado'}
         os_atualizada = OrdemServicoService.avancar_etapa(os.id, dados)
@@ -46,7 +46,7 @@ class TestOrdemServicoServiceEtapas:
         """Garante que o fluxo de 4 etapas finaliza em LIBERACAO sem pular status."""
         os = OrdemServicoFactory(status='PATIO')
         for _ in range(5):
-            MidiaOrdemServicoFactory(ordem_servico=os, momento='ENTRADA')
+            MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
 
         os = OrdemServicoService.avancar_etapa(os.id, {})
         assert os.status == 'VISTORIA_INICIAL'
@@ -65,21 +65,21 @@ class TestOrdemServicoServiceEtapas:
     def test_nao_deve_avancar_vistoria_sem_cinco_fotos(self):
         """RN-09: Com menos de 5 fotos, deve recusar o avanco de etapa."""
         os = OrdemServicoFactory(status='PATIO')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='ENTRADA')
-        MidiaOrdemServicoFactory(ordem_servico=os, momento='ENTRADA')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
+        MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
 
         with pytest.raises(ValueError) as exc:
             OrdemServicoService.avancar_etapa(os.id, {})
         assert 'mínimo de 5 fotos' in str(exc.value)
 
     def test_upload_liberacao_aceita_finalizado(self):
-        """Sucesso: deve permitir upload de fotos FINALIZACAO quando o status e LIBERACAO."""
+        """Sucesso: deve permitir upload de fotos FINALIZADO quando o status e LIBERACAO."""
         os = OrdemServicoFactory(status='LIBERACAO')
         foto = gerar_foto_valida()
 
-        midias = MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZACAO', [foto])
+        midias = MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZADO', [foto])
         assert len(midias) == 1
-        assert midias[0].momento == 'FINALIZACAO'
+        assert midias[0].momento == 'FINALIZADO'
 
     def test_upload_liberacao_bloqueia_vistoria(self):
         """Nao deve permitir fotos de vistoria na fase de liberacao."""
@@ -87,16 +87,16 @@ class TestOrdemServicoServiceEtapas:
         foto = gerar_foto_valida()
 
         with pytest.raises(ValidationError) as exc:
-            MidiaOrdemServicoService.processar_upload_multiplo(os, 'ENTRADA', [foto])
+            MidiaOrdemServicoService.processar_upload_multiplo(os, 'VISTORIA_GERAL', [foto])
         assert 'não é permitido' in str(exc.value)
 
     def test_upload_bloqueado_em_finalizado(self):
-        """Nao deve permitir upload apos a OS estar FINALIZACAO."""
+        """Nao deve permitir upload apos a OS estar FINALIZADO."""
         os = OrdemServicoFactory(status='FINALIZADO')
         foto = gerar_foto_valida()
 
         with pytest.raises(ValidationError):
-            MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZACAO', [foto])
+            MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZADO', [foto])
 
 
 @pytest.mark.django_db

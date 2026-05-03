@@ -22,18 +22,12 @@ export interface EstabelecimentoPublico {
   servicos: ServicoPublico[];
 }
 
-export interface MidiaGaleria {
-  id: number;
-  arquivo_url: string;
-  momento: string;
-}
-
 @Injectable({
   providedIn: 'root'
 })
 export class AutoagendamentoPublicoService {
   // Endpoint público — sem autenticação (RF-21)
-  private readonly apiUrl = '/api/publico';
+  private readonly apiUrl = '/api/publico/estabelecimento';
 
   constructor(private http: HttpClient) {}
 
@@ -43,7 +37,7 @@ export class AutoagendamentoPublicoService {
    */
   getEstabelecimento(slug: string): Observable<EstabelecimentoPublico> {
     return this.http
-      .get<EstabelecimentoPublico>(`${this.apiUrl}/estabelecimento/${slug}/`)
+      .get<EstabelecimentoPublico>(`${this.apiUrl}/${slug}/`)
       .pipe(
         map(est => ({
           ...est,
@@ -55,12 +49,5 @@ export class AutoagendamentoPublicoService {
           }))
         }))
       );
-  }
-
-  /**
-   * RF-26: Busca a galeria de fotos de uma Ordem de Serviço finalizada.
-   */
-  getGaleria(osId: number): Observable<MidiaGaleria[]> {
-    return this.http.get<MidiaGaleria[]>(`${this.apiUrl}/galeria/${osId}/`);
   }
 }

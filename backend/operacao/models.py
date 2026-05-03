@@ -32,16 +32,9 @@ class OrdemServico(models.Model):
     observacoes = models.TextField(blank=True, null=True)
 
 class MidiaOrdemServico(models.Model):
-    MOMENTO_CHOICES = [
-        ('ENTRADA', 'Vistoria de Entrada'),
-        ('FINALIZACAO', 'Entrega / Finalização'),
-        ('PROCESSO', 'Processo / Lavagem'),
-        ('INCIDENTE', 'Registro de Incidente'),
-        ('ACABAMENTO', 'Acabamento / Detalhamento'),
-    ]
     ordem_servico = models.ForeignKey(OrdemServico, on_delete=models.CASCADE, related_name='midias')
     arquivo = models.ImageField(upload_to='os/')
-    momento = models.CharField(max_length=20, choices=MOMENTO_CHOICES)
+    momento = models.CharField(max_length=20)
     
 class IncidenteOS(models.Model):
     """Registro de incidentes operacionais que bloqueiam a OS."""
