@@ -1,7 +1,5 @@
-<!-- Portal de Autoagendamento (RF-21) — Premium Dashboard -->
 <div class="portal-wrapper">
-
-  <!-- ── ESTADO: CARREGANDO ── -->
+  <!-- --- ESTADO: CARREGANDO --- -->
   <ng-container *ngIf="carregando">
     <div class="skeleton-wrapper">
       <div class="skeleton-header"></div>
@@ -9,10 +7,9 @@
     </div>
   </ng-container>
 
-  <!-- ── ESTADO: SUCESSO ── -->
+  <!-- --- ESTADO: SUCESSO --- -->
   <ng-container *ngIf="!carregando && !erro && estabelecimento">
-
-    <!-- Cabeçalho (Dashboard Style) -->
+    <!-- Cabeçalho Fixo -->
     <header class="portal-header">
       <div class="header-logo-container">
         <img [src]="estabelecimento!.logo_url || '/logo.jpeg'" class="main-logo" />
@@ -24,95 +21,148 @@
     </header>
 
     <main class="portal-main">
-
-      <!-- Seção de Serviços -->
-      <section class="section-servicos">
-        <h2 class="section-label">Serviços Disponíveis</h2>
-        <div class="servicos-grid">
-          <div *ngFor="let servico of servicos" class="servico-card-v"
-            [class.selected]="servicoSelecionado?.id === servico.id" (click)="selecionarServico(servico)">
-
-            <div class="servico-icon-wrapper">
-              <div class="icon-circle">
-                <span *ngIf="servico.nome.toLowerCase().includes('basic')">🚗</span>
-                <span *ngIf="!servico.nome.toLowerCase().includes('basic')">✨</span>
+      <!-- PASSO 1: Seleção de Serviços e Horários -->
+      <ng-container *ngIf="passo === 1">
+        <section class="section-servicos">
+          <h2 class="section-label">Serviços Disponíveis</h2>
+          <div class="servicos-grid">
+            <div *ngFor="let servico of servicos" class="servico-card-v"
+                 [class.selected]="servicoSelecionado?.id === servico.id"
+                 (click)="selecionarServico(servico)">
+              <div class="servico-icon-wrapper">
+                <div class="icon-circle">
+                  <span>{{ servico.nome.toLowerCase().includes('basic') ? '🚗' : '✨' }}</span>
+                </div>
+              </div>
+              <h3 class="servico-name">{{ servico.nome }}</h3>
+              <div class="servico-price">{{ formatarPreco(servico.preco) }}</div>
+              <div class="servico-duration">
+                <span class="icon-clock">⏱</span> {{ formatarDuracao(servico.duracao_estimada_minutos) }}
               </div>
             </div>
+          </div>
+        </section>
 
-            <h3 class="servico-name">{{ servico.nome }}</h3>
-
-            <div class="servico-price">{{ formatarPreco(servico.preco) }}</div>
-            <div class="servico-duration">
-              <span class="icon-clock">⏱</span> {{ formatarDuracao(servico.duracao_estimada_minutos) }}
+        <!-- Motor de Disponibilidade (Aparece ao selecionar serviço) -->
+        <div class="agendamento-flex-container" *ngIf="servicoSelecionado">
+          <section class="section-data">
+            <h2 class="section-label">Escolha a Data</h2>
+            <div class="calendar-card">
+              <header class="calendar-header">
+                <span class="calendar-month">{{ mesAtualNome }}</span>
+                <div class="calendar-nav">
+                  <button class="nav-btn" (click)="mudarMes(-1)">‹</button>
+                  <button class="nav-btn" (click)="mudarMes(1)">›</button>
+                </div>
+              </header>
+              <div class="calendar-grid">
+                <div class="calendar-weekdays">
+                  <div *ngFor="let dia of nomesDias" class="weekday">{{ dia }}</div>
+                </div>
+                <div class="calendar-days">
+                  <div *ngFor="let dia of diasDoMes" 
+                       class="calendar-day"
+                       [class.today]="dia?.hoje"
+                       [class.selected]="dia?.selecionado"
+                       [class.past]="dia?.passado"
+                       [class.disabled]="!dia || dia.passado"
+                       (click)="selecionarData(dia)">
+                    <span *ngIf="dia">{{ dia.dia }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
+          </section>
+
+          <section class="section-horario">
+            <h2 class="section-label">Escolha o Horário</h2>
+            <div class="horarios-card">
+              <div *ngIf="carregandoHorarios" class="loading-horarios">
+                <div class="loading-spinner"></div>
+                <span>Carregando horários...</span>
+              </div>
+              <div *ngIf="!carregandoHorarios && horariosDisponiveis.length === 0" class="no-horarios">
+                <span>Nenhum horário disponível para esta data</span>
+              </div>
+              <div *ngIf="!carregandoHorarios && horariosDisponiveis.length > 0" class="horarios-grid">
+                <div *ngFor="let horario of horariosDisponiveis" 
+                     class="horario-chip"
+                     [class.selected]="horarioSelecionado === horario.inicio"
+                     (click)="horarioSelecionado = horario.inicio">
+                  {{ horario.inicio }}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </ng-container>
+
+      <!-- PASSO 2 (Checkout): Dados do Cliente e Veículo -->
+      <section class="section-checkout" *ngIf="passo === 2">
+        <h2 class="section-label">Dados para o Check-in</h2>
+
+        <div class="checkout-grid">
+          <!-- Inputs de Placa, Modelo, Cor e WhatsApp conforme sua imagem -->
+          <div class="input-row">
+            <div class="form-group">
+              <label>Placa do Veículo</label>
+              <input type="text" placeholder="AAA-0000" (input)="onInputPlaca($event)" [(ngModel)]="dadosAgendamento.placa" maxlength="8">
+            </div>
+            <div class="form-group">
+              <label>Modelo do Veículo</label>
+              <input type="text" placeholder="Ex: Civic, Corolla..." [(ngModel)]="dadosAgendamento.modelo">
+            </div>
+          </div>
+          
+          <div class="input-row">
+            <div class="form-group">
+              <label>Seu Nome</label>
+              <input type="text" placeholder="Nome completo ou apelido" [(ngModel)]="dadosAgendamento.nome">
+            </div>
+            <div class="form-group">
+              <label>Cor Predominante</label>
+              <select class="form-select" [(ngModel)]="dadosAgendamento.cor">
+                <option value="">Selecione...</option>
+                <option *ngFor="let cor of coresDisponiveis" [value]="cor">{{ cor }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="input-row">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label>Seu WhatsApp</label>
+              <input type="text" placeholder="(00) 00000-0000" (input)="onInputWhatsApp($event)" [(ngModel)]="dadosAgendamento.whatsapp" maxlength="15">
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumo do Pedido -->
+        <div class="resumo-pedido-card">
+          <div class="resumo-row">
+            <span class="label">Serviço:</span>
+            <span class="valor-bold">{{ servicoSelecionado?.nome }}</span>
+          </div>
+          <div class="resumo-row">
+            <span class="label">Data:</span>
+            <span class="valor-bold">{{ dataSelecionada.objeto | date:"dd/MM" }} às {{ horarioSelecionado }}</span>
           </div>
         </div>
       </section>
 
-      <!-- Seção de Agendamento (Surgi ao selecionar serviço) -->
-      <div class="agendamento-flex-container" *ngIf="servicoSelecionado">
-
-        <!-- Escolha a Data (Calendário) -->
-        <section class="section-data">
-          <h2 class="section-label">Escolha a Data</h2>
-          <div class="calendar-card">
-            <header class="calendar-header">
-              <span class="calendar-month">{{ mesAtualNome }}</span>
-              <div class="calendar-nav">
-                <button class="nav-btn" (click)="mudarMes(-1)">‹</button>
-                <button class="nav-btn" (click)="mudarMes(1)">›</button>
-              </div>
-            </header>
-
-            <div class="calendar-week-names">
-              <div class="day-name" *ngFor="let nome of nomesDias">{{ nome }}</div>
-            </div>
-
-            <div class="calendar-days-grid">
-              <div *ngFor="let dia of diasDoMes" class="day-slot" 
-                   [class.empty]="!dia" 
-                   [class.today]="dia?.hoje"
-                   [class.selected]="dia?.selecionado" 
-                   [class.passado]="dia?.passado"
-                   (click)="selecionarData(dia)">
-                {{ dia?.dia }}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Escolha o Horário -->
-        <section class="section-horario">
-          <h2 class="section-label">Escolha o Horário</h2>
-          <div class="horarios-card">
-            <div class="horarios-card-header">
-              <span class="icon-clock">🕒</span>
-              Horários Disponíveis - {{ dataSelecionada.objeto | date:"d 'de' MMMM" }}
-            </div>
-
-            <div class="horarios-grid-chips" [class.is-loading]="carregandoHorarios">
-              <button *ngFor="let slot of horariosDisponiveis" class="time-chip-v"
-                [class.selected]="horarioSelecionado === slot.inicio" (click)="horarioSelecionado = slot.inicio">
-                {{ slot.inicio }}
-              </button>
-
-              <div class="no-slots-v" *ngIf="!carregandoHorarios && horariosDisponiveis.length === 0">
-                Nenhum horário disponível para esta data.
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </div>
-
-      <!-- Footer CTA -->
+      <!-- FOOTER DE AÇÃO UNIFICADO -->
       <footer class="portal-action-footer" *ngIf="servicoSelecionado">
-        <button class="btn-primary-huge" [disabled]="!horarioSelecionado" (click)="avancar()">
+        <button class="btn-voltar-outline" (click)="voltar()" *ngIf="passo > 1">Voltar</button>
+
+        <!-- Botão para avançar do Passo 1 para o 2 -->
+        <button class="btn-primary-huge" *ngIf="passo === 1" [disabled]="!horarioSelecionado" (click)="avancar()">
           Continuar para Dados
         </button>
+
+        <!-- Botão final de checkout no Passo 2 -->
+        <button class="btn-confirmar-huge" *ngIf="passo === 2" [disabled]="!podeFinalizar || enviando" (click)="confirmarAgendamento()">
+          {{ enviando ? 'Processando...' : 'Confirmar Agendamento' }}
+        </button>
       </footer>
-
     </main>
-
   </ng-container>
 </div>

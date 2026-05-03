@@ -59,8 +59,11 @@ export class PainelComponent implements OnInit, OnDestroy {
    * Atualiza os dados do painel baseado nas ordens de serviço
    */
   private atualizarDadosPainel(): void {
+    // Busca nome real do cliente do sessionStorage (vindo do formulário RF-23)
+    const nomeCliente = sessionStorage.getItem('clienteNome') || 'Cliente';
+    
     this.dados = {
-      cliente_nome: 'João Silva', // Mock inicial para Letícia Lopes[cite: 1]
+      cliente_nome: nomeCliente,
       ativos: this.ordensAtivas,
       historico: this.ordensFinalizadas
     };
