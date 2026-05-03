@@ -1,0 +1,89 @@
+<div class="galeria-transparencia-wrapper">
+  <!-- HEADER SUPERIOR -->
+  <header class="portal-header">
+    <div class="header-inner">
+      <img src="/logo.jpeg" class="brand-logo" alt="Lava-Me Logo">
+      <button class="btn-sair-publico" (click)="sair()">Sair</button>
+    </div>
+  </header>
+
+  <main class="content-body">
+    <!-- NAVEGAÇÃO -->
+    <button class="btn-voltar-link" (click)="voltar()">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Voltar
+    </button>
+
+    <!-- TÍTULOS -->
+    <section class="hero-section">
+      <h1 class="titulo-galeria">Galeria de Transparência</h1>
+      <p class="subtitulo-galeria">Veja o resultado do seu serviço</p>
+    </section>
+
+    <!-- NOVO: CARD DE RESUMO DO VEÍCULO E SERVIÇO -->
+    <div class="card-resumo-veiculo">
+      <div class="veiculo-main-info">
+        <div class="icon-car-bg">
+          <span class="material-symbols-outlined">directions_car</span>
+        </div>
+        <div class="veiculo-text">
+          <h3>Toyota Corolla</h3>
+          <p>BRA-2E19</p>
+        </div>
+      </div>
+      <div class="servico-tag-resumo">
+        <span class="label">Serviço Realizado:</span>
+        <span class="valor">BASIC</span>
+      </div>
+    </div>
+
+    <!-- CONTAINER 1: FOTOS DO VEÍCULO -->
+    <div class="card-container-transparencia">
+      <div class="section-header">
+        <div class="icon-circle green-bg">
+          <span class="material-symbols-outlined">photo_library</span>
+        </div>
+        <div class="text-group">
+          <h2 class="section-title">Fotos do Veículo</h2>
+          <p class="section-subtitle">Pós-serviço completo</p>
+        </div>
+      </div>
+
+      <div class="fotos-grid">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="foto-item">
+            <img src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=500" alt="Veículo" class="foto-img">
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- CONTAINER 2: LAUDO TÉCNICO (SEPARADO) -->
+    <div class="card-container-transparencia">
+      <div class="section-header">
+        <div class="icon-circle blue-bg">
+          <span class="material-symbols-outlined">description</span>
+        </div>
+        <div class="text-group">
+          <h2 class="section-title">Laudo Técnico</h2>
+          <p class="section-subtitle">Relatório do serviço</p>
+        </div>
+      </div>
+
+      <div class="laudo-stack">
+        <div class="laudo-card-item">
+          <label>Serviço Realizado</label>
+          <strong>Full Service</strong>
+        </div>
+        <div class="laudo-card-item">
+          <label>Tempo de Execução</label>
+          <strong>58 minutos</strong>
+        </div>
+        <div class="laudo-card-item">
+          <label>Observações</label>
+          <p>Veículo em excelente estado. Pintura sem arranhões. Interior higienizado completamente.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

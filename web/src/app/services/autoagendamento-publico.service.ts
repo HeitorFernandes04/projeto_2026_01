@@ -20,6 +20,7 @@ export interface EstabelecimentoPublico {
   endereco_completo: string;
   logo_url?: string; // Campo opcional vindo do backend
   servicos: ServicoPublico[];
+  slug?: string; // Adicionado para navegação RF-25
 }
 
 @Injectable({

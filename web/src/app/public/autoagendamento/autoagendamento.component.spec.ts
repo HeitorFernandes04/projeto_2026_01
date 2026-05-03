@@ -35,11 +35,22 @@ function criarComponente(mockService: Partial<AutoagendamentoPublicoService>) {
     snapshot: { paramMap: { get: vi.fn().mockReturnValue('lava-me-premium') } },
   } as any;
 
+  const mockRouter = {
+    navigate: vi.fn(),
+  } as any;
+
   const mockCdr = { markForCheck: vi.fn() } as any;
+
+  // Garantir que o mock tenha todos os métodos necessários
+  const serviceMock = {
+    getEstabelecimento: vi.fn(),
+    ...mockService,
+  };
 
   return new AutoagendamentoComponent(
     mockRoute,
-    mockService as AutoagendamentoPublicoService,
+    mockRouter,
+    serviceMock as AutoagendamentoPublicoService,
     mockCdr,
   );
 }

@@ -8,6 +8,13 @@ O projeto segue uma estrutura baseada em módulos funcionais e serviços central
 - `web/src/app/auth/`: Lógica de autenticação, login e Guards de rota.
 - `web/src/app/services/`: Camada de abstração de API (Singleton).
 - `web/src/app/shared/`: Componentes e pipes reutilizáveis.
+- `web/src/app/public/`: Módulos B2C (Portal do Cliente).
+  - `autoagendamento/`: RF-21 - Portal Público de Agendamento
+  - `painel-cliente/`: RF-24/25/26 - Painel Unificado do Cliente
+    - `componentes/`: Subcomponentes especializados
+      - `status-ativo/`: RF-24 - Status e Cancelamento
+      - `lista-historico/`: RF-25 - Histórico Global
+      - `galeria-dossie/`: RF-26 - Transparência Limitada
 
 ## 2. Design System (Tokens de Cores)
 As cores são extraídas do `styles.scss` e devem ser usadas via variáveis CSS:

@@ -1,0 +1,39 @@
+<div class="card-historico-container">
+  <!-- Header: Veículo e Horário -->
+  <div class="card-header">
+    <div class="veiculo-info">
+      <div class="icon-car-circle">
+        <span class="material-symbols-outlined">directions_car</span>
+      </div>
+      <div class="veiculo-detalhe">
+        <h3>{{ historico?.placa || 'DEF-5555' }}</h3>
+        <p>{{ historico?.modelo || 'VW Golf 2021' }}</p>
+      </div>
+    </div>
+    <div class="horario-info">
+      <span class="label">Horário</span>
+      <span class="valor-destaque">{{ historico?.horario || '10:00' }}</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Detalhes da Data -->
+  <div class="info-row">
+    <span class="label">Data do Serviço</span>
+    <span class="valor">{{ historico?.data || '15/04/2026' }}</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Detalhes do Serviço -->
+  <div class="info-row">
+    <span class="label">Serviço</span>
+    <span class="valor-bold">{{ historico?.servico || 'BASIC' }}</span>
+  </div>
+
+  <!-- Botão Ver Dossiê Completo -->
+  <button class="btn-ver-dossie" (click)="verDetalhes()">
+    Ver Dossiê Completo
+  </button>
+</div>

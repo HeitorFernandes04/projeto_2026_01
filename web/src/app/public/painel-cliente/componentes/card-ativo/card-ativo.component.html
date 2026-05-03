@@ -1,0 +1,79 @@
+<div class="card-ativo-container">
+  <!-- Header: Veículo e Horário -->
+  <div class="card-header">
+    <div class="veiculo-info">
+      <div class="icon-car-circle">
+        <span class="material-symbols-outlined">directions_car</span>
+      </div>
+      <div class="veiculo-detalhe">
+        <h3>{{ ativo?.modelo || 'A' }}</h3>
+        <p>{{ ativo?.placa || 'a' }}</p>
+      </div>
+    </div>
+    <div class="horario-info">
+      <span class="label">Horário</span>
+      <span class="valor-destaque">{{ ativo?.horario || '18:00' }}</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Detalhes da Data -->
+  <div class="info-row">
+    <span class="label">Data do Serviço</span>
+    <span class="valor">{{ ativo?.data || '02/05/2026' }}</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Detalhes do Serviço -->
+  <div class="info-row">
+    <span class="label">Serviço</span>
+    <span class="valor-bold">{{ ativo?.servico || 'BASIC' }}</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Progresso Vertical -->
+  <div class="progresso-vertical">
+    <h4>Progresso do Serviço</h4>
+    
+    <div class="stepper-vertical">
+      <div class="step" [class.active]="ativo?.status === 'PATIO'">
+        <div class="step-icon">
+          <span class="material-symbols-outlined">search</span>
+        </div>
+        <div class="step-content">
+          <span class="step-title">Vistoria</span>
+          <span class="step-sub">Inspeção inicial</span>
+        </div>
+      </div>
+
+      <div class="step" [class.active]="ativo?.status === 'EM_EXECUCAO'">
+        <div class="step-icon">
+          <span class="material-symbols-outlined">water_drop</span>
+        </div>
+        <div class="step-content">
+          <span class="step-title">Lavagem</span>
+          <span class="step-sub">Limpeza completa</span>
+        </div>
+      </div>
+
+      <div class="step" [class.active]="ativo?.status === 'LIBERACAO'">
+        <div class="step-icon">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+        <div class="step-content">
+          <span class="step-title">Liberação</span>
+          <span class="step-sub">Pronto para retirada</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ação de Cancelamento -->
+  <button class="btn-cancelar-agendamento" (click)="cancelarAgendamento()">
+    <span class="material-symbols-outlined">close</span>
+    Cancelar Agendamento
+  </button>
+</div>

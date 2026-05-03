@@ -1,0 +1,80 @@
+<div class="portal-wrapper">
+  <header class="portal-header">
+    <div class="header-inner">
+      <img src="/logo.jpeg" class="brand-logo" alt="Lava-Me Logo">
+      <button class="btn-logout" (click)="logout()">
+        Sair
+        <span class="material-symbols-outlined">logout</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="portal-body" *ngIf="dados">
+    <section class="hero-welcome">
+      <h1 class="greeting-text">Bem-vindo, {{ dados.cliente_nome }}</h1>
+      <p class="experience-tag">Acompanhe seu veículo em tempo real</p>
+    </section>
+
+    <!-- CARD DE STATUS GERAL (Acima das abas - sempre visível) -->
+    <app-status-ativo 
+      *ngIf="ordensAtivas.length > 0" 
+      [ativo]="ordensAtivas[0]">
+    </app-status-ativo>
+
+    <nav class="pill-navigation">
+      <button class="nav-pill" [class.active]="abaAtiva === 'ativos'" (click)="abaAtiva = 'ativos'">
+        <span class="material-symbols-outlined">directions_car</span>
+        Ativos ({{ ordensAtivas.length }})
+      </button>
+      <button class="nav-pill" [class.active]="abaAtiva === 'historico'" (click)="abaAtiva = 'historico'">
+        <span class="material-symbols-outlined">history</span>
+        Histórico ({{ ordensFinalizadas.length }})
+      </button>
+    </nav>
+
+    <div class="tab-content">
+      <!-- ABA ATIVOS -->
+      <div *ngIf="abaAtiva === 'ativos'" class="tab-pane">
+        <div class="secao-header" *ngIf="ordensAtivas.length > 0" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: white; font-size: 18px; font-weight: 800; margin: 0;">Serviços Ativos</h2>
+          <span style="color: #8b949e; font-size: 13px;">{{ ordensAtivas.length }} veículos</span>
+        </div>
+
+        <div class="ativos-list">
+          <!-- Cards individuais dos veículos ativos -->
+          <app-card-ativo 
+            *ngFor="let veiculo of ordensAtivas" 
+            [ativo]="veiculo">
+          </app-card-ativo>
+        </div>
+        
+        <div *ngIf="ordensAtivas.length === 0" class="empty-state">
+          <span class="material-symbols-outlined">directions_car</span>
+          <p>Nenhum serviço ativo no momento.</p>
+        </div>
+      </div>
+
+      <!-- ABA HISTÓRICO -->
+      <div *ngIf="abaAtiva === 'historico'" class="tab-pane">
+        <!-- Conteúdo da aba histórico -->
+        <div class="secao-header" *ngIf="ordensFinalizadas.length > 0" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: white; font-size: 18px; font-weight: 800; margin: 0;">Histórico de Serviços</h2>
+          <span style="color: #8b949e; font-size: 13px;">{{ ordensFinalizadas.length }} serviços</span>
+        </div>
+        
+        <!-- Cards de Histórico (Novo Layout) -->
+        <div class="historico-list">
+          <app-card-historico 
+            *ngFor="let historico of ordensFinalizadas" 
+            [historico]="historico">
+          </app-card-historico>
+        </div>
+        
+        <div *ngIf="ordensFinalizadas.length === 0" class="empty-state">
+          <span class="material-symbols-outlined">history</span>
+          <p>Nenhum histórico de serviços encontrado.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

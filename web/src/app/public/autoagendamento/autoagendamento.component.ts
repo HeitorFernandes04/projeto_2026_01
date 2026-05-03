@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   AutoagendamentoPublicoService,
   EstabelecimentoPublico,
@@ -55,6 +55,7 @@ export class AutoagendamentoComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
+    private readonly router: Router,
     private readonly service: AutoagendamentoPublicoService,
     private readonly cdr: ChangeDetectorRef,
   ) {}
@@ -134,7 +135,7 @@ export class AutoagendamentoComponent implements OnInit {
     if (this.passo === 1) return this.servicoSelecionado !== null;
     if (this.passo === 2) return this.horarioSelecionado !== null;
     if (this.passo === 3) return !!(this.dadosAgendamento.placa && this.dadosAgendamento.whatsapp && this.dadosAgendamento.cor);
-    return true;
+    return false; // Não permite avanço além do passo 3
   }
 
   selecionarServico(servico: ServicoPublico): void {
@@ -143,7 +144,7 @@ export class AutoagendamentoComponent implements OnInit {
   }
 
   avancar(): void {
-    if (this.podeAvancar && this.passo < 4) {
+    if (this.podeAvancar && this.passo < 3) {
       this.passo++;
       window.scrollTo(0, 0);
       this.cdr.markForCheck();
@@ -158,7 +159,13 @@ export class AutoagendamentoComponent implements OnInit {
   }
 
   finalizarAgendamento(): void {
-    this.avancar(); // Move para o passo 4 (Sucesso)
+    // 1. Aqui executa a lógica de salvar do seu colega...
+    // 2. Após o sucesso do backend, navegamos para a nova rota que você criou:
+    const slug = this.estabelecimento?.slug || 'scala-unidade-centro'; // Fallback para teste
+    if (slug) {
+      // Navega para localhost:4200/agendar/scala-unidade-centro/painel
+      this.router.navigate(['/agendar', slug, 'painel']);
+    }
   }
 
   formatarPreco(preco: number): string {
