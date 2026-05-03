@@ -1,15 +1,17 @@
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied, ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.models import TagPeca, Servico
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
-from .serializers import TagPecaSerializer, IncidenteOSSerializer
+from agendamento_publico.views import EstabelecimentoPublicoRateThrottle
+from .serializers import TagPecaSerializer, IncidenteOSSerializer, CheckoutPublicoSerializer
 from .services import IncidenteService
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
@@ -454,3 +456,17 @@ class HistoricoGestorFotosView(APIView):
             'estado_meio':    MidiaGaleriaSerializer(galeria['estado_meio'],    many=True, context=ctx).data,
             'estado_final':   MidiaGaleriaSerializer(galeria['estado_final'],   many=True, context=ctx).data,
         })
+
+
+class CheckoutPublicoView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [EstabelecimentoPublicoRateThrottle] # Proteção RNF-02
+
+    def post(self, request):
+        serializer = CheckoutPublicoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            os = OrdemServicoService.finalizar_checkout_publico(serializer.validated_data)
+            return Response(OrdemServicoSerializer(os).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

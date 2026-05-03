@@ -232,6 +232,50 @@ class OrdemServicoService:
         os.save()
 
         return os
+    
+
+
+    @staticmethod
+    @transaction.atomic
+    def finalizar_checkout_publico(dados):
+        """RF-23: Cria agendamento B2C garantindo integridade e atomicidade."""
+        estabelecimento = Estabelecimento.objects.filter(slug=dados['slug'], is_active=True).first()
+        if not estabelecimento:
+            raise ValidationError("Estabelecimento não encontrado")
+        
+        servico = Servico.objects.filter(id=dados['servico_id'], estabelecimento=estabelecimento).first()
+        if not servico:
+            raise ValidationError("Serviço não encontrado")
+
+        # LOCK PESSIMISTA (Sugerido no Report RF-22) para evitar Race Condition
+        Estabelecimento.objects.select_for_update().get(id=estabelecimento.id)
+
+        # Validação de disponibilidade (RF-22)
+        OrdemServicoService.verificar_conflito(
+            dados['data_hora'], 
+            datetime.timedelta(minutes=servico.duracao_estimada_minutos)
+        )
+
+        # Cria ou atualiza o veículo (Cadastro Dinâmico)
+        veiculo, _ = Veiculo.objects.update_or_create(
+            placa=dados['placa'],
+            defaults={
+                'modelo': dados['modelo'],
+                'cor': dados['cor'],
+                'nome_dono': dados['nome_cliente'],
+                'celular_dono': dados['whatsapp'],
+                'estabelecimento': estabelecimento
+            }
+        )
+
+        # Cria a Ordem de Serviço inicial no Pátio
+        return OrdemServico.objects.create(
+            estabelecimento=estabelecimento,
+            veiculo=veiculo,
+            servico=servico,
+            data_hora=dados['data_hora'],
+            status='PATIO'
+        )
 
 
 class HistoricoGestorService:
