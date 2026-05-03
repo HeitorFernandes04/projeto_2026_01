@@ -110,7 +110,10 @@ class OrdemServicoService:
 
     @staticmethod
     def verificar_conflito(data_hora, duracao):
-        """Verifica sobreposição de horários e limite operacional (18:00)."""
+        """Valida se o slot está disponível e não é retroativo."""
+        if data_hora < timezone.now():
+            raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
+
         fim = data_hora + duracao
         
         # Trava Rígida (REQUISITOS_RF22_HORARIOS.pdf - 1.2)

@@ -135,10 +135,17 @@ export class AutoagendamentoComponent implements OnInit {
         objeto: d,
         dia: i,
         hoje: this.isHoje(d),
-        selecionado: this.isSelecionado(d)
+        selecionado: this.isSelecionado(d),
+        passado: this.isPassado(d)
       });
     }
     this.cdr.markForCheck();
+  }
+
+  isPassado(d: Date): boolean {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return d < hoje;
   }
 
   isHoje(d: Date): boolean {
@@ -166,7 +173,7 @@ export class AutoagendamentoComponent implements OnInit {
   }
 
   selecionarData(dia: any) {
-    if (!dia || this.isSelecionado(dia.objeto)) return;
+    if (!dia || dia.passado || this.isSelecionado(dia.objeto)) return;
     this.dataSelecionada = {
       objeto: dia.objeto,
       dia: dia.dia,

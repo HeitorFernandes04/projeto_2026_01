@@ -7,7 +7,11 @@ from accounts.models import Estabelecimento
 class DisponibilidadeService:
     @staticmethod
     def calcular_horarios_livres(estabelecimento: Estabelecimento, servico: Servico, data_alvo: datetime.date):
-        # 1. Definir limites operacionais (RF-22)
+        # 1. Trava retroativa (RF-22)
+        if data_alvo < timezone.localdate():
+            return []
+
+        # 2. Definir limites operacionais (RF-22)
         # Trava rígida de 18:00 conforme REQUISITOS_RF22_HORARIOS.pdf
         limite_operacional = datetime.time(18, 0)
         hora_fechamento = min(estabelecimento.horario_fechamento, limite_operacional)

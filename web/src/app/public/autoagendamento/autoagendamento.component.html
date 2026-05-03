@@ -69,8 +69,12 @@
             </div>
 
             <div class="calendar-days-grid">
-              <div *ngFor="let dia of diasDoMes" class="day-slot" [class.empty]="!dia" [class.today]="dia?.hoje"
-                [class.selected]="dia?.selecionado" (click)="selecionarData(dia)">
+              <div *ngFor="let dia of diasDoMes" class="day-slot" 
+                   [class.empty]="!dia" 
+                   [class.today]="dia?.hoje"
+                   [class.selected]="dia?.selecionado" 
+                   [class.passado]="dia?.passado"
+                   (click)="selecionarData(dia)">
                 {{ dia?.dia }}
               </div>
             </div>

@@ -99,4 +99,33 @@ describe('AutoagendamentoComponent — Lógica RF-22 (Motor de Disponibilidade)'
     );
     expect(component.horarioSelecionado).toBeNull();
   });
+
+  it('deve identificar corretamente datas passadas e hoje', () => {
+    const hoje = new Date();
+    const ontem = new Date();
+    ontem.setDate(hoje.getDate() - 1);
+    const amanha = new Date();
+    amanha.setDate(hoje.getDate() + 1);
+
+    expect(component.isPassado(ontem)).toBe(true);
+    expect(component.isPassado(hoje)).toBe(false);
+    expect(component.isPassado(amanha)).toBe(false);
+  });
+
+  it('não deve permitir selecionar uma data passada', () => {
+    const ontem = new Date();
+    ontem.setDate(ontem.getDate() - 1);
+    
+    const diaPassado = {
+      objeto: ontem,
+      dia: ontem.getDate(),
+      passado: true
+    };
+
+    // Data atual antes do teste (deve ser hoje)
+    const dataInicial = component.dataSelecionada.objeto.getDate();
+
+    component.selecionarData(diaPassado);
+    expect(component.dataSelecionada.objeto.getDate()).toBe(dataInicial);
+  });
 });
