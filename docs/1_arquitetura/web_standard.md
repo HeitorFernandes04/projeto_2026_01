@@ -13,8 +13,9 @@ O projeto segue uma estrutura baseada em módulos funcionais e serviços central
   - `painel-cliente/`: RF-24/25/26 - Painel Unificado do Cliente
     - `componentes/`: Subcomponentes especializados
       - `status-ativo/`: RF-24 - Status e Cancelamento
-      - `lista-historico/`: RF-25 - Histórico Global
-      - `galeria-dossie/`: RF-26 - Transparência Limitada
+      - `card-ativo/`: Componente de exibição de veículo em pátio.
+      - `card-historico/`: Componente de exibição de histórico (RF-25).
+      - `galeria-transparencia/`: RF-26 - Transparência Limitada.
 
 ## 2. Design System (Tokens de Cores)
 As cores são extraídas do `styles.scss` e devem ser usadas via variáveis CSS:
@@ -33,7 +34,7 @@ As cores são extraídas do `styles.scss` e devem ser usadas via variáveis CSS:
 
 ### 3.2 Serviços e API
 - Devem estender um serviço base ou usar o `HttpClient` com tratamento de erro centralizado.
-- **Endpoints:** Todas as URLs devem começar com `/api/gestao/` para rotas de backoffice.
+- **Endpoints:** Todas as URLs devem começar com `/api/gestao/` para rotas de backoffice e `/api/cliente/` para rotas B2C.
 
 ## 4. Testes (Vitest)
 - Todo componente deve ter um arquivo `.spec.ts`.
