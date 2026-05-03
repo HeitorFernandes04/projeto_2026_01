@@ -10,6 +10,7 @@ export interface OrdemServico {
   servico: string;
   status: 'PATIO' | 'VISTORIA_INICIAL' | 'EM_EXECUCAO' | 'LIBERACAO' | 'FINALIZADO';
   previsao_entrega: string;
+  nome_dono?: string; // Nome do cliente para exibição no painel
 }
 
 @Injectable({
@@ -29,7 +30,8 @@ export class OrdemServicoService {
       data: '06/05/2026',
       servico: 'BASIC',
       status: 'PATIO',
-      previsao_entrega: '18:30'
+      previsao_entrega: '18:30',
+      nome_dono: 'Carlos Silva'
     },
     {
       id: 2,
@@ -39,7 +41,8 @@ export class OrdemServicoService {
       data: '06/05/2026',
       servico: 'PREMIUM',
       status: 'EM_EXECUCAO',
-      previsao_entrega: '08:30'
+      previsao_entrega: '08:30',
+      nome_dono: 'Maria Santos'
     },
     {
       id: 3,

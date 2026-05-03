@@ -29,6 +29,7 @@ export interface EstabelecimentoPublico {
 export class AutoagendamentoPublicoService {
   // Endpoint público — sem autenticação (RF-21)
   private readonly apiUrl = '/api/publico/estabelecimento';
+  private readonly checkoutUrl = '/api/ordens-servico/publico/agendamento/checkout/';
 
   constructor(private http: HttpClient) {}
 
@@ -60,5 +61,8 @@ export class AutoagendamentoPublicoService {
     const url = `/api/publico/agendamento/disponibilidade/`;
     const params = { slug, servicoId: servicoId.toString(), data };
     return this.http.get<any[]>(url, { params });
+  }
+  finalizarCheckout(payload: any): Observable<any> {
+    return this.http.post<any>(this.checkoutUrl, payload);
   }
 }

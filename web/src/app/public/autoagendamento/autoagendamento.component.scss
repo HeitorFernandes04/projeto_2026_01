@@ -66,7 +66,7 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
 .portal-main {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 0 20px 100px;
+  padding: 0 20px 120px; // Aumentado para não cobrir botões do footer
 }
 
 .section-label {
@@ -76,7 +76,7 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: #fff;
 }
 
-// ── Service Cards (Vertical) ──────────────────────────────────────────────
+// ── Passo 1: Service Cards & Agenda ───────────────────────────────────────
 .servicos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -105,7 +105,7 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
     border-color: $primary-blue;
     box-shadow: inset 0 0 0 1px $primary-blue, 0 0 20px rgba(0, 102, 255, 0.15);
     background: rgba(0, 102, 255, 0.03);
-    
+
     .servico-icon-wrapper .icon-circle {
       background: $primary-blue;
       color: #fff;
@@ -129,12 +129,10 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   .servico-name { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
-  .servico-desc { font-size: 13px; color: $text-muted; margin: 0 0 20px; line-height: 1.4; }
   .servico-price { font-size: 24px; font-weight: 800; color: $primary-blue; margin-bottom: 8px; }
   .servico-duration { font-size: 12px; color: $text-muted; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 }
 
-// ── Agendamento Flex Layout ───────────────────────────────────────────────
 .agendamento-flex-container {
   display: flex;
   flex-wrap: wrap;
@@ -146,12 +144,7 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
   .section-horario { flex: 1; min-width: 280px; }
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-// ── Custom Calendar ───────────────────────────────────────────────────────
+// ── Custom Calendar (RF-22) ────────────────────────────────────────────────
 .calendar-card {
   background: $card-dark;
   border: 1px solid $border-color;
@@ -165,18 +158,13 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
     margin-bottom: 24px;
     padding: 0 8px;
 
-    .calendar-month {
-      font-size: 16px;
-      font-weight: 800;
-      text-transform: capitalize;
-    }
+    .calendar-month { font-size: 16px; font-weight: 800; text-transform: capitalize; }
 
     .calendar-nav {
       display: flex;
       gap: 12px;
       .nav-btn {
-        width: 32px;
-        height: 32px;
+        width: 32px; height: 32px;
         background: transparent;
         border: 1px solid $border-color;
         border-radius: 8px;
@@ -187,53 +175,44 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
   }
 
-  .calendar-week-names {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 12px;
-    .day-name {
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: $text-muted;
+  .calendar-grid {
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 12px;
+      .weekday { text-align: center; font-size: 11px; font-weight: 700; color: $text-muted; }
     }
-  }
 
-  .calendar-days-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
 
-    .day-slot {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 600;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
+      .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
 
-      &:hover:not(.empty):not(.passado) { background: $card-hover; }
-      
-      &.today { color: $primary-blue; }
-      &.passado {
-        color: #484f58;
-        cursor: not-allowed;
-        opacity: 0.5;
+        &:hover:not(.disabled):not(.past) { background: $card-hover; }
+        &.today { color: $primary-blue; }
+        &.past { color: #484f58; cursor: not-allowed; opacity: 0.5; }
+        &.selected {
+          background: $primary-blue !important;
+          color: #fff !important;
+          box-shadow: 0 4px 15px $primary-glow;
+        }
+        &.disabled { cursor: not-allowed; opacity: 0.3; }
       }
-      &.selected {
-        background: $primary-blue !important;
-        color: #fff !important;
-        box-shadow: 0 4px 15px $primary-glow;
-      }
-      &.empty { cursor: default; }
     }
   }
 }
 
-// ── Horários Card ─────────────────────────────────────────────────────────
 .horarios-card {
   background: $card-dark;
   border: 1px solid $border-color;
@@ -243,29 +222,45 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
   box-sizing: border-box;
 
   .horarios-card-header {
-    font-size: 14px;
-    font-weight: 700;
-    color: $text-muted;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    font-size: 14px; font-weight: 700; color: $text-muted;
+    margin-bottom: 24px; display: flex; align-items: center; gap: 10px;
   }
 
-  .horarios-grid-chips {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 10px;
-    transition: opacity 0.2s ease;
-
-    &.is-loading { 
-      opacity: 0.7; 
-      pointer-events: none; 
-      filter: blur(1px);
+  .loading-horarios {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: $text-muted;
+    
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid $border-color;
+      border-top: 3px solid $primary-blue;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 12px;
     }
   }
 
-  .time-chip-v {
+  .no-horarios {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: $text-muted;
+    text-align: center;
+  }
+
+  .horarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+  }
+
+  .horario-chip {
     height: 44px;
     background: #1c2128;
     border: 1px solid $border-color;
@@ -275,7 +270,10 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
     &:hover { border-color: $text-muted; }
     &.selected {
       background: $primary-blue;
@@ -284,28 +282,122 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
   }
 
-  .no-slots-v {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 40px 0;
-    color: $text-muted;
-    font-size: 13px;
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 }
 
-// ── Footer CTA ────────────────────────────────────────────────────────────
+// ── PASSO 2: Checkout / Dados do Check-in (RF-23) ──────────────────────────
+.section-checkout {
+  animation: fadeIn 0.4s ease-out;
+
+  .checkout-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    @media (max-width: 480px) { grid-template-columns: 1fr; }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+      color: $text-muted;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input, .form-select, .form-select-premium {
+      background: $card-dark;
+      border: 1px solid $border-color;
+      border-radius: 14px;
+      height: 52px;
+      padding: 0 16px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: $primary-blue;
+        box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+      }
+
+      &::placeholder { color: #484f58; }
+    }
+
+    .form-select-premium {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b949e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      background-size: 16px;
+    }
+  }
+
+  /* Card de Resumo com Borda Tracejada da Imagem */
+  .resumo-pedido-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1.5px dashed #30363d;
+    border-radius: 20px;
+    padding: 24px;
+    margin-top: 40px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+
+    .resumo-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      &:last-child { margin-bottom: 0; }
+
+      .label { color: $text-muted; font-size: 14px; }
+      .valor-bold { color: #fff; font-weight: 800; font-size: 16px; }
+    }
+  }
+}
+
+// ── Footer CTA Unificado ──────────────────────────────────────────────────
 .portal-action-footer {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 24px;
-  background: linear-gradient(0deg, $bg-dark 60%, transparent 100%);
+  bottom: 0; left: 0; right: 0;
+  padding: 24px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  background: linear-gradient(0deg, $bg-dark 80%, transparent 100%);
   display: flex;
   justify-content: center;
-  z-index: 100;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
 
-  .btn-primary-huge {
+  .btn-voltar-outline {
+    background: transparent;
+    border: 1px solid $border-color;
+    color: #fff;
+    padding: 0 32px;
+    height: 56px;
+    border-radius: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    &:hover { background: rgba(255,255,255,0.05); }
+  }
+
+  .btn-primary-huge, .btn-confirmar-huge {
     width: 100%;
     max-width: 400px;
     height: 56px;
@@ -317,7 +409,7 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 800;
     cursor: pointer;
     transition: all 0.3s;
-    box-shadow: 0 8px 25px rgba(0, 102, 255, 0.4);
+    box-shadow: 0 8px 25px rgba(0, 102, 255, 0.3);
 
     &:disabled {
       background: #1c2128;
@@ -325,12 +417,14 @@ $font-family: 'Inter', system-ui, -apple-system, sans-serif;
       box-shadow: none;
       cursor: not-allowed;
     }
-
     &:active:not(:disabled) { transform: scale(0.98); }
   }
 }
 
-// ── Skeletons ─────────────────────────────────────────────────────────────
+// ── Animações e Skeletons ──────────────────────────────────────────────────
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 .skeleton-wrapper {
   padding: 40px 20px;
   .skeleton-header { height: 150px; background: $card-dark; border-radius: 20px; margin-bottom: 40px; }

@@ -449,3 +449,24 @@ class MidiaGaleriaSerializer(serializers.ModelSerializer):
         if request and obj.arquivo:
             return request.build_absolute_uri(obj.arquivo.url)
         return None
+
+
+class CheckoutPublicoSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    servico_id = serializers.IntegerField()
+    data_hora = serializers.DateTimeField()
+    placa = serializers.CharField(max_length=10)
+    modelo = serializers.CharField(max_length=50)
+    cor = serializers.CharField(max_length=30)
+    nome_cliente = serializers.CharField(max_length=100)
+    whatsapp = serializers.CharField(max_length=20)
+
+    def validate_placa(self, value):
+        # Reutiliza a normalização de placa da CriarOrdemServicoSerializer
+        normalized = re.sub(r'[^A-Z0-9]', '', value.strip().upper())
+        
+        # Validação de comprimento mínimo (placa antiga: 7 chars, Mercosul: 7 chars)
+        if len(normalized) < 7:
+            raise serializers.ValidationError("Placa inválida: deve ter pelo menos 7 caracteres")
+        
+        return normalized

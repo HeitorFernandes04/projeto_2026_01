@@ -41,6 +41,10 @@ describe('AutoagendamentoComponent — Lógica RF-22 (Motor de Disponibilidade)'
   });
 
   it('deve carregar horários ao avançar para o passo 2', () => {
+    // Garantir que serviço e data estejam selecionados antes de avançar
+    component.dataSelecionada = { objeto: new Date(), dia: 20, mes: 'Mai', semana: 'Qua' };
+    component.horarioSelecionado = '08:00';
+    
     component.avancar(); // Passo 1 -> 2
 
     expect(component.passo).toBe(2);

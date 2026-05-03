@@ -109,8 +109,8 @@ class OrdemServicoService:
         return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
 
     @staticmethod
-    def verificar_conflito(data_hora, duracao):
-        """Valida se o slot está disponível e não é retroativo."""
+    def verificar_conflito(estabelecimento, data_hora, duracao):
+        """Valida se o slot está disponível e não é retroativo com isolamento SaaS."""
         if data_hora < timezone.now():
             raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
 
@@ -121,7 +121,9 @@ class OrdemServicoService:
         if fim > limite_operacional:
             raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
 
+        # Isolamento SaaS: verifica conflitos apenas no mesmo estabelecimento
         conflitos = OrdemServico.objects.filter(
+            estabelecimento=estabelecimento,
             data_hora__date=data_hora.date(),
             status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']
         ).select_related('servico')
@@ -142,7 +144,7 @@ class OrdemServicoService:
         # (Axioma 14 / PR-Review RF-22)
         Estabelecimento.objects.select_for_update().get(id=servico.estabelecimento_id)
         
-        OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
+        OrdemServicoService.verificar_conflito(servico.estabelecimento, dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
 
         veiculo, _ = Veiculo.objects.update_or_create(
             placa=dados['placa'],
@@ -232,6 +234,51 @@ class OrdemServicoService:
         os.save()
 
         return os
+    
+
+
+    @staticmethod
+    @transaction.atomic
+    def finalizar_checkout_publico(dados):
+        """RF-23: Cria agendamento B2C garantindo integridade e atomicidade."""
+        estabelecimento = Estabelecimento.objects.filter(slug=dados['slug'], is_active=True).first()
+        if not estabelecimento:
+            raise ValidationError("Estabelecimento não encontrado")
+        
+        servico = Servico.objects.filter(id=dados['servico_id'], estabelecimento=estabelecimento).first()
+        if not servico:
+            raise ValidationError("Serviço não encontrado")
+
+        # LOCK PESSIMISTA (Sugerido no Report RF-22) para evitar Race Condition
+        Estabelecimento.objects.select_for_update().get(id=estabelecimento.id)
+
+        # Validação de disponibilidade (RF-22)
+        OrdemServicoService.verificar_conflito(
+            estabelecimento,
+            dados['data_hora'], 
+            datetime.timedelta(minutes=servico.duracao_estimada_minutos)
+        )
+
+        # Cria ou atualiza o veículo (Cadastro Dinâmico)
+        veiculo, _ = Veiculo.objects.update_or_create(
+            placa=dados['placa'],
+            defaults={
+                'modelo': dados['modelo'],
+                'cor': dados['cor'],
+                'nome_dono': dados['nome_cliente'],
+                'celular_dono': dados['whatsapp'],
+                'estabelecimento': estabelecimento
+            }
+        )
+
+        # Cria a Ordem de Serviço inicial no Pátio
+        return OrdemServico.objects.create(
+            estabelecimento=estabelecimento,
+            veiculo=veiculo,
+            servico=servico,
+            data_hora=dados['data_hora'],
+            status='PATIO'
+        )
 
 
 class HistoricoGestorService:
