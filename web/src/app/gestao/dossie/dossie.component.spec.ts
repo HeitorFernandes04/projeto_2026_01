@@ -8,7 +8,7 @@ import { of, throwError } from 'rxjs';
 
 const mockGaleria: GaleriaOS = {
   estado_inicial: [
-    { id: 1, arquivo_url: 'http://api/fotos/1.jpg', momento: 'VISTORIA_GERAL' },
+    { id: 1, arquivo_url: 'http://api/fotos/1.jpg', momento: 'ENTRADA' },
     { id: 2, arquivo_url: 'http://api/fotos/2.jpg', momento: 'AVARIA_PREVIA' },
   ],
   estado_meio: [],

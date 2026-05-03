@@ -8,7 +8,7 @@ import './EstadoLiberacao.css';
 
 const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void; }> = ({ ordemServicoId, onComplete }) => {
   const history = useHistory();
-  const [ordemServico, setOrdemServico] = useState<{midias?: Array<{arquivo: string; momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO'}>} | null>(null);
+  const [ordemServico, setOrdemServico] = useState<{midias?: Array<{arquivo: string; momento: 'ENTRADA' | 'FINALIZACAO' | 'PROCESSO' | 'INCIDENTE' | 'ACABAMENTO'}>} | null>(null);
   const [vaga, setVaga] = useState('');
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -26,7 +26,7 @@ const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void
 
   useEffect(() => { fetchDados(); }, [fetchDados]);
 
-  const fotosDepois = ordemServico?.midias?.filter((m) => m.momento === 'FINALIZADO') || [];
+  const fotosDepois = ordemServico?.midias?.filter((m) => m.momento === 'FINALIZACAO') || [];
   const podeLiberar = fotosDepois.length >= 5 && vaga.trim().length > 0;
 
   const handleFinalizarGeral = async (e?: React.MouseEvent) => {
@@ -63,7 +63,7 @@ const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void
 
       <GaleriaFotos
         ordemServicoId={ordemServicoId}
-        momento="FINALIZADO"
+        momento="FINALIZACAO"
         fotosIniciais={ordemServico?.midias || []}
         onUploadSuccess={fetchDados}
       />
