@@ -109,8 +109,8 @@ class OrdemServicoService:
         return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
 
     @staticmethod
-    def verificar_conflito(data_hora, duracao):
-        """Valida se o slot está disponível e não é retroativo."""
+    def verificar_conflito(estabelecimento, data_hora, duracao):
+        """Valida se o slot está disponível e não é retroativo com isolamento SaaS."""
         if data_hora < timezone.now():
             raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
 
@@ -121,7 +121,9 @@ class OrdemServicoService:
         if fim > limite_operacional:
             raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
 
+        # Isolamento SaaS: verifica conflitos apenas no mesmo estabelecimento
         conflitos = OrdemServico.objects.filter(
+            estabelecimento=estabelecimento,
             data_hora__date=data_hora.date(),
             status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']
         ).select_related('servico')
@@ -142,7 +144,7 @@ class OrdemServicoService:
         # (Axioma 14 / PR-Review RF-22)
         Estabelecimento.objects.select_for_update().get(id=servico.estabelecimento_id)
         
-        OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
+        OrdemServicoService.verificar_conflito(servico.estabelecimento, dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
 
         veiculo, _ = Veiculo.objects.update_or_create(
             placa=dados['placa'],
@@ -252,6 +254,7 @@ class OrdemServicoService:
 
         # Validação de disponibilidade (RF-22)
         OrdemServicoService.verificar_conflito(
+            estabelecimento,
             dados['data_hora'], 
             datetime.timedelta(minutes=servico.duracao_estimada_minutos)
         )

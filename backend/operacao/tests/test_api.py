@@ -35,11 +35,19 @@ class TestOrdemServicoFluxoAPI(APITestCase):
 
     def test_criar_ordem_servico_avulso_com_sucesso(self):
         """Valida a criação de um ordem_servico 'na hora' (AVULSO)."""
-        # Ajustar horário para futuro para evitar erro retroativo
-        horario = timezone.now() + timedelta(hours=2)
-        # Garantir que não ultrapasse 18:00
-        if horario.hour >= 18:
-            horario = timezone.now().replace(hour=16, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        # Garante horário comercial (08:00-17:00) para evitar falhas intermitentes
+        agora = timezone.now()
+        if agora.hour < 8:
+            # Se antes das 8h, agenda para as 9h de hoje
+            horario = agora.replace(hour=9, minute=0, second=0, microsecond=0)
+        elif agora.hour >= 16:
+            # Se tarde demais, agenda para 9h de amanhã
+            horario = (agora + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
+        else:
+            # Horário comercial, agenda para +2 horas
+            horario = agora + timedelta(hours=2)
+            if horario.hour >= 17:
+                horario = agora.replace(hour=16, minute=0, second=0, microsecond=0)
         
         url = reverse('os-criar')
         dados = {
