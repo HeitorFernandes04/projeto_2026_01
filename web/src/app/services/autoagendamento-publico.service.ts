@@ -51,4 +51,14 @@ export class AutoagendamentoPublicoService {
         }))
       );
   }
+
+  /**
+   * RF-22: Busca horários disponíveis cruzando duração do serviço e ocupação real.
+   * Retorna slots dinâmicos [ { inicio: "HH:mm", fim: "HH:mm" } ]
+   */
+  getDisponibilidade(slug: string, servicoId: number, data: string): Observable<any[]> {
+    const url = `/api/publico/agendamento/disponibilidade/`;
+    const params = { slug, servicoId: servicoId.toString(), data };
+    return this.http.get<any[]>(url, { params });
+  }
 }

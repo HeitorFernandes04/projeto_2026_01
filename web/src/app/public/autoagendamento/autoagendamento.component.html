@@ -99,10 +99,27 @@
           </div>
         </div>
 
-        <div class="horarios-grid">
-          <button *ngFor="let h of horariosDisponiveis" class="chip-horario" [class.selecionado]="horarioSelecionado === h" (click)="horarioSelecionado = h">
-            {{ h }}
-          </button>
+        <div class="horarios-grid" [class.carregando-grid]="carregandoHorarios">
+          <!-- Skeleton Loading para horários -->
+          <ng-container *ngIf="carregandoHorarios">
+            <div class="skeleton-chip" *ngFor="let i of [1,2,3,4,5,6]"></div>
+          </ng-container>
+
+          <!-- Lista de horários -->
+          <ng-container *ngIf="!carregandoHorarios && horariosDisponiveis.length > 0">
+            <button *ngFor="let slot of horariosDisponiveis" class="chip-horario" [class.selecionado]="horarioSelecionado === slot.inicio" (click)="horarioSelecionado = slot.inicio">
+              <span class="h-inicio">{{ slot.inicio }}</span>
+              <span class="h-separador">-</span>
+              <span class="h-fim">{{ slot.fim }}</span>
+            </button>
+          </ng-container>
+
+          <!-- Estado Vazio para Horários -->
+          <div class="sem-horarios" *ngIf="!carregandoHorarios && horariosDisponiveis.length === 0">
+            <span class="icon-calendar">📅</span>
+            <p>Nenhum horário disponível para esta data.</p>
+            <small>Tente escolher outro dia no carrossel acima.</small>
+          </div>
         </div>
       </ng-container>
 

@@ -217,20 +217,34 @@ class ServicoListView(APIView):
 
 
 class HorariosLivresView(APIView):
+    """
+    RF-22: Consulta de horários para o Funcionário (Mobile).
+    Utiliza o mesmo motor de disponibilidade do Cliente.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data_str = request.query_params.get('data')
         servico_id = request.query_params.get('servico_id')
+        
         if not data_str or not servico_id:
             return Response({'detail': 'Data e serviço são obrigatórios.'}, status=400)
 
-        try:
-            horarios = OrdemServicoService.get_horarios_livres(data_str, servico_id)
-            return Response({'horarios': horarios})
-        except Exception as e:
-            return Response({'detail': str(e)}, status=400)
+        data_alvo = parse_date(data_str)
+        if not data_alvo:
+            return Response({'detail': 'Data inválida.'}, status=400)
+
+        estabelecimento = request.user.estabelecimento
+        if not estabelecimento:
+             return Response({'detail': 'Usuário sem estabelecimento vinculado.'}, status=403)
+
+        servico = get_object_or_404(Servico, id=servico_id, estabelecimento=estabelecimento, is_active=True)
+        
+        from agendamento_publico.services import DisponibilidadeService
+        horarios = DisponibilidadeService.calcular_horarios_livres(estabelecimento, servico, data_alvo)
+        
+        return Response({'horarios': horarios})
 
 
 class KanbanAPIView(APIView):

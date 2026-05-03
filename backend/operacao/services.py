@@ -109,11 +109,17 @@ class OrdemServicoService:
 
     @staticmethod
     def verificar_conflito(data_hora, duracao):
-        """Verifica sobreposição de horários no pátio."""
+        """Verifica sobreposição de horários e limite operacional (18:00)."""
         fim = data_hora + duracao
+        
+        # Trava Rígida (REQUISITOS_RF22_HORARIOS.pdf - 1.2)
+        limite_operacional = data_hora.replace(hour=18, minute=0, second=0, microsecond=0)
+        if fim > limite_operacional:
+            raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
+
         conflitos = OrdemServico.objects.filter(
             data_hora__date=data_hora.date(),
-            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO']
+            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']
         ).select_related('servico')
 
         for os in conflitos:
@@ -123,8 +129,9 @@ class OrdemServicoService:
                 raise ValidationError(f'Conflito com OS das {os_inicio.strftime("%H:%M")} às {os_fim.strftime("%H:%M")}.')
 
     @staticmethod
+    @transaction.atomic
     def criar_com_veiculo(dados, funcionario):
-        """Cria OS garantindo apenas uma ativa por vez."""
+        """Cria OS garantindo apenas uma ativa por vez e validando disponibilidade."""
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
         OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
 

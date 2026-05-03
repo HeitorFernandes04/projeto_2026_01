@@ -24,6 +24,7 @@ import {
 export class AutoagendamentoComponent implements OnInit {
   // Estados da tela
   carregando = true;
+  carregandoHorarios = false;
   erro = false;
   naoEncontrado = false;
   
@@ -33,11 +34,11 @@ export class AutoagendamentoComponent implements OnInit {
   estabelecimento: EstabelecimentoPublico | null = null;
   servicoSelecionado: ServicoPublico | null = null;
   
-  // Mock para RF-22 (Horários)
-  dataSelecionada: any = null;
+  // Motor de Disponibilidade (RF-22)
+  private _dataSelecionada: any = null;
   horarioSelecionado: string | null = null;
   datasDisponiveis: any[] = [];
-  horariosDisponiveis = ['08:00', '09:30', '11:00', '14:00', '15:30', '17:00'];
+  horariosDisponiveis: any[] = [];
 
   // Mock para RF-23 (Checkout)
   dadosAgendamento = {
@@ -105,7 +106,46 @@ export class AutoagendamentoComponent implements OnInit {
         semana: i === 0 ? 'Hoje' : d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
       });
     }
-    this.dataSelecionada = this.datasDisponiveis[0];
+    this._dataSelecionada = this.datasDisponiveis[0];
+  }
+
+  get dataSelecionada(): any {
+    return this._dataSelecionada;
+  }
+
+  set dataSelecionada(valor: any) {
+    if (this._dataSelecionada !== valor) {
+      this._dataSelecionada = valor;
+      this.horarioSelecionado = null;
+      this.carregarHorarios();
+    }
+  }
+
+  carregarHorarios(): void {
+    if (!this.estabelecimento || !this.servicoSelecionado || !this.dataSelecionada) return;
+
+    this.carregandoHorarios = true;
+    this.horariosDisponiveis = [];
+    this.cdr.markForCheck();
+
+    // Ajuste de fuso horário para pegar apenas o YYYY-MM-DD
+    const d = this.dataSelecionada.objeto;
+    const dataIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    
+    const slug = this.estabelecimento.slug || this.route.snapshot.paramMap.get('slug') || '';
+
+    this.service.getDisponibilidade(slug, this.servicoSelecionado.id, dataIso).subscribe({
+      next: (horarios) => {
+        // Armazenamos o objeto completo do slot para exibir início e fim
+        this.horariosDisponiveis = horarios; 
+        this.carregandoHorarios = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.carregandoHorarios = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   private carregarEstabelecimento(slug: string): void {
@@ -140,12 +180,16 @@ export class AutoagendamentoComponent implements OnInit {
 
   selecionarServico(servico: ServicoPublico): void {
     this.servicoSelecionado = servico;
+    this.horarioSelecionado = null; // RF-22: Limpar horário ao trocar de serviço
     this.cdr.markForCheck();
   }
 
   avancar(): void {
     if (this.podeAvancar && this.passo < 3) {
       this.passo++;
+      if (this.passo === 2) {
+        this.carregarHorarios();
+      }
       window.scrollTo(0, 0);
       this.cdr.markForCheck();
     }
