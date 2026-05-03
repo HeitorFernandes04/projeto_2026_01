@@ -12,18 +12,6 @@ import TabBar from '../../components/TabBar';
 import Toast from '../../components/Toast';
 import logoLavaMe from '../../assets/logo.jpeg';
 
-const COR_CHOICES = [
-  { value: 'BRANCO', label: 'Branco' },
-  { value: 'PRETO', label: 'Preto' },
-  { value: 'CINZA', label: 'Cinza' },
-  { value: 'PRATA', label: 'Prata' },
-  { value: 'VERMELHO', label: 'Vermelho' },
-  { value: 'AZUL', label: 'Azul' },
-  { value: 'VERDE', label: 'Verde' },
-  { value: 'AMARELO', label: 'Amarelo' },
-  { value: 'OUTRO', label: 'Outro' },
-];
-
 const NovaOrdemServico: React.FC = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
@@ -151,16 +139,12 @@ const handleConfirmar = async () => {
               inputMode="numeric"
             />
 
-            <select 
+            <input 
               value={form.cor} 
               onChange={e => setForm({...form, cor: e.target.value})}
-              style={styles.input}
-            >
-              <option value="" disabled selected>SELECIONE A COR *</option>
-              {COR_CHOICES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
+              style={styles.input} 
+              placeholder="COR DO VEÍCULO *" 
+            />
           </div>
 
           <label style={styles.sectionLabel}>SELECIONE O SERVIÇO</label>

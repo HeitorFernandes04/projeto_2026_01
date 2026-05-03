@@ -23,11 +23,11 @@ class MidiaOrdemServicoService:
     """Serviço responsável pelo processamento de upload de mídias."""
 
     MAPA_STATUS_MOMENTO_PERMITIDO = {
-        'PATIO': ['ENTRADA'],
-        'VISTORIA_INICIAL': ['ENTRADA'],
-        'EM_EXECUCAO': ['PROCESSO'],
-        'LIBERACAO': ['FINALIZACAO'],
-        'BLOQUEADO_INCIDENTE': ['PROCESSO'],
+        'PATIO': ['VISTORIA_GERAL', 'AVARIA_PREVIA'],
+        'VISTORIA_INICIAL': ['VISTORIA_GERAL', 'AVARIA_PREVIA'],
+        'EM_EXECUCAO': ['EXECUCAO'],
+        'LIBERACAO': ['FINALIZADO'],
+        'BLOQUEADO_INCIDENTE': ['EXECUCAO'],
     }
 
     @staticmethod
@@ -164,7 +164,7 @@ class OrdemServicoService:
         if status_atual == 'PATIO':
             contagem_fotos = MidiaOrdemServico.objects.filter(
                 ordem_servico=os,
-                momento='ENTRADA'
+                momento='VISTORIA_GERAL'
             ).count()
 
             if contagem_fotos < 5:
@@ -204,7 +204,7 @@ class OrdemServicoService:
         if incidentes_abertos:
             raise ValueError("Não é possível finalizar a OS enquanto houver incidentes em aberto.")
 
-        if MidiaOrdemServico.objects.filter(ordem_servico=os, momento='FINALIZACAO').count() < 5:
+        if MidiaOrdemServico.objects.filter(ordem_servico=os, momento='FINALIZADO').count() < 5:
             raise ValueError("5 fotos de entrega exigidas.")
 
         if not dados.get('vaga_patio'):
@@ -274,9 +274,9 @@ class HistoricoGestorService:
         midias = MidiaOrdemServico.objects.filter(ordem_servico=os).order_by('id')
 
         return {
-            'estado_inicial': [m for m in midias if m.momento in ('ENTRADA', 'AVARIA_PREVIA')],
-            'estado_meio':    [m for m in midias if m.momento in ('PROCESSO', 'INCIDENTE')],
-            'estado_final':   [m for m in midias if m.momento == 'FINALIZACAO'],
+            'estado_inicial': [m for m in midias if m.momento in ('VISTORIA_GERAL', 'AVARIA_PREVIA')],
+            'estado_meio':    [m for m in midias if m.momento == 'EXECUCAO'],
+            'estado_final':   [m for m in midias if m.momento == 'FINALIZADO'],
         }
 
 

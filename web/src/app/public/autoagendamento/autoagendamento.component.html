@@ -126,7 +126,7 @@
           <label>Cor Predominante</label>
           <select [(ngModel)]="dadosAgendamento.cor" class="input-moderno">
             <option value="" disabled selected>Selecione a cor...</option>
-            <option *ngFor="let cor of coresDisponiveis" [value]="cor.value">{{ cor.label }}</option>
+            <option *ngFor="let cor of coresDisponiveis" [value]="cor">{{ cor }}</option>
           </select>
         </div>
 
@@ -149,27 +149,9 @@
           <p class="sucesso-sub">Agora é só levar seu veículo no horário marcado.</p>
           
           <div class="ticket-status">
-            <div class="ticket-row"><span>Status:</span> <span class="badge-status" [class]="statusAgendamento">{{ statusAgendamento }}</span></div>
+            <div class="ticket-row"><span>Status:</span> <span class="badge-status">{{ statusAgendamento }}</span></div>
             <div class="ticket-row"><span>Veículo:</span> <strong>{{ dadosAgendamento.placa }}</strong></div>
             <div class="ticket-divider"></div>
-            
-            <!-- RF-26: Galeria Pós-Venda -->
-            <div class="galeria-pos-venda" *ngIf="statusAgendamento === 'FINALIZADO'">
-              <h3 class="galeria-titulo">✨ Galeria do Seu Veículo</h3>
-              <p class="galeria-sub">Veja como ficou o resultado do nosso trabalho:</p>
-              
-              <div class="galeria-grid" id="galeria-fotos">
-                <div *ngFor="let foto of galeria" class="foto-card" id="foto-{{foto.id}}">
-                  <img [src]="foto.arquivo_url" [alt]="foto.momento" class="foto-img" />
-                  <span class="foto-badge">{{ foto.momento === 'ENTRADA' ? 'Entrada' : 'Resultado Final' }}</span>
-                </div>
-              </div>
-
-              <div class="galeria-vazia" *ngIf="galeria.length === 0">
-                <p>Nenhuma foto disponível para exibição.</p>
-              </div>
-            </div>
-
             <div class="ticket-footer">
               <button class="btn-cancelar" *ngIf="statusAgendamento === 'PATIO'">Cancelar Agendamento</button>
             </div>

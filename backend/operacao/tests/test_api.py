@@ -92,17 +92,17 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         """Valida avanço após registrar 5 fotos obrigatórias."""
         ordem_servico = OrdemServicoFactory(funcionario=self.funcionario, status='VISTORIA_INICIAL')
         for _ in range(5):
-            MidiaOrdemServicoFactory(ordem_servico=ordem_servico, momento='ENTRADA')
+            MidiaOrdemServicoFactory(ordem_servico=ordem_servico, momento='VISTORIA_GERAL')
         
         url = reverse('os-avancar', kwargs={'pk': ordem_servico.pk})
         response = self.client.patch(url, data={'laudo_vistoria': 'OK'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_finalizar_os_sucesso(self):
-        """Valida finalização com 5 fotos de FINALIZACAO e vaga."""
+        """Valida finalização com 5 fotos de FINALIZADO e vaga."""
         os = OrdemServicoFactory(funcionario=self.funcionario, status='LIBERACAO')
         for _ in range(5):
-            MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZACAO')
+            MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZADO')
         
         url = reverse('os-finalizar', kwargs={'pk': os.pk})
         dados = {'vaga_patio': 'VAGA_A1'}
@@ -115,7 +115,7 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         os = OrdemServicoFactory(funcionario=self.funcionario, status='LIBERACAO')
         # Apenas 3 fotos
         for _ in range(3):
-            MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZACAO')
+            MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZADO')
             
         url = reverse('os-finalizar', kwargs={'pk': os.pk})
         response = self.client.patch(url, {'vaga_patio': 'V1'})
@@ -134,7 +134,7 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         
         url = reverse('os-fotos', kwargs={'pk': os.pk})
         response = self.client.post(url, {
-            'momento': 'ENTRADA',
+            'momento': 'VISTORIA_GERAL',
             'arquivos': fotos
         }, format='multipart')
         

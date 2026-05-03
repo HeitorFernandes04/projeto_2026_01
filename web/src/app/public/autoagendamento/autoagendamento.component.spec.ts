@@ -91,7 +91,7 @@ describe('AutoagendamentoComponent — Controle do CTA (CA-07)', () => {
 
   it('deve permitir trocar o serviço selecionado', () => {
     const primeiro = mockEstabelecimentoComServicos.servicos[0];
-    const segundo = mockEstabelecimentoComServicos.servicos[1];
+    const segundo  = mockEstabelecimentoComServicos.servicos[1];
 
     component.selecionarServico(primeiro);
     expect(component.servicoSelecionado?.id).toBe(primeiro.id);
@@ -166,26 +166,5 @@ describe('AutoagendamentoComponent — Utilitários de formatação', () => {
 
   it('deve formatar duração em horas e minutos', () => {
     expect(component.formatarDuracao(90)).toBe('1h 30min');
-  });
-});
-// ═════════════════════════════════════════════════════════════════════════════
-// GRUPO 5: RF-26 — Simulação de Galeria
-// ═════════════════════════════════════════════════════════════════════════════
-describe('AutoagendamentoComponent — Simulação RF-26 (Dossiê Digital)', () => {
-  it('deve carregar galeria após simular finalização do agendamento', () => {
-    const mockMidias = [{ id: 1, arquivo: 'url_entrada', momento: 'ENTRADA' }];
-    const mockService = {
-      getEstabelecimento: vi.fn().mockReturnValue(of(mockEstabelecimentoComServicos)),
-      getGaleria: vi.fn().mockReturnValue(of(mockMidias)),
-    };
-
-    const component = criarComponente(mockService);
-    component.osIdParaGaleria = 123;
-
-    component.finalizarAgendamento();
-
-    expect(mockService.getGaleria).toHaveBeenCalledWith(123);
-    expect(component.galeria).toEqual(mockMidias);
-    expect(component.statusAgendamento).toBe('FINALIZADO');
   });
 });

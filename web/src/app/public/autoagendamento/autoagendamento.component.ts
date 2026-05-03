@@ -48,22 +48,10 @@ export class AutoagendamentoComponent implements OnInit {
     whatsapp: ''
   };
 
-  coresDisponiveis = [
-    { value: 'BRANCO', label: 'Branco' },
-    { value: 'PRETO', label: 'Preto' },
-    { value: 'CINZA', label: 'Cinza' },
-    { value: 'PRATA', label: 'Prata' },
-    { value: 'VERMELHO', label: 'Vermelho' },
-    { value: 'AZUL', label: 'Azul' },
-    { value: 'VERDE', label: 'Verde' },
-    { value: 'AMARELO', label: 'Amarelo' },
-    { value: 'OUTRO', label: 'Outro' },
-  ];
+  coresDisponiveis = ['Branco', 'Preto', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Bege', 'Verde', 'Amarelo', 'Outro'];
 
   // Mock para RF-24/25/26 (Status)
   statusAgendamento = 'PATIO'; // PATIO, EM_EXECUCAO, FINALIZADO
-  galeria: any[] = [];
-  osIdParaGaleria = 123; // Mock de ID vindo do agendamento real
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -102,20 +90,6 @@ export class AutoagendamentoComponent implements OnInit {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
     this.carregarEstabelecimento(slug);
     this.gerarDatas();
-    
-    // Simulação: Se cair direto no status FINALIZADO, carrega a galeria
-    if (this.statusAgendamento === 'FINALIZADO') {
-      this.carregarGaleria();
-    }
-  }
-
-  private carregarGaleria(): void {
-    this.service.getGaleria(this.osIdParaGaleria).subscribe({
-      next: (midias) => {
-        this.galeria = midias;
-        this.cdr.markForCheck();
-      }
-    });
   }
 
   private gerarDatas() {
@@ -184,9 +158,6 @@ export class AutoagendamentoComponent implements OnInit {
   }
 
   finalizarAgendamento(): void {
-    // Simulação para fins de teste da Galeria RF-26
-    this.statusAgendamento = 'FINALIZADO';
-    this.carregarGaleria();
     this.avancar(); // Move para o passo 4 (Sucesso)
   }
 

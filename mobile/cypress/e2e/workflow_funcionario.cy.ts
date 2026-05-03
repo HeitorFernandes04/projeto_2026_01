@@ -72,7 +72,7 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
         status: 'PATIO',
         veiculo: { placa: 'ABC1234', modelo: 'Gol', cor: 'Branco' },
         servico: { nome: 'Lavagem Completa' },
-        midias: Array(5).fill({ momento: 'ENTRADA', arquivo: 'mock.jpg' })
+        midias: Array(5).fill({ momento: 'VISTORIA_GERAL', arquivo: 'mock.jpg' })
       }
     }).as('getOSComFotos');
 
@@ -96,7 +96,7 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
         etapa_atual: 2,
         veiculo: { placa: 'ABC1234', modelo: 'Gol', cor: 'Branco' },
         servico: { nome: 'Lavagem Completa' },
-        midias: Array(5).fill({ momento: 'ENTRADA', arquivo: 'mock.jpg' })
+        midias: Array(5).fill({ momento: 'VISTORIA_GERAL', arquivo: 'mock.jpg' })
       }
     }).as('getOSExecucao');
 
@@ -122,7 +122,7 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
         etapa_atual: 3,
         veiculo: { placa: 'ABC1234', modelo: 'Gol', cor: 'Branco' },
         servico: { nome: 'Lavagem Completa' },
-        midias: Array(5).fill({ momento: 'ENTRADA', arquivo: 'mock.jpg' })
+        midias: Array(5).fill({ momento: 'VISTORIA_GERAL', arquivo: 'mock.jpg' })
       }
     }).as('getOSAcabamento');
 

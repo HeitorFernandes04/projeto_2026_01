@@ -17,12 +17,12 @@ interface FotoLocal {
 interface FotoSalva {
   id?: number;
   arquivo: string;
-  momento: 'ENTRADA' | 'FINALIZACAO' | 'PROCESSO' | 'INCIDENTE' | 'ACABAMENTO';
+  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
 }
 
 interface GaleriaFotosProps {
   ordemServicoId: number;
-  momento: 'ENTRADA' | 'FINALIZACAO' | 'PROCESSO' | 'INCIDENTE' | 'ACABAMENTO';
+  momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO';
   fotosIniciais: FotoSalva[];
   onUploadSuccess?: () => void;
   somenteLeitura?: boolean;
