@@ -1,0 +1,149 @@
+$bg-main: #0b0e11;      
+$bg-header: #161b22;    
+$border: #21262d;
+$primary: #0066ff;
+$text-muted: #8b949e;
+
+.portal-wrapper {
+  background-color: $bg-main;
+  height: 100vh; // Mudança: de min-height para height fixo
+  width: 100vw;          
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // Impede scroll no wrapper principal
+}
+
+.portal-header {
+  background-color: $bg-header;
+  width: 100%;
+  border-bottom: 1px solid $border;
+  padding: 16px 0;
+  flex-shrink: 0; // Garante que o header nunca diminua de tamanho
+  z-index: 1000;
+
+  .header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    width: 100%;
+    box-sizing: border-box;
+
+    .brand-logo {
+      height: 48px;    
+      width: auto;
+      object-fit: contain;
+    }
+
+    .btn-logout {
+      background: #0d1117;
+      border: 1px solid $border;
+      color: $primary;
+      padding: 8px 18px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      
+      span { font-size: 18px; }
+      &:hover { background: #1c2128; border-color: $primary; }
+    }
+  }
+}
+
+.portal-body {
+  flex: 1;
+  overflow-y: auto; // O scroll acontece apenas aqui dentro
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-welcome {
+  text-align: center;
+  padding: 40px 24px 20px;
+  .greeting-text {
+    color: #ffffff;
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0;
+  }
+  .experience-tag {
+    color: $text-muted;
+    font-size: 14px;
+    margin-top: 6px;
+  }
+}
+
+.pill-navigation {
+  display: flex;
+  background: #1c2128;
+  padding: 6px;
+  border-radius: 20px;
+  margin: 0 20px 24px;
+  gap: 8px;
+  border: 1px solid $border;
+  flex-shrink: 0;
+
+  .nav-pill {
+    flex: 1;           
+    height: 52px;
+    border: none;
+    background: transparent;
+    color: $text-muted;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+
+    &.active {
+      background: $primary;
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+    }
+  }
+}
+
+.tab-content {
+  padding: 0 20px 40px;
+  width: 100%;
+  box-sizing: border-box;
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 0;
+    color: #484f58;
+    span { font-size: 56px; margin-bottom: 16px; display: block; opacity: 0.5; }
+    p { font-size: 14px; color: $text-muted; }
+  }
+
+  /* ESTILOS DA LISTA DE VEÍCULOS ATIVOS */
+  .ativos-list {
+    /* Sem padding lateral para alinhar com as abas */
+    padding: 0;
+
+    .ativos-header {
+      margin-bottom: 20px;
+      padding: 0 20px;
+
+      h3 {
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+      }
+    }
+
+    /* Layout flexível para cards com largura total */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}

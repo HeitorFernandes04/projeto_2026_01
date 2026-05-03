@@ -9,7 +9,7 @@ export const routes: Routes = [
   },
   {
     path: 'gestao',
-    canActivate: [authGuard], // PROTEÇÃO ATIVADA AQUI
+    canActivate: [authGuard], // PROTEÇÃO PARA GESTORES E FUNCIONÁRIOS
     children: [
       {
         path: 'dashboard',
@@ -45,12 +45,41 @@ export const routes: Routes = [
     ]
   },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  // RF-21: Rota pública do Portal de Autoagendamento — SEM canActivate (sem autenticação)
+
+  // RF-21, RF-24 e RF-25: Fluxo Unificado do Cliente Contextualizado por Unidade
   {
     path: 'agendar/:slug',
-    loadComponent: () =>
-      import('./public/autoagendamento/autoagendamento.component').then(
-        m => m.AutoagendamentoComponent
-      )
-  }
+    children: [
+      {
+        path: '', // Rota pública de agendamento (RF-21)
+        loadComponent: () =>
+          import('./public/autoagendamento/autoagendamento.component').then(
+            m => m.AutoagendamentoComponent
+          )
+      },
+      {
+        path: 'painel', // Painel Unificado do Cliente (RF-24/25/26)
+        children: [
+          {
+            path: '',
+            canActivate: [authGuard], // Axioma 14: Autenticação Unificada
+            loadComponent: () =>
+              import('./public/painel-cliente/painel.component').then(
+                m => m.PainelComponent
+              )
+          },
+          {
+            path: 'galeria-transparencia', // Galeria de Transparência (herda proteção do painel)
+            loadComponent: () =>
+              import('./public/painel-cliente/componentes/galeria-transparencia/galeria-transparencia.component').then(
+                m => m.GaleriaTransparenciaComponent
+              )
+          }
+        ]
+      }
+    ]
+  },
+
+  // Rota de fallback para erros de digitação
+  { path: '**', redirectTo: 'login' }
 ];

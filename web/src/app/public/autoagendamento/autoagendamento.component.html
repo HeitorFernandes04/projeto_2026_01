@@ -141,28 +141,11 @@
         </div>
       </ng-container>
 
-      <!-- ── PASSO 4: STATUS E TRANSPARÊNCIA (RF-24/25/26) ── -->
-      <ng-container *ngIf="passo === 4">
-        <div class="sucesso-card">
-          <div class="sucesso-icone">✓</div>
-          <h2 class="sucesso-titulo">Agendamento Confirmado!</h2>
-          <p class="sucesso-sub">Agora é só levar seu veículo no horário marcado.</p>
-          
-          <div class="ticket-status">
-            <div class="ticket-row"><span>Status:</span> <span class="badge-status">{{ statusAgendamento }}</span></div>
-            <div class="ticket-row"><span>Veículo:</span> <strong>{{ dadosAgendamento.placa }}</strong></div>
-            <div class="ticket-divider"></div>
-            <div class="ticket-footer">
-              <button class="btn-cancelar" *ngIf="statusAgendamento === 'PATIO'">Cancelar Agendamento</button>
-            </div>
-          </div>
-        </div>
-      </ng-container>
 
     </div><!-- /portal-body -->
 
     <!-- ── RODAPÉ FIXO (CTA) ── -->
-    <div class="portal-footer" *ngIf="servicos.length > 0 && passo < 4">
+    <div class="portal-footer" *ngIf="servicos.length > 0 && passo <= 3">
       <div class="footer-btns">
         <button *ngIf="passo > 1" class="btn-voltar" (click)="voltar()">Voltar</button>
         

@@ -1,0 +1,166 @@
+$bg-card: #161b22;
+$border-color: #21262d;
+$text-muted: #8b949e;
+$accent-orange: #ff9500;
+$primary-blue: #0066ff;
+$danger-red: #ff453a;
+
+.card-ativo-container {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 0 16px;
+  
+  /* Ocupar toda a largura disponível alinhado com as abas */
+  width: 100%;
+  box-sizing: border-box;
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .veiculo-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .icon-car-circle {
+        width: 36px;
+        height: 36px;
+        background-color: $primary-blue;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        span { 
+          color: white; 
+          font-size: 20px; 
+          font-family: 'Material Symbols Outlined' !important;
+        }
+      }
+
+      .veiculo-detalhe {
+        h3 { color: white; font-size: 14px; margin: 0; font-weight: 700; }
+        p { color: $text-muted; font-size: 11px; margin: 2px 0 0; }
+      }
+    }
+
+    .horario-info {
+      text-align: right;
+      .label { display: block; color: $text-muted; font-size: 9px; text-transform: uppercase; }
+      .valor-destaque { color: $accent-orange; font-size: 14px; font-weight: 800; }
+    }
+  }
+
+  .divider {
+    height: 1px;
+    background-color: $border-color;
+    margin: 12px 0;
+  }
+
+  .info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    .label { color: $text-muted; font-size: 10px; }
+    .valor { color: white; font-size: 13px; font-weight: 600; }
+    .valor-bold { color: white; font-size: 13px; font-weight: 800; }
+  }
+
+  .progresso-vertical {
+    margin-top: 16px;
+    h4 { color: white; font-size: 12px; font-weight: 800; margin-bottom: 16px; }
+
+    .stepper-vertical {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+
+      /* Linha conectora vertical */
+      &::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background-color: $border-color;
+      }
+
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        z-index: 1;
+        opacity: 0.4;
+        transition: opacity 0.3s ease;
+
+        .step-icon {
+          width: 30px;
+          height: 30px;
+          background-color: #0d1117;
+          border: 1px solid $border-color;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          span { 
+            font-size: 16px; 
+            color: $text-muted; 
+            font-family: 'Material Symbols Outlined' !important;
+          }
+        }
+
+        .step-content {
+          .step-title { display: block; color: white; font-size: 12px; font-weight: 600; }
+          .step-sub { display: block; color: $text-muted; font-size: 10px; }
+        }
+
+        &.active {
+          opacity: 1;
+          .step-icon { 
+            border-color: $primary-blue; 
+            span { color: $primary-blue; } 
+          }
+        }
+      }
+    }
+  }
+
+  .btn-cancelar-agendamento {
+    width: 100%;
+    margin-top: 20px;
+    background: transparent;
+    border: 1px solid rgba($danger-red, 0.5);
+    color: $danger-red;
+    height: 40px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    span {
+      font-size: 18px;
+      font-family: 'Material Symbols Outlined' !important;
+    }
+
+    &:hover { 
+      background-color: rgba($danger-red, 0.1);
+      border-color: $danger-red;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}
