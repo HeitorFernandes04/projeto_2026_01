@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 from core.models import Servico, Veiculo, TagPeca # IMPORTANDO DO CORE
 from accounts.models import Estabelecimento
@@ -19,7 +20,7 @@ class OrdemServico(models.Model):
     servico = models.ForeignKey(Servico, on_delete=models.PROTECT)
     funcionario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='PATIO')
-    data_hora = models.DateTimeField(auto_now_add=True)
+    data_hora = models.DateTimeField(default=timezone.now)
     
     # Campos adicionais para controle do fluxo industrial
     laudo_vistoria = models.TextField(blank=True, null=True)

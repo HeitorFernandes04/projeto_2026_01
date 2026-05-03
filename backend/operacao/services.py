@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca, VistoriaItem
+from accounts.models import Estabelecimento
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
@@ -109,11 +110,20 @@ class OrdemServicoService:
 
     @staticmethod
     def verificar_conflito(data_hora, duracao):
-        """Verifica sobreposição de horários no pátio."""
+        """Valida se o slot está disponível e não é retroativo."""
+        if data_hora < timezone.now():
+            raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
+
         fim = data_hora + duracao
+        
+        # Trava Rígida (REQUISITOS_RF22_HORARIOS.pdf - 1.2)
+        limite_operacional = data_hora.replace(hour=18, minute=0, second=0, microsecond=0)
+        if fim > limite_operacional:
+            raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
+
         conflitos = OrdemServico.objects.filter(
             data_hora__date=data_hora.date(),
-            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO']
+            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']
         ).select_related('servico')
 
         for os in conflitos:
@@ -123,9 +133,15 @@ class OrdemServicoService:
                 raise ValidationError(f'Conflito com OS das {os_inicio.strftime("%H:%M")} às {os_fim.strftime("%H:%M")}.')
 
     @staticmethod
+    @transaction.atomic
     def criar_com_veiculo(dados, funcionario):
-        """Cria OS garantindo apenas uma ativa por vez."""
+        """Cria OS garantindo apenas uma ativa por vez e validando disponibilidade."""
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
+        
+        # Lock pessimista no estabelecimento para evitar race condition na reserva de horários
+        # (Axioma 14 / PR-Review RF-22)
+        Estabelecimento.objects.select_for_update().get(id=servico.estabelecimento_id)
+        
         OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
 
         veiculo, _ = Veiculo.objects.update_or_create(

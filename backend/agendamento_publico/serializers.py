@@ -28,7 +28,7 @@ class EstabelecimentoPublicoSerializer(serializers.ModelSerializer):
         model = Estabelecimento
         # Expor APENAS nome_fantasia, endereco_completo e servicos ativos.
         # id incluído para uso interno do frontend (sem IDOR pois a busca é via slug).
-        fields = ['id', 'nome_fantasia', 'endereco_completo', 'logo_url', 'servicos']
+        fields = ['id', 'nome_fantasia', 'endereco_completo', 'logo_url', 'servicos', 'slug']
 
     def get_logo_url(self, obj):
         request = self.context.get('request')

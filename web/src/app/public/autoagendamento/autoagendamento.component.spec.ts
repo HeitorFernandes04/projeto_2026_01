@@ -1,7 +1,6 @@
 /**
- * Testes do AutoagendamentoComponent (RF-21)
- * Cobre os Cenários BDD 4 e 5 da especificação rf21_draft_write_feature.md.
- * Padrão: mock manual do HttpClient (igual a servico.service.spec.ts do projeto).
+ * Testes do AutoagendamentoComponent (RF-21/22)
+ * Cobre os Cenários BDD da especificação.
  */
 import '@angular/compiler';
 import { of, throwError } from 'rxjs';
@@ -44,6 +43,7 @@ function criarComponente(mockService: Partial<AutoagendamentoPublicoService>) {
   // Garantir que o mock tenha todos os métodos necessários
   const serviceMock = {
     getEstabelecimento: vi.fn(),
+    getDisponibilidade: vi.fn().mockReturnValue(of([])),
     ...mockService,
   };
 
@@ -82,6 +82,7 @@ describe('AutoagendamentoComponent — Controle do CTA (CA-07)', () => {
   beforeEach(() => {
     const mockService = {
       getEstabelecimento: vi.fn().mockReturnValue(of(mockEstabelecimentoComServicos)),
+      getDisponibilidade: vi.fn().mockReturnValue(of([])),
     };
     component = criarComponente(mockService);
     component.ngOnInit();
@@ -157,6 +158,7 @@ describe('AutoagendamentoComponent — Utilitários de formatação', () => {
   beforeEach(() => {
     const mockService = {
       getEstabelecimento: vi.fn().mockReturnValue(of(mockEstabelecimentoComServicos)),
+      getDisponibilidade: vi.fn().mockReturnValue(of([])),
     };
     component = criarComponente(mockService);
   });

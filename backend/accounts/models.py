@@ -16,6 +16,10 @@ class Estabelecimento(models.Model):
     # Identidade visual do estabelecimento (Upload de arquivo)
     logo = models.ImageField(upload_to='logos/', null=True, blank=True)
 
+    # RF-22/RF-29: Horários de funcionamento para motor de disponibilidade
+    horario_abertura = models.TimeField(default="08:00")
+    horario_fechamento = models.TimeField(default="18:00")
+
     class Meta:
         verbose_name = "Estabelecimento"
         verbose_name_plural = "Estabelecimentos"
