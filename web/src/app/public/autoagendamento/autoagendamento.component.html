@@ -1,184 +1,114 @@
-<!-- Portal de Autoagendamento (RF-21) — Mobile-First -->
+<!-- Portal de Autoagendamento (RF-21) — Premium Dashboard -->
 <div class="portal-wrapper">
 
   <!-- ── ESTADO: CARREGANDO ── -->
   <ng-container *ngIf="carregando">
-    <div class="portal-header skeleton-header">
-      <div class="skeleton skeleton-title"></div>
-      <div class="skeleton skeleton-subtitle"></div>
-    </div>
-    <div class="portal-body">
-      <div class="skeleton skeleton-label"></div>
-      <div class="servicos-grid">
-        <div class="skeleton skeleton-card" *ngFor="let i of [1,2,3]"></div>
-      </div>
-    </div>
-  </ng-container>
-
-  <!-- ── ESTADO: 404 / NÃO ENCONTRADO ── -->
-  <ng-container *ngIf="!carregando && naoEncontrado">
-    <div class="estado-vazio" id="estado-nao-encontrado">
-      <div class="estado-icone">🔍</div>
-      <h2 class="estado-titulo">Lava-jato não encontrado</h2>
-      <p class="estado-descricao">
-        O link que você acessou pode estar desatualizado ou o estabelecimento foi desativado.
-        Verifique o endereço com quem te enviou.
-      </p>
-    </div>
-  </ng-container>
-
-  <!-- ── ESTADO: ERRO GENÉRICO ── -->
-  <ng-container *ngIf="!carregando && erro && !naoEncontrado">
-    <div class="estado-vazio" id="estado-erro">
-      <div class="estado-icone">⚠️</div>
-      <h2 class="estado-titulo">Algo deu errado</h2>
-      <p class="estado-descricao">
-        Não conseguimos carregar as informações do lava-jato. Tente novamente em instantes.
-      </p>
+    <div class="skeleton-wrapper">
+      <div class="skeleton-header"></div>
+      <div class="skeleton-cards"></div>
     </div>
   </ng-container>
 
   <!-- ── ESTADO: SUCESSO ── -->
   <ng-container *ngIf="!carregando && !erro && estabelecimento">
 
-    <!-- Cabeçalho do estabelecimento -->
-    <div class="portal-header">
-      <div class="header-logo-wrapper">
-        <img [src]="estabelecimento!.logo_url || '/logo.jpeg'" [alt]="estabelecimento!.nome_fantasia" class="header-logo" />
+    <!-- Cabeçalho (Dashboard Style) -->
+    <header class="portal-header">
+      <div class="header-logo-container">
+        <img [src]="estabelecimento!.logo_url || '/logo.jpeg'" class="main-logo" />
       </div>
-      <div class="badge-portal">Portal de Agendamento</div>
-      <h1 class="estabelecimento-nome" id="nome-estabelecimento">
-        {{ estabelecimento!.nome_fantasia }}
-      </h1>
-      <div class="estabelecimento-info">
-        <span class="icon-pin">📍</span>
-        {{ estabelecimento!.endereco_completo }}
+      <div class="header-titles">
+        <h1 class="main-title">Agende Seu Serviço</h1>
+        <p class="main-subtitle">Escolha o melhor para seu veículo</p>
       </div>
-    </div>
+    </header>
 
-    <div class="portal-body">
-      
-      <!-- ── PASSO 1: SELEÇÃO DE SERVIÇO (RF-21) ── -->
-      <ng-container *ngIf="passo === 1">
-        <!-- ESTADO: EMPTY STATE (sem serviços) -->
-        <ng-container *ngIf="servicos.length === 0">
-          <div class="estado-vazio" id="estado-sem-servicos">
-            <div class="estado-icone">🚿</div>
-            <h2 class="estado-titulo">Nenhum serviço disponível no momento</h2>
-            <p class="estado-descricao">Este lava-jato ainda não cadastrou serviços ativos.</p>
-          </div>
-        </ng-container>
+    <main class="portal-main">
 
-        <!-- LISTA DE SERVIÇOS -->
-        <ng-container *ngIf="servicos.length > 0">
-          <h2 class="secao-titulo">O que seu veículo precisa hoje?</h2>
-          <div class="servicos-grid" id="lista-servicos">
-            <label *ngFor="let servico of servicos" class="servico-card" [class.selecionado]="servicoSelecionado?.id === servico.id">
-              <input type="radio" name="servico" (change)="selecionarServico(servico)" class="servico-radio" [checked]="servicoSelecionado?.id === servico.id" />
-              <div class="servico-info">
-                <span class="servico-nome">{{ servico.nome }}</span>
-                <div class="servico-meta">
-                  <span class="servico-duracao">⏱ {{ formatarDuracao(servico.duracao_estimada_minutos) }}</span>
-                </div>
+      <!-- Seção de Serviços -->
+      <section class="section-servicos">
+        <h2 class="section-label">Serviços Disponíveis</h2>
+        <div class="servicos-grid">
+          <div *ngFor="let servico of servicos" class="servico-card-v"
+            [class.selected]="servicoSelecionado?.id === servico.id" (click)="selecionarServico(servico)">
+
+            <div class="servico-icon-wrapper">
+              <div class="icon-circle">
+                <span *ngIf="servico.nome.toLowerCase().includes('basic')">🚗</span>
+                <span *ngIf="!servico.nome.toLowerCase().includes('basic')">✨</span>
               </div>
-              <div class="servico-preco">{{ formatarPreco(servico.preco) }}</div>
-            </label>
-          </div>
-        </ng-container>
-      </ng-container>
+            </div>
 
-      <!-- ── PASSO 2: SELEÇÃO DE HORÁRIO (RF-22) ── -->
-      <ng-container *ngIf="passo === 2">
-        <h2 class="secao-titulo">Escolha um horário</h2>
-        
-        <div class="data-carrossel">
-          <div *ngFor="let d of datasDisponiveis" class="data-card" [class.ativa]="dataSelecionada === d" (click)="dataSelecionada = d">
-            <span class="data-semana">{{ d.semana }}</span>
-            <span class="data-dia">{{ d.dia }}</span>
-            <span class="data-mes">{{ d.mes }}</span>
+            <h3 class="servico-name">{{ servico.nome }}</h3>
+
+            <div class="servico-price">{{ formatarPreco(servico.preco) }}</div>
+            <div class="servico-duration">
+              <span class="icon-clock">⏱</span> {{ formatarDuracao(servico.duracao_estimada_minutos) }}
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="horarios-grid" [class.carregando-grid]="carregandoHorarios">
-          <!-- Skeleton Loading para horários -->
-          <ng-container *ngIf="carregandoHorarios">
-            <div class="skeleton-chip" *ngFor="let i of [1,2,3,4,5,6]"></div>
-          </ng-container>
+      <!-- Seção de Agendamento (Surgi ao selecionar serviço) -->
+      <div class="agendamento-flex-container" *ngIf="servicoSelecionado">
 
-          <!-- Lista de horários -->
-          <ng-container *ngIf="!carregandoHorarios && horariosDisponiveis.length > 0">
-            <button *ngFor="let slot of horariosDisponiveis" class="chip-horario" [class.selecionado]="horarioSelecionado === slot.inicio" (click)="horarioSelecionado = slot.inicio">
-              <span class="h-inicio">{{ slot.inicio }}</span>
-              <span class="h-separador">-</span>
-              <span class="h-fim">{{ slot.fim }}</span>
-            </button>
-          </ng-container>
+        <!-- Escolha a Data (Calendário) -->
+        <section class="section-data">
+          <h2 class="section-label">Escolha a Data</h2>
+          <div class="calendar-card">
+            <header class="calendar-header">
+              <span class="calendar-month">{{ mesAtualNome }}</span>
+              <div class="calendar-nav">
+                <button class="nav-btn" (click)="mudarMes(-1)">‹</button>
+                <button class="nav-btn" (click)="mudarMes(1)">›</button>
+              </div>
+            </header>
 
-          <!-- Estado Vazio para Horários -->
-          <div class="sem-horarios" *ngIf="!carregandoHorarios && horariosDisponiveis.length === 0">
-            <span class="icon-calendar">📅</span>
-            <p>Nenhum horário disponível para esta data.</p>
-            <small>Tente escolher outro dia no carrossel acima.</small>
+            <div class="calendar-week-names">
+              <div class="day-name" *ngFor="let nome of nomesDias">{{ nome }}</div>
+            </div>
+
+            <div class="calendar-days-grid">
+              <div *ngFor="let dia of diasDoMes" class="day-slot" [class.empty]="!dia" [class.today]="dia?.hoje"
+                [class.selected]="dia?.selecionado" (click)="selecionarData(dia)">
+                {{ dia?.dia }}
+              </div>
+            </div>
           </div>
-        </div>
-      </ng-container>
+        </section>
 
-      <!-- ── PASSO 3: CHECKOUT INTEGRADO (RF-23) ── -->
-      <ng-container *ngIf="passo === 3">
-        <h2 class="secao-titulo">Dados para o check-in</h2>
-        
-        <div class="form-row">
-          <div class="form-grupo flex-1">
-            <label>Placa do Veículo</label>
-            <input type="text" (input)="onInputPlaca($event)" placeholder="AAA-0000" class="input-moderno placa-input" maxlength="8" />
+        <!-- Escolha o Horário -->
+        <section class="section-horario">
+          <h2 class="section-label">Escolha o Horário</h2>
+          <div class="horarios-card">
+            <div class="horarios-card-header">
+              <span class="icon-clock">🕒</span>
+              Horários Disponíveis - {{ dataSelecionada.objeto | date:"d 'de' MMMM" }}
+            </div>
+
+            <div class="horarios-grid-chips" [class.is-loading]="carregandoHorarios">
+              <button *ngFor="let slot of horariosDisponiveis" class="time-chip-v"
+                [class.selected]="horarioSelecionado === slot.inicio" (click)="horarioSelecionado = slot.inicio">
+                {{ slot.inicio }}
+              </button>
+
+              <div class="no-slots-v" *ngIf="!carregandoHorarios && horariosDisponiveis.length === 0">
+                Nenhum horário disponível para esta data.
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div class="form-grupo flex-2">
-            <label>Modelo do Veículo</label>
-            <input type="text" [(ngModel)]="dadosAgendamento.modelo" placeholder="Ex: Civic, Corolla..." class="input-moderno" />
-          </div>
-        </div>
-
-        <div class="form-grupo">
-          <label>Cor Predominante</label>
-          <select [(ngModel)]="dadosAgendamento.cor" class="input-moderno">
-            <option value="" disabled selected>Selecione a cor...</option>
-            <option *ngFor="let cor of coresDisponiveis" [value]="cor">{{ cor }}</option>
-          </select>
-        </div>
-
-        <div class="form-grupo">
-          <label>Seu WhatsApp (Para avisarmos quando estiver pronto)</label>
-          <input type="text" (input)="onInputWhatsApp($event)" placeholder="(00) 00000-0000" class="input-moderno" maxlength="15" />
-        </div>
-
-        <div class="checkout-resumo">
-          <div class="resumo-item"><span>Serviço:</span> <strong>{{ servicoSelecionado?.nome }}</strong></div>
-          <div class="resumo-item"><span>Data:</span> <strong>{{ dataSelecionada.objeto | date:'dd/MM' }} às {{ horarioSelecionado }}</strong></div>
-        </div>
-      </ng-container>
-
-
-    </div><!-- /portal-body -->
-
-    <!-- ── RODAPÉ FIXO (CTA) ── -->
-    <div class="portal-footer" *ngIf="servicos.length > 0 && passo <= 3">
-      <div class="footer-btns">
-        <button *ngIf="passo > 1" class="btn-voltar" (click)="voltar()">Voltar</button>
-        
-        <button
-          class="btn-cta"
-          [disabled]="!podeAvancar"
-          [class.ativo]="podeAvancar"
-          (click)="passo === 3 ? finalizarAgendamento() : avancar()"
-        >
-          {{ passo === 3 ? 'Confirmar Agendamento' : 'Continuar' }}
-        </button>
       </div>
-    </div>
+
+      <!-- Footer CTA -->
+      <footer class="portal-action-footer" *ngIf="servicoSelecionado">
+        <button class="btn-primary-huge" [disabled]="!horarioSelecionado" (click)="avancar()">
+          Continuar para Dados
+        </button>
+      </footer>
+
+    </main>
 
   </ng-container>
-  <!-- /sucesso -->
-
 </div>
-<!-- /portal-wrapper -->

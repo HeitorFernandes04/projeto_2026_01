@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca, VistoriaItem
+from accounts.models import Estabelecimento
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
@@ -133,6 +134,11 @@ class OrdemServicoService:
     def criar_com_veiculo(dados, funcionario):
         """Cria OS garantindo apenas uma ativa por vez e validando disponibilidade."""
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
+        
+        # Lock pessimista no estabelecimento para evitar race condition na reserva de horários
+        # (Axioma 14 / PR-Review RF-22)
+        Estabelecimento.objects.select_for_update().get(id=servico.estabelecimento_id)
+        
         OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
 
         veiculo, _ = Veiculo.objects.update_or_create(

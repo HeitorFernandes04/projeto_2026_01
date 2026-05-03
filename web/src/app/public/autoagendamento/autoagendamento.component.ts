@@ -51,6 +51,11 @@ export class AutoagendamentoComponent implements OnInit {
 
   coresDisponiveis = ['Branco', 'Preto', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Bege', 'Verde', 'Amarelo', 'Outro'];
 
+  // Calendário Mensal Customizado
+  dataAtualExibida = new Date();
+  diasDoMes: any[] = [];
+  nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
   // Mock para RF-24/25/26 (Status)
   statusAgendamento = 'PATIO'; // PATIO, EM_EXECUCAO, FINALIZADO
 
@@ -107,6 +112,96 @@ export class AutoagendamentoComponent implements OnInit {
       });
     }
     this._dataSelecionada = this.datasDisponiveis[0];
+    this.gerarCalendario();
+  }
+
+  gerarCalendario() {
+    this.diasDoMes = [];
+    const ano = this.dataAtualExibida.getFullYear();
+    const mes = this.dataAtualExibida.getMonth();
+    
+    const primeiroDiaMes = new Date(ano, mes, 1).getDay();
+    const ultimoDiaMes = new Date(ano, mes + 1, 0).getDate();
+
+    // Preencher dias vazios antes do início do mês
+    for (let i = 0; i < primeiroDiaMes; i++) {
+      this.diasDoMes.push(null);
+    }
+
+    // Preencher dias do mês
+    for (let i = 1; i <= ultimoDiaMes; i++) {
+      const d = new Date(ano, mes, i);
+      this.diasDoMes.push({
+        objeto: d,
+        dia: i,
+        hoje: this.isHoje(d),
+        selecionado: this.isSelecionado(d)
+      });
+    }
+    this.cdr.markForCheck();
+  }
+
+  isHoje(d: Date): boolean {
+    const hoje = new Date();
+    return d.getDate() === hoje.getDate() && 
+           d.getMonth() === hoje.getMonth() && 
+           d.getFullYear() === hoje.getFullYear();
+  }
+
+  isSelecionado(d: Date): boolean {
+    if (!this.dataSelecionada) return false;
+    const sel = this.dataSelecionada.objeto;
+    return d.getDate() === sel.getDate() && 
+           d.getMonth() === sel.getMonth() && 
+           d.getFullYear() === sel.getFullYear();
+  }
+
+  mudarMes(delta: number) {
+    this.dataAtualExibida = new Date(this.dataAtualExibida.getFullYear(), this.dataAtualExibida.getMonth() + delta, 1);
+    this.gerarCalendario();
+  }
+
+  get mesAtualNome(): string {
+    return this.dataAtualExibida.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  selecionarData(dia: any) {
+    if (!dia || this.isSelecionado(dia.objeto)) return;
+    this.dataSelecionada = {
+      objeto: dia.objeto,
+      dia: dia.dia,
+      mes: dia.objeto.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+      semana: dia.objeto.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
+    };
+    this.gerarCalendario();
+  }
+
+  selecionarDataCalendario(event: any): void {
+    const dataStr = event.target.value; // YYYY-MM-DD
+    if (!dataStr) return;
+
+    const [ano, mes, dia] = dataStr.split('-').map(Number);
+    const dataObj = new Date(ano, mes - 1, dia);
+    
+    // Verifica se já existe no carrossel para não duplicar visualmente
+    const existente = this.datasDisponiveis.find(d => 
+      d.objeto.getDate() === dataObj.getDate() && 
+      d.objeto.getMonth() === dataObj.getMonth()
+    );
+
+    if (existente) {
+      this.dataSelecionada = existente;
+    } else {
+      // Cria um objeto temporário para representar essa data fora do carrossel
+      const novaData = {
+        objeto: dataObj,
+        dia: dataObj.getDate(),
+        mes: dataObj.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+        semana: dataObj.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
+      };
+      this.dataSelecionada = novaData;
+    }
+    this.cdr.markForCheck();
   }
 
   get dataSelecionada(): any {
@@ -122,17 +217,15 @@ export class AutoagendamentoComponent implements OnInit {
   }
 
   carregarHorarios(): void {
-    if (!this.estabelecimento || !this.servicoSelecionado || !this.dataSelecionada) return;
-
+    if (!this.servicoSelecionado || !this.dataSelecionada) return;
     this.carregandoHorarios = true;
-    this.horariosDisponiveis = [];
-    this.cdr.markForCheck();
+    this.horarioSelecionado = null;
 
     // Ajuste de fuso horário para pegar apenas o YYYY-MM-DD
     const d = this.dataSelecionada.objeto;
     const dataIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     
-    const slug = this.estabelecimento.slug || this.route.snapshot.paramMap.get('slug') || '';
+    const slug = this.estabelecimento?.slug || this.route.snapshot.paramMap.get('slug') || '';
 
     this.service.getDisponibilidade(slug, this.servicoSelecionado.id, dataIso).subscribe({
       next: (horarios) => {
@@ -179,8 +272,10 @@ export class AutoagendamentoComponent implements OnInit {
   }
 
   selecionarServico(servico: ServicoPublico): void {
+    if (this.servicoSelecionado?.id === servico.id) return;
     this.servicoSelecionado = servico;
-    this.horarioSelecionado = null; // RF-22: Limpar horário ao trocar de serviço
+    this.horarioSelecionado = null; 
+    this.carregarHorarios(); // RF-22: Carregar horários automaticamente para a data atual
     this.cdr.markForCheck();
   }
 

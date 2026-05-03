@@ -77,4 +77,26 @@ describe('AutoagendamentoComponent — Lógica RF-22 (Motor de Disponibilidade)'
       '2026-05-20'
     );
   });
+
+  it('deve atualizar horários ao selecionar data via calendário mensal', () => {
+    // Simula seleção de uma data daqui a 15 dias (fora do carrossel padrão)
+    const dataFutura = new Date();
+    dataFutura.setDate(dataFutura.getDate() + 15);
+    const dataIso = dataFutura.toISOString().split('T')[0];
+
+    // Simula a ação que o novo componente de calendário disparará
+    component.dataSelecionada = { 
+      objeto: dataFutura, 
+      dia: dataFutura.getDate(), 
+      mes: 'xxx', 
+      semana: 'xxx' 
+    };
+
+    expect(mockService.getDisponibilidade).toHaveBeenCalledWith(
+      expect.any(String),
+      10,
+      dataIso
+    );
+    expect(component.horarioSelecionado).toBeNull();
+  });
 });

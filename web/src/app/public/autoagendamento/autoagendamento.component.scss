@@ -1,473 +1,333 @@
-// Variáveis de Design System
-$bg: #0d1117;
-$card: #161b22;
+// Design System Lava-Me Premium
+$bg-dark: #090c10;
+$card-dark: #12171d;
 $card-hover: #1c2128;
-$primary: #0066ff;
-$border: #30363d;
-$text: #e6edf3;
+$primary-blue: #0066ff;
+$primary-glow: rgba(0, 102, 255, 0.4);
+$text-main: #f0f6fc;
 $text-muted: #8b949e;
-$success: #3fb950;
-$font: 'Inter', system-ui, -apple-system, sans-serif;
+$border-color: #30363d;
+$font-family: 'Inter', system-ui, -apple-system, sans-serif;
 
-// ── Wrapper principal ────────────────────────────────────────────────────
 .portal-wrapper {
   min-height: 100vh;
-  width: 100%;
-  max-width: 100%; 
-  margin: 0 auto;
-  background: $bg;
-  display: flex;
-  flex-direction: column;
-  font-family: $font;
-  padding-top: 20px;
-  padding-bottom: 110px;
-  position: relative;
-  box-sizing: border-box;
-
-  @media (min-width: 768px) {
-    max-width: 850px; // Largura confortável para Desktop
-    padding-top: 40px;
-    box-shadow: 0 0 100px rgba(0,0,0,0.5);
-    margin: 20px auto;
-    border-radius: 24px;
-    min-height: calc(100vh - 40px);
-  }
+  background: $bg-dark;
+  color: $text-main;
+  font-family: $font-family;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-// ── Cabeçalho do Estabelecimento ─────────────────────────────────────────
+// ── Header ────────────────────────────────────────────────────────────────
 .portal-header {
-  padding: 32px 20px;
+  padding: 40px 20px 20px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-bottom: 1px solid $border;
   text-align: center;
 
-  .header-logo-wrapper {
-    width: 70px;
-    height: 70px;
-    background: $card;
-    border-radius: 18px;
-    padding: 3px;
-    border: 1px solid $border;
-    margin-bottom: 16px;
+  .header-logo-container {
+    width: 64px;
+    height: 64px;
+    background: #000;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 
-    .header-logo {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 14px;
+    .main-logo {
+      max-width: 100%;
+      height: auto;
     }
   }
 
-  .badge-portal {
-    background: rgba(0, 102, 255, 0.1);
-    color: $primary;
-    padding: 4px 12px;
-    border-radius: 100px;
-    font-size: 10px;
+  .main-title {
+    font-size: 28px;
     font-weight: 800;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .estabelecimento-nome {
-    font-size: 22px;
-    font-weight: 800;
-    color: #fff;
     margin: 0 0 8px;
+    letter-spacing: -0.02em;
   }
 
-  .estabelecimento-info {
-    font-size: 13px;
+  .main-subtitle {
+    font-size: 14px;
     color: $text-muted;
+    margin: 0;
   }
 }
 
-// ── Corpo da tela ────────────────────────────────────────────────────────
-.portal-body {
-  flex: 1;
-  padding: 24px 20px;
-  width: 100%;
-  box-sizing: border-box;
+// ── Main Content ──────────────────────────────────────────────────────────
+.portal-main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 20px 100px;
 }
 
-.secao-titulo {
-  font-size: 14px;
+.section-label {
+  font-size: 16px;
   font-weight: 700;
-  color: $text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 24px;
+  margin: 40px 0 20px;
+  color: #fff;
 }
 
-// ── Cards de Serviço (GRID RESPONSIVO) ──────────────────────────────────
+// ── Service Cards (Vertical) ──────────────────────────────────────────────
 .servicos-grid {
   display: grid;
-  grid-template-columns: 1fr; // Mobile: 1 coluna
-  gap: 12px;
-
-  @media (min-width: 600px) {
-    grid-template-columns: 1fr 1fr; // Tablet/Desktop: 2 colunas
-  }
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
 }
 
-.servico-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: $card;
-  border: 1px solid $border;
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  .servico-info {
-    flex: 1;
-    .servico-nome { display: block; font-size: 15px; font-weight: 600; color: #fff; }
-    .servico-meta { font-size: 12px; color: $text-muted; }
-  }
-
-  .servico-preco { font-weight: 700; color: #fff; }
-
-  &.selecionado {
-    border-color: $primary;
-    background: rgba(0, 102, 255, 0.05);
-  }
-}
-
-// ── Carrossel e Horários ────────────────────────────────────────────────
-.data-carrossel {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 16px;
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
-
-  .data-card {
-    flex: 0 0 80px;
-    height: 100px;
-    background: $card;
-    border: 1px solid $border;
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-
-    .data-semana { font-size: 9px; font-weight: 800; color: $text-muted; text-transform: uppercase; }
-    .data-dia    { font-size: 22px; font-weight: 800; color: #fff; }
-
-    &.ativa {
-      border-color: $primary;
-      background: rgba(0, 102, 255, 0.1);
-      .data-semana, .data-dia { color: $primary; }
-    }
-  }
-}
-
-.horarios-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 12px;
-  margin-top: 24px;
-  transition: opacity 0.3s ease;
-
-  &.carregando-grid {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-
-  .chip-horario {
-    height: 48px;
-    background: $card;
-    border: 1px solid $border;
-    border-radius: 12px;
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-
-    &:active { transform: scale(0.95); }
-
-    &.selecionado {
-      background: $primary;
-      border-color: $primary;
-      box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
-    }
-
-    .h-inicio { font-size: 14px; }
-    .h-separador { font-size: 10px; margin: 0 4px; opacity: 0.5; }
-    .h-fim { font-size: 11px; opacity: 0.8; }
-  }
-
-  .skeleton-chip {
-    height: 48px;
-    background: $card;
-    border-radius: 12px;
-    border: 1px solid $border;
-    position: relative;
-    overflow: hidden;
-    &::after {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-      animation: shimmer 1.5s infinite linear;
-    }
-  }
-
-  .sem-horarios {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 32px 20px;
-    text-align: center;
-    background: rgba(255,255,255,0.02);
-    border: 1px dashed $border;
-    border-radius: 20px;
-
-    .icon-calendar { font-size: 32px; margin-bottom: 12px; display: block; filter: grayscale(1); opacity: 0.5; }
-    p { font-size: 14px; font-weight: 600; color: #fff; margin: 0 0 4px; }
-    small { font-size: 12px; color: $text-muted; }
-  }
-}
-
-// ── Checkout (FORMULÁRIO RESPONSIVO) ───────────────────────────────────
-.form-row {
+.servico-card-v {
+  background: $card-dark;
+  border: 1px solid $border-color;
+  border-radius: 20px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 16px;
-
-  @media (min-width: 600px) {
-    flex-direction: row; // Desktop: Lado a lado
-  }
-
-  .form-grupo {
-    flex: 1;
-    margin-bottom: 0;
-  }
-}
-
-.form-grupo {
-  margin-bottom: 20px;
-  label {
-    display: block;
-    font-size: 11px;
-    font-weight: 800;
-    color: $text-muted;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-}
-
-.input-moderno {
-  width: 100%;
-  height: 48px;
-  background: $card;
-  border: 1px solid $border;
-  border-radius: 14px;
-  padding: 0 16px;
-  color: #fff;
-  font-family: $font;
-  box-sizing: border-box;
-
-  &:focus { outline: none; border-color: $primary; }
-}
-
-.placa-input {
+  align-items: center;
   text-align: center;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    border-color: rgba(255,255,255,0.2);
+    transform: translateY(-4px);
+    background: $card-hover;
+  }
+
+  &.selected {
+    border-color: $primary-blue;
+    box-shadow: inset 0 0 0 1px $primary-blue, 0 0 20px rgba(0, 102, 255, 0.15);
+    background: rgba(0, 102, 255, 0.03);
+    
+    .servico-icon-wrapper .icon-circle {
+      background: $primary-blue;
+      color: #fff;
+      box-shadow: 0 0 15px $primary-glow;
+    }
+  }
+
+  .servico-icon-wrapper {
+    margin-bottom: 20px;
+    .icon-circle {
+      width: 56px;
+      height: 56px;
+      background: #1c2128;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.3s;
+    }
+  }
+
+  .servico-name { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
+  .servico-desc { font-size: 13px; color: $text-muted; margin: 0 0 20px; line-height: 1.4; }
+  .servico-price { font-size: 24px; font-weight: 800; color: $primary-blue; margin-bottom: 8px; }
+  .servico-duration { font-size: 12px; color: $text-muted; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 }
 
-.checkout-resumo {
-  background: rgba(255,255,255,0.02);
-  border: 1px dashed $border;
-  border-radius: 16px;
-  padding: 20px;
-  margin-top: 24px;
+// ── Agendamento Flex Layout ───────────────────────────────────────────────
+.agendamento-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 40px;
+  animation: slideUp 0.5s ease-out;
 
-  .resumo-item {
+  .section-data { flex: 1.4; min-width: 320px; }
+  .section-horario { flex: 1; min-width: 280px; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ── Custom Calendar ───────────────────────────────────────────────────────
+.calendar-card {
+  background: $card-dark;
+  border: 1px solid $border-color;
+  border-radius: 20px;
+  padding: 24px;
+
+  .calendar-header {
     display: flex;
     justify-content: space-between;
-    font-size: 14px;
-    margin-bottom: 8px;
-    span { color: $text-muted; }
-    strong { color: #fff; }
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 8px;
+
+    .calendar-month {
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 12px;
+      .nav-btn {
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        border: 1px solid $border-color;
+        border-radius: 8px;
+        color: #fff;
+        cursor: pointer;
+        &:hover { border-color: $text-muted; }
+      }
+    }
+  }
+
+  .calendar-week-names {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 12px;
+    .day-name {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: $text-muted;
+    }
+  }
+
+  .calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+
+    .day-slot {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover:not(.empty) { background: $card-hover; }
+      
+      &.today { color: $primary-blue; }
+      &.selected {
+        background: $primary-blue !important;
+        color: #fff !important;
+        box-shadow: 0 4px 15px $primary-glow;
+      }
+      &.empty { cursor: default; }
+    }
   }
 }
 
-// ── Footer Navegação (PADRONIZADO UI/UX) ────────────────────────────────
-.portal-footer {
+// ── Horários Card ─────────────────────────────────────────────────────────
+.horarios-card {
+  background: $card-dark;
+  border: 1px solid $border-color;
+  border-radius: 20px;
+  padding: 24px;
+  height: 100%;
+  box-sizing: border-box;
+
+  .horarios-card-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: $text-muted;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .horarios-grid-chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    transition: opacity 0.2s ease;
+
+    &.is-loading { 
+      opacity: 0.7; 
+      pointer-events: none; 
+      filter: blur(1px);
+    }
+  }
+
+  .time-chip-v {
+    height: 44px;
+    background: #1c2128;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover { border-color: $text-muted; }
+    &.selected {
+      background: $primary-blue;
+      border-color: $primary-blue;
+      box-shadow: 0 4px 12px $primary-glow;
+    }
+  }
+
+  .no-slots-v {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 0;
+    color: $text-muted;
+    font-size: 13px;
+  }
+}
+
+// ── Footer CTA ────────────────────────────────────────────────────────────
+.portal-action-footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(0deg, $bg 85%, transparent 100%);
-  z-index: 1000;
+  padding: 24px;
+  background: linear-gradient(0deg, $bg-dark 60%, transparent 100%);
   display: flex;
   justify-content: center;
-  box-sizing: border-box;
+  z-index: 100;
 
-  @media (min-width: 768px) {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    max-width: 850px;
-    padding: 24px;
-    border-radius: 0 0 24px 24px;
-  }
-}
-
-.footer-btns {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-  max-width: 600px; // Largura máxima confortável para os botões
-  margin: 0 auto;
-
-  .btn-voltar {
-    flex: 1; // 33% do espaço aproximadamente
-    height: 52px;
-    background: transparent;
-    border: 1px solid $border;
-    border-radius: 14px;
-    color: #fff;
-    font-weight: 700;
-    font-family: $font;
-    cursor: pointer;
-    transition: all 0.2s;
-    &:active { transform: scale(0.98); }
-  }
-
-  .btn-cta {
-    flex: 2; // 66% do espaço para destaque da ação principal
-    height: 52px;
-    border: none;
-    border-radius: 14px;
-    font-weight: 800;
-    font-family: $font;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-    
-    background: #1c2128;
-    color: #484f58;
-
-    &:disabled { cursor: not-allowed; }
-    &:active:not(:disabled) { transform: scale(0.98); }
-
-    &.ativo {
-      background: $primary;
-      color: #fff;
-      box-shadow: 0 8px 24px rgba(0, 102, 255, 0.3);
-    }
-  }
-}
-
-// ── Passo 4: Sucesso e Status (RESPONSIVO) ────────────────────────────────
-.sucesso-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 20px 0;
-
-  .sucesso-icone {
-    width: 56px;
-    height: 56px;
-    background: $success;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    color: #fff;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 20px rgba(63, 185, 80, 0.3);
-  }
-
-  .sucesso-titulo { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; }
-  .sucesso-sub { font-size: 13px; color: $text-muted; margin-bottom: 32px; }
-}
-
-.ticket-status {
-  width: 100%;
-  max-width: 400px;
-  background: $card;
-  border: 1px solid $border;
-  border-radius: 20px;
-  padding: 24px;
-  margin: 0 auto;
-
-  .ticket-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 13px;
-    span { color: $text-muted; }
-    strong { color: #fff; }
-  }
-
-  .badge-status {
-    background: rgba(0, 102, 255, 0.1);
-    color: $primary;
-    padding: 3px 10px;
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-
-  .ticket-divider {
-    height: 1px;
-    border-top: 1px dashed $border;
-    margin: 16px 0;
-  }
-
-  .btn-cancelar {
+  .btn-primary-huge {
     width: 100%;
-    height: 44px;
-    background: transparent;
-    border: 1px solid rgba(235, 87, 87, 0.3);
-    color: #eb5757;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 12px;
+    max-width: 400px;
+    height: 56px;
+    background: $primary-blue;
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
     cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 8px 25px rgba(0, 102, 255, 0.4);
+
+    &:disabled {
+      background: #1c2128;
+      color: #484f58;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    &:active:not(:disabled) { transform: scale(0.98); }
   }
 }
 
-// ── Skeleton Loading ─────────────────────────────────────────────────────
-.skeleton {
-  background: linear-gradient(90deg, $card 25%, $card-hover 50%, $card 75%);
-  background-size: 800px 100%;
-  animation: shimmer 1.4s infinite linear;
-  border-radius: 8px;
+// ── Skeletons ─────────────────────────────────────────────────────────────
+.skeleton-wrapper {
+  padding: 40px 20px;
+  .skeleton-header { height: 150px; background: $card-dark; border-radius: 20px; margin-bottom: 40px; }
+  .skeleton-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; height: 300px; }
 }
-
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-
-.skeleton-title    { height: 24px; width: 60%; margin-bottom: 12px; }
-.skeleton-subtitle { height: 14px; width: 40%; }
-.skeleton-card     { height: 80px; width: 100%; margin-bottom: 12px; }
