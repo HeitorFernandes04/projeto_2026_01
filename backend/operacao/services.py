@@ -353,12 +353,16 @@ class KanbanService:
     def listar_por_estabelecimento(estabelecimento):
         from django.db.models import Q
         hoje = timezone.localdate()
-        # OS ativas (qualquer data) + finalizadas somente hoje
+        # OS do dia atual + pendentes de dias anteriores (em execução) + finalizadas somente hoje
         return (
             OrdemServico.objects
             .filter(estabelecimento=estabelecimento)
             .filter(
-                Q(status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                # OS do dia atual (qualquer status ativo)
+                Q(data_hora__date=hoje, status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                # Pendentes de dias anteriores (em execução)
+                Q(data_hora__date__lt=hoje, status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                # Finalizadas somente hoje
                 Q(status='FINALIZADO', horario_finalizacao__date=hoje)
             )
             .select_related('veiculo', 'servico')
