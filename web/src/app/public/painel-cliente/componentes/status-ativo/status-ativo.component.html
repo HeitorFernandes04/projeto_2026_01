@@ -29,7 +29,7 @@
   <!-- Previsão de entrega -->
   <div class="delivery-eta">
     <span class="material-symbols-outlined">schedule</span>
-    <strong *ngIf="ativo?.status !== 'FINALIZADO'">Previsão de entrega: {{ ativo?.previsao_entrega || '16:30' }}</strong>
+    <strong *ngIf="ativo?.status !== 'FINALIZADO'">Previsão de entrega: {{ ativo?.previsao_entrega || '--:--' }}</strong>
     <strong *ngIf="ativo?.status === 'FINALIZADO'">Serviço concluído em: {{ ativo?.data || '--/--/----' }}</strong>
   </div>
 </div>

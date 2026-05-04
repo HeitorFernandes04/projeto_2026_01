@@ -28,7 +28,7 @@ export class StatusAtivoComponent {
       'LIBERACAO': 'Pronto para retirada',
       'FINALIZADO': 'Serviço concluído'
     };
-    return mapa[this.ativo.status_nome] || 'Veículo Recebido';
+    return mapa[this.ativo.status] || 'Veículo Recebido';
   }
 
   getEtapaIndex(): number {
@@ -41,7 +41,7 @@ export class StatusAtivoComponent {
       'LIBERACAO': 3,
       'FINALIZADO': 3
     };
-    return mapa[this.ativo.status_nome] || 0;
+    return mapa[this.ativo.status] || 0;
   }
 
   getProgressoBarra(): number {

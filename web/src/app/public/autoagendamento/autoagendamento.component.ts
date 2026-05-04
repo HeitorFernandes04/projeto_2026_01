@@ -154,9 +154,10 @@ export class AutoagendamentoComponent implements OnInit {
         this.cdr.markForCheck();
       }))
       .subscribe({
-        next: () => {
+        next: (ordemCriada) => {
           // Salvar nome do cliente no sessionStorage para o painel usar
           sessionStorage.setItem('clienteNome', this.dadosAgendamento.nome);
+          sessionStorage.setItem('ordemServicoAtiva', JSON.stringify(ordemCriada));
           const slug = this.estabelecimento?.slug;
           this.router.navigate([`/agendar/${slug}/painel`]);
         },

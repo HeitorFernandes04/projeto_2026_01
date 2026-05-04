@@ -33,9 +33,6 @@ export class PainelComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
 
   ngOnInit(): void {
-    // Iniciar simulação de progresso em tempo real conforme lógica do serviço
-    this.ordemServicoService.iniciarSimulacaoProgresso();
-    
     // Escutar mudanças nas ordens de serviço (Reatividade Axioma 13)
     this.subscriptions.push(
       this.ordemServicoService.getOrdensServico$().subscribe(() => {
@@ -91,7 +88,7 @@ export class PainelComponent implements OnInit, OnDestroy {
    * Acionado pelo EventEmitter (cancelado) do CardAtivoComponent.
    */
   onAgendamentoCancelado(osId: number): void {
-    this.ordensAtivas = this.ordensAtivas.filter(os => os.id !== osId);
+    this.ordemServicoService.removerOrdemAtiva(osId);
     this.cdr.detectChanges();
   }
 

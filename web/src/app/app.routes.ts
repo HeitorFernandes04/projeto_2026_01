@@ -62,7 +62,6 @@ export const routes: Routes = [
         children: [
           {
             path: '',
-            canActivate: [authGuard], // Axioma 14: Autenticação Unificada
             loadComponent: () =>
               import('./public/painel-cliente/painel.component').then(
                 m => m.PainelComponent

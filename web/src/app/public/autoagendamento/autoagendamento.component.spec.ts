@@ -29,6 +29,22 @@ const mockEstabelecimentoSemServicos: EstabelecimentoPublico = {
   servicos: [],
 };
 
+const mockOrdemCriada = {
+  id: 123,
+  veiculo: {
+    placa: 'ABC-1234',
+    modelo: 'Civic',
+    nome_dono: 'Carlos Silva',
+  },
+  servico: {
+    nome: 'Ducha Simples',
+    duracao_estimada_minutos: 30,
+  },
+  data_hora: '2026-05-06T14:00:00',
+  status: 'PATIO',
+  slug_cancelamento: 'f475af97-c771-4d7a-ba1d-1047db93d0e9',
+};
+
 // ── Factory: cria o componente com um mock de serviço ──────────────────────
 function criarComponente(mockService: Partial<AutoagendamentoPublicoService>) {
   const mockRoute = {
@@ -158,7 +174,7 @@ describe('AutoagendamentoComponent — RF-23 Checkout', () => {
     mockService = {
       getEstabelecimento: vi.fn().mockReturnValue(of(mockEstabelecimentoComServicos)),
       getDisponibilidade: vi.fn().mockReturnValue(of([])),
-      finalizarCheckout: vi.fn().mockReturnValue(of({ id: 123 })),
+      finalizarCheckout: vi.fn().mockReturnValue(of(mockOrdemCriada)),
     };
     
     mockRouter = {
@@ -294,9 +310,8 @@ describe('AutoagendamentoComponent — RF-23 Checkout', () => {
     });
   });
 
-  it('deve salvar nome do cliente no sessionStorage e redirecionar', () => {
-    // Mock sessionStorage
-    const mockSetItem = vi.spyOn(sessionStorage, 'setItem');
+  it('deve salvar nome do cliente, OS real no sessionStorage e redirecionar', () => {
+    sessionStorage.clear();
     
     component.dadosAgendamento = {
       placa: 'ABC-1234',
@@ -322,8 +337,9 @@ describe('AutoagendamentoComponent — RF-23 Checkout', () => {
       nome_cliente: 'Carlos Silva',
       whatsapp: '11999990000'
     });
-    
-    mockSetItem.mockRestore();
+    expect(sessionStorage.getItem('clienteNome')).toBe('Carlos Silva');
+    expect(sessionStorage.getItem('ordemServicoAtiva')).toBe(JSON.stringify(mockOrdemCriada));
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/agendar/lava-me-premium/painel']);
   });
 
   it('deve exibir alert em caso de erro no checkout', () => {
