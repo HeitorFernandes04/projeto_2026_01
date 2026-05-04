@@ -80,9 +80,19 @@ class HistoricoOrdemServicoView(APIView):
         filtro_serializer = HistoricoOrdemServicoFiltroSerializer(data=request.query_params)
         filtro_serializer.is_valid(raise_exception=True)
 
+        # Obter estabelecimento do usuário (Axioma 5 - Multi-tenancy)
+        estabelecimento = None
+        if hasattr(request.user, 'perfil_gestor'):
+            estabelecimento = request.user.perfil_gestor.estabelecimento
+        elif hasattr(request.user, 'perfil_funcionario'):
+            estabelecimento = request.user.perfil_funcionario.estabelecimento
+        else:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Usuário sem estabelecimento vinculado.")
+
         try:
             ordens = OrdemServicoService.listar_historico_por_periodo(
-                funcionario=request.user,
+                estabelecimento=estabelecimento,
                 data_inicial=filtro_serializer.validated_data['data_inicial'],
                 data_final=filtro_serializer.validated_data['data_final'],
                 status=filtro_serializer.validated_data['status'],

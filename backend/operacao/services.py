@@ -93,20 +93,20 @@ class OrdemServicoService:
     """Serviço responsável pelas operações de criação e transição de Ordens de Serviço."""
 
     @staticmethod
-    def listar_historico_por_periodo(funcionario, data_inicial, data_final, status='todos'):
-        """RF-10: Lista histórico restrito ao funcionário com validação de datas."""
+    def listar_historico_por_periodo(estabelecimento, data_inicial, data_final, status='todos'):
+        """RF-10: Lista histórico por estabelecimento (Axioma 5 - Multi-tenancy)."""
         if data_inicial > data_final:
             raise ValidationError("A data inicial não pode ser maior que a data final.")
 
         filtros = {
-            'funcionario': funcionario,
+            'estabelecimento': estabelecimento,
             'data_hora__date__gte': data_inicial,
             'data_hora__date__lte': data_final,
         }
         if status and status != 'todos':
             filtros['status'] = status
 
-        return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
+        return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico', 'funcionario').order_by('-data_hora')
 
     @staticmethod
     def verificar_conflito(estabelecimento, data_hora, duracao):
