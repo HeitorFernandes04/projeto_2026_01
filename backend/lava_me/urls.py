@@ -28,6 +28,8 @@ urlpatterns = [
     path('api/incidentes-os/', include('operacao.incidentes_urls')),
     # RF-21: Portal de Autoagendamento — rotas públicas (sem autenticação)
     path('api/publico/', include('agendamento_publico.urls')),
+    # RF-25: Painel do Cliente — rotas autenticadas (perfil CLIENTE)
+    path('api/cliente/', include('operacao.cliente_urls')),
     
     # Documentação da API (drf-spectacular)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

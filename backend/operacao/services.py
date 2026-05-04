@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca, VistoriaItem
-from accounts.models import Estabelecimento
+from accounts.models import Estabelecimento, Cliente
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
@@ -270,6 +270,14 @@ class OrdemServicoService:
                 'estabelecimento': estabelecimento
             }
         )
+
+        # RF-25: linka ao perfil Cliente se já existe conta com esse telefone
+        cliente_existente = Cliente.objects.filter(
+            telefone_whatsapp=dados['whatsapp']
+        ).first()
+        if cliente_existente and veiculo.cliente_id != cliente_existente.pk:
+            veiculo.cliente = cliente_existente
+            veiculo.save(update_fields=['cliente'])
 
         # Cria a Ordem de Serviço inicial no Pátio
         return OrdemServico.objects.create(

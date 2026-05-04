@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import OrdemServico, MidiaOrdemServico
 from core.models import Servico, TagPeca, Veiculo
+from core.utils import formatar_placa
+from accounts.models import Estabelecimento
 from operacao.models import IncidenteOS
 from django.utils import timezone
 import os
@@ -20,10 +22,7 @@ class VeiculoSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        placa = ret.get('placa', '')
-        # RN: Aplica máscara visual na saída da API (AAA-1234 ou AAA-1A23)
-        if len(placa) == 7 and '-' not in placa:
-            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        ret['placa'] = formatar_placa(ret.get('placa', ''))
         return ret
 
 
@@ -219,9 +218,7 @@ class KanbanCardSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        placa = ret.get('placa', '')
-        if len(placa) == 7 and '-' not in placa:
-            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        ret['placa'] = formatar_placa(ret.get('placa', ''))
         return ret
 
 
@@ -263,9 +260,7 @@ class IncidentePendenteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        placa = ret.get('placa', '')
-        if len(placa) == 7 and '-' not in placa:
-            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        ret['placa'] = formatar_placa(ret.get('placa', ''))
         return ret
 
 
@@ -304,9 +299,7 @@ class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        placa = ret.get('placa', '')
-        if len(placa) == 7 and '-' not in placa:
-            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        ret['placa'] = formatar_placa(ret.get('placa', ''))
         return ret
 
 
@@ -427,9 +420,7 @@ class HistoricoGestorItemSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        placa = ret.get('placa', '')
-        if len(placa) == 7 and '-' not in placa:
-            ret['placa'] = f"{placa[:3]}-{placa[3:]}"
+        ret['placa'] = formatar_placa(ret.get('placa', ''))
         return ret
 
 
@@ -468,5 +459,44 @@ class CheckoutPublicoSerializer(serializers.Serializer):
         # Validação de comprimento mínimo (placa antiga: 7 chars, Mercosul: 7 chars)
         if len(normalized) < 7:
             raise serializers.ValidationError("Placa inválida: deve ter pelo menos 7 caracteres")
-        
+
         return normalized
+
+
+# ── RF-25: Painel do Cliente ────────────────────────────────────────────────
+
+class EstabelecimentoResumoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estabelecimento
+        fields = ['nome_fantasia', 'slug']
+
+
+class OrdemServicoClienteSerializer(serializers.ModelSerializer):
+    servico_nome = serializers.CharField(source='servico.nome', read_only=True)
+    veiculo_placa = serializers.SerializerMethodField()
+    veiculo_modelo = serializers.CharField(source='veiculo.modelo', read_only=True)
+    estabelecimento = EstabelecimentoResumoSerializer(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    etapa_atual = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrdemServico
+        fields = [
+            'id', 'data_hora', 'status', 'status_display', 'etapa_atual',
+            'servico_nome', 'veiculo_placa', 'veiculo_modelo', 'estabelecimento',
+        ]
+
+    def get_veiculo_placa(self, obj):
+        return formatar_placa(obj.veiculo.placa)
+
+    def get_etapa_atual(self, obj):
+        mapa = {
+            'PATIO': 1,
+            'VISTORIA_INICIAL': 2,
+            'EM_EXECUCAO': 3,
+            'LIBERACAO': 4,
+            'FINALIZADO': 4,
+            'CANCELADO': 0,
+            'BLOQUEADO_INCIDENTE': 3,
+        }
+        return mapa.get(obj.status, 1)

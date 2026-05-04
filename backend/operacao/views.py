@@ -1,4 +1,6 @@
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied, ValidationError
+from core.utils import formatar_placa
+from operacao.constants import STATUS_ATIVOS, STATUS_HISTORICO, HISTORICO_CLIENTE_LIMITE
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
@@ -18,9 +20,11 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from .permissions import IsFuncionarioDaOS, IsGestor
+from accounts.permissions import IsCliente
 from .serializers import (
     KanbanCardSerializer,
     OrdemServicoSerializer,
+    OrdemServicoClienteSerializer,
     CriarOrdemServicoSerializer,
     HistoricoOrdemServicoFiltroSerializer,
     HistoricoGestorFiltroSerializer,
@@ -296,7 +300,7 @@ class EntradasRecentesAPIView(APIView):
         data = [
             {
                 'id': os.id,
-                'placa': f"{os.veiculo.placa[:3]}-{os.veiculo.placa[3:]}" if len(os.veiculo.placa) == 7 else os.veiculo.placa,
+                'placa': formatar_placa(os.veiculo.placa),
                 'modelo': os.veiculo.modelo,
                 'servico': os.servico.nome,
                 'data_hora': os.data_hora,
@@ -470,3 +474,30 @@ class CheckoutPublicoView(APIView):
             return Response(OrdemServicoSerializer(os).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ── RF-25: Painel do Cliente ─────────────────────────────────────────────────
+
+
+class ClienteHistoricoView(APIView):
+    """RF-25: Retorna histórico de OSs do cliente autenticado, separando ativos e concluídos."""
+    permission_classes = [IsAuthenticated, IsCliente]
+
+    def get(self, request):
+        cliente = request.user.perfil_cliente
+        base_qs = (
+            OrdemServico.objects
+            .filter(veiculo__cliente=cliente)
+            .select_related('veiculo', 'servico', 'estabelecimento')
+            .order_by('-data_hora')
+        )
+
+        ativos = base_qs.filter(status__in=STATUS_ATIVOS)
+        historico = base_qs.filter(status__in=STATUS_HISTORICO)[:HISTORICO_CLIENTE_LIMITE]
+
+        ctx = {'request': request}
+        return Response({
+            'cliente_nome': request.user.name,
+            'ativos': OrdemServicoClienteSerializer(ativos, many=True, context=ctx).data,
+            'historico': OrdemServicoClienteSerializer(historico, many=True, context=ctx).data,
+        })

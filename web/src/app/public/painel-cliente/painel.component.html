@@ -9,9 +9,19 @@
     </div>
   </header>
 
-  <main class="portal-body" *ngIf="dados">
+  <div *ngIf="carregando" class="loading-state">
+    <span class="material-symbols-outlined spinning">sync</span>
+    <p>Carregando seus dados...</p>
+  </div>
+
+  <div *ngIf="erro" class="error-state">
+    <span class="material-symbols-outlined">error</span>
+    <p>{{ erro }}</p>
+  </div>
+
+  <main class="portal-body" *ngIf="!carregando && !erro">
     <section class="hero-welcome">
-      <h1 class="greeting-text">Bem-vindo, {{ dados.cliente_nome }}</h1>
+      <h1 class="greeting-text">Bem-vindo, {{ clienteNome }}</h1>
       <p class="experience-tag">Acompanhe seu veículo em tempo real</p>
     </section>
 
