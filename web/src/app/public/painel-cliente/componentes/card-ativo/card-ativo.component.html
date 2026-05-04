@@ -71,9 +71,27 @@
     </div>
   </div>
 
-  <!-- Ação de Cancelamento -->
-  <button class="btn-cancelar-agendamento" (click)="cancelarAgendamento()">
-    <span class="material-symbols-outlined">close</span>
-    Cancelar Agendamento
-  </button>
+  <!-- Ação de Cancelamento — RF-24 -->
+  <div class="cancelamento-area">
+    @if (erroCancelamento) {
+      <p class="erro-cancelamento">
+        <span class="material-symbols-outlined">error</span>
+        {{ erroCancelamento }}
+      </p>
+    }
+
+    @if (podeCancelar) {
+      <button
+        class="btn-cancelar-agendamento"
+        [disabled]="cancelando"
+        (click)="cancelarAgendamento()"
+        type="button"
+        aria-label="Cancelar agendamento">
+        <span class="material-symbols-outlined">
+          {{ cancelando ? 'hourglass_empty' : 'close' }}
+        </span>
+        {{ cancelando ? 'Cancelando...' : 'Cancelar Agendamento' }}
+      </button>
+    }
+  </div>
 </div>

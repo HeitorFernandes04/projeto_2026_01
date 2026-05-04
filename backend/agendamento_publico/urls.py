@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import EstabelecimentoPublicoDetailView, DisponibilidadeView
+from .views import EstabelecimentoPublicoDetailView, DisponibilidadeView, CancelamentoView
 
 urlpatterns = [
     # RF-21: GET /api/publico/estabelecimento/{slug}/
@@ -13,5 +13,11 @@ urlpatterns = [
         'agendamento/disponibilidade/',
         DisponibilidadeView.as_view(),
         name='disponibilidade-horarios'
+    ),
+    # RF-24: PATCH /api/publico/agendamento/ordens-servico/{slug_uuid}/cancelar/
+    path(
+        'agendamento/ordens-servico/<uuid:slug>/cancelar/',
+        CancelamentoView.as_view(),
+        name='cancelamento-autonomo'
     ),
 ]

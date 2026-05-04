@@ -42,9 +42,10 @@
 
         <div class="ativos-list">
           <!-- Cards individuais dos veículos ativos -->
-          <app-card-ativo 
-            *ngFor="let veiculo of ordensAtivas" 
-            [ativo]="veiculo">
+          <app-card-ativo
+            *ngFor="let veiculo of ordensAtivas"
+            [ativo]="veiculo"
+            (cancelado)="onAgendamentoCancelado($event)">
           </app-card-ativo>
         </div>
         

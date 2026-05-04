@@ -58,7 +58,8 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
             'etapa_atual',
             'laudo_vistoria', 'comentario_lavagem', 'comentario_acabamento',
             'vaga_patio', 'horario_lavagem',
-            'horario_acabamento', 'horario_finalizacao', 'observacoes', 'midias'
+            'horario_acabamento', 'horario_finalizacao', 'observacoes', 'midias',
+            'slug_cancelamento',  # RF-24: UUID para cancelamento autônomo pelo cliente portal
         ]
         read_only_fields = [
             'horario_lavagem',

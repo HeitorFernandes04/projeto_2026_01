@@ -87,6 +87,15 @@ export class PainelComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * RF-24: Remove a OS cancelada da lista de ordens ativas.
+   * Acionado pelo EventEmitter (cancelado) do CardAtivoComponent.
+   */
+  onAgendamentoCancelado(osId: number): void {
+    this.ordensAtivas = this.ordensAtivas.filter(os => os.id !== osId);
+    this.cdr.detectChanges();
+  }
+
+  /**
    * Retorna o texto do status baseado no código para consistência visual[cite: 1]
    */
   getStatusText(status: string): string {

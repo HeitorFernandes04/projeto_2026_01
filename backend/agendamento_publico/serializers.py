@@ -46,3 +46,17 @@ class EstabelecimentoPublicoSerializer(serializers.ModelSerializer):
             is_active=True
         )
         return ServicoPublicoSerializer(servicos_ativos, many=True).data
+
+
+class CancelamentoSerializer(serializers.Serializer):
+    """
+    RF-24: Serializer de entrada para cancelamento autônomo pelo cliente.
+    A identificação da OS é feita via slug na URL (RF-24.3).
+    O motivo é opcional (RF-24 §1.5 / RNF-02).
+    """
+    motivo_cancelamento = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=500,
+        default='',
+    )

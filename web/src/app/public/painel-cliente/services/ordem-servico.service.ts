@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 export interface OrdemServico {
   id: number;
@@ -10,7 +11,8 @@ export interface OrdemServico {
   servico: string;
   status: 'PATIO' | 'VISTORIA_INICIAL' | 'EM_EXECUCAO' | 'LIBERACAO' | 'FINALIZADO';
   previsao_entrega: string;
-  nome_dono?: string; // Nome do cliente para exibição no painel
+  nome_dono?: string;
+  slug_cancelamento?: string; // RF-24.3: UUID para cancelamento seguro (nunca ID sequencial)
 }
 
 @Injectable({
@@ -66,7 +68,7 @@ export class OrdemServicoService {
     }
   ];
 
-  constructor() {
+  constructor(private http: HttpClient) {
     this.ordensServicoSubject.next(this.ordensMock);
   }
 
@@ -136,5 +138,14 @@ export class OrdemServicoService {
   // Obter ordens finalizadas
   getOrdensFinalizadas(): OrdemServico[] {
     return this.ordensServicoSubject.value.filter(os => os.status === 'FINALIZADO');
+  }
+
+  /**
+   * RF-24: Cancela agendamento via UUID (slug_cancelamento).
+   * Nunca usa o ID sequencial (RF-24.3).
+   */
+  cancelarAgendamento(slug: string, motivo: string = ''): Observable<{ detail: string }> {
+    const url = `/api/publico/agendamento/ordens-servico/${slug}/cancelar/`;
+    return this.http.patch<{ detail: string }>(url, { motivo_cancelamento: motivo });
   }
 }

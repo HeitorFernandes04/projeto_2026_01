@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'accounts',
     'core',
     'operacao',
+    'agendamento_publico',  # RF-21/22/23/24: portal público
     'drf_spectacular',
 ]
 
