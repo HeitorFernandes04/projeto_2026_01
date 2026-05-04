@@ -28,43 +28,37 @@ export class OrdemServicoService {
       id: 1,
       modelo: 'Toyota Corolla',
       placa: 'BRA-2E19',
-      horario: '18:00',
-      data: '06/05/2026',
-      servico: 'BASIC',
+      horario: '12:00',
+      data: '04/05/2026',
+      servico: 'Lavagem Básica',
       status: 'PATIO',
-      previsao_entrega: '18:30',
-      nome_dono: 'Carlos Silva'
+      previsao_entrega: '12:30',
+      nome_dono: 'João',
+      slug_cancelamento: 'f475af97-c771-4d7a-ba1d-1047db93d0e9'
     },
     {
       id: 2,
-      modelo: 'Honda Civic',
-      placa: 'KYS-1234',
-      horario: '08:00',
-      data: '06/05/2026',
-      servico: 'PREMIUM',
-      status: 'EM_EXECUCAO',
-      previsao_entrega: '08:30',
-      nome_dono: 'Maria Santos'
+      modelo: 'Ferrari',
+      placa: 'TEST-123',
+      horario: '13:00',
+      data: '05/05/2026',
+      servico: 'Lavagem Premium',
+      status: 'PATIO',
+      previsao_entrega: '14:00',
+      nome_dono: 'Teste',
+      slug_cancelamento: '7a3dff0e-8987-44c4-88ef-eb357e34e30a'
     },
     {
       id: 3,
-      modelo: 'VW Golf',
-      placa: 'DEF-5555',
-      horario: '10:00',
-      data: '15/04/2026',
-      servico: 'BASIC',
-      status: 'FINALIZADO',
-      previsao_entrega: '10:30'
-    },
-    {
-      id: 4,
-      modelo: 'Chevrolet Onix',
-      placa: 'ABC-1234',
-      horario: '14:00',
-      data: '10/04/2026',
-      servico: 'PREMIUM',
-      status: 'FINALIZADO',
-      previsao_entrega: '14:45'
+      modelo: 'Civic',
+      placa: 'ABC-1425',
+      horario: '11:00',
+      data: '04/05/2026',
+      servico: 'Lavagem Básica',
+      status: 'PATIO',
+      previsao_entrega: '11:30',
+      nome_dono: 'Teste 2',
+      slug_cancelamento: 'b7067397-407f-482c-b379-f05a4a091324'
     }
   ];
 
