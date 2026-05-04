@@ -37,11 +37,16 @@ const Agendar: React.FC = () => {
   const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
-    getServicos().then(setServicos).catch(() => setToastMsg("Erro ao carregar serviços"));
+    getServicos()
+      .then(setServicos)
+      .catch(() => {
+        setToastMsg("Erro ao carregar serviços");
+        setShowToast(true);
+      });
   }, []);
 
   const handleConfirmar = async () => {
-    // Validação de campos obrigatórios incluindo o horário selecionado
+    // Validação de campos obrigatórios
     if (!form.placa || !form.modelo || !form.nome_dono || !form.servico_id || !form.data || !form.hora) {
       setToastMsg("Preencha todos os campos e selecione um horário.");
       setShowToast(true);
@@ -56,8 +61,7 @@ const Agendar: React.FC = () => {
 
     setLoading(true);
     try {
-      // CONSTRUÇÃO DA DATA/HORA CORRETA PARA AGENDAMENTO
-      // Combina a data do input com a hora da GradeHorarios (Formato: YYYY-MM-DDTHH:mm:00)
+      // Formato: YYYY-MM-DDTHH:mm:00
       const dataHoraAgendamento = `${form.data}T${form.hora}:00`;
       
       await criarOrdemServico({
@@ -68,7 +72,7 @@ const Agendar: React.FC = () => {
         nome_dono: form.nome_dono,
         celular_dono: form.celular_dono || '',
         servico_id: form.servico_id,
-        iniciar_agora: false, // Importante: não ativa cronômetro agora
+        iniciar_agora: false,
         data_hora: dataHoraAgendamento,
         observacoes: ''
       });
@@ -76,13 +80,12 @@ const Agendar: React.FC = () => {
       setToastMsg("Agendamento realizado com sucesso!");
       setShowToast(true);
       
-      // Pequeno delay para o usuário ler o toast e depois volta ao Pátio
       setTimeout(() => {
         history.push('/ordens-servico/hoje');
       }, 1500);
 
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Erro ao realizar agendamento";
+    } catch (e: any) {
+      const msg = e.response?.data?.detail || e.message || "Erro ao realizar agendamento";
       setToastMsg(msg);
       setShowToast(true);
     } finally {
@@ -151,33 +154,42 @@ const Agendar: React.FC = () => {
 
           <label style={styles.sectionLabel}>SERVIÇO</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {servicos.map(s => (
-              <div 
-                key={s.id} 
-                onClick={() => setForm({...form, servico_id: s.id})}
-                style={{ 
-                  ...styles.selectableCard, 
-                  border: form.servico_id === s.id ? '2px solid var(--lm-primary)' : '1px solid var(--lm-border)' 
-                }}
-              >
-                <span style={{ color: '#fff', fontWeight: 700 }}>{s.nome}</span>
-                {form.servico_id === s.id && <Check color="var(--lm-primary)" size={20} />}
+            {Array.isArray(servicos) && servicos.length > 0 ? (
+              servicos.map(s => (
+                <div 
+                  key={s.id} 
+                  onClick={() => setForm({...form, servico_id: s.id})}
+                  style={{ 
+                    ...styles.selectableCard, 
+                    border: form.servico_id === s.id ? '2px solid var(--lm-primary)' : '1px solid var(--lm-border)' 
+                  }}
+                >
+                  <span style={{ color: '#fff', fontWeight: 700 }}>{s.nome}</span>
+                  {form.servico_id === s.id && <Check color="var(--lm-primary)" size={20} />}
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center' }}>
+                <p style={{ color: '#666', fontSize: '14px' }}>
+                  Carregando serviços...
+                </p>
               </div>
-            ))}
+            )}
           </div>
 
           <label style={styles.sectionLabel}>DATA E HORÁRIO</label>
           <input 
             type="date" 
-            min={hojeStr} // Bloqueia datas passadas
+            min={hojeStr}
             value={form.data} 
-            onChange={e => setForm({...form, data: e.target.value, hora: ''})} // Reseta hora ao mudar data
+            onChange={e => setForm({...form, data: e.target.value, hora: ''})} 
             style={styles.inputDate}
           />
 
           <div style={{ marginTop: '20px' }}>
             <GradeHorarios 
               data={form.data} 
+              servicoId={form.servico_id}
               onSelectHora={(h) => setForm({...form, hora: h})}
               horaSelecionada={form.hora}
             />
