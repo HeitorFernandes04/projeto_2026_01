@@ -4,6 +4,78 @@ info:
   version: 1.0.0
   description: Documentação oficial da API do projeto Lava-me.
 paths:
+  /api/auth/estabelecimento/me/:
+    get:
+      operationId: auth_estabelecimento_me_retrieve
+      description: Endpoint para o Gestor consultar e atualizar dados do seu estabelecimento.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estabelecimento'
+          description: ''
+    put:
+      operationId: auth_estabelecimento_me_update
+      description: Endpoint para o Gestor consultar e atualizar dados do seu estabelecimento.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstabelecimentoUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EstabelecimentoUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EstabelecimentoUpdate'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstabelecimentoUpdate'
+          description: ''
+    patch:
+      operationId: auth_estabelecimento_me_partial_update
+      description: Endpoint para o Gestor consultar e atualizar dados do seu estabelecimento.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEstabelecimentoUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEstabelecimentoUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEstabelecimentoUpdate'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstabelecimentoUpdate'
+          description: ''
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -31,6 +103,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenObtainPair'
           description: ''
+  /api/auth/meu_perfil/:
+    get:
+      operationId: auth_meu_perfil_retrieve
+      description: Endpoint para o usuário logado consultar seu próprio perfil
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/auth/register/:
     post:
       operationId: auth_register_create
@@ -60,6 +145,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/Funcionario'
           description: ''
+  /api/auth/registro-cliente/:
+    post:
+      operationId: auth_registro_cliente_create
+      description: |-
+        RF-25: Cadastro público de perfil Cliente. Username é auto-derivado do email.
+        Após criar, linka retroativamente veículos com o mesmo celular_dono.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+          description: ''
+  /api/cliente/auth/setup/:
+    post:
+      operationId: cliente_auth_setup_create
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/auth/token/:
+    post:
+      operationId: cliente_auth_token_create
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/historico/:
+    get:
+      operationId: cliente_historico_retrieve
+      description: 'RF-25: Retorna histórico de OSs do cliente autenticado, separando
+        ativos e concluídos.'
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/painel/:
+    get:
+      operationId: cliente_painel_retrieve
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/gestao/estabelecimento/:
     get:
       operationId: gestao_estabelecimento_retrieve
@@ -80,6 +249,85 @@ paths:
       description: |-
         GET /api/gestao/estabelecimento/ - Retorna dados do estabelecimento
         PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/funcionarios/:
+    get:
+      operationId: gestao_funcionarios_retrieve
+      description: |-
+        GET /api/gestao/funcionarios/ - Lista funcionários do estabelecimento
+        POST /api/gestao/funcionarios/ - Cadastra novo funcionário
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: gestao_funcionarios_create
+      description: |-
+        GET /api/gestao/funcionarios/ - Lista funcionários do estabelecimento
+        POST /api/gestao/funcionarios/ - Cadastra novo funcionário
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/funcionarios/{id}/:
+    patch:
+      operationId: gestao_funcionarios_partial_update
+      description: PATCH /api/gestao/funcionarios/<id>/ - Atualiza dados do funcionário
+        (Incluindo Status)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/gestor/dashboard/eficiencia-equipe/:
+    get:
+      operationId: gestao_gestor_dashboard_eficiencia_equipe_retrieve
+      description: |-
+        GET /api/gestao/gestor/dashboard/eficiencia-equipe
+        RF-20: Relatório de Eficiência da Equipe
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/gestor/dashboard/indicadores/:
+    get:
+      operationId: gestao_gestor_dashboard_indicadores_retrieve
+      description: |-
+        GET /api/gestao/gestor/dashboard/indicadores
+        RF-19: Dashboard Executivo Básico
       tags:
       - gestao
       security:
@@ -242,7 +490,11 @@ paths:
   /api/gestao/tags-peca/:
     get:
       operationId: gestao_tags_peca_list
-      description: Lista tags de peça do estabelecimento do usuário.
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
       tags:
       - gestao
       security:
@@ -257,6 +509,227 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TagPeca'
+          description: ''
+    post:
+      operationId: gestao_tags_peca_create
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+  /api/gestao/tags-peca/{id}/:
+    get:
+      operationId: gestao_tags_peca_retrieve
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+    put:
+      operationId: gestao_tags_peca_update
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TagPeca'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+    patch:
+      operationId: gestao_tags_peca_partial_update
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTagPeca'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTagPeca'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTagPeca'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagPeca'
+          description: ''
+    delete:
+      operationId: gestao_tags_peca_destroy
+      description: |-
+        CRUD de tags de peça do estabelecimento do usuário.
+
+        Leitura (list/retrieve): qualquer usuário autenticado com vínculo.
+        Escrita (create/update/delete): apenas gestores.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/incidentes-os/{id}/auditoria/:
+    get:
+      operationId: incidentes_os_auditoria_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - incidentes-os
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentePendente'
+          description: ''
+  /api/incidentes-os/{id}/resolver/:
+    patch:
+      operationId: incidentes_os_resolver_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - incidentes-os
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentePendente'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentePendente'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentePendente'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentePendente'
+          description: ''
+  /api/incidentes-os/pendentes/:
+    get:
+      operationId: incidentes_os_pendentes_retrieve
+      tags:
+      - incidentes-os
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentePendente'
           description: ''
   /api/ordens-servico/{id}/:
     get:
@@ -350,6 +823,46 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/ordens-servico/entradas-recentes/:
+    get:
+      operationId: ordens_servico_entradas_recentes_retrieve
+      description: GET /api/ordens-servico/entradas-recentes/ — Últimas entradas no
+        pátio para o Dashboard.
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/gestor/historico/:
+    get:
+      operationId: ordens_servico_gestor_historico_retrieve
+      description: GET /api/ordens-servico/gestor/historico/
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/gestor/historico/{id}/fotos/:
+    get:
+      operationId: ordens_servico_gestor_historico_fotos_retrieve
+      description: GET /api/ordens-servico/gestor/historico/{id}/fotos/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/ordens-servico/historico/:
     get:
       operationId: ordens_servico_historico_retrieve
@@ -374,6 +887,21 @@ paths:
   /api/ordens-servico/horarios-livres/:
     get:
       operationId: ordens_servico_horarios_livres_retrieve
+      description: |-
+        RF-22: Consulta de horários para o Funcionário (Mobile).
+        Utiliza o mesmo motor de disponibilidade do Cliente.
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/kanban/:
+    get:
+      operationId: ordens_servico_kanban_retrieve
+      description: 'RF-14: GET /api/ordens-servico/kanban/ — OS operacionais agrupadas
+        por coluna.'
       tags:
       - ordens-servico
       security:
@@ -392,9 +920,9 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/ordens-servico/servicos/:
-    get:
-      operationId: ordens_servico_servicos_retrieve
+  /api/ordens-servico/publico/agendamento/checkout/:
+    post:
+      operationId: ordens_servico_publico_agendamento_checkout_create
       tags:
       - ordens-servico
       security:
@@ -402,6 +930,16 @@ paths:
       - cookieAuth: []
       - basicAuth: []
       - {}
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/servicos/:
+    get:
+      operationId: ordens_servico_servicos_retrieve
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -414,7 +952,6 @@ paths:
       - jwtAuth: []
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -440,13 +977,54 @@ paths:
       - jwtAuth: []
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TagPeca'
+          description: ''
+  /api/publico/agendamento/disponibilidade/:
+    get:
+      operationId: publico_agendamento_disponibilidade_retrieve
+      description: |-
+        RF-22: Retorna horários disponíveis para agendamento.
+        Consome o Motor de Disponibilidade para evitar overbooking.
+      tags:
+      - publico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/publico/estabelecimento/{slug}/:
+    get:
+      operationId: publico_estabelecimento_retrieve
+      description: |-
+        RF-21: Endpoint público (sem autenticação) que retorna os dados básicos
+        de um Estabelecimento e seus serviços ativos via slug.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstabelecimentoPublico'
           description: ''
 components:
   schemas:
@@ -468,6 +1046,137 @@ components:
       description: |-
         * `INTERNO` - Interno
         * `EXTERNO` - Externo
+    Cliente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          title: Usuário
+          description: Obrigatório. 150 caracteres ou menos. Letras, números e @/./+/-/_
+            apenas.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 6
+        telefone_whatsapp:
+          type: string
+          maxLength: 20
+        endereco_padrao:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    Estabelecimento:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        cnpj:
+          type: string
+          maxLength: 14
+        endereco_completo:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+        slug:
+          type: string
+          nullable: true
+          maxLength: 150
+          pattern: ^[-a-zA-Z0-9_]+$
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        logo_url:
+          type: string
+          readOnly: true
+      required:
+      - cnpj
+      - endereco_completo
+      - id
+      - logo_url
+      - nome_fantasia
+    EstabelecimentoPublico:
+      type: object
+      description: |-
+        Exposição pública e segura do Estabelecimento para o Portal de Autoagendamento.
+        CA-03: cnpj, faturamento e dados do gestor são omitidos por design (não incluídos em fields).
+        CA-02: servicos filtrados para is_active=True via ServicoPublicoSerializer.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        endereco_completo:
+          type: string
+          maxLength: 255
+        logo_url:
+          type: string
+          readOnly: true
+        servicos:
+          type: string
+          readOnly: true
+        slug:
+          type: string
+          nullable: true
+          maxLength: 150
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - endereco_completo
+      - id
+      - logo_url
+      - nome_fantasia
+      - servicos
+    EstabelecimentoUpdate:
+      type: object
+      description: Serializer restrito para atualização de configurações pelo Gestor.
+      properties:
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        cnpj:
+          type: string
+          maxLength: 14
+        endereco_completo:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          nullable: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        logo_url:
+          type: string
+          readOnly: true
+      required:
+      - cnpj
+      - endereco_completo
+      - logo_url
+      - nome_fantasia
+      - slug
     Funcionario:
       type: object
       properties:
@@ -498,13 +1207,130 @@ components:
           allOf:
           - $ref: '#/components/schemas/CargoEnum'
           default: LAVADOR
+        is_active:
+          type: boolean
+          title: Ativo
+          description: Indica que o usuário será tratado como ativo. Ao invés de excluir
+            contas de usuário, desmarque isso.
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Último login
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Data de registro
       required:
-      - email
-      - estabelecimento
+      - date_joined
       - id
+      - last_login
       - name
-      - password
       - username
+    IncidentePendente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        ordem_servico_id:
+          type: integer
+          readOnly: true
+        status_ordem_servico:
+          type: string
+          readOnly: true
+        placa:
+          type: string
+          readOnly: true
+        modelo:
+          type: string
+          readOnly: true
+        servico:
+          type: string
+          readOnly: true
+        tag_peca:
+          type: string
+          readOnly: true
+        descricao:
+          type: string
+        foto_url:
+          type: string
+          readOnly: true
+        data_registro:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - data_registro
+      - descricao
+      - foto_url
+      - id
+      - modelo
+      - ordem_servico_id
+      - placa
+      - servico
+      - status_ordem_servico
+      - tag_peca
+    PatchedEstabelecimentoUpdate:
+      type: object
+      description: Serializer restrito para atualização de configurações pelo Gestor.
+      properties:
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        cnpj:
+          type: string
+          maxLength: 14
+        endereco_completo:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          nullable: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        logo_url:
+          type: string
+          readOnly: true
+    PatchedIncidentePendente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        ordem_servico_id:
+          type: integer
+          readOnly: true
+        status_ordem_servico:
+          type: string
+          readOnly: true
+        placa:
+          type: string
+          readOnly: true
+        modelo:
+          type: string
+          readOnly: true
+        servico:
+          type: string
+          readOnly: true
+        tag_peca:
+          type: string
+          readOnly: true
+        descricao:
+          type: string
+        foto_url:
+          type: string
+          readOnly: true
+        data_registro:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedServico:
       type: object
       properties:
@@ -526,6 +1352,20 @@ components:
           description: Tempo médio em minutos
         is_active:
           type: boolean
+        estabelecimento:
+          type: integer
+          readOnly: true
+    PatchedTagPeca:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 50
+        categoria:
+          $ref: '#/components/schemas/CategoriaEnum'
         estabelecimento:
           type: integer
           readOnly: true

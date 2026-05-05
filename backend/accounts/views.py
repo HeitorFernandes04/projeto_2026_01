@@ -1,14 +1,32 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from accounts.models import User, Estabelecimento, Cliente, Funcionario, Gestor, CargoChoices
-from accounts.serializers import RegisterSerializer, EstabelecimentoSerializer, EstabelecimentoUpdateSerializer
+from accounts.serializers import ClienteSerializer, RegisterSerializer, EstabelecimentoSerializer, EstabelecimentoUpdateSerializer
 
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+
+
+class RegistroClienteView(generics.CreateAPIView):
+    """RF-25: Cadastro público de perfil Cliente. Username é auto-derivado do email.
+    Após criar, linka retroativamente veículos com o mesmo celular_dono."""
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ClienteSerializer
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        user = serializer.save()
+        telefone = serializer.validated_data.get('telefone_whatsapp', '')
+        if telefone and hasattr(user, 'perfil_cliente'):
+            from core.models import Veiculo
+            Veiculo.objects.filter(
+                celular_dono=telefone, cliente__isnull=True
+            ).update(cliente=user.perfil_cliente)
 
 
 class FuncionarioListCreateView(generics.ListCreateAPIView):
