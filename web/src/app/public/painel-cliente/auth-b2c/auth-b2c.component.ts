@@ -131,6 +131,10 @@ export class AuthB2CComponent implements OnInit {
       return 'Este telefone ja tem acesso cadastrado. Entre usando seu PIN.';
     }
 
+    if (err?.status === 404) {
+      return 'Inicie pelo menos um agendamento antes de criar seu acesso.';
+    }
+
     if (err?.status === 400) {
       return err?.error?.detail || 'Confira telefone, placa e PIN antes de continuar.';
     }

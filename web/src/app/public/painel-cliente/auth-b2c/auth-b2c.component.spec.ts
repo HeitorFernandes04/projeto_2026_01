@@ -102,6 +102,23 @@ describe('AuthB2CComponent - UX de entrada do cliente', () => {
     expect(cdrMock).toHaveBeenCalled();
   });
 
+  it('deve orientar cliente sem veiculo a iniciar um agendamento antes de criar acesso', async () => {
+    const { component, authB2CServiceMock, cdrMock } = await criarComponente('/agendar/lava-me-centro/cliente/setup');
+    authB2CServiceMock.setup.mockReturnValue(
+      throwError(() => ({ status: 404, error: { detail: 'Combinacao de placa e telefone nao encontrada.' } })),
+    );
+
+    component.telefone = '(11) 99999-0000';
+    component.placa = 'ABC-1234';
+    component.pin = '1234';
+    component.confirmarPin = '1234';
+    component.enviar();
+    await Promise.resolve();
+
+    expect(component.erro).toBe('Inicie pelo menos um agendamento antes de criar seu acesso.');
+    expect(cdrMock).toHaveBeenCalled();
+  });
+
   it('deve diferenciar textos de carregamento para login e novo acesso', async () => {
     const login = (await criarComponente()).component;
     login.carregando = true;
