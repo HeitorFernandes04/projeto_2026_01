@@ -1,4 +1,5 @@
 import pytest
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework.exceptions import Throttled
 from rest_framework.test import APIClient
@@ -12,6 +13,7 @@ from operacao.tests.factories import EstabelecimentoFactory, OrdemServicoFactory
 
 @pytest.fixture
 def api_client():
+    cache.clear()
     return APIClient()
 
 
@@ -94,6 +96,29 @@ class TestAuthB2CAPI:
             {
                 'telefone': '11999999999',
                 'placa': 'ABC1234',
+                'pin': '9999',
+            },
+            format='json',
+        )
+
+        user = User.objects.get(username='b2c_11999999999')
+        assert response.status_code == 409
+        assert user.check_password('1234')
+        assert not user.check_password('9999')
+
+    def test_setup_repetido_retorna_409_mesmo_com_placa_incorreta(self, api_client, veiculo_cliente):
+        AuthB2CService.setup_cliente('11999999999', 'ABC1234', '1234')
+        VeiculoFactory(
+            estabelecimento=veiculo_cliente.estabelecimento,
+            placa='ZZZ9999',
+            celular_dono='11888888888',
+        )
+
+        response = api_client.post(
+            reverse('auth-b2c-setup'),
+            {
+                'telefone': '11999999999',
+                'placa': 'ZZZ9999',
                 'pin': '9999',
             },
             format='json',

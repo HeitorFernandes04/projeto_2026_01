@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -13,6 +13,11 @@ import { AuthB2CService } from '../../../services/auth-b2c.service';
   styleUrl: './auth-b2c.component.scss',
 })
 export class AuthB2CComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly authB2CService = inject(AuthB2CService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
   modo: 'login' | 'setup' = 'login';
   telefone = '';
   placa = '';
@@ -20,12 +25,6 @@ export class AuthB2CComponent implements OnInit {
   confirmarPin = '';
   carregando = false;
   erro = '';
-
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly authB2CService: AuthB2CService,
-  ) {}
 
   ngOnInit(): void {
     this.modo = this.router.url.includes('/setup') ? 'setup' : 'login';
@@ -54,7 +53,8 @@ export class AuthB2CComponent implements OnInit {
         this.router.navigate([`/agendar/${this.slugAtual}/painel`]);
       },
       error: (err) => {
-        this.erro = err.error?.detail || 'Nao foi possivel concluir o acesso.';
+        this.erro = this.mensagemErro(err);
+        queueMicrotask(() => this.cdr.detectChanges());
       },
     });
   }
@@ -99,8 +99,43 @@ export class AuthB2CComponent implements OnInit {
     return telefoneValido && this.placa.replace(/[^A-Z0-9]/gi, '').length === 7 && pinValido && this.pin === this.confirmarPin;
   }
 
+  get titulo(): string {
+    return this.modo === 'login' ? 'Acesso do cliente' : 'Novo acesso';
+  }
+
+  get descricao(): string {
+    return this.modo === 'login'
+      ? 'Entre com telefone e PIN para acompanhar seus agendamentos.'
+      : 'Confirme telefone, placa e escolha um PIN de 4 digitos.';
+  }
+
+  get textoBotaoPrincipal(): string {
+    if (this.carregando) return this.modo === 'login' ? 'Entrando...' : 'Criando acesso...';
+    return this.modo === 'login' ? 'Acessar painel' : 'Criar PIN';
+  }
+
+  get textoAlternarModo(): string {
+    return this.modo === 'login' ? 'Novo Acesso' : 'Ja tenho PIN';
+  }
+
   private somenteDigitos(valor: string): string {
     return (valor || '').replace(/\D/g, '');
+  }
+
+  private mensagemErro(err: any): string {
+    if (err?.status === 401) {
+      return 'Telefone ou PIN incorretos. Confira os dados e tente novamente.';
+    }
+
+    if (err?.status === 409) {
+      return 'Este telefone ja tem acesso cadastrado. Entre usando seu PIN.';
+    }
+
+    if (err?.status === 400) {
+      return err?.error?.detail || 'Confira telefone, placa e PIN antes de continuar.';
+    }
+
+    return 'Nao foi possivel concluir o acesso. Tente novamente em instantes.';
   }
 
   private get slugAtual(): string {

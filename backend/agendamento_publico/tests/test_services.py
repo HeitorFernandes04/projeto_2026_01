@@ -104,6 +104,36 @@ class TestAuthB2CService:
         assert user.check_password('1234')
         assert not user.check_password('9999')
 
+    def test_setup_repetido_retorna_conflito_antes_de_validar_placa(self):
+        estabelecimento = EstabelecimentoFactory()
+        VeiculoFactory(
+            estabelecimento=estabelecimento,
+            placa='ABC1234',
+            celular_dono='11999999999',
+        )
+        VeiculoFactory(
+            estabelecimento=estabelecimento,
+            placa='ZZZ9999',
+            celular_dono='11888888888',
+        )
+        AuthB2CService.setup_cliente(
+            telefone='11999999999',
+            placa='ABC1234',
+            pin='1234',
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            AuthB2CService.setup_cliente(
+                telefone='11999999999',
+                placa='ZZZ9999',
+                pin='9999',
+            )
+
+        user = User.objects.get(username='b2c_11999999999')
+        assert 'ja possui PIN cadastrado' in str(exc_info.value)
+        assert user.check_password('1234')
+        assert not user.check_password('9999')
+
     def test_login_cliente_b2c_retorna_tokens(self):
         estabelecimento = EstabelecimentoFactory()
         VeiculoFactory(

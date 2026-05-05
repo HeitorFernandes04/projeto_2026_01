@@ -153,6 +153,18 @@ $font: 'Inter', system-ui, -apple-system, sans-serif;
         span { font-size: 20px; }
       }
 
+      .erro {
+        margin: 0;
+        padding: 12px 14px;
+        border: 1px solid #ff7b72;
+        border-radius: 14px;
+        background: rgba(255, 123, 114, 0.12);
+        color: #ff7b72;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
       .form-footer { 
         text-align: center; 
         margin-top: 8px;

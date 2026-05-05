@@ -62,14 +62,14 @@ class AuthB2CService:
         if len(telefone_normalizado) < 10:
             raise ValidationError('Telefone invalido.')
 
+        username = AuthB2CService.montar_username(telefone_normalizado)
+        if User.objects.filter(username=username).exists():
+            raise ValidationError('Este usuario ja possui PIN cadastrado.')
+
         veiculo = AuthB2CService._buscar_veiculo_por_titularidade(
             telefone=telefone_normalizado,
             placa=placa,
         )
-        username = AuthB2CService.montar_username(telefone_normalizado)
-
-        if User.objects.filter(username=username).exists():
-            raise ValidationError('Este usuario ja possui PIN cadastrado.')
 
         nome_cliente = (veiculo.nome_dono or 'Cliente Lava-Me').strip()
         user = User(

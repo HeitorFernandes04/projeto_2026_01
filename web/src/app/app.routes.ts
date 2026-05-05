@@ -59,6 +59,11 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'cliente',
+        redirectTo: 'cliente/login',
+        pathMatch: 'full'
+      },
+      {
         path: 'cliente/login',
         loadComponent: () =>
           import('./public/painel-cliente/auth-b2c/auth-b2c.component').then(
