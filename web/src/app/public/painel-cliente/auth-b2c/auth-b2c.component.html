@@ -1,0 +1,88 @@
+<div class="login-wrapper">
+  <div class="login-card" aria-labelledby="auth-b2c-title">
+    <header class="login-header">
+      <img src="logo.jpeg" alt="Lava-Me Logo" class="brand-logo">
+      <h2 id="auth-b2c-title">{{ titulo }}</h2>
+      <p>{{ descricao }}</p>
+    </header>
+
+    <form class="login-form" (submit)="enviar(); $event.preventDefault()">
+      <div class="input-group">
+        <label for="telefone-cliente">Telefone</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined" aria-hidden="true">call</span>
+          <input
+            id="telefone-cliente"
+            name="telefone"
+            inputmode="numeric"
+            autocomplete="tel"
+            [(ngModel)]="telefone"
+            (input)="onInputTelefone($event)"
+            placeholder="(11) 99999-9999"
+            required>
+        </div>
+      </div>
+
+      <div class="input-group" *ngIf="modo === 'setup'">
+        <label for="placa-cliente">Placa</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined" aria-hidden="true">directions_car</span>
+          <input
+            id="placa-cliente"
+            name="placa"
+            autocomplete="off"
+            [(ngModel)]="placa"
+            (input)="onInputPlaca($event)"
+            placeholder="ABC-1234"
+            required>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="pin-cliente">PIN</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+          <input
+            id="pin-cliente"
+            name="pin"
+            inputmode="numeric"
+            type="password"
+            maxlength="4"
+            [(ngModel)]="pin"
+            placeholder="0000"
+            required>
+        </div>
+      </div>
+
+      <div class="input-group" *ngIf="modo === 'setup'">
+        <label for="confirmar-pin-cliente">Confirmar PIN</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+          <input
+            id="confirmar-pin-cliente"
+            name="confirmarPin"
+            inputmode="numeric"
+            type="password"
+            maxlength="4"
+            [(ngModel)]="confirmarPin"
+            placeholder="0000"
+            required>
+        </div>
+      </div>
+
+      <p class="erro" role="alert" aria-live="assertive" *ngIf="erro">{{ erro }}</p>
+
+      <button type="submit" class="btn-login" [disabled]="!formularioValido || carregando">
+        <span>{{ textoBotaoPrincipal }}</span>
+        <span class="material-symbols-outlined spin" aria-hidden="true" *ngIf="carregando">autorenew</span>
+        <span class="material-symbols-outlined" aria-hidden="true" *ngIf="!carregando">login</span>
+      </button>
+
+      <div class="form-footer">
+        <button type="button" class="link-mode" (click)="alternarModo()">
+          {{ textoAlternarModo }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

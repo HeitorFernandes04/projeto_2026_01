@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'accounts',
     'core',
     'operacao',
+    'agendamento_publico',
     'drf_spectacular',
 ]
 

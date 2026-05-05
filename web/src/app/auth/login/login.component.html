@@ -23,6 +23,8 @@
         </div>
       </div>
 
+      <p class="erro" role="alert" aria-live="assertive" *ngIf="erro">{{ erro }}</p>
+
       <button type="submit" class="btn-login" [disabled]="!email || !password">
         Acessar Painel
         <span class="material-symbols-outlined">login</span>

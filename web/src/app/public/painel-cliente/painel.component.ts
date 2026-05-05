@@ -4,17 +4,17 @@ import { Router } from '@angular/router';
 import { StatusAtivoComponent } from './componentes/status-ativo/status-ativo.component';
 import { CardAtivoComponent } from './componentes/card-ativo/card-ativo.component';
 import { CardHistoricoComponent } from './componentes/card-historico/card-historico.component';
-import { OrdemServicoService, OrdemServico } from './services/ordem-servico.service';
+import { PainelClienteService } from '../../services/painel-cliente.service';
+import { AuthB2CService } from '../../services/auth-b2c.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-painel',
   standalone: true,
-  // Removido ListaHistoricoComponent para eliminar o WARNING NG8113
   imports: [
-    CommonModule, 
-    StatusAtivoComponent, 
-    CardAtivoComponent, 
+    CommonModule,
+    StatusAtivoComponent,
+    CardAtivoComponent,
     CardHistoricoComponent
   ],
   templateUrl: './painel.component.html',
@@ -22,80 +22,60 @@ import { Subscription } from 'rxjs';
 })
 export class PainelComponent implements OnInit, OnDestroy {
   private router = inject(Router);
-  private ordemServicoService = inject(OrdemServicoService);
+  private painelClienteService = inject(PainelClienteService);
+  private authB2CService = inject(AuthB2CService);
   private cdr = inject(ChangeDetectorRef);
 
   dados: any = null;
   abaAtiva: 'ativos' | 'historico' = 'ativos';
-  ordensAtivas: OrdemServico[] = [];
-  ordensFinalizadas: OrdemServico[] = [];
-  
+  ordensAtivas: any[] = [];
+  ordensFinalizadas: any[] = [];
+  carregando = true;
+  erro = '';
+
   private subscriptions: Subscription[] = [];
 
   ngOnInit(): void {
-    // Iniciar simulação de progresso em tempo real conforme lógica do serviço
-    this.ordemServicoService.iniciarSimulacaoProgresso();
-    
-    // Escutar mudanças nas ordens de serviço (Reatividade Axioma 13)
     this.subscriptions.push(
-      this.ordemServicoService.getOrdensServico$().subscribe(() => {
-        this.ordensAtivas = this.ordemServicoService.getOrdensAtivas();
-        this.ordensFinalizadas = this.ordemServicoService.getOrdensFinalizadas();
-        
-        this.atualizarDadosPainel();
+      this.painelClienteService.getDadosPainel().subscribe({
+        next: (dados) => {
+          this.dados = dados;
+          this.ordensAtivas = dados.ativos;
+          this.ordensFinalizadas = dados.historico;
+          this.carregando = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.erro = 'Nao foi possivel carregar seu painel.';
+          this.carregando = false;
+          this.cdr.detectChanges();
+        }
       })
     );
-
-    // Initial check para garantir renderização correta
-    this.atualizarDadosPainel();
   }
 
   ngOnDestroy(): void {
-    // Limpar subscriptions para evitar memory leaks[cite: 1]
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  /**
-   * Atualiza os dados do painel baseado nas ordens de serviço
-   */
-  private atualizarDadosPainel(): void {
-    // Busca nome real do cliente do sessionStorage (vindo do formulário RF-23)
-    const nomeCliente = sessionStorage.getItem('clienteNome') || 'Cliente';
-    
-    this.dados = {
-      cliente_nome: nomeCliente,
-      ativos: this.ordensAtivas,
-      historico: this.ordensFinalizadas
-    };
-    this.cdr.detectChanges();
-  }
-
-  /**
-   * Como é um link de autoagendamento público, sair retorna para a home da unidade[cite: 2]
-   */
   logout(): void {
+    this.authB2CService.logout();
     const urlParts = this.router.url.split('/');
-    const slug = urlParts[2]; // Pega o slug de /agendar/:slug/painel
+    const slug = urlParts[2];
     this.router.navigate([`/agendar/${slug}`]);
   }
 
-  /**
-   * Navega para os detalhes de um veículo ativo
-   */
   verDetalhes(id: number): void {
-    console.log('Ver detalhes do veículo:', id);
+    console.log('Ver detalhes do veiculo:', id);
   }
 
-  /**
-   * Retorna o texto do status baseado no código para consistência visual[cite: 1]
-   */
   getStatusText(status: string): string {
     const mapa: { [key: string]: string } = {
-      'PATIO': 'Veículo Recebido',
+      'PATIO': 'Veiculo Recebido',
       'VISTORIA_INICIAL': 'Check-list em andamento',
-      'EM_EXECUCAO': 'Limpando seu veículo',
+      'EM_EXECUCAO': 'Limpando seu veiculo',
       'LIBERACAO': 'Pronto para retirada',
-      'FINALIZADO': 'Serviço concluído'
+      'FINALIZADO': 'Servico concluido'
     };
     return mapa[status] || 'Status desconhecido';
   }

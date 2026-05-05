@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/login/auth.guard';
+import { clienteAuthGuard } from './public/painel-cliente/cliente-auth.guard';
 
 export const routes: Routes = [
   {
@@ -58,11 +59,30 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'cliente',
+        redirectTo: 'cliente/login',
+        pathMatch: 'full'
+      },
+      {
+        path: 'cliente/login',
+        loadComponent: () =>
+          import('./public/painel-cliente/auth-b2c/auth-b2c.component').then(
+            m => m.AuthB2CComponent
+          )
+      },
+      {
+        path: 'cliente/setup',
+        loadComponent: () =>
+          import('./public/painel-cliente/auth-b2c/auth-b2c.component').then(
+            m => m.AuthB2CComponent
+          )
+      },
+      {
         path: 'painel', // Painel Unificado do Cliente (RF-24/25/26)
         children: [
           {
             path: '',
-            canActivate: [authGuard], // Axioma 14: Autenticação Unificada
+            canActivate: [clienteAuthGuard], // RF-27: Autenticacao B2C por perfil CLIENTE
             loadComponent: () =>
               import('./public/painel-cliente/painel.component').then(
                 m => m.PainelComponent
