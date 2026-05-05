@@ -1,76 +1,92 @@
-# 1. Funcionalidade: RF-25 Painel do Cliente (Histórico Global)
+# 1. Funcionalidade: RF-25 Painel do Cliente (Historico Global)
 
 ## 1.1 Use Case
-- **Nome:** Consultar Histórico Multicentralizado (B2C)
+- **Nome:** Consultar Historico Multicentralizado (B2C)
 - **Ator:** Cliente Final
-- **Descrição:**  
-Permite que o cliente visualize seu histórico completo de ordens de serviço realizadas em qualquer unidade da rede Lava-Me, com a visualização organizada e agrupada por Estabelecimento.
+- **Descricao:**  
+Permite que o cliente visualize seu historico completo de ordens de servico realizadas na rede Lava-Me, com visualizacao organizada e preparada para agrupamento por Estabelecimento.
 
 ---
 
 ## 1.2 Requisitos Funcionais (RFs)
 
-| Número  | Requisito                        | Descrição                                                                                  |
-|---------|---------------------------------|--------------------------------------------------------------------------------------------|
-| RF-25.1 | Autenticação Unificada          | Acesso via perfil CLIENTE (JWT) válido em todo o ecossistema Lava-Me                       |
-| RF-25.2 | Visão Multicentralizada         | O histórico deve listar OSs de todas as unidades, agrupadas por nome do estabelecimento    |
-| RF-25.3 | Isolamento por Propriedade      | O cliente visualiza apenas veículos vinculados ao seu CPF/ID, independente da unidade      |
-| RF-25.4 | Detalhes Transparentes          | Exibição de Data, Serviço, Placa, Unidade e Status final no portal                         |
+| Numero  | Requisito                        | Descricao                                                                                  |
+|---------|----------------------------------|--------------------------------------------------------------------------------------------|
+| RF-25.1 | Autenticacao Unificada           | Acesso via perfil `CLIENTE` (JWT) valido no ecossistema Lava-Me.                           |
+| RF-25.2 | Visao Multicentralizada          | O historico deve listar OSs do cliente, preparado para agrupamento por estabelecimento.     |
+| RF-25.3 | Isolamento por Propriedade       | O cliente visualiza apenas veiculos vinculados a sua titularidade.                         |
+| RF-25.4 | Detalhes Transparentes           | Exibicao de data, servico, placa, unidade e status no portal.                              |
 
 ---
 
-## 1.3 Requisitos Não Funcionais (RNFs)
+## 1.3 Requisitos Nao Funcionais (RNFs)
 
-| Número | Requisito            | Descrição                                                                                  |
-|--------|---------------------|--------------------------------------------------------------------------------------------|
-| RNF-01 | Prevenção de IDOR   | Filtro estrito de Titularidade: `where cliente_id = user.id`                               |
-| RNF-02 | Agrupamento Lógico  | A UI deve separar claramente as manutenções por unidade para facilitar a conferência        |
-| RNF-03 | Privacy by Design   | Dados financeiros internos do estabelecimento não são visíveis ao cliente                  |
+| Numero | Requisito            | Descricao                                                                                  |
+|--------|----------------------|--------------------------------------------------------------------------------------------|
+| RNF-01 | Prevencao de IDOR    | Filtro estrito de titularidade. Na implementacao atual, telefone normalizado.              |
+| RNF-02 | Agrupamento Logico   | A UI deve separar claramente as manutencoes por unidade quando houver dados multicentro.    |
+| RNF-03 | Privacy by Design    | Dados financeiros internos do estabelecimento nao sao visiveis ao cliente.                 |
+
+---
+
+## 1.3.1 Nota de Implementacao Atual (RF-27)
+A autenticacao B2C por telefone e PIN foi implementada na RF-27 sem alterar o modelo de dados. Portanto, neste momento a titularidade do cliente e resolvida por `Cliente.telefone_whatsapp` e `Veiculo.celular_dono` normalizados.
+
+O filtro ideal `where cliente_id = user.id`, citado em rascunhos anteriores da RF-25, permanece como diretriz futura caso o projeto evolua para adicionar um vinculo relacional direto entre `Veiculo` e `Cliente` via migration. Ate essa evolucao, a API deve continuar aplicando filtro estrito por telefone normalizado para evitar IDOR.
+
+Endpoints implementados pela RF-27:
+- `POST /api/cliente/auth/setup/`
+- `POST /api/cliente/auth/token/`
+- `GET /api/cliente/painel/`
 
 ---
 
 ## 1.4 Endpoints RESTful
 
-### Endpoint: `/api/cliente/historico/`
-- **Método:** GET  
-- **Descrição:** Lista todas as OSs do cliente autenticado em toda a rede.
+### Endpoint: `/api/cliente/painel/`
+- **Metodo:** GET  
+- **Descricao:** Lista ordens ativas e historico do cliente autenticado. Na implementacao atual, a titularidade e filtrada por telefone normalizado (`Cliente.telefone_whatsapp` x `Veiculo.celular_dono`).
 
 ---
 
-# 2. Funcionalidade: RF-26 Galeria Pós-Venda (Transparência Limitada)
+# 2. Funcionalidade: RF-26 Galeria Pos-Venda (Transparencia Limitada)
 
-## 2.1 Requisitos de Visibilidade de Mídias
-Para proteger a auditoria interna e evitar exposição de falhas operacionais não resolvidas, a galeria do cliente é restrita:
+## 2.1 Requisitos de Visibilidade de Midias
+Para proteger a auditoria interna e evitar exposicao de falhas operacionais nao resolvidas, a galeria do cliente e restrita:
 
-- **Mídias Visíveis:** Apenas fotos categorizadas como `ENTRADA` (Vistoria Inicial) e `FINALIZACAO` (Entrega).
-- **Mídias Ocultas:** Fotos de `INCIDENTE`, `ACABAMENTO` ou `PROCESSO` são estritamente para uso interno e auditoria de gestão.
+- **Midias Visiveis:** Apenas fotos categorizadas como `ENTRADA`/vistoria inicial e `FINALIZACAO`/entrega.
+- **Midias Ocultas:** Fotos de `INCIDENTE`, `ACABAMENTO` ou `PROCESSO` sao estritamente para uso interno e auditoria de gestao.
 
 ---
 
 ## 2.2 Requisitos Funcionais (RFs)
 
-| Número  | Requisito                  | Descrição                                                                                  |
-|---------|---------------------------|--------------------------------------------------------------------------------------------|
-| RF-26.1 | Filtro de Categorização   | A API de galeria deve filtrar mídias pelo campo `momento` in ('ENTRADA', 'FINALIZACAO')    |
-| RF-26.2 | Condição de Status        | Galeria liberada apenas quando `status = 'FINALIZADO'`                                     |
-| RF-26.3 | Ocultação de Incidentes   | Bloqueio total de qualquer metadado ou imagem de incidente operacional para o cliente final |
+| Numero  | Requisito                  | Descricao                                                                                  |
+|---------|----------------------------|--------------------------------------------------------------------------------------------|
+| RF-26.1 | Filtro de Categorizacao    | A API de galeria deve filtrar midias pelo campo `momento` conforme categorias permitidas.  |
+| RF-26.2 | Condicao de Status         | Galeria liberada apenas quando `status = 'FINALIZADO'`.                                    |
+| RF-26.3 | Ocultacao de Incidentes    | Bloqueio total de metadados ou imagens de incidente operacional para o cliente final.      |
 
 ---
 
-## 2.3 Modelagem de Dados Necessária
+## 2.3 Modelagem de Dados Necessaria / Evolucao Futura
 
-- **Entidade Cliente:** Necessário criar model `Cliente` (one-to-one com `User`) para gerenciar a titularidade dos veículos.
-- **Vínculo Veículo:** Alterar `Veiculo.cor` para `ChoiceField` e adicionar `ForeignKey(Cliente)`.
-- **Categorização de Mídia:** O campo `MidiaOrdemServico.momento` deve ser um `ChoiceField` para garantir o filtro da galeria.
+- **Entidade Cliente:** O model `Cliente` (one-to-one com `User`) ja existe e foi reutilizado pela RF-27.
+- **Vinculo Veiculo:** A RF-27 nao criou migration. Hoje o vinculo B2C e feito por telefone normalizado. Adicionar `ForeignKey(Cliente)` em `Veiculo` permanece como evolucao futura para uma RF propria.
+- **Categorizacao de Midia:** O campo `MidiaOrdemServico.momento` deve ser um `ChoiceField` para garantir o filtro da galeria.
 
 ---
 
-# 3. Testes de Qualidade e Segurança
+# 3. Testes de Qualidade e Seguranca
 
-## 3.1 Teste de Privacidade de Mídia
-- **Ação:** Cliente acessa galeria de uma OS finalizada que teve incidentes durante o processo.
-- **Esperado:** O cliente visualiza as fotos do carro limpo e o estado inicial, mas não vê nenhuma evidência técnica do incidente que ocorreu no pátio.
+## 3.1 Teste de Privacidade de Midia
+- **Acao:** Cliente acessa galeria de uma OS finalizada que teve incidentes durante o processo.
+- **Esperado:** O cliente visualiza as fotos permitidas, mas nao ve evidencia tecnica do incidente do patio.
 
 ## 3.2 Teste de Agrupamento por Unidade
-- **Ação:** Cliente que lavou o carro nas unidades "Centro" e "Shopping" acessa o portal.
-- **Esperado:** A lista exibe os blocos separados por unidade, facilitando a identificação de onde cada serviço foi feito.
+- **Acao:** Cliente que lavou o carro nas unidades "Centro" e "Shopping" acessa o portal.
+- **Esperado:** A lista exibe blocos separados por unidade, facilitando a identificacao de onde cada servico foi feito.
+
+## 3.3 Teste de Titularidade Atual
+- **Acao:** Cliente autenticado acessa `/api/cliente/painel/`.
+- **Esperado:** A API retorna apenas OSs de veiculos cujo `celular_dono` normalizado corresponda ao `telefone_whatsapp` do perfil `Cliente`.

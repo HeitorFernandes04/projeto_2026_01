@@ -12,15 +12,15 @@ Permite que o cliente acesse o painel web usando apenas telefone e PIN de 4 digi
 
 | Area | Situacao | Avaliacao |
 |------|----------|-----------|
-| App B2C | Parcialmente pronto | O app `agendamento_publico` ja concentra regras publicas e B2C, sendo o local adequado para a implementacao. |
+| App B2C | Implementado | O app `agendamento_publico` concentra as regras publicas e B2C. A RF-27 foi implementada nele, sem criacao de novo app. |
 | Usuario Django | Pronto para o escopo | O model `accounts.User` possui `email` unico e `username`, permitindo o uso de e-mail fantasma e prefixo `b2c_`. |
 | Perfil Cliente | Pronto para o escopo | Ja existe `accounts.Cliente` com vinculo one-to-one com `User` e campo `telefone_whatsapp`. |
 | Veiculo | Pronto para validacao | `core.Veiculo` possui `placa` e `celular_dono`, campos necessarios para comprovar titularidade no setup. |
-| Autoagendamento | Parcialmente pronto | O checkout publico ja cria/atualiza `Veiculo` e cria `OrdemServico`, o que permite criar PIN logo apos o agendamento. |
-| JWT | Parcialmente pronto | SimpleJWT ja esta configurado para o login atual, mas ainda nao existe login B2C por telefone/PIN. |
-| Painel Cliente Web | Parcialmente pronto | A tela existe em `web/src/app/public/painel-cliente`, mas ainda usa simulacao/mock e guard generico. |
-| Historico Cliente | Pendente | Ainda falta endpoint real filtrado por cliente autenticado para alimentar o painel. |
-| Testes Canonicos | Pendente | Ainda faltam testes B2C em `backend/agendamento_publico/tests/test_api.py` e `test_services.py`. |
+| Autoagendamento | Integrado | Apos checkout publico, o Web direciona o cliente para o setup de PIN com placa e telefone preenchidos. |
+| JWT | Implementado | Setup e login B2C retornam `access` e `refresh` via SimpleJWT no body da resposta. |
+| Painel Cliente Web | Implementado com fallback | O painel consome `/api/cliente/painel/` e mantem fallback mockado para ambiente sem dados reais. |
+| Historico Cliente | Implementado no painel | O endpoint `/api/cliente/painel/` retorna ordens ativas e historico filtrados pela titularidade atual. |
+| Testes Canonicos | Implementados | A cobertura B2C foi adicionada em `backend/agendamento_publico/tests/test_api.py` e `test_services.py`. |
 
 ---
 
@@ -125,20 +125,26 @@ O portal web deve separar claramente o acesso do cliente do acesso do gestor. O 
 # 3. Modelagem e Implementacao Necessaria
 
 ## 3.1 Backend
-- Adicionar `agendamento_publico` em `INSTALLED_APPS`, se ainda estiver ausente.
-- Criar serializers `AuthB2CSetupSerializer` e `AuthB2CLoginSerializer` em `backend/agendamento_publico/serializers.py`.
-- Criar servico de autenticacao B2C em `backend/agendamento_publico/services.py`, concentrando regra de criacao, validacao e emissao de tokens.
-- Criar views `AuthB2CSetupView` e `AuthB2CLoginView` em `backend/agendamento_publico/views.py`.
-- Adicionar rotas em `backend/agendamento_publico/urls.py`.
-- Criar throttle especifico para setup/login B2C, mais restritivo que o throttle publico geral.
-- Criar endpoint real de painel/historico do cliente ou integrar com a RF-25.
+- `agendamento_publico` foi adicionado em `INSTALLED_APPS`.
+- `AuthB2CSetupSerializer` e `AuthB2CLoginSerializer` foram criados em `backend/agendamento_publico/serializers.py`.
+- `AuthB2CService` foi criado em `backend/agendamento_publico/services.py`, concentrando regra de criacao, validacao e emissao de tokens.
+- `AuthB2CSetupView`, `AuthB2CLoginView` e `PainelClienteView` foram criadas em `backend/agendamento_publico/views.py`.
+- As rotas B2C foram isoladas em `backend/agendamento_publico/cliente_urls.py` e expostas por `path('api/cliente/', include(...))`.
+- `AuthB2CRateThrottle`, baseado em `AnonRateThrottle`, foi criado com limite restrito para setup/login B2C.
+- O endpoint real `/api/cliente/painel/` foi criado para alimentar o painel e integrar com a RF-25.
 
 ## 3.2 Frontend Web
-- Criar service B2C para `/api/cliente/auth/setup/` e `/api/cliente/auth/token/`.
-- Separar login de cliente do `AuthService` atual de gestao ou parametrizar o service sem misturar fluxos.
-- Atualizar guard do painel cliente para validar perfil `CLIENTE`.
-- Substituir mocks do painel por chamada real ao backend.
-- Preservar o login de gestor/funcionario sem alteracao de contrato.
+- `AuthB2CService` foi criado para `/api/cliente/auth/setup/` e `/api/cliente/auth/token/`.
+- O login de cliente foi separado do login de gestao.
+- `clienteAuthGuard` protege o painel exigindo perfil `CLIENTE`.
+- O painel cliente consome `/api/cliente/painel/`.
+- O fallback mockado foi mantido para ambiente de demonstracao ou ausencia de dados reais.
+- O login de gestor/funcionario foi preservado sem alteracao de contrato.
+
+## 3.3 Observacao de Modelagem
+- Nao houve migration nesta RF.
+- A titularidade atual do painel cliente e do setup B2C usa `Veiculo.celular_dono` normalizado.
+- O padrao `Veiculo.cliente_id` permanece como evolucao futura recomendada para uma RF propria, caso a equipe queira trocar o vinculo por telefone por um vinculo relacional direto.
 
 ---
 
