@@ -510,11 +510,18 @@ class ClienteHistoricoView(APIView):
         )
 
         ativos = base_qs.filter(status__in=STATUS_ATIVOS)
-        historico = base_qs.filter(status__in=STATUS_HISTORICO)[:HISTORICO_CLIENTE_LIMITE]
+        historico_qs = base_qs.filter(status__in=STATUS_HISTORICO)
+        total_historico = historico_qs.count()
+        historico = historico_qs[:HISTORICO_CLIENTE_LIMITE]
 
         ctx = {'request': request}
         return Response({
             'cliente_nome': request.user.name,
             'ativos': OrdemServicoClienteSerializer(ativos, many=True, context=ctx).data,
             'historico': OrdemServicoClienteSerializer(historico, many=True, context=ctx).data,
+            'historico_meta': {
+                'total': total_historico,
+                'limit': HISTORICO_CLIENTE_LIMITE,
+                'has_more': total_historico > HISTORICO_CLIENTE_LIMITE,
+            },
         })

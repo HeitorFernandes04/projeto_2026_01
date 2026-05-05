@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -226,6 +227,53 @@ class TestClienteHistoricoAPI:
         from accounts.models import Cliente
         cliente_criado = Cliente.objects.get(telefone_whatsapp='11955550000')
         assert veiculo_orfao.cliente == cliente_criado
+
+    # --- historico_meta ---
+
+    def test_historico_meta_presente_na_resposta(self):
+        OrdemServicoFactory(
+            estabelecimento=self.est, veiculo=self.veiculo, servico=self.servico, status='FINALIZADO'
+        )
+        _auth(self.api, self.cliente.user)
+        resp = self.api.get('/api/cliente/historico/')
+        assert resp.status_code == 200
+        meta = resp.data['historico_meta']
+        assert meta['total'] == 1
+        assert meta['limit'] == 50
+        assert meta['has_more'] is False
+
+    def test_historico_meta_has_more_verdadeiro_quando_excede_limite(self):
+        for _ in range(3):
+            OrdemServicoFactory(
+                estabelecimento=self.est, veiculo=self.veiculo, servico=self.servico, status='FINALIZADO'
+            )
+        _auth(self.api, self.cliente.user)
+        with patch('operacao.views.HISTORICO_CLIENTE_LIMITE', 2):
+            resp = self.api.get('/api/cliente/historico/')
+        assert resp.status_code == 200
+        meta = resp.data['historico_meta']
+        assert meta['total'] == 3
+        assert meta['limit'] == 2
+        assert meta['has_more'] is True
+        assert len(resp.data['historico']) == 2
+
+    def test_cliente_ve_os_de_multiplos_estabelecimentos(self):
+        """RF-25: histórico multicentralizado — OSs de qualquer unidade da rede."""
+        outro_est = EstabelecimentoFactory()
+        outro_servico = ServicoFactory(estabelecimento=outro_est)
+        outro_veiculo = VeiculoFactory(estabelecimento=outro_est, cliente=self.cliente)
+        OrdemServicoFactory(
+            estabelecimento=self.est, veiculo=self.veiculo, servico=self.servico, status='FINALIZADO'
+        )
+        OrdemServicoFactory(
+            estabelecimento=outro_est, veiculo=outro_veiculo, servico=outro_servico, status='FINALIZADO'
+        )
+        _auth(self.api, self.cliente.user)
+        resp = self.api.get('/api/cliente/historico/')
+        assert resp.status_code == 200
+        assert len(resp.data['historico']) == 2
+        slugs = {os['estabelecimento']['slug'] for os in resp.data['historico']}
+        assert len(slugs) == 2
 
     def test_registro_cliente_rejeita_email_duplicado(self):
         self.api.post('/api/auth/registro-cliente/', {

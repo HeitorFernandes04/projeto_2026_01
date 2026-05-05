@@ -160,24 +160,46 @@ $text-muted: #8b949e;
 
   /* ESTILOS DA LISTA DE VEÍCULOS ATIVOS */
   .ativos-list {
-    /* Sem padding lateral para alinhar com as abas */
     padding: 0;
-
-    .ativos-header {
-      margin-bottom: 20px;
-      padding: 0 20px;
-
-      h3 {
-        color: #ffffff;
-        font-size: 18px;
-        font-weight: 600;
-        margin: 0;
-      }
-    }
-
-    /* Layout flexível para cards com largura total */
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
+
+  .historico-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+.grupo-estabelecimento {
+  margin-bottom: 28px;
+
+  .grupo-nome {
+    color: $text-muted;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 12px 0;
+    padding-left: 8px;
+    border-left: 2px solid $primary;
+  }
+}
+
+.historico-limite-aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1c2128;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 8px;
+  color: $text-muted;
+  font-size: 13px;
+
+  span { font-size: 18px; color: $primary; flex-shrink: 0; }
+  p { margin: 0; line-height: 1.4; }
 }
