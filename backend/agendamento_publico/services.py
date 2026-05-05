@@ -1,8 +1,145 @@
 import datetime
+import re
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.utils import timezone
+from rest_framework_simplejwt.tokens import RefreshToken
+from accounts.models import Cliente, User
+from core.models import Veiculo
 from operacao.models import OrdemServico
 from core.models import Servico
 from accounts.models import Estabelecimento
+
+
+B2C_USERNAME_PREFIX = 'b2c_'
+B2C_EMAIL_DOMAIN = 'cliente.lava.me'
+
+
+class AuthB2CService:
+    @staticmethod
+    def normalizar_telefone(telefone):
+        return re.sub(r'\D', '', telefone or '')
+
+    @staticmethod
+    def normalizar_placa(placa):
+        return re.sub(r'[^A-Z0-9]', '', (placa or '').strip().upper())
+
+    @staticmethod
+    def montar_username(telefone):
+        return f'{B2C_USERNAME_PREFIX}{AuthB2CService.normalizar_telefone(telefone)}'
+
+    @staticmethod
+    def montar_email_fantasma(telefone):
+        return f'{AuthB2CService.normalizar_telefone(telefone)}@{B2C_EMAIL_DOMAIN}'
+
+    @staticmethod
+    def _emitir_tokens(user):
+        refresh = RefreshToken.for_user(user)
+        return {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        }
+
+    @staticmethod
+    def _buscar_veiculo_por_titularidade(telefone, placa):
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        placa_normalizada = AuthB2CService.normalizar_placa(placa)
+
+        veiculos = Veiculo.objects.filter(
+            placa=placa_normalizada,
+        ).select_related('estabelecimento')
+
+        for veiculo in veiculos:
+            if AuthB2CService.normalizar_telefone(veiculo.celular_dono) == telefone_normalizado:
+                return veiculo
+
+        raise PermissionDenied('Combinacao de placa e telefone nao encontrada.')
+
+    @staticmethod
+    @transaction.atomic
+    def setup_cliente(telefone, placa, pin):
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        if len(telefone_normalizado) < 10:
+            raise ValidationError('Telefone invalido.')
+
+        veiculo = AuthB2CService._buscar_veiculo_por_titularidade(
+            telefone=telefone_normalizado,
+            placa=placa,
+        )
+        username = AuthB2CService.montar_username(telefone_normalizado)
+
+        if User.objects.filter(username=username).exists():
+            raise ValidationError('Este usuario ja possui PIN cadastrado.')
+
+        nome_cliente = (veiculo.nome_dono or 'Cliente Lava-Me').strip()
+        user = User(
+            email=AuthB2CService.montar_email_fantasma(telefone_normalizado),
+            username=username,
+            name=nome_cliente,
+            is_staff=False,
+            is_superuser=False,
+        )
+        user.set_password(pin)
+        user.save()
+
+        Cliente.objects.create(
+            user=user,
+            telefone_whatsapp=telefone_normalizado,
+        )
+
+        return AuthB2CService._emitir_tokens(user)
+
+    @staticmethod
+    def login_cliente(telefone, pin):
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        username = AuthB2CService.montar_username(telefone_normalizado)
+        user = (
+            User.objects
+            .filter(username=username, is_active=True)
+            .select_related('perfil_cliente')
+            .first()
+        )
+
+        if not user or not hasattr(user, 'perfil_cliente') or not user.check_password(pin):
+            raise PermissionDenied('Telefone ou PIN incorretos.')
+
+        return AuthB2CService._emitir_tokens(user)
+
+    @staticmethod
+    def montar_painel_cliente(user):
+        if not hasattr(user, 'perfil_cliente'):
+            raise PermissionDenied('Usuario sem perfil de cliente.')
+
+        telefone = AuthB2CService.normalizar_telefone(user.perfil_cliente.telefone_whatsapp)
+        ordens = (
+            OrdemServico.objects
+            .filter(veiculo__celular_dono=telefone)
+            .select_related('veiculo', 'servico', 'estabelecimento')
+            .order_by('-data_hora')
+        )
+
+        ativos = []
+        historico = []
+        for ordem in ordens:
+            item = {
+                'id': ordem.id,
+                'placa': ordem.veiculo.placa,
+                'modelo': ordem.veiculo.modelo,
+                'servico': ordem.servico.nome,
+                'unidade': ordem.estabelecimento.nome_fantasia,
+                'status': ordem.status,
+                'data_hora': ordem.data_hora,
+            }
+            if ordem.status in ('FINALIZADO', 'CANCELADO'):
+                historico.append(item)
+            else:
+                ativos.append(item)
+
+        return {
+            'cliente_nome': user.name or 'Cliente',
+            'ativos': ativos,
+            'historico': historico,
+        }
 
 class DisponibilidadeService:
     @staticmethod

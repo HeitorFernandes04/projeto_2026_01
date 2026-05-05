@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import EstabelecimentoPublicoDetailView, DisponibilidadeView
+from .views import (
+    DisponibilidadeView,
+    EstabelecimentoPublicoDetailView,
+)
 
 urlpatterns = [
     # RF-21: GET /api/publico/estabelecimento/{slug}/

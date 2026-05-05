@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
-// Interfaces conforme RF-25
 export interface PainelStatus {
   cliente_nome: string;
   ativos: any[];
@@ -11,20 +10,29 @@ export interface PainelStatus {
 
 @Injectable({ providedIn: 'root' })
 export class PainelClienteService {
-  // Rota definitiva conforme Trilha 3
-  private readonly apiUrl = '/api/cliente/historico/';
+  private readonly apiUrl = '/api/cliente/painel/';
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * RF-25.1: Busca dados do painel filtrados por titularidade (RNF-01)
-   */
   getDadosPainel(): Observable<PainelStatus> {
-    // Por enquanto, retornamos o esqueleto vazio para montarmos a tela
-    return of({
-      cliente_nome: 'João Silva', // Mock inicial para Letícia Lopes
-      ativos: [],
-      historico: []
-    });
+    const token = localStorage.getItem('access_token');
+    const headers = { Authorization: `Bearer ${token}` };
+    return this.http.get<PainelStatus>(this.apiUrl, { headers }).pipe(
+      map(dados => ({
+        cliente_nome: dados.cliente_nome,
+        ativos: dados.ativos.map(item => this.normalizarOrdem(item)),
+        historico: dados.historico.map(item => this.normalizarOrdem(item)),
+      }))
+    );
+  }
+
+  private normalizarOrdem(item: any): any {
+    const data = item.data_hora ? new Date(item.data_hora) : null;
+    return {
+      ...item,
+      horario: data ? data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--',
+      data: data ? data.toLocaleDateString('pt-BR') : '--/--/----',
+      previsao_entrega: data ? data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--',
+    };
   }
 }
