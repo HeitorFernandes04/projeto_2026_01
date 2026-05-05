@@ -29,12 +29,12 @@ Permite que o cliente visualize seu historico completo de ordens de servico real
 
 ---
 
-## 1.3.1 Nota de Implementacao Atual (RF-27)
-A autenticacao B2C por telefone e PIN foi implementada na RF-27 sem alterar o modelo de dados. Portanto, neste momento a titularidade do cliente e resolvida por `Cliente.telefone_whatsapp` e `Veiculo.celular_dono` normalizados.
+## 1.3.1 Nota de Implementacao Atual (Auth B2C)
+A autenticacao B2C por telefone e PIN foi implementada na Auth B2C sem alterar o modelo de dados. Portanto, neste momento a titularidade do cliente e resolvida por `Cliente.telefone_whatsapp` e `Veiculo.celular_dono` normalizados.
 
 O filtro ideal `where cliente_id = user.id`, citado em rascunhos anteriores da RF-25, permanece como diretriz futura caso o projeto evolua para adicionar um vinculo relacional direto entre `Veiculo` e `Cliente` via migration. Ate essa evolucao, a API deve continuar aplicando filtro estrito por telefone normalizado para evitar IDOR.
 
-Endpoints implementados pela RF-27:
+Endpoints implementados pela Auth B2C:
 - `POST /api/cliente/auth/setup/`
 - `POST /api/cliente/auth/token/`
 - `GET /api/cliente/painel/`
@@ -71,8 +71,8 @@ Para proteger a auditoria interna e evitar exposicao de falhas operacionais nao 
 
 ## 2.3 Modelagem de Dados Necessaria / Evolucao Futura
 
-- **Entidade Cliente:** O model `Cliente` (one-to-one com `User`) ja existe e foi reutilizado pela RF-27.
-- **Vinculo Veiculo:** A RF-27 nao criou migration. Hoje o vinculo B2C e feito por telefone normalizado. Adicionar `ForeignKey(Cliente)` em `Veiculo` permanece como evolucao futura para uma RF propria.
+- **Entidade Cliente:** O model `Cliente` (one-to-one com `User`) ja existe e foi reutilizado pela Auth B2C.
+- **Vinculo Veiculo:** A Auth B2C nao criou migration. Hoje o vinculo B2C e feito por telefone normalizado. Adicionar `ForeignKey(Cliente)` em `Veiculo` permanece como evolucao futura para uma RF propria.
 - **Categorizacao de Midia:** O campo `MidiaOrdemServico.momento` deve ser um `ChoiceField` para garantir o filtro da galeria.
 
 ---
@@ -90,3 +90,4 @@ Para proteger a auditoria interna e evitar exposicao de falhas operacionais nao 
 ## 3.3 Teste de Titularidade Atual
 - **Acao:** Cliente autenticado acessa `/api/cliente/painel/`.
 - **Esperado:** A API retorna apenas OSs de veiculos cujo `celular_dono` normalizado corresponda ao `telefone_whatsapp` do perfil `Cliente`.
+

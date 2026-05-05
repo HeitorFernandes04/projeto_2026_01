@@ -6,9 +6,9 @@
 - `GET /api/auth/estabelecimento/me/`: Dados da unidade do gestor autenticado.
 
 ## Autenticacao B2C (`/api/cliente/`)
-- `POST /api/cliente/auth/setup/`: Primeiro acesso B2C. Valida telefone + placa, cria `User` com `username=b2c_[telefone]`, cria perfil `Cliente` e retorna JWT (RF-27).
-- `POST /api/cliente/auth/token/`: Login recorrente B2C por telefone + PIN, retornando JWT no body da resposta (RF-27).
-- `GET /api/cliente/painel/`: Painel do cliente autenticado, com ordens ativas e historico filtrados pela titularidade atual do cliente (RF-25/RF-27).
+- `POST /api/cliente/auth/setup/`: Primeiro acesso B2C. Valida telefone + placa, cria `User` com `username=b2c_[telefone]`, cria perfil `Cliente` e retorna JWT (Auth B2C).
+- `POST /api/cliente/auth/token/`: Login recorrente B2C por telefone + PIN, retornando JWT no body da resposta (Auth B2C).
+- `GET /api/cliente/painel/`: Painel do cliente autenticado, com ordens ativas e historico filtrados pela titularidade atual do cliente (RF-25/Auth B2C).
 
 ## Gestao de Unidade (`/api/gestao/`)
 - `GET /api/gestao/estabelecimento/`: Retorna dados da unidade logada.
@@ -39,3 +39,4 @@
 ## Portal Publico (`/api/publico/`)
 - `GET /api/publico/estabelecimento/<slug>/`: Dados publicos para autoagendamento (RF-21).
 - `GET /api/publico/agendamento/disponibilidade/`: Consulta disponibilidade publica por `slug`, `servicoId` e `data` (RF-22).
+

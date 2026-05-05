@@ -1,4 +1,4 @@
-# 1. Funcionalidade: RF-27 Autenticacao B2C por Telefone e PIN
+# 1. Funcionalidade: Autenticacao B2C por Telefone e PIN
 
 ## 1.1 Use Case
 - **Nome:** Login do Cliente Web (B2C)
@@ -12,7 +12,7 @@ Permite que o cliente acesse o painel web usando apenas telefone e PIN de 4 digi
 
 | Area | Situacao | Avaliacao |
 |------|----------|-----------|
-| App B2C | Implementado | O app `agendamento_publico` concentra as regras publicas e B2C. A RF-27 foi implementada nele, sem criacao de novo app. |
+| App B2C | Implementado | O app `agendamento_publico` concentra as regras publicas e B2C. A autenticacao B2C foi implementada nele, sem criacao de novo app. |
 | Usuario Django | Pronto para o escopo | O model `accounts.User` possui `email` unico e `username`, permitindo o uso de e-mail fantasma e prefixo `b2c_`. |
 | Perfil Cliente | Pronto para o escopo | Ja existe `accounts.Cliente` com vinculo one-to-one com `User` e campo `telefone_whatsapp`. |
 | Veiculo | Pronto para validacao | `core.Veiculo` possui `placa` e `celular_dono`, campos necessarios para comprovar titularidade no setup. |
@@ -28,16 +28,16 @@ Permite que o cliente acesse o painel web usando apenas telefone e PIN de 4 digi
 
 | Numero  | Requisito                      | Descricao                                                                                  |
 |---------|--------------------------------|--------------------------------------------------------------------------------------------|
-| RF-27.1 | Setup Inicial do Cliente       | Cliente cria seu primeiro PIN informando telefone, placa e PIN de 4 digitos.               |
-| RF-27.2 | Prova de Titularidade          | Backend valida se existe `Veiculo` com a combinacao exata de `placa` e `celular_dono`.     |
-| RF-27.3 | E-mail Fantasma                | Backend cria o usuario com e-mail tecnico no formato `[telefone]@cliente.lava.me`.         |
-| RF-27.4 | Isolamento B2C                 | Backend cria o usuario com `username=b2c_[telefone]` para evitar colisao com funcionarios. |
-| RF-27.5 | Criacao de Perfil Cliente      | Backend cria ou vincula `Cliente` ao usuario B2C, preenchendo `telefone_whatsapp`.         |
-| RF-27.6 | Login por Telefone e PIN       | Cliente autenticado acessa o sistema usando apenas telefone e PIN.                         |
-| RF-27.7 | Emissao de JWT RESTful         | Setup e login retornam `{ access, refresh }` no body da resposta, sem depender de cookies. |
-| RF-27.8 | Bloqueio de Sobrescrita        | Nova chamada de setup para usuario B2C ja existente retorna `409 Conflict`.                |
-| RF-27.9 | Login Cliente no Web           | Web deve oferecer fluxo separado do login de gestor, usando telefone/PIN.                  |
-| RF-27.10 | Painel com Dados Reais        | Painel cliente deve consumir API protegida por JWT e exibir apenas dados do cliente logado. |
+| AUTH-B2C.1 | Setup Inicial do Cliente       | Cliente cria seu primeiro PIN informando telefone, placa e PIN de 4 digitos.               |
+| AUTH-B2C.2 | Prova de Titularidade          | Backend valida se existe `Veiculo` com a combinacao exata de `placa` e `celular_dono`.     |
+| AUTH-B2C.3 | E-mail Fantasma                | Backend cria o usuario com e-mail tecnico no formato `[telefone]@cliente.lava.me`.         |
+| AUTH-B2C.4 | Isolamento B2C                 | Backend cria o usuario com `username=b2c_[telefone]` para evitar colisao com funcionarios. |
+| AUTH-B2C.5 | Criacao de Perfil Cliente      | Backend cria ou vincula `Cliente` ao usuario B2C, preenchendo `telefone_whatsapp`.         |
+| AUTH-B2C.6 | Login por Telefone e PIN       | Cliente autenticado acessa o sistema usando apenas telefone e PIN.                         |
+| AUTH-B2C.7 | Emissao de JWT RESTful         | Setup e login retornam `{ access, refresh }` no body da resposta, sem depender de cookies. |
+| AUTH-B2C.8 | Bloqueio de Sobrescrita        | Nova chamada de setup para usuario B2C ja existente retorna `409 Conflict`.                |
+| AUTH-B2C.9 | Login Cliente no Web           | Web deve oferecer fluxo separado do login de gestor, usando telefone/PIN.                  |
+| AUTH-B2C.10 | Painel com Dados Reais        | Painel cliente deve consumir API protegida por JWT e exibir apenas dados do cliente logado. |
 
 ---
 
@@ -114,11 +114,11 @@ O portal web deve separar claramente o acesso do cliente do acesso do gestor. O 
 
 | Numero  | Requisito                    | Descricao                                                                                  |
 |---------|------------------------------|--------------------------------------------------------------------------------------------|
-| RF-27.11 | Tela de Login B2C           | Criar tela de entrada por telefone e PIN, mobile-first e separada da gestao.               |
-| RF-27.12 | Tela de Setup B2C           | Criar fluxo de primeiro acesso com placa, telefone, PIN e confirmacao de PIN.              |
-| RF-27.13 | Guard de Cliente            | Proteger painel cliente exigindo JWT valido e perfil `CLIENTE`.                            |
-| RF-27.14 | Integracao com Autoagendamento | Apos checkout publico, permitir criacao de PIN usando placa e telefone recem-cadastrados. |
-| RF-27.15 | Logout Cliente              | Remover token do armazenamento local e retornar ao contexto publico da unidade.            |
+| AUTH-B2C.11 | Tela de Login B2C           | Criar tela de entrada por telefone e PIN, mobile-first e separada da gestao.               |
+| AUTH-B2C.12 | Tela de Setup B2C           | Criar fluxo de primeiro acesso com placa, telefone, PIN e confirmacao de PIN.              |
+| AUTH-B2C.13 | Guard de Cliente            | Proteger painel cliente exigindo JWT valido e perfil `CLIENTE`.                            |
+| AUTH-B2C.14 | Integracao com Autoagendamento | Apos checkout publico, permitir criacao de PIN usando placa e telefone recem-cadastrados. |
+| AUTH-B2C.15 | Logout Cliente              | Remover token do armazenamento local e retornar ao contexto publico da unidade.            |
 
 ---
 
@@ -177,3 +177,4 @@ O portal web deve separar claramente o acesso do cliente do acesso do gestor. O 
 ## 4.7 Teste do Painel Cliente Autenticado
 - **Acao:** Cliente autenticado acessa `/api/cliente/painel/`.
 - **Esperado:** API retorna apenas OSs vinculadas ao cliente logado, sem dados internos da unidade.
+
