@@ -5,29 +5,42 @@ import './GradeHorarios.css';
 
 interface GradeProps {
   data: string;
+  servicoId: number;
   onSelectHora: (hora: string) => void;
   horaSelecionada: string;
 }
 
-const GradeHorarios: React.FC<GradeProps> = ({ data, onSelectHora, horaSelecionada }) => {
+const GradeHorarios: React.FC<GradeProps> = ({ data, servicoId, onSelectHora, horaSelecionada }) => {
   const [horarios, setHorarios] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!data || !servicoId || servicoId === 0) {
+      setLoading(false);
+      setHorarios([]);
+      return;
+    }
+    
     setLoading(true);
     
-    // Busca os horários livres da API
-    getHorariosLivres(data, 1) 
-      .then(res => {
-        const todosHorarios: string[] = res.horarios || [];
+    try {
+      // Busca os horários livres da API
+      console.log('Fetching horarios for data:', data, 'servicoId:', servicoId);
+      getHorariosLivres(data, servicoId) 
+        .then(res => {
+          console.log('API response:', res);
+          // API retorna lista de objetos {inicio, fim}, extrair apenas os horários de início
+          const slots = res?.horarios || [];
+          const todosHorarios: string[] = slots.map((slot: any) => slot.inicio || slot);
+          console.log('todosHorarios:', todosHorarios);
         
-        // --- LÓGICA DE FILTRO DINÂMICO ---
-        const agora = new Date();
-        const hojeIso = agora.toISOString().split('T')[0];
+          // --- LÓGICA DE FILTRO DINÂMICO ---
+          const agora = new Date();
+          const hojeIso = agora.toISOString().split('T')[0];
 
-        if (data === hojeIso) {
-          // Se for hoje, calcula a hora atual em minutos para comparação
-          const minutosAtuais = agora.getHours() * 60 + agora.getMinutes();
+          if (data === hojeIso) {
+            // Se for hoje, calcula a hora atual em minutos para comparação
+            const minutosAtuais = agora.getHours() * 60 + agora.getMinutes();
 
           const filtrados = todosHorarios.filter(h => {
             const [hora, min] = h.split(':').map(Number);
@@ -36,23 +49,25 @@ const GradeHorarios: React.FC<GradeProps> = ({ data, onSelectHora, horaSeleciona
             // Retorna apenas horários que ainda não passaram (com margem de 5min)
             return minutosDoHorario > minutosAtuais + 5;
           });
-          setAtuaisOuFuturos(filtrados);
+          setHorarios(filtrados);
         } else {
           // Se for data futura, mostra tudo o que a API retornar
-          setAtuaisOuFuturos(todosHorarios);
+          setHorarios(todosHorarios);
         }
       })
       .catch(() => {
         // Fallback caso a API falhe (exemplo de horários padrão)
-        setAtuaisOuFuturos(['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']);
+        setHorarios(['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']);
       })
       .finally(() => setLoading(false));
-  }, [data]);
+    } catch (error) {
+      console.error('Erro no useEffect:', error);
+      setLoading(false);
+    }
+  }, [data, servicoId]);
 
-  // Função auxiliar para evitar repetição no set de horários
-  const setAtuaisOuFuturos = (lista: string[]) => {
-    setHorarios(lista);
-  };
+  // Debug do estado final antes do render
+  console.log('Estado final - loading:', loading, 'horarios:', horarios);
 
   return (
     <div className="grade-horarios-wrapper">
@@ -63,7 +78,7 @@ const GradeHorarios: React.FC<GradeProps> = ({ data, onSelectHora, horaSeleciona
       ) : (
         <IonGrid style={{ padding: 0 }}>
           <IonRow>
-            {horarios.length > 0 ? (
+            {Array.isArray(horarios) && horarios.length > 0 ? (
               horarios.map((h) => (
                 <IonCol size="3" key={h} style={{ padding: '4px' }}>
                   <div 
@@ -89,7 +104,7 @@ const GradeHorarios: React.FC<GradeProps> = ({ data, onSelectHora, horaSeleciona
             ) : (
               <IonCol size="12">
                 <p style={{ color: '#666', fontSize: '12px', textAlign: 'center', fontWeight: 700 }}>
-                  Não há mais horários disponíveis para hoje.
+                  {horarios.length === 0 ? 'Nenhum horário disponível para esta data.' : 'Carregando horários...'}
                 </p>
               </IonCol>
             )}

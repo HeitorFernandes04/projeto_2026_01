@@ -145,6 +145,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/Funcionario'
           description: ''
+  /api/cliente/auth/setup/:
+    post:
+      operationId: cliente_auth_setup_create
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/auth/token/:
+    post:
+      operationId: cliente_auth_token_create
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/painel/:
+    get:
+      operationId: cliente_painel_retrieve
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/gestao/estabelecimento/:
     get:
       operationId: gestao_estabelecimento_retrieve
@@ -803,6 +841,9 @@ paths:
   /api/ordens-servico/horarios-livres/:
     get:
       operationId: ordens_servico_horarios_livres_retrieve
+      description: |-
+        RF-22: Consulta de horários para o Funcionário (Mobile).
+        Utiliza o mesmo motor de disponibilidade do Cliente.
       tags:
       - ordens-servico
       security:
@@ -830,6 +871,19 @@ paths:
       - ordens-servico
       security:
       - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/publico/agendamento/checkout/:
+    post:
+      operationId: ordens_servico_publico_agendamento_checkout_create
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
       responses:
         '200':
           description: No response body
@@ -884,18 +938,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/TagPeca'
           description: ''
+  /api/publico/agendamento/disponibilidade/:
+    get:
+      operationId: publico_agendamento_disponibilidade_retrieve
+      description: |-
+        RF-22: Retorna horários disponíveis para agendamento.
+        Consome o Motor de Disponibilidade para evitar overbooking.
+      tags:
+      - publico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/publico/estabelecimento/{slug}/:
     get:
       operationId: publico_estabelecimento_retrieve
       description: |-
         RF-21: Endpoint público (sem autenticação) que retorna os dados básicos
         de um Estabelecimento e seus serviços ativos via slug.
-
-        Segurança:
-          - AllowAny: Acesso público, sem JWT.
-          - Throttle: 60 req/min por IP (previne scraping — CA-05).
-          - Lookup via slug (não expõe IDs sequenciais — evita IDOR reverso).
-          - Serializer expõe apenas campos seguros (CA-03).
       parameters:
       - in: path
         name: slug
@@ -993,6 +1057,11 @@ components:
         servicos:
           type: string
           readOnly: true
+        slug:
+          type: string
+          nullable: true
+          maxLength: 150
+          pattern: ^[-a-zA-Z0-9_]+$
       required:
       - endereco_completo
       - id
@@ -1006,16 +1075,30 @@ components:
         nome_fantasia:
           type: string
           maxLength: 150
+        cnpj:
+          type: string
+          maxLength: 14
         endereco_completo:
           type: string
           maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          nullable: true
+          pattern: ^[-a-zA-Z0-9_]+$
         logo:
           type: string
           format: uri
           nullable: true
+        logo_url:
+          type: string
+          readOnly: true
       required:
+      - cnpj
       - endereco_completo
+      - logo_url
       - nome_fantasia
+      - slug
     Funcionario:
       type: object
       properties:
@@ -1119,13 +1202,24 @@ components:
         nome_fantasia:
           type: string
           maxLength: 150
+        cnpj:
+          type: string
+          maxLength: 14
         endereco_completo:
           type: string
           maxLength: 255
+        slug:
+          type: string
+          readOnly: true
+          nullable: true
+          pattern: ^[-a-zA-Z0-9_]+$
         logo:
           type: string
           format: uri
           nullable: true
+        logo_url:
+          type: string
+          readOnly: true
     PatchedIncidentePendente:
       type: object
       properties:

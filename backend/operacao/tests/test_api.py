@@ -247,7 +247,8 @@ class TestOrdemServicoFluxoAPI(APITestCase):
 
 class TestHistoricoAPI(APITestCase):
     def setUp(self):
-        self.funcionario = UserFactory()
+        self.estabelecimento = EstabelecimentoFactory()
+        self.funcionario = UserFactory(estabelecimento=self.estabelecimento)
         self.client = APIClient()
         self.client.force_authenticate(user=self.funcionario)
         self.url = reverse('os-historico')

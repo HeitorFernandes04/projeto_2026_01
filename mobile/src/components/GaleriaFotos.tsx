@@ -96,13 +96,42 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
     if (fotosStaged.length === 0 || enviando) return;
     setEnviando(true);
     try {
+      console.log(`Enviando ${fotosStaged.length} fotos para OS ${ordemServicoId}, momento: ${momento}`);
       await uploadFotos(ordemServicoId, momento, fotosStaged.map((f) => f.blob));
       // Limpa o staging após sucesso (sem revokeObjectURL porque usamos DataUrl)
       setFotosStaged([]);
       if (onUploadSuccess) onUploadSuccess();
-    } catch (e) {
+      console.log('Upload de fotos concluído com sucesso');
+    } catch (e: any) {
       console.error('Erro no upload em lote:', e);
-      alert('Erro ao enviar fotos. Tente novamente.');
+      
+      // Tratamento detalhado de erros
+      let errorMessage = 'Erro ao enviar fotos. Tente novamente.';
+      
+      if (e.response) {
+        // Erro HTTP do backend
+        const status = e.response.status;
+        const data = e.response.data;
+        
+        if (status === 400) {
+          errorMessage = data?.detail || 'Formato de arquivo inválido ou dados incorretos.';
+        } else if (status === 401) {
+          errorMessage = 'Sessão expirada. Faça login novamente.';
+        } else if (status === 403) {
+          errorMessage = 'Sem permissão para enviar fotos.';
+        } else if (status === 413) {
+          errorMessage = 'Arquivos muito grandes. Reduza a qualidade das fotos.';
+        } else if (status >= 500) {
+          errorMessage = 'Erro no servidor. Tente novamente em alguns instantes.';
+        }
+      } else if (e.message) {
+        // Erro de rede ou JavaScript
+        errorMessage = e.message.includes('NetworkError') 
+          ? 'Sem conexão com o servidor. Verifique sua internet.'
+          : e.message;
+      }
+      
+      alert(`Falha no Upload: ${errorMessage}`);
     } finally {
       setEnviando(false);
     }
@@ -134,6 +163,20 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
                   style={{ ...styles.thumb, opacity: ehStaged ? 0.85 : 1, cursor: 'pointer' }}
                   alt={`Foto ${slotIndex + 1}`}
                   onClick={() => setFotoSelecionada(srcPreview!)}
+                  onError={(e) => {
+                    console.error('Erro ao carregar imagem:', srcPreview, e);
+                    // Tenta adicionar o domínio se for URL relativa
+                    const img = e.target as HTMLImageElement;
+                    if (srcPreview && !srcPreview.startsWith('http') && !srcPreview.startsWith('data:')) {
+                      const urlCompleta = `http://127.0.0.1:8000${srcPreview}`;
+                      console.log('Tentando URL completa:', urlCompleta);
+                      img.src = urlCompleta;
+                    } else {
+                      // Se já falhou com URL completa, mostra placeholder
+                      img.style.background = 'var(--lm-card)';
+                      img.alt = 'Erro ao carregar';
+                    }
+                  }}
                 />
                 {/* Badge amarelo para fotos ainda não enviadas (staged) */}
                 {ehStaged && <div style={styles.badgePendente} title="Aguardando confirmação" />}

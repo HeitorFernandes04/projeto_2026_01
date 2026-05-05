@@ -3,6 +3,7 @@ from core.utils import formatar_placa
 from operacao.constants import STATUS_ATIVOS, STATUS_HISTORICO, HISTORICO_CLIENTE_LIMITE
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
@@ -52,11 +53,17 @@ class OrdensServicoHojeView(APIView):
 
         estabelecimento = request.user.perfil_funcionario.estabelecimento
         # Exibe OS sem funcionário ou do próprio usuário (fila do pátio)
+        # Inclui: OS do dia atual + pendentes de dias anteriores (em execução)
+        hoje_local = timezone.localdate()
         ordens = (
             OrdemServico.objects
             .filter(
-                Q(funcionario__isnull=True) | Q(funcionario=request.user),
-                estabelecimento=estabelecimento,
+                (Q(funcionario__isnull=True) | Q(funcionario=request.user)) &
+                Q(estabelecimento=estabelecimento) &
+                (
+                    Q(data_hora__date=hoje_local) | 
+                    Q(data_hora__date__lt=hoje_local, status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE'])
+                )
             )
             .exclude(status__in=['FINALIZADO', 'CANCELADO'])
             .select_related('veiculo', 'servico')
@@ -77,9 +84,19 @@ class HistoricoOrdemServicoView(APIView):
         filtro_serializer = HistoricoOrdemServicoFiltroSerializer(data=request.query_params)
         filtro_serializer.is_valid(raise_exception=True)
 
+        # Obter estabelecimento do usuário (Axioma 5 - Multi-tenancy)
+        estabelecimento = None
+        if hasattr(request.user, 'perfil_gestor'):
+            estabelecimento = request.user.perfil_gestor.estabelecimento
+        elif hasattr(request.user, 'perfil_funcionario'):
+            estabelecimento = request.user.perfil_funcionario.estabelecimento
+        else:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Usuário sem estabelecimento vinculado.")
+
         try:
             ordens = OrdemServicoService.listar_historico_por_periodo(
-                funcionario=request.user,
+                estabelecimento=estabelecimento,
                 data_inicial=filtro_serializer.validated_data['data_inicial'],
                 data_final=filtro_serializer.validated_data['data_final'],
                 status=filtro_serializer.validated_data['status'],

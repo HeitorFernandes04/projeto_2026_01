@@ -1,0 +1,201 @@
+.login-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  padding: 20px;
+  background-color: var(--lm-bg);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  z-index: 9999;
+
+  .login-card {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 24px;
+    border: 1px solid var(--lm-border);
+    border-radius: 32px;
+    background-color: var(--lm-card);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+
+    @media (min-width: 768px) {
+      padding: 48px;
+    }
+
+    .login-header {
+      margin-bottom: 32px;
+      text-align: center;
+
+      .brand-logo {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        margin-bottom: 20px;
+        padding: 4px;
+        border: 1px solid var(--lm-border);
+        border-radius: 16px;
+        background: var(--lm-bg);
+      }
+
+      h2 {
+        margin: 0;
+        color: var(--lm-text);
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      p {
+        margin-top: 10px;
+        color: var(--lm-text-muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        label {
+          color: var(--lm-text-muted);
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+
+        .input-box {
+          display: flex;
+          align-items: center;
+          height: 48px;
+          padding: 0 16px;
+          border: 1px solid var(--lm-border);
+          border-radius: 14px;
+          background: var(--lm-bg);
+          transition: all 0.2s ease;
+
+          &:focus-within {
+            border-color: var(--lm-primary);
+            box-shadow: 0 0 0 3px var(--lm-primary-glow);
+
+            span {
+              color: var(--lm-primary);
+            }
+          }
+
+          span {
+            margin-right: 12px;
+            color: var(--lm-text-muted);
+            font-size: 20px;
+            transition: color 0.2s ease;
+          }
+
+          input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--lm-text);
+            font-family: inherit;
+            font-size: 15px;
+
+            &::placeholder {
+              color: var(--lm-text-muted);
+              opacity: 0.7;
+            }
+          }
+        }
+      }
+
+      .erro {
+        margin: 0;
+        padding: 12px 14px;
+        border: 1px solid var(--lm-accent);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--lm-accent) 12%, transparent);
+        color: var(--lm-accent);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
+      .btn-login {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        height: 52px;
+        margin-top: 8px;
+        border: none;
+        border-radius: 14px;
+        background: var(--lm-primary);
+        color: var(--lm-text);
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 800;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px var(--lm-primary-glow);
+        }
+
+        &:disabled {
+          background: var(--lm-card-hover);
+          color: var(--lm-text-muted);
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+
+        &:active:not(:disabled) {
+          transform: scale(0.98);
+        }
+
+        span {
+          font-size: 20px;
+        }
+
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+      }
+
+      .form-footer {
+        margin-top: 8px;
+        text-align: center;
+
+        .link-mode {
+          border: 0;
+          background: transparent;
+          color: var(--lm-text-muted);
+          cursor: pointer;
+          font: inherit;
+          font-size: 13px;
+          text-decoration: none;
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: var(--lm-text);
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -39,21 +39,103 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
   useEffect(() => { carregarDados(); }, [carregarDados]);
 
   const fotosExistentes = ordemServico?.midias?.filter((m: Midia) => m.momento === 'VISTORIA_GERAL') || [];
-  const podeConcluir = fotosExistentes.length >= 5;
+  const podeConcluir = fotosExistentes.length >= 5 && !enviando;
 
   const handleFinalizar = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
-    if (!podeConcluir || enviando) return;
+    
+    // Validação rigorosa antes de permitir avanço
+    if (enviando) return;
+    
+    // Recarrega dados para garantir estado atualizado
+    try {
+      const dadosAtualizados = await getOrdemServico(ordemServicoId);
+      const fotosAtuais = dadosAtualizados.midias?.filter((m: Midia) => m.momento === 'VISTORIA_GERAL') || [];
+      
+      if (fotosAtuais.length < 5) {
+        alert(`Bloqueio: Apenas ${fotosAtuais.length}/5 fotos foram salvas no sistema. Aguarde o processamento completo.`);
+        return;
+      }
+
+      // Verificação crítica: testar se cada imagem realmente existe (não 404)
+      console.log('Verificando existência física das imagens...');
+      
+      const verificarImagem = async (foto: Midia): Promise<{url: string, ok: boolean, status?: number, error?: string}> => {
+        const urlsParaTestar = [
+          foto.arquivo, // URL original (absoluta)
+          foto.arquivo.replace('http://127.0.0.1:8000', ''), // URL relativa
+          `http://127.0.0.1:8000${foto.arquivo}`, // Forçar domínio se for relativa
+        ];
+        
+        for (const url of urlsParaTestar) {
+          try {
+            console.log(`Testando URL: ${url}`);
+            const response = await fetch(url, { 
+              method: 'HEAD',
+              mode: 'cors',
+              cache: 'no-cache'
+            });
+            
+            if (response.ok) {
+              console.log(`✅ Imagem acessível: ${url}`);
+              return { url, ok: true, status: response.status };
+            } else {
+              console.log(`❌ Falha ${response.status}: ${url}`);
+            }
+          } catch (error) {
+            console.log(`❌ Erro ao acessar ${url}:`, error);
+          }
+        }
+        
+        return { url: foto.arquivo, ok: false, error: 'Todas as URLs falharam' };
+      };
+
+      const verificacoes = await Promise.allSettled(
+        fotosAtuais.map((foto: Midia) => verificarImagem(foto))
+      );
+
+      const falhas = verificacoes.filter(
+        (result): result is PromiseRejectedResult | PromiseFulfilledResult<{ok: false; url: string; error?: string}> => 
+          result.status === 'rejected' || (result.status === 'fulfilled' && !result.value.ok)
+      );
+
+      if (falhas.length > 0) {
+        console.error('Imagens com falha:', falhas);
+        
+        // Tentar identificar o problema específico
+        const erroDetalhado = falhas.map(f => {
+          if (f.status === 'rejected') {
+            return `Erro de rede: ${f.reason}`;
+          } else {
+            return `URL falhou: ${f.value.url} - ${f.value.error || 'Erro desconhecido'}`;
+          }
+        }).join('\n');
+        
+        alert(`Bloqueio Crítico: ${falhas.length}/5 imagens não foram encontradas no servidor.\n\nDetalhes:\n${erroDetalhado}\n\nAs fotos precisam ser reenviadas.`);
+        
+        // Recarrega os dados para mostrar estado real
+        await carregarDados();
+        return;
+      }
+
+      console.log('✅ Todas as 5 imagens foram verificadas e existem no servidor');
+    } catch (err) {
+      console.error('Erro ao verificar estado atual:', err);
+      alert('Erro ao verificar estado das fotos. Tente novamente.');
+      return;
+    }
 
     setEnviando(true);
     try {
       await avancarEtapa(ordemServicoId, { laudo_vistoria: observacoes });
       setOrdemServico(null); // Limpa estado local antes de completar
       onComplete();
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Erro ao salvar vistoria:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Verifique se as 5 fotos foram processadas.';
+      const errorMessage = err.response?.data?.detail || err.message || 'Verifique se as 5 fotos foram processadas.';
       alert('Bloqueio na Vistoria: ' + errorMessage);
+      // Recarrega dados em caso de erro para mostrar estado real
+      await carregarDados();
     } finally {
       setEnviando(false);
     }

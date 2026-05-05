@@ -3,6 +3,23 @@ from accounts.models import Estabelecimento
 from core.models import Servico
 
 
+class AuthB2CSetupSerializer(serializers.Serializer):
+    telefone = serializers.CharField(max_length=20)
+    placa = serializers.CharField(max_length=10)
+    pin = serializers.RegexField(
+        regex=r'^\d{4}$',
+        error_messages={'invalid': 'O PIN deve conter exatamente 4 digitos.'},
+    )
+
+
+class AuthB2CLoginSerializer(serializers.Serializer):
+    telefone = serializers.CharField(max_length=20)
+    pin = serializers.RegexField(
+        regex=r'^\d{4}$',
+        error_messages={'invalid': 'O PIN deve conter exatamente 4 digitos.'},
+    )
+
+
 class ServicoPublicoSerializer(serializers.ModelSerializer):
     """
     Exposição segura de serviços: apenas campos necessários para o portal B2C.
