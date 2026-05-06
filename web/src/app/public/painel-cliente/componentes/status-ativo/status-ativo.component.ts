@@ -19,29 +19,13 @@ export class StatusAtivoComponent {
   ];
 
   getStatusText(): string {
-    if (!this.ativo) return 'Veículo Recebido';
-    
-    const mapa: { [key: string]: string } = {
-      'PATIO': 'Veículo Recebido',
-      'VISTORIA_INICIAL': 'Check-list em andamento',
-      'EM_EXECUCAO': 'Limpando seu veículo',
-      'LIBERACAO': 'Pronto para retirada',
-      'FINALIZADO': 'Serviço concluído'
-    };
-    return mapa[this.ativo.status_nome] || 'Veículo Recebido';
+    return this.ativo?.status_display || 'Veículo Recebido';
   }
 
   getEtapaIndex(): number {
-    if (!this.ativo) return 0; // Sem serviço ativo = primeira etapa
-    // Mapeia o status vindo da API para o índice do progresso (0 a 3)
-    const mapa: { [key: string]: number } = {
-      'PATIO': 0,
-      'VISTORIA_INICIAL': 1,
-      'EM_EXECUCAO': 2,
-      'LIBERACAO': 3,
-      'FINALIZADO': 3
-    };
-    return mapa[this.ativo.status_nome] || 0;
+    // etapa_atual vem da API como 1–4; índice do stepper é 0–3
+    // Math.max garante que CANCELADO (etapa_atual=0) não gere índice negativo
+    return Math.max(0, (this.ativo?.etapa_atual ?? 1) - 1);
   }
 
   getProgressoBarra(): number {
@@ -49,13 +33,4 @@ export class StatusAtivoComponent {
     return (index / (this.etapas.length - 1)) * 100;
   }
 
-  cancelarAgendamento(): void {
-    if (this.ativo) {
-      // Emitir evento para o componente pai tratar o cancelamento
-      console.log('Cancelar agendamento:', this.ativo);
-      // Aqui você pode usar @Output para comunicar com o componente pai
-    } else {
-      console.log('Nenhum serviço ativo para cancelar');
-    }
-  }
 }

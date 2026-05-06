@@ -6,13 +6,13 @@
         <span class="material-symbols-outlined">directions_car</span>
       </div>
       <div class="veiculo-detalhe">
-        <h3>{{ ativo?.modelo || 'A' }}</h3>
-        <p>{{ ativo?.placa || 'a' }}</p>
+        <h3>{{ ativo?.veiculo_modelo }}</h3>
+        <p>{{ ativo?.veiculo_placa }}</p>
       </div>
     </div>
     <div class="horario-info">
       <span class="label">Horário</span>
-      <span class="valor-destaque">{{ ativo?.horario || '18:00' }}</span>
+      <span class="valor-destaque">{{ ativo?.data_hora | date:'HH:mm' }}</span>
     </div>
   </div>
 
@@ -21,7 +21,7 @@
   <!-- Detalhes da Data -->
   <div class="info-row">
     <span class="label">Data do Serviço</span>
-    <span class="valor">{{ ativo?.data || '02/05/2026' }}</span>
+    <span class="valor">{{ ativo?.data_hora | date:'dd/MM/yyyy' }}</span>
   </div>
 
   <div class="divider"></div>
@@ -29,7 +29,7 @@
   <!-- Detalhes do Serviço -->
   <div class="info-row">
     <span class="label">Serviço</span>
-    <span class="valor-bold">{{ ativo?.servico || 'BASIC' }}</span>
+    <span class="valor-bold">{{ ativo?.servico_nome }}</span>
   </div>
 
   <div class="divider"></div>
@@ -37,9 +37,9 @@
   <!-- Progresso Vertical -->
   <div class="progresso-vertical">
     <h4>Progresso do Serviço</h4>
-    
+
     <div class="stepper-vertical">
-      <div class="step" [class.active]="ativo?.status === 'PATIO'">
+      <div class="step" [class.active]="(ativo?.etapa_atual ?? 0) >= 1">
         <div class="step-icon">
           <span class="material-symbols-outlined">search</span>
         </div>
@@ -49,7 +49,7 @@
         </div>
       </div>
 
-      <div class="step" [class.active]="ativo?.status === 'EM_EXECUCAO'">
+      <div class="step" [class.active]="(ativo?.etapa_atual ?? 0) >= 3">
         <div class="step-icon">
           <span class="material-symbols-outlined">water_drop</span>
         </div>
@@ -59,7 +59,7 @@
         </div>
       </div>
 
-      <div class="step" [class.active]="ativo?.status === 'LIBERACAO'">
+      <div class="step" [class.active]="(ativo?.etapa_atual ?? 0) >= 4">
         <div class="step-icon">
           <span class="material-symbols-outlined">check_circle</span>
         </div>
@@ -71,8 +71,8 @@
     </div>
   </div>
 
-  <!-- Ação de Cancelamento -->
-  <button class="btn-cancelar-agendamento" (click)="cancelarAgendamento()">
+  <!-- Ação de Cancelamento: feature não implementada nesta versão -->
+  <button class="btn-cancelar-agendamento" disabled title="Em breve">
     <span class="material-symbols-outlined">close</span>
     Cancelar Agendamento
   </button>

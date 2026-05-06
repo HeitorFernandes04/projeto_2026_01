@@ -24,12 +24,23 @@ class Servico(models.Model):
 class Veiculo(models.Model):
     """Cadastro base de veículos consumido pela Operação."""
     estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
+    # RF-25: vínculo com perfil Cliente para o Painel do Cliente
+    cliente = models.ForeignKey(
+        'accounts.Cliente',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='veiculos',
+    )
     placa = models.CharField(max_length=10, unique=True)
     modelo = models.CharField(max_length=50)
     marca = models.CharField(max_length=50)
     cor = models.CharField(max_length=30)
     nome_dono = models.CharField(max_length=100, null=True, blank=True)
     celular_dono = models.CharField(max_length=20, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.placa} — {self.modelo}"
 
 class TagPeca(models.Model):
     """Estrutura para mapeamento de avarias."""

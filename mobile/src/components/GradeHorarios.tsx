@@ -3,6 +3,11 @@ import { IonGrid, IonRow, IonCol, IonSpinner } from '@ionic/react';
 import { getHorariosLivres } from '../services/api';
 import './GradeHorarios.css';
 
+interface HorarioSlot {
+  inicio: string;
+  fim?: string;
+}
+
 interface GradeProps {
   data: string;
   servicoId: number;
@@ -31,7 +36,7 @@ const GradeHorarios: React.FC<GradeProps> = ({ data, servicoId, onSelectHora, ho
           console.log('API response:', res);
           // API retorna lista de objetos {inicio, fim}, extrair apenas os horários de início
           const slots = res?.horarios || [];
-          const todosHorarios: string[] = slots.map((slot: any) => slot.inicio || slot);
+          const todosHorarios: string[] = slots.map((slot: HorarioSlot) => slot.inicio || (slot as unknown as string));
           console.log('todosHorarios:', todosHorarios);
         
           // --- LÓGICA DE FILTRO DINÂMICO ---

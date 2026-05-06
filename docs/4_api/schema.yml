@@ -145,6 +145,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/Funcionario'
           description: ''
+  /api/auth/registro-cliente/:
+    post:
+      operationId: auth_registro_cliente_create
+      description: |-
+        RF-25: Cadastro público de perfil Cliente. Username é auto-derivado do email.
+        Após criar, linka retroativamente veículos com o mesmo celular_dono.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+          description: ''
   /api/cliente/auth/setup/:
     post:
       operationId: cliente_auth_setup_create
@@ -168,6 +200,20 @@ paths:
       - cookieAuth: []
       - basicAuth: []
       - {}
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/historico/:
+    get:
+      operationId: cliente_historico_retrieve
+      description: 'RF-25: Retorna histórico de OSs do cliente autenticado, separando
+        ativos e concluídos.'
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
       responses:
         '200':
           description: No response body
@@ -1000,6 +1046,38 @@ components:
       description: |-
         * `INTERNO` - Interno
         * `EXTERNO` - Externo
+    Cliente:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          title: Usuário
+          description: Obrigatório. 150 caracteres ou menos. Letras, números e @/./+/-/_
+            apenas.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 6
+        telefone_whatsapp:
+          type: string
+          maxLength: 20
+        endereco_padrao:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
     Estabelecimento:
       type: object
       properties:
