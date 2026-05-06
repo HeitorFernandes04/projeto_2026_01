@@ -1,6 +1,9 @@
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied, ValidationError
+from core.utils import formatar_placa
+from operacao.constants import STATUS_ATIVOS, STATUS_HISTORICO, HISTORICO_CLIENTE_LIMITE
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
@@ -18,9 +21,11 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from .permissions import IsFuncionarioDaOS, IsGestor
+from accounts.permissions import IsCliente
 from .serializers import (
     KanbanCardSerializer,
     OrdemServicoSerializer,
+    OrdemServicoClienteSerializer,
     CriarOrdemServicoSerializer,
     HistoricoOrdemServicoFiltroSerializer,
     HistoricoGestorFiltroSerializer,
@@ -48,11 +53,17 @@ class OrdensServicoHojeView(APIView):
 
         estabelecimento = request.user.perfil_funcionario.estabelecimento
         # Exibe OS sem funcionário ou do próprio usuário (fila do pátio)
+        # Inclui: OS do dia atual + pendentes de dias anteriores (em execução)
+        hoje_local = timezone.localdate()
         ordens = (
             OrdemServico.objects
             .filter(
-                Q(funcionario__isnull=True) | Q(funcionario=request.user),
-                estabelecimento=estabelecimento,
+                (Q(funcionario__isnull=True) | Q(funcionario=request.user)) &
+                Q(estabelecimento=estabelecimento) &
+                (
+                    Q(data_hora__date=hoje_local) | 
+                    Q(data_hora__date__lt=hoje_local, status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE'])
+                )
             )
             .exclude(status__in=['FINALIZADO', 'CANCELADO'])
             .select_related('veiculo', 'servico')
@@ -73,9 +84,19 @@ class HistoricoOrdemServicoView(APIView):
         filtro_serializer = HistoricoOrdemServicoFiltroSerializer(data=request.query_params)
         filtro_serializer.is_valid(raise_exception=True)
 
+        # Obter estabelecimento do usuário (Axioma 5 - Multi-tenancy)
+        estabelecimento = None
+        if hasattr(request.user, 'perfil_gestor'):
+            estabelecimento = request.user.perfil_gestor.estabelecimento
+        elif hasattr(request.user, 'perfil_funcionario'):
+            estabelecimento = request.user.perfil_funcionario.estabelecimento
+        else:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Usuário sem estabelecimento vinculado.")
+
         try:
             ordens = OrdemServicoService.listar_historico_por_periodo(
-                funcionario=request.user,
+                estabelecimento=estabelecimento,
                 data_inicial=filtro_serializer.validated_data['data_inicial'],
                 data_final=filtro_serializer.validated_data['data_final'],
                 status=filtro_serializer.validated_data['status'],
@@ -296,7 +317,7 @@ class EntradasRecentesAPIView(APIView):
         data = [
             {
                 'id': os.id,
-                'placa': f"{os.veiculo.placa[:3]}-{os.veiculo.placa[3:]}" if len(os.veiculo.placa) == 7 else os.veiculo.placa,
+                'placa': formatar_placa(os.veiculo.placa),
                 'modelo': os.veiculo.modelo,
                 'servico': os.servico.nome,
                 'data_hora': os.data_hora,
@@ -470,3 +491,37 @@ class CheckoutPublicoView(APIView):
             return Response(OrdemServicoSerializer(os).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ── RF-25: Painel do Cliente ─────────────────────────────────────────────────
+
+
+class ClienteHistoricoView(APIView):
+    """RF-25: Retorna histórico de OSs do cliente autenticado, separando ativos e concluídos."""
+    permission_classes = [IsAuthenticated, IsCliente]
+
+    def get(self, request):
+        cliente = request.user.perfil_cliente
+        base_qs = (
+            OrdemServico.objects
+            .filter(veiculo__cliente=cliente)
+            .select_related('veiculo', 'servico', 'estabelecimento')
+            .order_by('-data_hora')
+        )
+
+        ativos = base_qs.filter(status__in=STATUS_ATIVOS)
+        historico_qs = base_qs.filter(status__in=STATUS_HISTORICO)
+        total_historico = historico_qs.count()
+        historico = historico_qs[:HISTORICO_CLIENTE_LIMITE]
+
+        ctx = {'request': request}
+        return Response({
+            'cliente_nome': request.user.name,
+            'ativos': OrdemServicoClienteSerializer(ativos, many=True, context=ctx).data,
+            'historico': OrdemServicoClienteSerializer(historico, many=True, context=ctx).data,
+            'historico_meta': {
+                'total': total_historico,
+                'limit': HISTORICO_CLIENTE_LIMITE,
+                'has_more': total_historico > HISTORICO_CLIENTE_LIMITE,
+            },
+        })

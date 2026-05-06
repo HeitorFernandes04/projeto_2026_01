@@ -1,83 +1,82 @@
-import { Component, OnInit, inject, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { StatusAtivoComponent } from './componentes/status-ativo/status-ativo.component';
 import { CardAtivoComponent } from './componentes/card-ativo/card-ativo.component';
 import { CardHistoricoComponent } from './componentes/card-historico/card-historico.component';
-import { OrdemServicoService, OrdemServico } from './services/ordem-servico.service';
+import {
+  PainelClienteService,
+  OrdemServicoCliente,
+  GrupoEstabelecimento,
+  HistoricoMeta,
+} from '../../services/painel-cliente.service';
+import { AuthB2CService } from '../../services/auth-b2c.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-painel',
   standalone: true,
-  // Removido ListaHistoricoComponent para eliminar o WARNING NG8113
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule, 
-    StatusAtivoComponent, 
-    CardAtivoComponent, 
-    CardHistoricoComponent
+    CommonModule,
+    StatusAtivoComponent,
+    CardAtivoComponent,
+    CardHistoricoComponent,
   ],
   templateUrl: './painel.component.html',
   styleUrls: ['./painel.component.scss']
 })
 export class PainelComponent implements OnInit, OnDestroy {
-  private router = inject(Router);
-  private ordemServicoService = inject(OrdemServicoService);
-  private cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  private readonly painelClienteService = inject(PainelClienteService);
+  private readonly authB2CService = inject(AuthB2CService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  dados: any = null;
+  clienteNome = '';
   abaAtiva: 'ativos' | 'historico' = 'ativos';
-  ordensAtivas: OrdemServico[] = [];
-  ordensFinalizadas: OrdemServico[] = [];
-  
-  private subscriptions: Subscription[] = [];
+  ordensAtivas: OrdemServicoCliente[] = [];
+  ordensFinalizadas: OrdemServicoCliente[] = [];
+  gruposAtivos: GrupoEstabelecimento[] = [];
+  gruposHistorico: GrupoEstabelecimento[] = [];
+  historicoMeta: HistoricoMeta | null = null;
+  carregando = true;
+  erro = '';
+
+  private readonly subscriptions: Subscription[] = [];
 
   ngOnInit(): void {
-    // Iniciar simulação de progresso em tempo real conforme lógica do serviço
-    this.ordemServicoService.iniciarSimulacaoProgresso();
-    
-    // Escutar mudanças nas ordens de serviço (Reatividade Axioma 13)
     this.subscriptions.push(
-      this.ordemServicoService.getOrdensServico$().subscribe(() => {
-        this.ordensAtivas = this.ordemServicoService.getOrdensAtivas();
-        this.ordensFinalizadas = this.ordemServicoService.getOrdensFinalizadas();
-        
-        this.atualizarDadosPainel();
+      this.painelClienteService.getDadosPainel().subscribe({
+        next: (dados) => {
+          this.clienteNome = dados.cliente_nome;
+          this.ordensAtivas = dados.ativos;
+          this.ordensFinalizadas = dados.historico;
+          this.gruposAtivos = this.agruparPorEstabelecimento(dados.ativos);
+          this.gruposHistorico = this.agruparPorEstabelecimento(dados.historico);
+          this.historicoMeta = dados.historico_meta ?? null;
+          this.carregando = false;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.erro = 'Não foi possível carregar seus dados. Tente novamente.';
+          this.carregando = false;
+          this.cdr.markForCheck();
+        },
       })
     );
-
-    // Initial check para garantir renderização correta
-    this.atualizarDadosPainel();
   }
 
   ngOnDestroy(): void {
-    // Limpar subscriptions para evitar memory leaks[cite: 1]
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  /**
-   * Atualiza os dados do painel baseado nas ordens de serviço
-   */
-  private atualizarDadosPainel(): void {
-    // Busca nome real do cliente do sessionStorage (vindo do formulário RF-23)
-    const nomeCliente = sessionStorage.getItem('clienteNome') || 'Cliente';
-    
-    this.dados = {
-      cliente_nome: nomeCliente,
-      ativos: this.ordensAtivas,
-      historico: this.ordensFinalizadas
-    };
-    this.cdr.detectChanges();
-  }
-
-  /**
-   * Como é um link de autoagendamento público, sair retorna para a home da unidade[cite: 2]
-   */
   logout(): void {
+    this.authB2CService.logout();
     const urlParts = this.router.url.split('/');
-    const slug = urlParts[2]; // Pega o slug de /agendar/:slug/painel
+    const slug = urlParts[2];
     this.router.navigate([`/agendar/${slug}`]);
   }
+
 
   /**
    * Navega para os detalhes de um veículo ativo
@@ -87,25 +86,39 @@ export class PainelComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * RF-24: Remove a OS cancelada da lista de ordens ativas.
+   * RF-24: Remove a OS cancelada da lista de ordens ativas e reagrupa.
    * Acionado pelo EventEmitter (cancelado) do CardAtivoComponent.
    */
   onAgendamentoCancelado(osId: number): void {
     this.ordensAtivas = this.ordensAtivas.filter(os => os.id !== osId);
-    this.cdr.detectChanges();
+    this.gruposAtivos = this.agruparPorEstabelecimento(this.ordensAtivas);
+    this.cdr.markForCheck();
   }
 
-  /**
-   * Retorna o texto do status baseado no código para consistência visual[cite: 1]
-   */
   getStatusText(status: string): string {
     const mapa: { [key: string]: string } = {
       'PATIO': 'Veículo Recebido',
       'VISTORIA_INICIAL': 'Check-list em andamento',
       'EM_EXECUCAO': 'Limpando seu veículo',
       'LIBERACAO': 'Pronto para retirada',
-      'FINALIZADO': 'Serviço concluído'
+      'FINALIZADO': 'Serviço concluído',
     };
     return mapa[status] || 'Status desconhecido';
+  }
+
+  private agruparPorEstabelecimento(ordens: OrdemServicoCliente[]): GrupoEstabelecimento[] {
+    const grupos = new Map<string, GrupoEstabelecimento>();
+    for (const os of ordens) {
+      const chave = os.estabelecimento?.slug ?? os.estabelecimento?.nome_fantasia ?? 'sem-estabelecimento';
+      if (!grupos.has(chave)) {
+        grupos.set(chave, {
+          nome_fantasia: os.estabelecimento?.nome_fantasia ?? 'Estabelecimento',
+          slug: os.estabelecimento?.slug ?? '',
+          ordens: [],
+        });
+      }
+      grupos.get(chave)!.ordens.push(os);
+    }
+    return Array.from(grupos.values());
   }
 }

@@ -158,7 +158,12 @@ export class AutoagendamentoComponent implements OnInit {
           // Salvar nome do cliente no sessionStorage para o painel usar
           sessionStorage.setItem('clienteNome', this.dadosAgendamento.nome);
           const slug = this.estabelecimento?.slug;
-          this.router.navigate([`/agendar/${slug}/painel`]);
+          this.router.navigate([`/agendar/${slug}/cliente/setup`], {
+            queryParams: {
+              placa: this.dadosAgendamento.placa,
+              telefone: payload.whatsapp
+            }
+          });
         },
         error: (err: any) => {
           alert(err.error?.detail || 'Erro ao processar agendamento.');

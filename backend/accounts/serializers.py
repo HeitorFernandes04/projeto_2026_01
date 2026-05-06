@@ -54,6 +54,8 @@ class ClienteSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'name', 'email', 'username', 'password', 'telefone_whatsapp', 'endereco_padrao']
+        # username é auto-derivado do email no fluxo B2C — não obrigatório externamente
+        extra_kwargs = {'username': {'required': False, 'allow_blank': True}}
 
     def validate(self, attrs):
         # Validação mandatória apenas para novas contas (POST)
@@ -78,6 +80,9 @@ class ClienteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         telefone_whatsapp = validated_data.pop('telefone_whatsapp', '')
         endereco_padrao = validated_data.pop('endereco_padrao', '')
+        # B2C: username é auto-derivado do email se não fornecido
+        if not validated_data.get('username'):
+            validated_data['username'] = validated_data.get('email', '').strip().lower()
         user = User.objects.create_user(**validated_data)
         Cliente.objects.create(
             user=user,

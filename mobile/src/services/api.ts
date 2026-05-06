@@ -1,5 +1,4 @@
-// A URL base é lida do arquivo .env (variável VITE_API_URL).
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
+const BASE_URL = 'http://127.0.0.1:8000';
 
 // --- INTERFACES DE TIPAGEM ---
 
@@ -141,9 +140,14 @@ export async function uploadFotos(
 ) {
   const formData = new FormData();
   formData.append('momento', momento);
+  
   fotoBlobs.forEach((blob, i) => {
+    console.log(`Blob ${i + 1}: tamanho=${blob.size} bytes, tipo=${blob.type}`);
     formData.append('arquivos', blob, `foto_${i + 1}.jpg`);
   });
+
+  console.log(`Enviando FormData para OS ${id}, momento: ${momento}`);
+  console.log('FormData entries:', Array.from(formData.entries()));
 
   return request(`/api/ordens-servico/${id}/fotos/`, {
     method: 'POST',
