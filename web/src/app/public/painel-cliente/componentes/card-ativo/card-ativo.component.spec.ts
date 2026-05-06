@@ -190,3 +190,66 @@ describe('CardAtivoComponent — guards de estado', () => {
     expect(mock.cancelarAgendamento).not.toHaveBeenCalled();
   });
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GRUPO 5: pedirConfirmacao() / cancelarConfirmacao() — fluxo de confirmação
+// ═════════════════════════════════════════════════════════════════════════════
+describe('CardAtivoComponent — confirmação antes do cancelamento', () => {
+  it('pedirConfirmacao deve ativar aguardandoConfirmacao', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo();
+
+    c.pedirConfirmacao();
+
+    expect(c.aguardandoConfirmacao).toBe(true);
+  });
+
+  it('pedirConfirmacao deve limpar erroCancelamento anterior', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo();
+    c.erroCancelamento = 'Erro anterior';
+
+    c.pedirConfirmacao();
+
+    expect(c.erroCancelamento).toBe('');
+  });
+
+  it('pedirConfirmacao não deve ativar se podeCancelar for false', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo({ status: 'EM_EXECUCAO' });
+
+    c.pedirConfirmacao();
+
+    expect(c.aguardandoConfirmacao).toBe(false);
+  });
+
+  it('cancelarConfirmacao deve desativar aguardandoConfirmacao', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo();
+    c.aguardandoConfirmacao = true;
+
+    c.cancelarConfirmacao();
+
+    expect(c.aguardandoConfirmacao).toBe(false);
+  });
+
+  it('cancelarAgendamento deve resetar aguardandoConfirmacao após sucesso', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo();
+    c.aguardandoConfirmacao = true;
+
+    c.cancelarAgendamento();
+
+    expect(c.aguardandoConfirmacao).toBe(false);
+  });
+
+  it('cancelarAgendamento deve resetar aguardandoConfirmacao após erro', () => {
+    const c = criarComponente(mockServicoErro400);
+    c.ativo = makeAtivo();
+    c.aguardandoConfirmacao = true;
+
+    c.cancelarAgendamento();
+
+    expect(c.aguardandoConfirmacao).toBe(false);
+  });
+});

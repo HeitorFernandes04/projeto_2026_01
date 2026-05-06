@@ -1,9 +1,15 @@
 {
-  // For more information, visit: https://angular.dev/ai/mcp
   "servers": {
     "angular-cli": {
       "command": "npx",
       "args": ["-y", "@angular/cli", "mcp"]
+    },
+    "lavame-ai": {
+      "command": "python",
+      "args": ["../backend/mcp_server.py"],
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "lava_me.settings"
+      }
     }
   }
 }

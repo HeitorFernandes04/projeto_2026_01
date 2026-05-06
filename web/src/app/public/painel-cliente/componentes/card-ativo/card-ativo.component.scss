@@ -132,6 +132,69 @@ $danger-red: #ff453a;
     }
   }
 
+  .cancelamento-area {
+    .erro-cancelamento {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: $danger-red;
+      font-size: 11px;
+      margin: 12px 0 0;
+      span { font-size: 16px; font-family: 'Material Symbols Outlined' !important; }
+    }
+  }
+
+  .confirmacao-inline {
+    margin-top: 20px;
+
+    .confirmacao-pergunta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #e3b341;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      span { font-size: 18px; font-family: 'Material Symbols Outlined' !important; }
+    }
+
+    .confirmacao-acoes {
+      display: flex;
+      gap: 8px;
+
+      button {
+        flex: 1;
+        height: 40px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-weight: 700;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        span { font-size: 16px; font-family: 'Material Symbols Outlined' !important; }
+        &:disabled { opacity: 0.5; cursor: not-allowed; }
+        &:active:not(:disabled) { transform: scale(0.98); }
+      }
+
+      .btn-confirmar-sim {
+        background: transparent;
+        border: 1px solid $danger-red;
+        color: $danger-red;
+        &:hover:not(:disabled) { background-color: rgba($danger-red, 0.15); }
+      }
+
+      .btn-confirmar-nao {
+        background: transparent;
+        border: 1px solid $border-color;
+        color: $text-muted;
+        &:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.05); border-color: $text-muted; }
+      }
+    }
+  }
+
   .btn-cancelar-agendamento {
     width: 100%;
     margin-top: 20px;

@@ -18,21 +18,24 @@ export class CardAtivoComponent {
 
   private ordemServicoService = inject(OrdemServicoService);
 
+  aguardandoConfirmacao = false;
   cancelando = false;
   erroCancelamento = '';
 
-  /**
-   * RF-24.1 + RF-24.3: Só exibe o botão se a OS está em PATIO e possui slug (UUID).
-   * OS iniciadas (VISTORIA_INICIAL em diante) não permitem cancelamento.
-   */
   get podeCancelar(): boolean {
     return this.ativo?.status === 'PATIO' && !!this.ativo?.slug_cancelamento;
   }
 
-  /**
-   * RF-24: Envia PATCH via slug_cancelamento (nunca ID sequencial).
-   * Emite evento (cancelado) para que o painel pai remova o card da lista.
-   */
+  pedirConfirmacao(): void {
+    if (!this.podeCancelar || this.cancelando) return;
+    this.aguardandoConfirmacao = true;
+    this.erroCancelamento = '';
+  }
+
+  cancelarConfirmacao(): void {
+    this.aguardandoConfirmacao = false;
+  }
+
   cancelarAgendamento(): void {
     if (!this.podeCancelar || this.cancelando) return;
 
@@ -44,10 +47,12 @@ export class CardAtivoComponent {
       .subscribe({
         next: () => {
           this.cancelando = false;
+          this.aguardandoConfirmacao = false;
           this.cancelado.emit(this.ativo.id);
         },
         error: (err) => {
           this.cancelando = false;
+          this.aguardandoConfirmacao = false;
           this.erroCancelamento =
             err.error?.detail ?? 'Não foi possível cancelar. Tente novamente.';
         },

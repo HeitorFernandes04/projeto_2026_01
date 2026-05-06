@@ -80,18 +80,44 @@
       </p>
     }
 
-    @if (podeCancelar) {
+    @if (podeCancelar && !aguardandoConfirmacao) {
       <button
         class="btn-cancelar-agendamento"
-        [disabled]="cancelando"
-        (click)="cancelarAgendamento()"
+        (click)="pedirConfirmacao()"
         type="button"
         aria-label="Cancelar agendamento">
-        <span class="material-symbols-outlined">
-          {{ cancelando ? 'hourglass_empty' : 'close' }}
-        </span>
-        {{ cancelando ? 'Cancelando...' : 'Cancelar Agendamento' }}
+        <span class="material-symbols-outlined">close</span>
+        Cancelar Agendamento
       </button>
+    }
+
+    @if (aguardandoConfirmacao) {
+      <div class="confirmacao-inline">
+        <p class="confirmacao-pergunta">
+          <span class="material-symbols-outlined">warning</span>
+          Tem certeza que deseja cancelar?
+        </p>
+        <div class="confirmacao-acoes">
+          <button
+            class="btn-confirmar-sim"
+            [disabled]="cancelando"
+            (click)="cancelarAgendamento()"
+            type="button">
+            <span class="material-symbols-outlined">
+              {{ cancelando ? 'hourglass_empty' : 'check' }}
+            </span>
+            {{ cancelando ? 'Cancelando...' : 'Sim, cancelar' }}
+          </button>
+          <button
+            class="btn-confirmar-nao"
+            [disabled]="cancelando"
+            (click)="cancelarConfirmacao()"
+            type="button">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Não, voltar
+          </button>
+        </div>
+      </div>
     }
   </div>
 </div>
