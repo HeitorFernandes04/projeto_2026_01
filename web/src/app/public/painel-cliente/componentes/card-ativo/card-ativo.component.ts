@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { OrdemServicoService, OrdemServico } from '../../services/ordem-servico.service';
+import { OrdemServicoService } from '../../services/ordem-servico.service';
+import { OrdemServicoCliente } from '../../../../services/painel-cliente.service';
 
 @Component({
   selector: 'app-card-ativo',
@@ -10,7 +11,7 @@ import { OrdemServicoService, OrdemServico } from '../../services/ordem-servico.
   styleUrls: ['./card-ativo.component.scss']
 })
 export class CardAtivoComponent {
-  @Input() ativo!: OrdemServico;
+  @Input() ativo!: OrdemServicoCliente;
 
   /** RF-24: Notifica o painel pai para remover o card após cancelamento bem-sucedido. */
   @Output() cancelado = new EventEmitter<number>();

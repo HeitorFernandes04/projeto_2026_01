@@ -1,197 +1,188 @@
 /**
- * Testes do CardAtivoComponent (RF-25 - Painel do Cliente)
- * Cobrem funcionalidades do card de veículos ativos: exibição e cancelamento
- * Padrão: testes simples de componente com @Input
+ * Testes do CardAtivoComponent — RF-24 (Cancelamento Autônomo)
+ * Cobrem: podeCancelar, cancelarAgendamento(), feedback de erro e emissão de evento.
  */
 import '@angular/compiler';
+import { of, throwError } from 'rxjs';
 import { CardAtivoComponent } from './card-ativo.component';
+import { OrdemServicoCliente } from '../../../../services/painel-cliente.service';
 
-// ── Dados de Teste ────────────────────────────────────────────────────────
-const mockAtivo = {
+// ── Factories de dados alinhadas com OrdemServicoCliente (RF-25 interface) ──
+
+const makeAtivo = (overrides: Partial<OrdemServicoCliente> = {}): OrdemServicoCliente => ({
   id: 1,
-  modelo: 'Toyota Corolla',
-  placa: 'ABC1D23',
-  horario: '08:30',
-  data: '15/01/2024',
-  servico: 'Lavagem Completa',
-  status: 'EM_EXECUCAO',
-  previsao_entrega: '10:00'
+  data_hora: '2026-05-10T10:00:00',
+  status: 'PATIO',
+  status_display: 'Pátio',
+  etapa_atual: 1,
+  servico_nome: 'Lavagem Básica',
+  veiculo_placa: 'BRA-2E19',
+  veiculo_modelo: 'Toyota Corolla',
+  slug_cancelamento: 'f475af97-c771-4d7a-ba1d-1047db93d0e9',
+  estabelecimento: { nome_fantasia: 'Lava-Me Centro', slug: 'lava-me-centro' },
+  ...overrides,
+});
+
+// ── Helper: mock do OrdemServicoService ──────────────────────────────────────
+
+const mockServicoOk = {
+  cancelarAgendamento: vi.fn(() => of({ detail: 'Agendamento cancelado com sucesso.' })),
 };
 
-const mockAtivoSemDados = null;
+const mockServicoErro403 = {
+  cancelarAgendamento: vi.fn(() =>
+    throwError(() => ({ error: { detail: 'Não é possível cancelar um serviço que já foi iniciado.' } }))
+  ),
+};
+
+const mockServicoErro400 = {
+  cancelarAgendamento: vi.fn(() =>
+    throwError(() => ({ error: { detail: 'O cancelamento só é permitido com 1 hora de antecedência.' } }))
+  ),
+};
+
+// ── Criação do componente injetando o serviço mock ──────────────────────────
+
+function criarComponente(mockServico = mockServicoOk) {
+  const component = new CardAtivoComponent();
+  // Injeta o mock diretamente na propriedade privada (sem DI completa)
+  (component as any).ordemServicoService = mockServico;
+  return component;
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
-// GRUPO 1: Inicialização e Props
+// GRUPO 1: podeCancelar — guarda de exibição do botão (RF-24.1 + RF-24.3)
 // ═════════════════════════════════════════════════════════════════════════════
-describe('CardAtivoComponent — Inicialização', () => {
-  it('deve ser criado com sucesso', () => {
-    const component = new CardAtivoComponent();
-    expect(component).toBeTruthy();
+describe('CardAtivoComponent — podeCancelar (RF-24.1 + RF-24.3)', () => {
+  it('deve ser TRUE quando status=PATIO e slug_cancelamento presente', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo({ status: 'PATIO', slug_cancelamento: 'uuid-valido' });
+    expect(c.podeCancelar).toBe(true);
   });
 
-  it('deve iniciar com ativo undefined', () => {
-    const component = new CardAtivoComponent();
-    expect(component.ativo).toBeUndefined();
+  it('deve ser FALSE quando status não é PATIO (vistoria já iniciada)', () => {
+    const c = criarComponente();
+    for (const status of ['VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'FINALIZADO', 'CANCELADO'] as any[]) {
+      c.ativo = makeAtivo({ status });
+      expect(c.podeCancelar).toBe(false);
+    }
   });
 
-  it('deve aceitar dados de ativo via @Input', () => {
-    const component = new CardAtivoComponent();
-    component.ativo = mockAtivo;
-    
-    expect(component.ativo).toEqual(mockAtivo);
-    expect(component.ativo?.id).toBe(1);
-    expect(component.ativo?.placa).toBe('ABC1D23');
+  it('deve ser FALSE quando slug_cancelamento está ausente (OS sem UUID)', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo({ status: 'PATIO', slug_cancelamento: undefined });
+    expect(c.podeCancelar).toBe(false);
   });
 
-  it('deve aceitar valor nulo para ativo', () => {
-    const component = new CardAtivoComponent();
-    component.ativo = mockAtivoSemDados;
-    
-    expect(component.ativo).toBeNull();
+  it('deve ser FALSE quando ativo é undefined', () => {
+    const c = criarComponente();
+    (c as any).ativo = undefined;
+    expect(c.podeCancelar).toBe(false);
   });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// GRUPO 2: Funcionalidades do Componente
+// GRUPO 2: cancelarAgendamento() — fluxo de sucesso (CA-01)
 // ═════════════════════════════════════════════════════════════════════════════
-describe('CardAtivoComponent — Funcionalidades', () => {
-  let component: CardAtivoComponent;
+describe('CardAtivoComponent — cancelamento sucesso (CA-01)', () => {
+  it('deve chamar o serviço com o slug correto via PATCH', () => {
+    const mock = { cancelarAgendamento: vi.fn(() => of({ detail: 'ok' })) };
+    const c = criarComponente(mock);
+    c.ativo = makeAtivo();
 
-  beforeEach(() => {
-    component = new CardAtivoComponent();
-    component.ativo = mockAtivo;
+    c.cancelarAgendamento();
+
+    expect(mock.cancelarAgendamento).toHaveBeenCalledWith('f475af97-c771-4d7a-ba1d-1047db93d0e9', '');
   });
 
-  it('deve ter método cancelarAgendamento', () => {
-    expect(typeof component.cancelarAgendamento).toBe('function');
+  it('deve emitir o id da OS via @Output cancelado após sucesso', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo({ id: 42 });
+
+    let idEmitido: number | undefined;
+    c.cancelado.subscribe((id: number) => { idEmitido = id; });
+
+    c.cancelarAgendamento();
+
+    expect(idEmitido).toBe(42);
   });
 
-  it('deve registrar cancelamento no console', () => {
-    const consoleSpy = vi.spyOn(console, 'log');
-    
-    component.cancelarAgendamento();
-    
-    expect(consoleSpy).toHaveBeenCalledWith('Cancelar agendamento:', 1);
-    consoleSpy.mockRestore();
+  it('deve resetar estado cancelando=false após sucesso', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo();
+
+    c.cancelarAgendamento();
+
+    expect(c.cancelando).toBe(false);
   });
 
-  it('deve lidar com cancelamento quando ativo é null', () => {
-    const consoleSpy = vi.spyOn(console, 'log');
-    
-    component.ativo = null;
-    component.cancelarAgendamento();
-    
-    expect(consoleSpy).toHaveBeenCalledWith('Cancelar agendamento:', undefined);
-    consoleSpy.mockRestore();
-  });
+  it('deve limpar erroCancelamento antes de cada tentativa', () => {
+    const c = criarComponente();
+    c.ativo = makeAtivo();
+    c.erroCancelamento = 'Erro anterior';
 
-  it('deve lidar com cancelamento quando ativo é undefined', () => {
-    const consoleSpy = vi.spyOn(console, 'log');
-    
-    component.ativo = undefined;
-    component.cancelarAgendamento();
-    
-    expect(consoleSpy).toHaveBeenCalledWith('Cancelar agendamento:', undefined);
-    consoleSpy.mockRestore();
+    c.cancelarAgendamento();
+
+    expect(c.erroCancelamento).toBe('');
   });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// GRUPO 3: Validação de Dados
+// GRUPO 3: cancelarAgendamento() — bloqueios de status (CA-03)
 // ═════════════════════════════════════════════════════════════════════════════
-describe('CardAtivoComponent — Validação de Dados', () => {
-  it('deve acessar propriedades do ativo corretamente', () => {
-    const component = new CardAtivoComponent();
-    component.ativo = mockAtivo;
-    
-    expect(component.ativo?.modelo).toBe('Toyota Corolla');
-    expect(component.ativo?.placa).toBe('ABC1D23');
-    expect(component.ativo?.servico).toBe('Lavagem Completa');
-    expect(component.ativo?.status).toBe('EM_EXECUCAO');
-    expect(component.ativo?.horario).toBe('08:30');
-    expect(component.ativo?.data).toBe('15/01/2024');
-    expect(component.ativo?.previsao_entrega).toBe('10:00');
+describe('CardAtivoComponent — bloqueio por status iniciado (CA-03)', () => {
+  it('deve exibir mensagem de erro 403 (serviço já iniciado)', () => {
+    const c = criarComponente(mockServicoErro403);
+    c.ativo = makeAtivo({ status: 'PATIO' }); // backend decide, frontend só envia
+
+    c.cancelarAgendamento();
+
+    expect(c.erroCancelamento).toBe('Não é possível cancelar um serviço que já foi iniciado.');
+    expect(c.cancelando).toBe(false);
   });
 
-  it('deve usar optional chaining para acessar propriedades', () => {
-    const component = new CardAtivoComponent();
-    component.ativo = null;
-    
-    expect(component.ativo?.id).toBeUndefined();
-    expect(component.ativo?.placa).toBeUndefined();
-    expect(component.ativo?.modelo).toBeUndefined();
+  it('deve exibir mensagem de erro 400 (antecedência insuficiente)', () => {
+    const c = criarComponente(mockServicoErro400);
+    c.ativo = makeAtivo();
+
+    c.cancelarAgendamento();
+
+    expect(c.erroCancelamento).toBe('O cancelamento só é permitido com 1 hora de antecedência.');
   });
 
-  it('deve aceitar diferentes estruturas de dados', () => {
-    const component = new CardAtivoComponent();
-    const ativoSimples = { id: 999, placa: 'TEST-123' };
-    
-    component.ativo = ativoSimples;
-    
-    expect(component.ativo?.id).toBe(999);
-    expect(component.ativo?.placa).toBe('TEST-123');
-    expect(component.ativo?.modelo).toBeUndefined();
+  it('deve usar mensagem genérica quando detail não está no erro', () => {
+    const mock = { cancelarAgendamento: vi.fn(() => throwError(() => ({}))) };
+    const c = criarComponente(mock);
+    c.ativo = makeAtivo();
+
+    c.cancelarAgendamento();
+
+    expect(c.erroCancelamento).toBe('Não foi possível cancelar. Tente novamente.');
   });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// GRUPO 4: Testes de Integração
+// GRUPO 4: Guards de duplo clique e estado
 // ═════════════════════════════════════════════════════════════════════════════
-describe('CardAtivoComponent — Integração', () => {
-  it('deve funcionar com dados completos do serviço', () => {
-    const component = new CardAtivoComponent();
-    const ativoCompleto = {
-      id: 123,
-      modelo: 'Honda Civic',
-      placa: 'KYS-1234',
-      horario: '14:00',
-      data: '16/01/2024',
-      servico: 'PREMIUM',
-      status: 'PATIO',
-      previsao_entrega: '14:45'
-    };
-    
-    component.ativo = ativoCompleto;
-    
-    expect(component.ativo).toEqual(ativoCompleto);
-    expect(component.ativo?.id).toBe(123);
-    expect(component.ativo?.status).toBe('PATIO');
+describe('CardAtivoComponent — guards de estado', () => {
+  it('não deve chamar o serviço se podeCancelar for false', () => {
+    const mock = { cancelarAgendamento: vi.fn(() => of({ detail: 'ok' })) };
+    const c = criarComponente(mock);
+    c.ativo = makeAtivo({ status: 'EM_EXECUCAO' }); // podeCancelar = false
+
+    c.cancelarAgendamento();
+
+    expect(mock.cancelarAgendamento).not.toHaveBeenCalled();
   });
 
-  it('deve manter estado consistente após múltiplas atribuições', () => {
-    const component = new CardAtivoComponent();
-    
-    // Primeira atribuição
-    component.ativo = mockAtivo;
-    expect(component.ativo?.id).toBe(1);
-    
-    // Segunda atribuição
-    const outroAtivo = { ...mockAtivo, id: 456, placa: 'XYZ-789' };
-    component.ativo = outroAtivo;
-    expect(component.ativo?.id).toBe(456);
-    expect(component.ativo?.placa).toBe('XYZ-789');
-    
-    // Limpar
-    component.ativo = null;
-    expect(component.ativo).toBeNull();
-  });
+  it('não deve chamar o serviço enquanto cancelando=true (duplo clique)', () => {
+    const mock = { cancelarAgendamento: vi.fn(() => of({ detail: 'ok' })) };
+    const c = criarComponente(mock);
+    c.ativo = makeAtivo();
+    c.cancelando = true; // simula clique duplo
 
-  it('deve funcionar em cenário de uso típico', () => {
-    const component = new CardAtivoComponent();
-    
-    // Simular uso típico: receber dados e permitir cancelamento
-    component.ativo = mockAtivo;
-    
-    const consoleSpy = vi.spyOn(console, 'log');
-    
-    // Verificar que dados estão disponíveis
-    expect(component.ativo?.placa).toBe('ABC1D23');
-    expect(component.ativo?.servico).toBe('Lavagem Completa');
-    
-    // Verificar que cancelamento funciona
-    component.cancelarAgendamento();
-    expect(consoleSpy).toHaveBeenCalledWith('Cancelar agendamento:', 1);
-    
-    consoleSpy.mockRestore();
+    c.cancelarAgendamento();
+
+    expect(mock.cancelarAgendamento).not.toHaveBeenCalled();
   });
 });

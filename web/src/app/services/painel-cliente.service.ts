@@ -17,6 +17,7 @@ export interface OrdemServicoCliente {
   veiculo_placa: string;
   veiculo_modelo: string;
   estabelecimento: EstabelecimentoResumo;
+  slug_cancelamento?: string; // RF-24.3: exposto apenas para OS em PATIO
   horario?: string;
   data?: string;
   previsao_entrega?: string;

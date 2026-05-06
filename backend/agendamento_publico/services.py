@@ -125,12 +125,19 @@ class AuthB2CService:
         for ordem in ordens:
             item = {
                 'id': ordem.id,
-                'placa': ordem.veiculo.placa,
-                'modelo': ordem.veiculo.modelo,
-                'servico': ordem.servico.nome,
-                'unidade': ordem.estabelecimento.nome_fantasia,
+                'veiculo_placa': ordem.veiculo.placa,
+                'veiculo_modelo': ordem.veiculo.modelo,
+                'servico_nome': ordem.servico.nome,
+                'estabelecimento': {
+                    'nome_fantasia': ordem.estabelecimento.nome_fantasia,
+                    'slug': ordem.estabelecimento.slug,
+                },
                 'status': ordem.status,
-                'data_hora': ordem.data_hora,
+                'status_display': ordem.get_status_display(),
+                'data_hora': ordem.data_hora.isoformat(),
+                'etapa_atual': ordem.etapa_atual if hasattr(ordem, 'etapa_atual') else 0,
+                # RF-24.3: slug exposto apenas para OS em PATIO (canceláveis)
+                'slug_cancelamento': str(ordem.slug_cancelamento) if ordem.status == 'PATIO' and ordem.slug_cancelamento else None,
             }
             if ordem.status in ('FINALIZADO', 'CANCELADO'):
                 historico.append(item)
