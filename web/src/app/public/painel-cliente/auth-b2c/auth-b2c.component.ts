@@ -132,7 +132,11 @@ export class AuthB2CComponent implements OnInit {
     }
 
     if (err?.status === 404) {
-      return 'Telefone ou placa não encontrados. Verifique os dados ou confirme que já possui um agendamento.';
+      return 'Inicie pelo menos um agendamento antes de criar seu acesso.';
+    }
+
+    if (err?.status === 429) {
+      return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
     }
 
     if (err?.status === 400) {

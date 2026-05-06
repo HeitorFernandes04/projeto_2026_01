@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -31,6 +32,12 @@ class OrdemServico(models.Model):
     vaga_patio = models.CharField(max_length=20, blank=True, null=True)
     horario_finalizacao = models.DateTimeField(null=True, blank=True)
     observacoes = models.TextField(blank=True, null=True)
+
+    # RF-24: Campos de cancelamento autônomo pelo cliente portal
+    slug_cancelamento   = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True, editable=False)
+    cancelado_em        = models.DateTimeField(null=True, blank=True)
+    motivo_cancelamento = models.TextField(blank=True, null=True)
+    cancelado_por       = models.CharField(max_length=50, blank=True, null=True)
 
 class MidiaOrdemServico(models.Model):
     ordem_servico = models.ForeignKey(OrdemServico, on_delete=models.CASCADE, related_name='midias')

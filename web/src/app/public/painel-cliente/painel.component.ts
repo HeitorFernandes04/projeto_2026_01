@@ -77,6 +77,29 @@ export class PainelComponent implements OnInit, OnDestroy {
     this.router.navigate([`/agendar/${slug}`]);
   }
 
+  novoAgendamento(): void {
+    const slug = this.router.url.split('/')[2];
+    this.router.navigate(['/agendar', slug]);
+  }
+
+
+  /**
+   * Navega para os detalhes de um veículo ativo
+   */
+  verDetalhes(id: number): void {
+    console.log('Ver detalhes do veículo:', id);
+  }
+
+  /**
+   * RF-24: Remove a OS cancelada da lista de ordens ativas e reagrupa.
+   * Acionado pelo EventEmitter (cancelado) do CardAtivoComponent.
+   */
+  onAgendamentoCancelado(osId: number): void {
+    this.ordensAtivas = this.ordensAtivas.filter(os => os.id !== osId);
+    this.gruposAtivos = this.agruparPorEstabelecimento(this.ordensAtivas);
+    this.cdr.markForCheck();
+  }
+
   getStatusText(status: string): string {
     const mapa: { [key: string]: string } = {
       'PATIO': 'Veículo Recebido',
