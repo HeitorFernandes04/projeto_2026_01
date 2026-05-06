@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of } from 'rxjs';
 
@@ -41,8 +41,34 @@ export interface PainelStatus {
   historico_meta?: HistoricoMeta;
 }
 
+export interface MidiaGaleriaCliente {
+  id: number;
+  arquivo_url: string;
+  momento: string;
+}
+
+export interface LaudoTecnicoCliente {
+  servico_realizado: string;
+  tempo_execucao_minutos: number | null;
+  observacoes: string;
+  status_final: string;
+  status_final_display: string;
+  placa: string;
+  veiculo_modelo: string;
+  unidade: string;
+  data_servico: string;
+}
+
+export interface GaleriaClienteResponse {
+  ordem_servico_id: number;
+  entrada: MidiaGaleriaCliente[];
+  finalizacao: MidiaGaleriaCliente[];
+  laudo_tecnico: LaudoTecnicoCliente;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PainelClienteService {
+  private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api/cliente/historico/';
   private readonly dadosMockados: PainelStatus = {
     cliente_nome: 'João Silva',
@@ -97,8 +123,6 @@ export class PainelClienteService {
     historico_meta: { total: 2, limit: 50, has_more: false },
   };
 
-  constructor(private readonly http: HttpClient) {}
-
   getDadosPainel(): Observable<PainelStatus> {
     return this.http.get<PainelStatus>(this.apiUrl).pipe(
       map(dados => ({
@@ -110,6 +134,10 @@ export class PainelClienteService {
       map(dados => this.temDados(dados) ? dados : this.dadosMockados),
       catchError(() => of(this.dadosMockados))
     );
+  }
+
+  getGaleriaTransparencia(osId: number): Observable<GaleriaClienteResponse> {
+    return this.http.get<GaleriaClienteResponse>(`${this.apiUrl}${osId}/galeria/`);
   }
 
   private normalizarOrdem(item: OrdemServicoCliente): OrdemServicoCliente {

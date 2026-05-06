@@ -23,6 +23,7 @@ from rest_framework.response import Response
 from .permissions import IsFuncionarioDaOS, IsGestor
 from accounts.permissions import IsCliente
 from .serializers import (
+    ClienteGaleriaMidiaSerializer,
     KanbanCardSerializer,
     OrdemServicoSerializer,
     OrdemServicoClienteSerializer,
@@ -40,7 +41,13 @@ from .serializers import (
     IncidentePendenteSerializer,
     ResolverIncidenteSerializer,
 )
-from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService, HistoricoGestorService
+from .services import (
+    ClienteGaleriaService,
+    OrdemServicoService,
+    MidiaOrdemServicoService,
+    KanbanService,
+    HistoricoGestorService,
+)
 
 
 class OrdensServicoHojeView(APIView):
@@ -525,3 +532,34 @@ class ClienteHistoricoView(APIView):
                 'has_more': total_historico > HISTORICO_CLIENTE_LIMITE,
             },
         })
+
+
+class ClienteGaleriaView(APIView):
+    """RF-26: Retorna somente midias publicas da OS finalizada do cliente."""
+    permission_classes = [IsAuthenticated, IsCliente]
+
+    def get(self, request, pk):
+        cliente = request.user.perfil_cliente
+
+        try:
+            galeria = ClienteGaleriaService.montar_galeria_pos_venda(
+                ordem_servico_id=pk,
+                cliente=cliente,
+            )
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+        except ValidationError as exc:
+            detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+            return Response({'detail': detail}, status=status.HTTP_400_BAD_REQUEST)
+
+        ctx = {'request': request}
+        return Response({
+            'ordem_servico_id': pk,
+            'entrada': ClienteGaleriaMidiaSerializer(
+                galeria['entrada'], many=True, context=ctx,
+            ).data,
+            'finalizacao': ClienteGaleriaMidiaSerializer(
+                galeria['finalizacao'], many=True, context=ctx,
+            ).data,
+            'laudo_tecnico': galeria['laudo_tecnico'],
+        }, status=status.HTTP_200_OK)

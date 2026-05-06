@@ -1,4 +1,5 @@
 import datetime
+import re
 from io import BytesIO
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -231,6 +232,7 @@ class OrdemServicoService:
         os.status = 'FINALIZADO'
         os.vaga_patio = dados.get('vaga_patio')
         os.horario_finalizacao = timezone.now()
+        os.observacoes = dados.get('observacoes', os.observacoes)
         os.save()
 
         return os
@@ -348,6 +350,75 @@ class HistoricoGestorService:
             'estado_inicial': [m for m in midias if m.momento in ('VISTORIA_GERAL', 'AVARIA_PREVIA')],
             'estado_meio':    [m for m in midias if m.momento == 'EXECUCAO'],
             'estado_final':   [m for m in midias if m.momento == 'FINALIZADO'],
+        }
+
+
+class ClienteGaleriaService:
+    """RF-26: galeria pos-venda visivel ao cliente final."""
+
+    MOMENTOS_ENTRADA = ('VISTORIA_GERAL', 'AVARIA_PREVIA', 'ENTRADA')
+    MOMENTOS_FINALIZACAO = ('FINALIZADO', 'FINALIZACAO')
+
+    @staticmethod
+    def _normalizar_telefone(telefone):
+        return re.sub(r'\D', '', telefone or '')
+
+    @classmethod
+    def _cliente_tem_titularidade(cls, ordem_servico, cliente):
+        if ordem_servico.veiculo.cliente_id == cliente.id:
+            return True
+
+        telefone_cliente = cls._normalizar_telefone(cliente.telefone_whatsapp)
+        telefone_veiculo = cls._normalizar_telefone(ordem_servico.veiculo.celular_dono)
+        return bool(telefone_cliente and telefone_cliente == telefone_veiculo)
+
+    @staticmethod
+    def _calcular_tempo_execucao_minutos(ordem_servico):
+        if not ordem_servico.horario_lavagem or not ordem_servico.horario_finalizacao:
+            return None
+        delta = ordem_servico.horario_finalizacao - ordem_servico.horario_lavagem
+        return max(0, int(delta.total_seconds() // 60))
+
+    @classmethod
+    def _montar_laudo_tecnico(cls, ordem_servico):
+        return {
+            'servico_realizado': ordem_servico.servico.nome,
+            'tempo_execucao_minutos': cls._calcular_tempo_execucao_minutos(ordem_servico),
+            'observacoes': ordem_servico.observacoes or '',
+            'status_final': ordem_servico.status,
+            'status_final_display': ordem_servico.get_status_display(),
+            'placa': ordem_servico.veiculo.placa,
+            'veiculo_modelo': ordem_servico.veiculo.modelo,
+            'unidade': ordem_servico.estabelecimento.nome_fantasia,
+            'data_servico': ordem_servico.data_hora,
+        }
+
+    @classmethod
+    def montar_galeria_pos_venda(cls, ordem_servico_id, cliente):
+        ordem_servico = get_object_or_404(
+            OrdemServico.objects.select_related('veiculo', 'servico', 'estabelecimento'),
+            id=ordem_servico_id,
+        )
+
+        if not cls._cliente_tem_titularidade(ordem_servico, cliente):
+            raise PermissionDenied("Esta OS nao pertence ao cliente autenticado.")
+
+        if ordem_servico.status != 'FINALIZADO':
+            raise ValidationError("Galeria disponivel apenas para ordens finalizadas.")
+
+        midias = (
+            MidiaOrdemServico.objects
+            .filter(
+                ordem_servico=ordem_servico,
+                momento__in=(*cls.MOMENTOS_ENTRADA, *cls.MOMENTOS_FINALIZACAO),
+            )
+            .order_by('id')
+        )
+
+        return {
+            'entrada': [m for m in midias if m.momento in cls.MOMENTOS_ENTRADA],
+            'finalizacao': [m for m in midias if m.momento in cls.MOMENTOS_FINALIZACAO],
+            'laudo_tecnico': cls._montar_laudo_tecnico(ordem_servico),
         }
 
 
