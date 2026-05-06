@@ -3,8 +3,10 @@
  * Cobrem: podeCancelar, cancelarAgendamento(), feedback de erro e emissão de evento.
  */
 import '@angular/compiler';
+import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { CardAtivoComponent } from './card-ativo.component';
+import { OrdemServicoService } from '../../services/ordem-servico.service';
 import { OrdemServicoCliente } from '../../../../services/painel-cliente.service';
 
 // ── Factories de dados alinhadas com OrdemServicoCliente (RF-25 interface) ──
@@ -44,11 +46,13 @@ const mockServicoErro400 = {
 // ── Criação do componente injetando o serviço mock ──────────────────────────
 
 function criarComponente(mockServico = mockServicoOk) {
-  const component = new CardAtivoComponent();
-  // Injeta o mock diretamente na propriedade privada (sem DI completa)
-  (component as any).ordemServicoService = mockServico;
-  return component;
+  TestBed.configureTestingModule({
+    providers: [{ provide: OrdemServicoService, useValue: mockServico }],
+  });
+  return TestBed.runInInjectionContext(() => new CardAtivoComponent());
 }
+
+afterEach(() => TestBed.resetTestingModule());
 
 // ═════════════════════════════════════════════════════════════════════════════
 // GRUPO 1: podeCancelar — guarda de exibição do botão (RF-24.1 + RF-24.3)
@@ -92,7 +96,7 @@ describe('CardAtivoComponent — cancelamento sucesso (CA-01)', () => {
 
     c.cancelarAgendamento();
 
-    expect(mock.cancelarAgendamento).toHaveBeenCalledWith('f475af97-c771-4d7a-ba1d-1047db93d0e9', '');
+    expect(mock.cancelarAgendamento).toHaveBeenCalledWith('f475af97-c771-4d7a-ba1d-1047db93d0e9');
   });
 
   it('deve emitir o id da OS via @Output cancelado após sucesso', () => {

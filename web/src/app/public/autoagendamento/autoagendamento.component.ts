@@ -292,6 +292,10 @@ export class AutoagendamentoComponent implements OnInit {
     }
   }
 
+  irParaLogin(): void {
+    this.router.navigate(['/agendar', this.estabelecimento?.slug, 'cliente', 'login']);
+  }
+
   formatarPreco(preco: number): string {
     return preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }

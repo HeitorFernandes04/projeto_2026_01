@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { of } from 'rxjs';
 import { AutoagendamentoComponent } from './autoagendamento.component';
 import { AutoagendamentoPublicoService } from '../../services/autoagendamento-publico.service';
@@ -86,7 +87,10 @@ describe('AutoagendamentoComponent — Lógica RF-22 (Motor de Disponibilidade)'
     // Simula seleção de uma data daqui a 15 dias (fora do carrossel padrão)
     const dataFutura = new Date();
     dataFutura.setDate(dataFutura.getDate() + 15);
-    const dataIso = `${dataFutura.getFullYear()}-${String(dataFutura.getMonth() + 1).padStart(2, '0')}-${String(dataFutura.getDate()).padStart(2, '0')}`;
+    const ano = dataFutura.getFullYear();
+    const mes = String(dataFutura.getMonth() + 1).padStart(2, '0');
+    const dia = String(dataFutura.getDate()).padStart(2, '0');
+    const dataIso = `${ano}-${mes}-${dia}`;
 
     // Simula a ação que o novo componente de calendário disparará
     component.dataSelecionada = { 

@@ -44,7 +44,7 @@ export interface PainelStatus {
 
 @Injectable({ providedIn: 'root' })
 export class PainelClienteService {
-  private readonly apiUrl = '/api/cliente/historico/';
+  private readonly apiUrl = '/api/cliente/painel/';
 
   constructor(private readonly http: HttpClient) {}
 

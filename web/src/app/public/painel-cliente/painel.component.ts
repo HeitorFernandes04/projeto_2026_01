@@ -77,6 +77,11 @@ export class PainelComponent implements OnInit, OnDestroy {
     this.router.navigate([`/agendar/${slug}`]);
   }
 
+  novoAgendamento(): void {
+    const slug = this.router.url.split('/')[2];
+    this.router.navigate(['/agendar', slug]);
+  }
+
 
   /**
    * Navega para os detalhes de um veículo ativo
