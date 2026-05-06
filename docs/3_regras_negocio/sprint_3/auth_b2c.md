@@ -15,7 +15,7 @@ Permite que o cliente acesse o painel web usando apenas telefone e PIN de 4 digi
 | App B2C | Implementado | O app `agendamento_publico` concentra as regras publicas e B2C. A autenticacao B2C foi implementada nele, sem criacao de novo app. |
 | Usuario Django | Pronto para o escopo | O model `accounts.User` possui `email` unico e `username`, permitindo o uso de e-mail fantasma e prefixo `b2c_`. |
 | Perfil Cliente | Pronto para o escopo | Ja existe `accounts.Cliente` com vinculo one-to-one com `User` e campo `telefone_whatsapp`. |
-| Veiculo | Pronto para validacao | `core.Veiculo` possui `placa` e `celular_dono`, campos necessarios para comprovar titularidade no setup. |
+| Veiculo | Pronto para validacao e vinculo | `core.Veiculo` possui `placa`, `celular_dono` e `cliente`, permitindo prova inicial de titularidade e consulta relacional do painel. |
 | Autoagendamento | Integrado | Apos checkout publico, o Web direciona o cliente para o setup de PIN com placa e telefone preenchidos. |
 | JWT | Implementado | Setup e login B2C retornam `access` e `refresh` via SimpleJWT no body da resposta. |
 | Painel Cliente Web | Implementado com fallback | O painel consome `/api/cliente/painel/` e mantem fallback mockado para ambiente sem dados reais. |
@@ -29,7 +29,7 @@ Permite que o cliente acesse o painel web usando apenas telefone e PIN de 4 digi
 | Numero  | Requisito                      | Descricao                                                                                  |
 |---------|--------------------------------|--------------------------------------------------------------------------------------------|
 | AUTH-B2C.1 | Setup Inicial do Cliente       | Cliente cria seu primeiro PIN informando telefone, placa e PIN de 4 digitos.               |
-| AUTH-B2C.2 | Prova de Titularidade          | Backend valida se existe `Veiculo` com a combinacao exata de `placa` e `celular_dono`.     |
+| AUTH-B2C.2 | Prova de Titularidade          | Backend valida se existe `Veiculo` com placa equivalente e telefone normalizado equivalente ao `celular_dono`. |
 | AUTH-B2C.3 | E-mail Fantasma                | Backend cria o usuario com e-mail tecnico no formato `[telefone]@cliente.lava.me`.         |
 | AUTH-B2C.4 | Isolamento B2C                 | Backend cria o usuario com `username=b2c_[telefone]` para evitar colisao com funcionarios. |
 | AUTH-B2C.5 | Criacao de Perfil Cliente      | Backend cria ou vincula `Cliente` ao usuario B2C, preenchendo `telefone_whatsapp`.         |
@@ -59,7 +59,7 @@ Permite que o cliente acesse o painel web usando apenas telefone e PIN de 4 digi
 ### Endpoint: `/api/cliente/auth/setup/`
 - **Metodo:** POST  
 - **Camada:** `agendamento_publico.views.AuthB2CSetupView`  
-- **Descricao:** Cria o primeiro acesso do cliente, validando telefone e placa contra a tabela de veiculos.
+- **Descricao:** Cria o primeiro acesso do cliente, validando telefone e placa contra a tabela de veiculos. Apos sucesso, vincula veiculos orfaos do mesmo telefone normalizado ao perfil `Cliente`.
 - **Request Body:**
 ```json
 {
@@ -93,7 +93,7 @@ Permite que o cliente acesse o painel web usando apenas telefone e PIN de 4 digi
 ### Endpoint: `/api/cliente/painel/`
 - **Metodo:** GET  
 - **Camada:** API de painel do cliente autenticado  
-- **Descricao:** Retorna ordens ativas e historico do cliente logado, filtrando por perfil `Cliente`.
+- **Descricao:** Retorna ordens ativas e historico do cliente logado, filtrando por `Veiculo.cliente = request.user.perfil_cliente`. Antes da consulta, o servico repara de forma conservadora veiculos orfaos cujo telefone normalizado corresponda ao telefone do perfil `Cliente`.
 
 ---
 
@@ -132,6 +132,7 @@ O portal web deve separar claramente o acesso do cliente do acesso do gestor. O 
 - As rotas B2C foram isoladas em `backend/agendamento_publico/cliente_urls.py` e expostas por `path('api/cliente/', include(...))`.
 - `AuthB2CRateThrottle`, baseado em `AnonRateThrottle`, foi criado com limite restrito para setup/login B2C.
 - O endpoint real `/api/cliente/painel/` foi criado para alimentar o painel e integrar com a RF-25.
+- O servico B2C vincula `Veiculo.cliente` apos a prova de posse por telefone/placa e usa esse vinculo no painel.
 
 ## 3.2 Frontend Web
 - `AuthB2CService` foi criado para `/api/cliente/auth/setup/` e `/api/cliente/auth/token/`.
@@ -142,9 +143,10 @@ O portal web deve separar claramente o acesso do cliente do acesso do gestor. O 
 - O login de gestor/funcionario foi preservado sem alteracao de contrato.
 
 ## 3.3 Observacao de Modelagem
-- Nao houve migration nesta RF.
-- A titularidade atual do painel cliente e do setup B2C usa `Veiculo.celular_dono` normalizado.
-- O padrao `Veiculo.cliente_id` permanece como evolucao futura recomendada para uma RF propria, caso a equipe queira trocar o vinculo por telefone por um vinculo relacional direto.
+- Nao houve migration nesta entrega porque `core.Veiculo.cliente` ja existe no modelo.
+- A titularidade inicial do setup B2C usa `Veiculo.celular_dono` normalizado como prova de posse.
+- A titularidade operacional do painel e da integracao com RF-26 usa `Veiculo.cliente_id`.
+- O reparo automatico de vinculo e conservador: so preenche `cliente` em veiculos orfaos, sem sobrescrever veiculos ja associados a outro cliente.
 
 ---
 
@@ -176,5 +178,9 @@ O portal web deve separar claramente o acesso do cliente do acesso do gestor. O 
 
 ## 4.7 Teste do Painel Cliente Autenticado
 - **Acao:** Cliente autenticado acessa `/api/cliente/painel/`.
-- **Esperado:** API retorna apenas OSs vinculadas ao cliente logado, sem dados internos da unidade.
+- **Esperado:** API retorna apenas OSs de veiculos vinculados ao cliente logado, sem dados internos da unidade.
+
+## 4.8 Teste de Historico com Telefone Formatado
+- **Acao:** Cliente faz setup com telefone formatado, possui OS finalizada e acessa `/api/cliente/painel/`.
+- **Esperado:** A OS aparece no historico mesmo que `Veiculo.celular_dono` esteja salvo com mascara.
 

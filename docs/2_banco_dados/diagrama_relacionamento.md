@@ -9,6 +9,7 @@ erDiagram
     ESTABELECIMENTO ||--o{ FUNCIONARIO : "contrata"
     ESTABELECIMENTO ||--o{ GESTOR : "gerenciado_por"
     ESTABELECIMENTO ||--o{ VEICULO : "registra"
+    CLIENTE ||--o{ VEICULO : "titularidade B2C"
     ESTABELECIMENTO ||--o{ TAG_PECA : "define"
     VEICULO ||--o{ ORDEM_SERVICO : "recebe"
     SERVICO ||--o{ ORDEM_SERVICO : "vinculado_a"
@@ -63,6 +64,7 @@ erDiagram
     VEICULO {
         int id PK
         int estabelecimento_id FK
+        int cliente_id FK "opcional, titular B2C"
         string placa "único, 7 chars (antigo ou Mercosul)"
         string modelo
         string marca

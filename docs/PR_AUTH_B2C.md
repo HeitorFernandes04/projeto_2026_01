@@ -72,17 +72,17 @@ E expostas pelo projeto em:
 
 ## Modelagem
 
-Esta implementação não altera a estrutura do banco de dados.
+Esta implementação não alterou a estrutura do banco de dados na entrega original.
 
 Não foram criadas migrations.
 
-A titularidade atual do cliente é resolvida pela relação entre telefone do perfil cliente e telefone do veículo:
+A titularidade inicial do cliente é comprovada pela relação entre telefone do perfil cliente e telefone do veículo:
 
 ```text
 Cliente.telefone_whatsapp <-> Veiculo.celular_dono
 ```
 
-O vínculo relacional direto, como `Veiculo.cliente_id`, permanece como evolução futura caso o projeto decida formalizar a titularidade por chave estrangeira.
+No estado atual do projeto, `Veiculo.cliente_id` ja existe e e usado pelo painel RF-25 e pela integracao com a galeria RF-26. O telefone normalizado permanece como prova inicial de posse e como mecanismo conservador para vincular veiculos orfaos ao perfil `Cliente`.
 
 ---
 
@@ -98,9 +98,9 @@ As documentações agora refletem:
 
 - novos endpoints B2C;
 - separação entre login de cliente e login de gestão;
-- estratégia atual de titularidade por telefone normalizado;
+- estratégia atual de titularidade por `Veiculo.cliente`, com telefone normalizado apenas na prova inicial de posse;
 - ausência de alteração estrutural no banco;
-- evolução futura recomendada para vínculo direto entre `Veiculo` e `Cliente`.
+- integração entre RF-25 e RF-26 usando a OS finalizada do histórico do cliente.
 
 ---
 
@@ -114,4 +114,3 @@ As documentações agora refletem:
 - [x] Documentação atualizada.
 - [x] Sem migrations.
 - [x] Throttle de segurança configurado.
-

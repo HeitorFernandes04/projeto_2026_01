@@ -183,3 +183,28 @@ class TestAuthB2CAPI:
         assert response.status_code == 200
         assert len(response.data['ativos']) == 1
         assert response.data['ativos'][0]['veiculo_placa'] == 'ABC1234'
+
+    def test_painel_cliente_exibe_historico_finalizado_com_telefone_formatado(self, api_client, db):
+        estabelecimento = EstabelecimentoFactory()
+        veiculo = VeiculoFactory(
+            estabelecimento=estabelecimento,
+            placa='HIS2026',
+            nome_dono='Cliente Historico',
+            celular_dono='(11) 99999-9999',
+        )
+        AuthB2CService.setup_cliente('(11) 99999-9999', 'HIS-2026', '1234')
+        cliente_user = User.objects.get(username='b2c_11999999999')
+        OrdemServicoFactory(
+            estabelecimento=estabelecimento,
+            veiculo=veiculo,
+            funcionario=None,
+            status='FINALIZADO',
+        )
+        api_client.force_authenticate(user=cliente_user)
+
+        response = api_client.get(reverse('cliente-painel'))
+
+        assert response.status_code == 200
+        assert response.data['ativos'] == []
+        assert len(response.data['historico']) == 1
+        assert response.data['historico'][0]['veiculo_placa'] == 'HIS2026'

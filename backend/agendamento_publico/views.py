@@ -72,6 +72,7 @@ class AuthB2CLoginView(APIView):
 
 
 class PainelClienteView(APIView):
+    """RF-25: Painel B2C filtrado por Veiculo.cliente, com reparo por telefone normalizado."""
     permission_classes = [IsCliente]
 
     def get(self, request):

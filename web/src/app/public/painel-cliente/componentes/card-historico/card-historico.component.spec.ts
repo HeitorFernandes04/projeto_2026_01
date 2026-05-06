@@ -4,6 +4,8 @@
  * Padrão: testes de componente com @Input e Router mockado
  */
 import '@angular/compiler';
+import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { CardHistoricoComponent } from './card-historico.component';
 
 // ── Dados de Teste ────────────────────────────────────────────────────────
@@ -23,9 +25,14 @@ function criarComponente(url: string = '/agendar/lava-me-centro/painel') {
   const mockRouter = {
     url: url,
     navigate: vi.fn(),
-  } as any;
+  } as unknown as Router;
 
-  const component = new CardHistoricoComponent(mockRouter);
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [{ provide: Router, useValue: mockRouter }],
+  });
+
+  const component = TestBed.runInInjectionContext(() => new CardHistoricoComponent());
   
   return { component, mockRouter };
 }

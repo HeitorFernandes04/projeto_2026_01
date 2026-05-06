@@ -49,7 +49,7 @@
             @for (foto of fotosEntrada(); track foto.id) {
               <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
                 <img [src]="foto.arquivo_url" [alt]="'Foto inicial ' + foto.id" class="foto-img" loading="lazy">
-                <span class="foto-label">{{ foto.momento }}</span>
+                <span class="foto-label">{{ formatarMomentoFoto(foto.momento) }}</span>
               </button>
             }
           </div>
@@ -74,7 +74,7 @@
             @for (foto of fotosFinalizacao(); track foto.id) {
               <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
                 <img [src]="foto.arquivo_url" [alt]="'Foto final ' + foto.id" class="foto-img" loading="lazy">
-                <span class="foto-label">{{ foto.momento }}</span>
+                <span class="foto-label">{{ formatarMomentoFoto(foto.momento) }}</span>
               </button>
             }
           </div>
@@ -113,7 +113,7 @@
             <span class="label">Tempo de execucao</span>
             <strong>{{ tempoExecucao() }}</strong>
           </div>
-          <div class="laudo-item">
+          <div class="laudo-item laudo-status-final" [ngClass]="statusFinalClasse()">
             <span class="label">Status final</span>
             <div class="status-row" [ngClass]="statusFinalClasse()">
               <strong>{{ laudoTecnico()?.status_final_display || laudoTecnico()?.status_final }}</strong>

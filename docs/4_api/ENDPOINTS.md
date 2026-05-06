@@ -8,7 +8,9 @@
 ## Autenticacao B2C (`/api/cliente/`)
 - `POST /api/cliente/auth/setup/`: Primeiro acesso B2C. Valida telefone + placa, cria `User` com `username=b2c_[telefone]`, cria perfil `Cliente` e retorna JWT (Auth B2C).
 - `POST /api/cliente/auth/token/`: Login recorrente B2C por telefone + PIN, retornando JWT no body da resposta (Auth B2C).
-- `GET /api/cliente/painel/`: Painel do cliente autenticado, com ordens ativas e historico filtrados pela titularidade atual do cliente (RF-25/Auth B2C).
+- `GET /api/cliente/painel/`: Painel do cliente autenticado, com ordens ativas e historico filtrados por `Veiculo.cliente` (RF-25/Auth B2C). O servico repara veiculos orfaos por telefone normalizado antes da listagem.
+- `GET /api/cliente/historico/`: Historico autenticado do cliente, separando OSs ativas e concluidas por titularidade relacional (`veiculo__cliente`) (RF-25).
+- `GET /api/cliente/historico/<id>/galeria/`: Galeria pos-venda da OS finalizada do cliente autenticado, exibindo apenas midias publicas e laudo tecnico resumido (RF-26 integrada ao historico RF-25).
 
 ## Gestao de Unidade (`/api/gestao/`)
 - `GET /api/gestao/estabelecimento/`: Retorna dados da unidade logada.

@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
+  GaleriaClienteErro,
   GaleriaClienteResponse,
   LaudoTecnicoCliente,
   MidiaGaleriaCliente,
@@ -23,13 +24,11 @@ export class GaleriaTransparenciaComponent implements OnInit {
   erro = '';
   fotoAmpliada: string | null = null;
 
-  constructor(
-    private router: Router,
-    private location: Location,
-    private route: ActivatedRoute,
-    private painelClienteService: PainelClienteService,
-    private cdr: ChangeDetectorRef,
-  ) {}
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private readonly route = inject(ActivatedRoute);
+  private readonly painelClienteService = inject(PainelClienteService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     const osParam = this.route.snapshot.queryParamMap.get('os');
@@ -56,8 +55,8 @@ export class GaleriaTransparenciaComponent implements OnInit {
         this.carregando = false;
         this.cdr.markForCheck();
       },
-      error: () => {
-        this.erro = 'Nao foi possivel carregar a galeria desta OS.';
+      error: (error: unknown) => {
+        this.erro = this.montarMensagemErro(error);
         this.carregando = false;
         this.cdr.markForCheck();
       },
@@ -78,6 +77,24 @@ export class GaleriaTransparenciaComponent implements OnInit {
 
   totalFotos(): number {
     return this.fotosEntrada().length + this.fotosFinalizacao().length;
+  }
+
+  private montarMensagemErro(error: unknown): string {
+    if (error instanceof GaleriaClienteErro) {
+      if (error.status === 404) {
+        return 'Nao encontramos a galeria desta ordem de servico.';
+      }
+
+      if (error.status === 403) {
+        return 'Esta galeria pertence a outro cliente ou nao esta liberada para este acesso.';
+      }
+
+      if (error.status === 400) {
+        return error.message || 'A galeria fica disponivel apenas quando o servico esta finalizado.';
+      }
+    }
+
+    return 'Nao foi possivel carregar a galeria desta OS.';
   }
 
   tempoExecucao(): string {
@@ -103,6 +120,20 @@ export class GaleriaTransparenciaComponent implements OnInit {
       BLOQUEADO_INCIDENTE: 'Atendimento em analise operacional',
     };
     return mapa[status ?? ''] ?? 'Status atualizado';
+  }
+
+  formatarMomentoFoto(momento: string): string {
+    const mapa: Record<string, string> = {
+      VISTORIA_INICIAL: 'Vistoria inicial',
+      VISTORIA_GERAL: 'Vistoria inicial',
+      ENTRADA: 'Entrada',
+      FINALIZADO: 'Finalizacao',
+      FINALIZACAO: 'Finalizacao',
+    };
+    if (mapa[momento]) return mapa[momento];
+
+    const texto = momento.toLowerCase().replace(/_/g, ' ');
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
   ampliarFoto(url: string): void {

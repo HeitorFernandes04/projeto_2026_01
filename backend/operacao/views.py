@@ -504,7 +504,7 @@ class CheckoutPublicoView(APIView):
 
 
 class ClienteHistoricoView(APIView):
-    """RF-25: Retorna histórico de OSs do cliente autenticado, separando ativos e concluídos."""
+    """RF-25: Retorna OSs do cliente autenticado por titularidade veiculo__cliente."""
     permission_classes = [IsAuthenticated, IsCliente]
 
     def get(self, request):
@@ -535,7 +535,7 @@ class ClienteHistoricoView(APIView):
 
 
 class ClienteGaleriaView(APIView):
-    """RF-26: Retorna somente midias publicas da OS finalizada do cliente."""
+    """RF-26: Retorna galeria publica da OS finalizada integrada ao historico RF-25."""
     permission_classes = [IsAuthenticated, IsCliente]
 
     def get(self, request, pk):

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, map, throwError } from 'rxjs';
 
 export interface EstabelecimentoResumo {
   nome_fantasia: string;
@@ -67,12 +67,29 @@ export interface GaleriaClienteResponse {
   laudo_tecnico: LaudoTecnicoCliente;
 }
 
+export interface ApiErroResponse {
+  detail?: string;
+  error?: string;
+}
+
+export class GaleriaClienteErro extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'GaleriaClienteErro';
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class PainelClienteService {
-  private readonly apiUrl = '/api/cliente/painel/';
+  private readonly http = inject(HttpClient);
+  private readonly painelUrl = '/api/cliente/painel/';
+  private readonly historicoUrl = '/api/cliente/historico/';
 
   getDadosPainel(): Observable<PainelStatus> {
-    return this.http.get<PainelStatus>(this.apiUrl).pipe(
+    return this.http.get<PainelStatus>(this.painelUrl).pipe(
       map(dados => ({
         cliente_nome: dados.cliente_nome,
         ativos: dados.ativos.map(item => this.normalizarOrdem(item)),
@@ -83,7 +100,21 @@ export class PainelClienteService {
   }
 
   getGaleriaTransparencia(osId: number): Observable<GaleriaClienteResponse> {
-    return this.http.get<GaleriaClienteResponse>(`${this.apiUrl}${osId}/galeria/`);
+    return this.http
+      .get<GaleriaClienteResponse>(`${this.historicoUrl}${osId}/galeria/`)
+      .pipe(catchError((error: HttpErrorResponse) => throwError(() => this.normalizarErroGaleria(error))));
+  }
+
+  private normalizarErroGaleria(error: HttpErrorResponse): GaleriaClienteErro {
+    const body = error.error as ApiErroResponse | null;
+    const detalheApi = body?.detail || body?.error;
+    const mensagem =
+      detalheApi ||
+      (error.status === 404
+        ? 'Galeria nao encontrada para esta ordem de servico.'
+        : 'Nao foi possivel carregar a galeria desta OS.');
+
+    return new GaleriaClienteErro(mensagem, error.status);
   }
 
   private normalizarOrdem(item: OrdemServicoCliente): OrdemServicoCliente {

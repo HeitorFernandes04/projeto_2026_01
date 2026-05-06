@@ -1,4 +1,5 @@
 import { ChangeDetectorRef } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import '@angular/compiler';
@@ -13,7 +14,7 @@ import {
 const galeriaMock: GaleriaClienteResponse = {
   ordem_servico_id: 42,
   entrada: [
-    { id: 1, arquivo_url: 'http://api/os/antes.jpg', momento: 'VISTORIA_GERAL' },
+    { id: 1, arquivo_url: 'http://api/os/antes.jpg', momento: 'VISTORIA_INICIAL' },
   ],
   finalizacao: [
     { id: 2, arquivo_url: 'http://api/os/final.jpg', momento: 'FINALIZADO' },
@@ -49,13 +50,18 @@ function criarComponente(osId: string | null = '42') {
   } as unknown as PainelClienteService;
   const cdrSpy = { markForCheck: vi.fn() } as unknown as ChangeDetectorRef;
 
-  const component = new GaleriaTransparenciaComponent(
-    routerSpy,
-    locationSpy,
-    routeSpy,
-    serviceSpy,
-    cdrSpy,
-  );
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [
+      { provide: Router, useValue: routerSpy },
+      { provide: Location, useValue: locationSpy },
+      { provide: ActivatedRoute, useValue: routeSpy },
+      { provide: PainelClienteService, useValue: serviceSpy },
+      { provide: ChangeDetectorRef, useValue: cdrSpy },
+    ],
+  });
+
+  const component = TestBed.runInInjectionContext(() => new GaleriaTransparenciaComponent());
 
   return { component, routerSpy, locationSpy, serviceSpy, cdrSpy };
 }
@@ -100,6 +106,14 @@ describe('GaleriaTransparenciaComponent - RF-26', () => {
     component.ngOnInit();
 
     expect(component.statusFinalClasse()).toBe('status-finalizado');
+  });
+
+  it('deve formatar momento de foto sem underscore e com texto humano', () => {
+    const { component } = criarComponente('42');
+
+    expect(component.formatarMomentoFoto('VISTORIA_INICIAL')).toBe('Vistoria inicial');
+    expect(component.formatarMomentoFoto('FINALIZADO')).toBe('Finalizacao');
+    expect(component.formatarMomentoFoto('AUDITORIA_POS_LAVAGEM')).toBe('Auditoria pos lavagem');
   });
 
   it('deve retornar descricao contextual para status finalizado', () => {
