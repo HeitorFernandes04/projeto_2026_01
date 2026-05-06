@@ -9,9 +9,10 @@ import {
   OrdemServicoCliente,
   GrupoEstabelecimento,
   HistoricoMeta,
+  PainelStatus,
 } from '../../services/painel-cliente.service';
 import { AuthB2CService } from '../../services/auth-b2c.service';
-import { Subscription } from 'rxjs';
+import { EMPTY, Subscription, switchMap, timer } from 'rxjs';
 
 @Component({
   selector: 'app-painel',
@@ -43,27 +44,11 @@ export class PainelComponent implements OnInit, OnDestroy {
   erro = '';
 
   private readonly subscriptions: Subscription[] = [];
+  private readonly intervaloPollingMs = 30000;
 
   ngOnInit(): void {
-    this.subscriptions.push(
-      this.painelClienteService.getDadosPainel().subscribe({
-        next: (dados) => {
-          this.clienteNome = dados.cliente_nome;
-          this.ordensAtivas = dados.ativos;
-          this.ordensFinalizadas = dados.historico;
-          this.gruposAtivos = this.agruparPorEstabelecimento(dados.ativos);
-          this.gruposHistorico = this.agruparPorEstabelecimento(dados.historico);
-          this.historicoMeta = dados.historico_meta ?? null;
-          this.carregando = false;
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          this.erro = 'Não foi possível carregar seus dados. Tente novamente.';
-          this.carregando = false;
-          this.cdr.markForCheck();
-        },
-      })
-    );
+    this.carregarDados();
+    this.iniciarPolling();
   }
 
   ngOnDestroy(): void {
@@ -82,6 +67,44 @@ export class PainelComponent implements OnInit, OnDestroy {
     this.router.navigate(['/agendar', slug]);
   }
 
+  private carregarDados(): void {
+    this.subscriptions.push(
+      this.painelClienteService.getDadosPainel().subscribe({
+        next: dados => {
+          this.atualizarInterface(dados);
+          this.carregando = false;
+        },
+        error: () => {
+          this.erro = 'Não foi possível carregar seus dados. Tente novamente.';
+          this.carregando = false;
+          this.cdr.markForCheck();
+        },
+      })
+    );
+  }
+
+  private iniciarPolling(): void {
+    this.subscriptions.push(
+      timer(this.intervaloPollingMs, this.intervaloPollingMs).pipe(
+        switchMap(() => {
+          if (this.ordensAtivas.length === 0) return EMPTY;
+          return this.painelClienteService.getDadosPainel();
+        }),
+      ).subscribe({
+        next: dados => this.atualizarInterface(dados),
+      }),
+    );
+  }
+
+  private atualizarInterface(dados: PainelStatus): void {
+    this.clienteNome = dados.cliente_nome;
+    this.ordensAtivas = dados.ativos;
+    this.ordensFinalizadas = dados.historico;
+    this.gruposAtivos = this.agruparPorEstabelecimento(dados.ativos);
+    this.gruposHistorico = this.agruparPorEstabelecimento(dados.historico);
+    this.historicoMeta = dados.historico_meta ?? null;
+    this.cdr.markForCheck();
+  }
 
   /**
    * Navega para os detalhes de um veículo ativo

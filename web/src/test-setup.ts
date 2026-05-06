@@ -12,6 +12,11 @@ getTestBed().initTestEnvironment(
   platformBrowserTesting(),
 );
 
+Object.defineProperty(window, 'scrollTo', {
+  value: vi.fn(),
+  writable: true,
+});
+
 // Global test setup for Vitest with Angular-like syntax
 declare global {
   var describe: (description: string, specDefinitions: () => void) => void;

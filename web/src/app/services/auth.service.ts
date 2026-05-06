@@ -23,8 +23,8 @@ export class AuthService {
     );
   }
 
-  obterPerfil(): Observable<any> {
-    const token = localStorage.getItem('access_token');
+  obterPerfil(tokenKey = 'access_token'): Observable<any> {
+    const token = localStorage.getItem(tokenKey);
     const headers = { 'Authorization': `Bearer ${token}` };
     return this.http.get<any>('/api/auth/meu_perfil/', { headers }).pipe(
       tap(perfil => this.perfilSubject.next(perfil))
