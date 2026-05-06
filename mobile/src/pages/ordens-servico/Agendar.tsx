@@ -84,8 +84,9 @@ const Agendar: React.FC = () => {
         history.push('/ordens-servico/hoje');
       }, 1500);
 
-    } catch (e: any) {
-      const msg = e.response?.data?.detail || e.message || "Erro ao realizar agendamento";
+    } catch (e: unknown) {
+      const apiErr = e as { response?: { data?: { detail?: string } }; message?: string };
+      const msg = apiErr.response?.data?.detail || apiErr.message || "Erro ao realizar agendamento";
       setToastMsg(msg);
       setShowToast(true);
     } finally {

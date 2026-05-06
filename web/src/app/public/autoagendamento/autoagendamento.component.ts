@@ -154,9 +154,10 @@ export class AutoagendamentoComponent implements OnInit {
         this.cdr.markForCheck();
       }))
       .subscribe({
-        next: () => {
+        next: (ordemCriada) => {
           // Salvar nome do cliente no sessionStorage para o painel usar
           sessionStorage.setItem('clienteNome', this.dadosAgendamento.nome);
+          sessionStorage.setItem('ordemServicoAtiva', JSON.stringify(ordemCriada));
           const slug = this.estabelecimento?.slug;
           this.router.navigate([`/agendar/${slug}/cliente/setup`], {
             queryParams: {
@@ -290,6 +291,10 @@ export class AutoagendamentoComponent implements OnInit {
       this.passo = 1;
       this.cdr.markForCheck();
     }
+  }
+
+  irParaLogin(): void {
+    this.router.navigate(['/agendar', this.estabelecimento?.slug, 'cliente', 'login']);
   }
 
   formatarPreco(preco: number): string {

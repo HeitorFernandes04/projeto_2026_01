@@ -1,4 +1,5 @@
 import datetime
+import logging
 import re
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -10,6 +11,7 @@ from operacao.models import OrdemServico
 from core.models import Servico
 from accounts.models import Estabelecimento
 
+logger = logging.getLogger('agendamento_publico')
 
 B2C_USERNAME_PREFIX = 'b2c_'
 B2C_EMAIL_DOMAIN = 'cliente.lava.me'
@@ -123,12 +125,19 @@ class AuthB2CService:
         for ordem in ordens:
             item = {
                 'id': ordem.id,
-                'placa': ordem.veiculo.placa,
-                'modelo': ordem.veiculo.modelo,
-                'servico': ordem.servico.nome,
-                'unidade': ordem.estabelecimento.nome_fantasia,
+                'veiculo_placa': ordem.veiculo.placa,
+                'veiculo_modelo': ordem.veiculo.modelo,
+                'servico_nome': ordem.servico.nome,
+                'estabelecimento': {
+                    'nome_fantasia': ordem.estabelecimento.nome_fantasia,
+                    'slug': ordem.estabelecimento.slug,
+                },
                 'status': ordem.status,
-                'data_hora': ordem.data_hora,
+                'status_display': ordem.get_status_display(),
+                'data_hora': ordem.data_hora.isoformat(),
+                'etapa_atual': ordem.etapa_atual if hasattr(ordem, 'etapa_atual') else 0,
+                # RF-24.3: slug exposto apenas para OS em PATIO (canceláveis)
+                'slug_cancelamento': str(ordem.slug_cancelamento) if ordem.status == 'PATIO' and ordem.slug_cancelamento else None,
             }
             if ordem.status in ('FINALIZADO', 'CANCELADO'):
                 historico.append(item)
@@ -140,6 +149,7 @@ class AuthB2CService:
             'ativos': ativos,
             'historico': historico,
         }
+
 
 class DisponibilidadeService:
     @staticmethod
@@ -199,3 +209,69 @@ class DisponibilidadeService:
             cursor += passo
             
         return slots_disponiveis
+
+
+class CancelamentoService:
+    """RF-24: Cancelamento autônomo de agendamento pelo cliente via slug UUID."""
+
+    ANTECEDENCIA_MINIMA_HORAS = 1
+
+    @staticmethod
+    @transaction.atomic
+    def cancelar_por_slug(slug: str, motivo: str = '') -> OrdemServico:
+        """
+        RF-24.1: Apenas status PATIO pode ser cancelado.
+        RF-24.2: Antecedência mínima de 1 hora.
+        RF-24.3: Busca via slug (UUID), nunca via ID sequencial.
+        RF-24.4: Liberação automática — OS CANCELADA sai do filtro de conflitos.
+        RF-24.5: Log para o gestor.
+        RNF-01: select_for_update — atomicidade.
+        RNF-02: Registra cancelado_em, motivo_cancelamento e cancelado_por.
+        """
+        # RF-24.3: Busca via slug
+        try:
+            os = (
+                OrdemServico.objects
+                .select_for_update()  # RNF-01: lock pessimista
+                .select_related('servico', 'estabelecimento')
+                .get(slug_cancelamento=slug)
+            )
+        except OrdemServico.DoesNotExist:
+            raise ValidationError("Agendamento não encontrado.")
+
+        # RF-24.1: Apenas status PATIO
+        if os.status != 'PATIO':
+            raise PermissionError(
+                "Não é possível cancelar um serviço que já foi iniciado."
+            )
+
+        # RF-24.2: Antecedência mínima de 1 hora
+        agora = timezone.now()
+        antecedencia = os.data_hora - agora
+        if antecedencia.total_seconds() < CancelamentoService.ANTECEDENCIA_MINIMA_HORAS * 3600:
+            raise ValidationError(
+                "O cancelamento só é permitido com 1 hora de antecedência."
+            )
+
+        # Transição de status + campos de auditoria (RNF-02)
+        os.status               = 'CANCELADO'
+        os.cancelado_em         = agora
+        os.motivo_cancelamento  = motivo.strip() if motivo else ''
+        os.cancelado_por        = 'CLIENTE_PORTAL'
+        os.save(update_fields=[
+            'status', 'cancelado_em', 'motivo_cancelamento', 'cancelado_por'
+        ])
+
+        # RF-24.4: O horário é liberado automaticamente — OS CANCELADA não aparece
+        # no filtro status__in=[PATIO, VISTORIA_INICIAL, ...] do DisponibilidadeService.
+
+        # RF-24.5: Log interno para auditoria do gestor
+        logger.info(
+            "RF-24 | OS #%s cancelada via CLIENTE_PORTAL | "
+            "Estabelecimento: %s | Data agendada: %s",
+            os.id,
+            os.estabelecimento.nome_fantasia,
+            os.data_hora.isoformat(),
+        )
+
+        return os

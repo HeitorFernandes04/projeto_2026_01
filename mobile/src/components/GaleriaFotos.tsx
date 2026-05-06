@@ -102,17 +102,18 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
       setFotosStaged([]);
       if (onUploadSuccess) onUploadSuccess();
       console.log('Upload de fotos concluído com sucesso');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Erro no upload em lote:', e);
-      
+
       // Tratamento detalhado de erros
       let errorMessage = 'Erro ao enviar fotos. Tente novamente.';
-      
-      if (e.response) {
+      const apiErr = e as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+
+      if (apiErr.response) {
         // Erro HTTP do backend
-        const status = e.response.status;
-        const data = e.response.data;
-        
+        const status = apiErr.response.status;
+        const data = apiErr.response.data;
+
         if (status === 400) {
           errorMessage = data?.detail || 'Formato de arquivo inválido ou dados incorretos.';
         } else if (status === 401) {
@@ -121,14 +122,14 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
           errorMessage = 'Sem permissão para enviar fotos.';
         } else if (status === 413) {
           errorMessage = 'Arquivos muito grandes. Reduza a qualidade das fotos.';
-        } else if (status >= 500) {
+        } else if (status !== undefined && status >= 500) {
           errorMessage = 'Erro no servidor. Tente novamente em alguns instantes.';
         }
-      } else if (e.message) {
+      } else if (apiErr.message) {
         // Erro de rede ou JavaScript
-        errorMessage = e.message.includes('NetworkError') 
+        errorMessage = apiErr.message.includes('NetworkError')
           ? 'Sem conexão com o servidor. Verifique sua internet.'
-          : e.message;
+          : apiErr.message;
       }
       
       alert(`Falha no Upload: ${errorMessage}`);

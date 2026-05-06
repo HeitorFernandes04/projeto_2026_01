@@ -130,9 +130,10 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
       await avancarEtapa(ordemServicoId, { laudo_vistoria: observacoes });
       setOrdemServico(null); // Limpa estado local antes de completar
       onComplete();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar vistoria:', err);
-      const errorMessage = err.response?.data?.detail || err.message || 'Verifique se as 5 fotos foram processadas.';
+      const apiErr = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMessage = apiErr.response?.data?.detail || apiErr.message || 'Verifique se as 5 fotos foram processadas.';
       alert('Bloqueio na Vistoria: ' + errorMessage);
       // Recarrega dados em caso de erro para mostrar estado real
       await carregarDados();

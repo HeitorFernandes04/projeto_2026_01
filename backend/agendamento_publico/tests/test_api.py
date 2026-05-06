@@ -182,4 +182,4 @@ class TestAuthB2CAPI:
 
         assert response.status_code == 200
         assert len(response.data['ativos']) == 1
-        assert response.data['ativos'][0]['placa'] == 'ABC1234'
+        assert response.data['ativos'][0]['veiculo_placa'] == 'ABC1234'

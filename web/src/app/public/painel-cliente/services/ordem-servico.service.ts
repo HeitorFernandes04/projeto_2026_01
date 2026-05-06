@@ -11,6 +11,7 @@ export interface OrdemServicoAPI {
   servico_nome: string;
   veiculo_placa: string;
   veiculo_modelo: string;
+  slug_cancelamento?: string; // RF-24.3: UUID para cancelamento seguro (nunca ID sequencial)
   estabelecimento: { nome_fantasia: string; slug: string };
 }
 
@@ -27,5 +28,14 @@ export class OrdemServicoService {
 
   getDadosPainel(): Observable<PainelResponse> {
     return this.http.get<PainelResponse>('/api/cliente/historico/');
+  }
+
+  /**
+   * RF-24: Cancela agendamento via UUID (slug_cancelamento).
+   * Nunca usa o ID sequencial (RF-24.3).
+   */
+  cancelarAgendamento(slug: string, motivo: string = ''): Observable<{ detail: string }> {
+    const url = `/api/publico/agendamento/ordens-servico/${slug}/cancelar/`;
+    return this.http.patch<{ detail: string }>(url, { motivo_cancelamento: motivo });
   }
 }

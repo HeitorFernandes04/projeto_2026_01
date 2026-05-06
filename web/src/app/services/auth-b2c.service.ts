@@ -20,8 +20,8 @@ export interface AuthB2CLoginPayload {
 
 @Injectable({ providedIn: 'root' })
 export class AuthB2CService {
-  private readonly setupUrl = '/api/cliente/auth/setup/';
-  private readonly tokenUrl = '/api/cliente/auth/token/';
+  private readonly setupUrl = '/api/publico/auth/setup/';
+  private readonly loginUrl = '/api/publico/auth/login/';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -32,7 +32,7 @@ export class AuthB2CService {
   }
 
   login(payload: AuthB2CLoginPayload): Observable<AuthB2CTokens> {
-    return this.http.post<AuthB2CTokens>(this.tokenUrl, payload).pipe(
+    return this.http.post<AuthB2CTokens>(this.loginUrl, payload).pipe(
       tap(tokens => this.salvarTokens(tokens))
     );
   }
