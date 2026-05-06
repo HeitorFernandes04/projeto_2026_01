@@ -339,7 +339,10 @@ describe('AutoagendamentoComponent — RF-23 Checkout', () => {
     });
     expect(sessionStorage.getItem('clienteNome')).toBe('Carlos Silva');
     expect(sessionStorage.getItem('ordemServicoAtiva')).toBe(JSON.stringify(mockOrdemCriada));
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/agendar/lava-me-premium/painel']);
+    expect(mockRouter.navigate).toHaveBeenCalledWith(
+      ['/agendar/lava-me-premium/cliente/setup'],
+      { queryParams: { placa: 'ABC-1234', telefone: '11999990000' } }
+    );
   });
 
   it('deve exibir alert em caso de erro no checkout', () => {
