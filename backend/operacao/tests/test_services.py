@@ -98,6 +98,21 @@ class TestOrdemServicoServiceEtapas:
         with pytest.raises(ValidationError):
             MidiaOrdemServicoService.processar_upload_multiplo(os, 'FINALIZADO', [foto])
 
+    def test_finalizacao_salva_observacoes_da_vistoria_final(self):
+        os = OrdemServicoFactory(status='LIBERACAO')
+        for _ in range(5):
+            MidiaOrdemServicoFactory(ordem_servico=os, momento='FINALIZADO')
+
+        finalizada = OrdemServicoService.finalizar_ordem_servico_industrial(
+            os.id,
+            {
+                'vaga_patio': 'A1',
+                'observacoes': 'Sem avarias novas na vistoria final.',
+            },
+        )
+
+        assert finalizada.observacoes == 'Sem avarias novas na vistoria final.'
+
 
 @pytest.mark.django_db
 class TestIncidenteServiceRegistro:

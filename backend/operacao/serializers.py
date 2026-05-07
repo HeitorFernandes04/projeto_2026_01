@@ -443,6 +443,20 @@ class MidiaGaleriaSerializer(serializers.ModelSerializer):
         return None
 
 
+class ClienteGaleriaMidiaSerializer(serializers.ModelSerializer):
+    arquivo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MidiaOrdemServico
+        fields = ['id', 'arquivo_url', 'momento']
+
+    def get_arquivo_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.arquivo:
+            return request.build_absolute_uri(obj.arquivo.url)
+        return None
+
+
 class CheckoutPublicoSerializer(serializers.Serializer):
     slug = serializers.CharField()
     servico_id = serializers.IntegerField()

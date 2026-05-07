@@ -10,11 +10,11 @@ from operacao.tests.factories import EstabelecimentoFactory, VeiculoFactory
 class TestAuthB2CService:
     def test_setup_cria_usuario_b2c_cliente_e_tokens(self):
         estabelecimento = EstabelecimentoFactory()
-        VeiculoFactory(
+        veiculo = VeiculoFactory(
             estabelecimento=estabelecimento,
             placa='ABC1234',
             nome_dono='Cliente Teste',
-            celular_dono='11999999999',
+            celular_dono='(11) 99999-9999',
         )
 
         result = AuthB2CService.setup_cliente(
@@ -30,6 +30,8 @@ class TestAuthB2CService:
         assert user.is_staff is False
         assert user.is_superuser is False
         assert Cliente.objects.get(user=user).telefone_whatsapp == '11999999999'
+        veiculo.refresh_from_db()
+        assert veiculo.cliente == user.perfil_cliente
         assert set(result.keys()) == {'access', 'refresh'}
 
     def test_setup_bloqueia_idor_quando_telefone_nao_pertence_a_placa(self):

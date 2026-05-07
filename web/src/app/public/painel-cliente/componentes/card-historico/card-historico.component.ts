@@ -1,6 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { OrdemServicoCliente } from '../../../../services/painel-cliente.service';
 
 @Component({
   selector: 'app-card-historico',
@@ -10,9 +11,9 @@ import { Router } from '@angular/router';
   styleUrls: ['./card-historico.component.scss']
 })
 export class CardHistoricoComponent {
-  @Input() historico: any;
+  @Input() historico?: OrdemServicoCliente | null;
 
-  constructor(private router: Router) {}
+  private readonly router = inject(Router);
 
   verDetalhes(): void {
     // Captura o slug dinamicamente da URL atual (/agendar/SLUG/painel)

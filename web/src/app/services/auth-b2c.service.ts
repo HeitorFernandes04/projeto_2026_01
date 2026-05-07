@@ -22,6 +22,8 @@ export interface AuthB2CLoginPayload {
 export class AuthB2CService {
   private readonly setupUrl = '/api/publico/auth/setup/';
   private readonly loginUrl = '/api/publico/auth/login/';
+  private readonly accessTokenKey = 'b2c_access_token';
+  private readonly refreshTokenKey = 'b2c_refresh_token';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -38,12 +40,12 @@ export class AuthB2CService {
   }
 
   logout(): void {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    localStorage.removeItem(this.accessTokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
   }
 
   private salvarTokens(tokens: AuthB2CTokens): void {
-    localStorage.setItem('access_token', tokens.access);
-    localStorage.setItem('refresh_token', tokens.refresh);
+    localStorage.setItem(this.accessTokenKey, tokens.access);
+    localStorage.setItem(this.refreshTokenKey, tokens.refresh);
   }
 }

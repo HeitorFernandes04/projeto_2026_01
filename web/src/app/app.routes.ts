@@ -90,6 +90,7 @@ export const routes: Routes = [
           },
           {
             path: 'galeria-transparencia', // Galeria de Transparência (herda proteção do painel)
+            canActivate: [clienteAuthGuard],
             loadComponent: () =>
               import('./public/painel-cliente/componentes/galeria-transparencia/galeria-transparencia.component').then(
                 m => m.GaleriaTransparenciaComponent

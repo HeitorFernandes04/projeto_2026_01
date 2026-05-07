@@ -1,134 +1,383 @@
-$bg-main: #0b0e11;
-$bg-header: #161b22;
-$bg-card: #1c2128;
-$border: #21262d;
-$primary: #0066ff;
-$text-muted: #8b949e;
-$success-green: #00e676;
+$bg-main: var(--lm-bg);
+$bg-header: var(--lm-card);
+$bg-card: var(--lm-sidebar);
+$border: var(--lm-border);
+$primary: var(--lm-primary);
+$muted: var(--lm-text-muted);
+$success: var(--lm-success);
+$text: var(--lm-text);
+$accent: var(--lm-accent);
 
 .galeria-transparencia-wrapper {
-  background-color: $bg-main;
-  height: 100vh;
-  width: 100vw;
+  background: $bg-main;
   display: flex;
   flex-direction: column;
+  height: 100vh;
   overflow-y: auto;
+  width: 100vw;
 }
 
 .portal-header {
-  background-color: $bg-header;
+  background: $bg-header;
   border-bottom: 1px solid $border;
   padding: 16px 24px;
   position: sticky;
   top: 0;
   z-index: 100;
+
   .header-inner {
-    display: flex; justify-content: space-between; align-items: center;
-    .brand-logo { height: 42px; width: auto; }
-    .btn-sair-publico {
-      background: #1c2128; border: 1px solid $border; color: $primary;
-      padding: 8px 24px; border-radius: 100px; font-weight: 800; cursor: pointer;
-    }
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .brand-logo { height: 42px; width: auto; }
+
+  .btn-sair-publico {
+    background: $bg-card;
+    border: 1px solid $border;
+    border-radius: 100px;
+    color: $primary;
+    cursor: pointer;
+    font-weight: 800;
+    padding: 8px 24px;
   }
 }
 
 .content-body {
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 24px 20px 60px;
   box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 760px;
+  padding: 24px 20px 60px;
+  width: 100%;
 
   .btn-voltar-link {
-    background: transparent; border: none; color: $primary;
-    display: flex; align-items: center; gap: 8px;
-    font-weight: 800; font-size: 16px; cursor: pointer;
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: $primary;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    font-weight: 800;
+    gap: 8px;
     margin-bottom: 40px;
   }
 
   .hero-section {
-    text-align: center; margin-bottom: 40px;
-    .titulo-galeria { color: #fff; font-size: 26px; font-weight: 800; }
-    .subtitulo-galeria { color: $text-muted; font-size: 14px; margin-top: 8px; }
+    margin-bottom: 40px;
+    text-align: center;
   }
 
-  /* ESTILO DO CARD DE RESUMO DO VEÍCULO */
-  .card-resumo-veiculo {
-    background-color: #161b22;
-    border: 1px solid #30363d;
+  .titulo-galeria {
+    color: $text;
+    font-size: 26px;
+    font-weight: 800;
+  }
+
+  .subtitulo-galeria,
+  .sem-fotos,
+  .state-card p {
+    color: $muted;
+  }
+
+  .subtitulo-galeria {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .card-resumo-veiculo,
+  .card-container-transparencia,
+  .state-card {
+    background: $bg-header;
+    border: 1px solid $border;
     border-radius: 24px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .card-resumo-veiculo {
+    align-items: center;
     display: flex;
     justify-content: space-between;
+    margin-bottom: 24px;
+    padding: 20px 24px;
+  }
+
+  .veiculo-main-info,
+  .section-header {
     align-items: center;
-    width: 100%;
-    box-sizing: border-box;
+    display: flex;
+    gap: 14px;
+  }
 
-    .veiculo-main-info {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+  .icon-car-bg,
+  .icon-circle {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+  }
 
-      .icon-car-bg {
-        width: 44px; height: 44px;
-        background: rgba($primary, 0.1);
-        border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        span { color: $primary; font-size: 24px; }
-      }
+  .icon-car-bg {
+    background: color-mix(in srgb, #{$primary} 14%, transparent);
+    border-radius: 12px;
+    height: 44px;
+    width: 44px;
 
-      .veiculo-text {
-        h3 { color: #fff; font-size: 16px; font-weight: 800; margin: 0; }
-        p { color: $text-muted; font-size: 12px; font-weight: 600; margin-top: 2px; }
-      }
+    span { color: $primary; font-size: 24px; }
+  }
+
+  .veiculo-text {
+    h3 {
+      color: $text;
+      font-size: 16px;
+      font-weight: 800;
+      margin: 0;
     }
 
-    .servico-tag-resumo {
-      text-align: right;
-      .label { display: block; color: $text-muted; font-size: 9px; text-transform: uppercase; font-weight: 800; }
-      .valor { color: $primary; font-size: 14px; font-weight: 900; }
+    p {
+      color: $muted;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 2px 0 0;
+    }
+  }
+
+  .servico-tag-resumo {
+    text-align: right;
+
+    .label {
+      color: $muted;
+      display: block;
+      font-weight: 800;
+    }
+
+    .valor {
+      color: $primary;
+      font-weight: 900;
     }
   }
 
   .card-container-transparencia {
-    background-color: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 32px;
-    padding: 28px;
     margin-bottom: 24px;
+    padding: 28px;
+  }
 
-    .section-header {
-      display: flex; align-items: center; gap: 14px; margin-bottom: 28px;
-      .icon-circle {
-        width: 44px; height: 44px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        span { color: #fff; font-size: 22px; }
-        &.green-bg { background-color: $success-green; }
-        &.blue-bg { background-color: $primary; }
-      }
-      .section-title { color: #fff; font-size: 17px; font-weight: 800; margin: 0; }
-      .section-subtitle { color: $text-muted; font-size: 12px; margin: 0; }
+  .section-header {
+    margin-bottom: 28px;
+  }
+
+  .icon-circle {
+    border-radius: 50%;
+    height: 44px;
+    width: 44px;
+
+    span { color: $text; font-size: 22px; }
+    &.green-bg { background: $success; }
+    &.blue-bg { background: $primary; }
+  }
+
+  .section-title {
+    color: $text;
+    font-size: 17px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .section-subtitle {
+    color: $muted;
+    font-size: 12px;
+    margin: 0;
+  }
+
+  .fotos-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .laudo-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .laudo-item {
+    background: $bg-card;
+    border: 1px solid color-mix(in srgb, #{$text} 8%, transparent);
+    border-radius: 16px;
+    padding: 16px;
+
+    .label {
+      color: $muted;
+      display: block;
+      font-weight: 800;
+      margin-bottom: 6px;
     }
 
-    .fotos-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-      .foto-item {
-        aspect-ratio: 1 / 1; border-radius: 28px; overflow: hidden; background: #000;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        .foto-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    strong,
+    p {
+      color: $text;
+      margin: 0;
+    }
+
+    .status-row {
+      border: 1px solid transparent;
+      border-radius: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+
+      strong,
+      span {
+        margin: 0;
+      }
+
+      span {
+        font-weight: 700;
       }
     }
 
-    .laudo-stack {
-      display: flex; flex-direction: column; gap: 12px;
-      .laudo-card-item {
-        background-color: #1c2128; border-radius: 20px; padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.03);
-        label { color: $text-muted; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-        strong { color: #fff; font-size: 15px; font-weight: 800; display: block; margin-top: 4px; }
-        p { color: #fff; font-size: 13px; margin: 4px 0 0; line-height: 1.5; }
+    .status-finalizado {
+      background: transparent;
+      border-color: transparent;
+      color: $text;
+
+      strong,
+      span {
+        color: $text;
+      }
+    }
+
+    &.laudo-status-final.status-finalizado {
+      background: color-mix(in srgb, #{$success} 12%, #{$bg-card});
+      border-color: color-mix(in srgb, #{$success} 72%, transparent);
+
+      > .label,
+      > strong,
+      > p {
+        color: $success;
+      }
+
+      .status-row {
+        strong,
+        span {
+          color: $success;
+        }
+      }
+    }
+
+    .status-cancelado {
+      background: color-mix(in srgb, #{$accent} 14%, transparent);
+      color: $accent;
+
+      strong,
+      span {
+        color: $accent;
+      }
+    }
+
+    .status-incidente {
+      background: color-mix(in srgb, #{$accent} 16%, transparent);
+      color: $accent;
+
+      strong,
+      span {
+        color: $accent;
+      }
+    }
+
+    .status-neutro {
+      background: color-mix(in srgb, #{$text} 10%, transparent);
+      color: $muted;
+
+      strong,
+      span {
+        color: $muted;
       }
     }
   }
+
+  .foto-item {
+    aspect-ratio: 1 / 1;
+    background: var(--lm-bg);
+    border: 1px solid color-mix(in srgb, #{$text} 8%, transparent);
+    border-radius: 28px;
+    cursor: pointer;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+  }
+
+  .foto-img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .foto-label {
+    background: color-mix(in srgb, var(--lm-bg) 68%, transparent);
+    bottom: 10px;
+    color: $text;
+    font-weight: 800;
+    left: 10px;
+    padding: 4px;
+    position: absolute;
+  }
+
+  .state-card {
+    align-items: center;
+    color: $text;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 28px;
+    text-align: center;
+
+    p { margin: 0; }
+    .material-symbols-outlined { color: $primary; font-size: 32px; }
+  }
+
+  .btn-primary {
+    background: $primary;
+    border: 0;
+    border-radius: 999px;
+    color: $text;
+    cursor: pointer;
+    font-weight: 800;
+    padding: 10px 16px;
+  }
+
+  .spinner {
+    animation: spin 0.8s linear infinite;
+    border: 3px solid color-mix(in srgb, #{$text} 16%, transparent);
+    border-radius: 50%;
+    border-top-color: $primary;
+    height: 34px;
+    width: 34px;
+  }
+}
+
+.lightbox {
+  align-items: center;
+  background: color-mix(in srgb, var(--lm-bg) 86%, transparent);
+  border: 0;
+  cursor: zoom-out;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 500;
+
+  img {
+    max-height: 90vh;
+    max-width: min(920px, 100%);
+    object-fit: contain;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

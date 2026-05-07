@@ -110,6 +110,19 @@ $text-muted: #8b949e;
     font-size: 14px;
     margin-top: 6px;
   }
+
+  .btn-new-appointment {
+    margin-top: 16px;
+    padding: 13px 24px;
+    background: $primary;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
 }
 
 .pill-navigation {

@@ -58,6 +58,19 @@ class AuthB2CService:
         raise PermissionDenied('Combinacao de placa e telefone nao encontrada.')
 
     @staticmethod
+    def _linkar_veiculos_cliente_por_telefone(cliente, telefone):
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        veiculo_ids = [
+            veiculo_id
+            for veiculo_id, celular_dono in Veiculo.objects
+            .filter(celular_dono__isnull=False)
+            .values_list('id', 'celular_dono')
+            if AuthB2CService.normalizar_telefone(celular_dono) == telefone_normalizado
+        ]
+        if veiculo_ids:
+            Veiculo.objects.filter(id__in=veiculo_ids, cliente__isnull=True).update(cliente=cliente)
+
+    @staticmethod
     @transaction.atomic
     def setup_cliente(telefone, placa, pin):
         telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
@@ -84,10 +97,11 @@ class AuthB2CService:
         user.set_password(pin)
         user.save()
 
-        Cliente.objects.create(
+        cliente = Cliente.objects.create(
             user=user,
             telefone_whatsapp=telefone_normalizado,
         )
+        AuthB2CService._linkar_veiculos_cliente_por_telefone(cliente, telefone_normalizado)
 
         return AuthB2CService._emitir_tokens(user)
 
@@ -112,10 +126,12 @@ class AuthB2CService:
         if not hasattr(user, 'perfil_cliente'):
             raise PermissionDenied('Usuario sem perfil de cliente.')
 
-        telefone = AuthB2CService.normalizar_telefone(user.perfil_cliente.telefone_whatsapp)
+        cliente = user.perfil_cliente
+        telefone = AuthB2CService.normalizar_telefone(cliente.telefone_whatsapp)
+        AuthB2CService._linkar_veiculos_cliente_por_telefone(cliente, telefone)
         ordens = (
             OrdemServico.objects
-            .filter(veiculo__celular_dono=telefone)
+            .filter(veiculo__cliente=cliente)
             .select_related('veiculo', 'servico', 'estabelecimento')
             .order_by('-data_hora')
         )

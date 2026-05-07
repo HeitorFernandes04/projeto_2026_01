@@ -6,7 +6,7 @@ import { AuthService } from '../../services/auth.service';
 export const clienteAuthGuard: CanActivateFn = (route) => {
   const router = inject(Router);
   const authService = inject(AuthService);
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem('b2c_access_token');
   const slug = route.parent?.parent?.paramMap.get('slug') ?? route.paramMap.get('slug') ?? '';
 
   if (!token) {
@@ -14,7 +14,7 @@ export const clienteAuthGuard: CanActivateFn = (route) => {
     return false;
   }
 
-  return authService.obterPerfil().pipe(
+  return authService.obterPerfil('b2c_access_token').pipe(
     map(perfil => {
       if (perfil?.tipo_perfil === 'CLIENTE') {
         return true;

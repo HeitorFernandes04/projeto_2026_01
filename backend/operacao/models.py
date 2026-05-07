@@ -40,9 +40,21 @@ class OrdemServico(models.Model):
     cancelado_por       = models.CharField(max_length=50, blank=True, null=True)
 
 class MidiaOrdemServico(models.Model):
+    MOMENTO_CHOICES = [
+        ('VISTORIA_GERAL', 'Vistoria geral'),
+        ('AVARIA_PREVIA', 'Avaria previa'),
+        ('FINALIZADO', 'Finalizado'),
+        ('EXECUCAO', 'Execucao'),
+        ('ENTRADA', 'Entrada'),
+        ('FINALIZACAO', 'Finalizacao'),
+        ('INCIDENTE', 'Incidente'),
+        ('ACABAMENTO', 'Acabamento'),
+        ('PROCESSO', 'Processo'),
+    ]
+
     ordem_servico = models.ForeignKey(OrdemServico, on_delete=models.CASCADE, related_name='midias')
     arquivo = models.ImageField(upload_to='os/')
-    momento = models.CharField(max_length=20)
+    momento = models.CharField(max_length=20, choices=MOMENTO_CHOICES)
     
 class IncidenteOS(models.Model):
     """Registro de incidentes operacionais que bloqueiam a OS."""
