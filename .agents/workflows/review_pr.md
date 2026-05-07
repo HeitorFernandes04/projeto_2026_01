@@ -11,9 +11,12 @@ Este workflow deve ser acionado para avaliar qualquer Pull Request no projeto La
 ## 2. Auditoria Técnica e Qualidade (Uso do MCP)
 Execute as ferramentas de teste diretamente pelo MCP para garantir que o código base compila, roda e é seguro.
 
-1. **Qualidade Backend**: Utilize `run_backend_tests` e depois `generate_backend_coverage`. Verifique se a PR derrubou a cobertura geral ou se os testes falharam.
-2. **Qualidade Web**: Se o Angular foi tocado, utilize `run_web_tests` e `run_web_linter`.
-3. **Auditoria de Segurança (SAST)**: Utilize `run_security_audit` (passando target="all") para buscar dependências vulneráveis ou falhas inseridas pela PR.
+1. **Qualidade Backend**: Utilize `run_backend_tests` e depois `generate_backend_coverage`. Verifique se a PR derrubou a cobertura geral ou se os testes falharam. **Meta: > 80%**.
+2. **Qualidade Web**: Se o Angular foi tocado, utilize `run_web_tests` e `run_web_linter`. **Meta: > 80% em Services**.
+3. **Qualidade Mobile**: Se o Ionic foi tocado, utilize `run_frontend_tests` e `run_frontend_linter`.
+4. **Limpeza de Ruído (Anti-Debug)**: Execute um grep no diff da PR em busca de `console.log`, `alert`, `print` ou `debugger`. Se encontrados, solicite a remoção imediata.
+5. **Integridade de Dados**: Utilize `check_and_run_migrations` (com apply=False). Se houver alterações em `models.py` sem migrations correspondentes, a PR deve ser BLOQUEADA.
+6. **Auditoria de Segurança (SAST)**: Utilize `run_security_audit` (passando target="all") para buscar dependências vulneráveis ou falhas inseridas pela PR.
 
 *Nota: Colete todos os retornos de erro.*
 

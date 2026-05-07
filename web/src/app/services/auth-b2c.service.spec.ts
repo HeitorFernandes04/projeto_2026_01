@@ -46,7 +46,7 @@ describe('AuthB2CService - armazenamento isolado B2C', () => {
 
     service.login({ telefone: '(11) 99999-0000', pin: '1234' }).subscribe();
 
-    expect(httpClient.post).toHaveBeenCalledWith('/api/publico/auth/login/', {
+    expect(httpClient.post).toHaveBeenCalledWith('/api/cliente/auth/token/', {
       telefone: '(11) 99999-0000',
       pin: '1234',
     });
@@ -54,6 +54,22 @@ describe('AuthB2CService - armazenamento isolado B2C', () => {
     expect(localStorage.getItem('b2c_refresh_token')).toBe('refresh-cliente');
     expect(localStorage.getItem('access_token')).toBe('jwt-gestor');
     expect(localStorage.getItem('refresh_token')).toBe('refresh-gestor');
+  });
+
+  it('deve realizar setup inicial e salvar tokens b2c', () => {
+    httpClient.post.mockReturnValueOnce(of({
+      access: 'jwt-setup',
+      refresh: 'refresh-setup',
+    }));
+
+    service.setup({ telefone: '11999999999', placa: 'ABC1234', pin: '4321' }).subscribe();
+
+    expect(httpClient.post).toHaveBeenCalledWith('/api/cliente/auth/setup/', {
+      telefone: '11999999999',
+      placa: 'ABC1234',
+      pin: '4321',
+    });
+    expect(localStorage.getItem('b2c_access_token')).toBe('jwt-setup');
   });
 
   it('deve limpar somente tokens B2C no logout do cliente', () => {

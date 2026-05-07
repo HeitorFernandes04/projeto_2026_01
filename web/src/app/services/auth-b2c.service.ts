@@ -20,8 +20,8 @@ export interface AuthB2CLoginPayload {
 
 @Injectable({ providedIn: 'root' })
 export class AuthB2CService {
-  private readonly setupUrl = '/api/publico/auth/setup/';
-  private readonly loginUrl = '/api/publico/auth/login/';
+  private readonly setupUrl = '/api/cliente/auth/setup/';
+  private readonly loginUrl = '/api/cliente/auth/token/';
   private readonly accessTokenKey = 'b2c_access_token';
   private readonly refreshTokenKey = 'b2c_refresh_token';
 

@@ -1,144 +1,187 @@
+# Diagrama Entidade-Relacionamento (ERD)\n\n*Gerado automaticamente pelo Agente MCP.*\n\n```mermaid\n19 objects imported automatically (use -v 2 for details).
+
 erDiagram
-    %% Hierarquia de Usuários e Perfis
-    USER ||--o| CLIENTE : "possui perfil"
-    USER ||--o| FUNCIONARIO : "possui perfil"
-    USER ||--o| GESTOR : "possui perfil"
-
-    %% Relacionamentos Principais
-    ESTABELECIMENTO ||--o{ SERVICO : "oferece"
-    ESTABELECIMENTO ||--o{ FUNCIONARIO : "contrata"
-    ESTABELECIMENTO ||--o{ GESTOR : "gerenciado_por"
-    ESTABELECIMENTO ||--o{ VEICULO : "registra"
-    CLIENTE ||--o{ VEICULO : "titularidade B2C"
-    ESTABELECIMENTO ||--o{ TAG_PECA : "define"
-    VEICULO ||--o{ ORDEM_SERVICO : "recebe"
-    SERVICO ||--o{ ORDEM_SERVICO : "vinculado_a"
-    FUNCIONARIO ||--o{ ORDEM_SERVICO : "executa"
-    ESTABELECIMENTO ||--o{ ORDEM_SERVICO : "pertence_a"
-
-    ORDEM_SERVICO ||--o{ VISTORIA_ITEM : "possui avarias (check-in)"
-    ORDEM_SERVICO ||--o{ MIDIA_ORDEM_SERVICO : "contem evidencias"
-    ORDEM_SERVICO ||--o{ INCIDENTE_OS : "registra excecao (sinistro)"
-
-    TAG_PECA ||--o{ VISTORIA_ITEM : "classifica"
-    TAG_PECA ||--o{ INCIDENTE_OS : "referencia"
-
-    USER {
-        int id PK
-        string email "Login (único)"
-        string password
-        string name
-        string username
-        boolean is_active
-        datetime date_joined
-    }
-
-    CLIENTE {
-        int id PK
-        int user_id FK
-        string telefone_whatsapp
-        string endereco_padrao
-    }
-
-    FUNCIONARIO {
-        int id PK
-        int user_id FK
-        int estabelecimento_id FK
-        enum cargo "GESTOR, LAVADOR, DETALHISTA"
-    }
-
-    GESTOR {
-        int id PK
-        int user_id FK
-        int estabelecimento_id FK
-    }
-
-    ESTABELECIMENTO {
-        int id PK
-        string nome_fantasia
-        string cnpj "14 dígitos, único"
-        string endereco_completo
-        boolean is_active
-    }
-
-    VEICULO {
-        int id PK
-        int estabelecimento_id FK
-        int cliente_id FK "opcional, titular B2C"
-        string placa "único, 7 chars (antigo ou Mercosul)"
-        string modelo
-        string marca
-        string cor
-        string nome_dono "opcional"
-        string celular_dono "opcional"
-    }
-
-    SERVICO {
-        int id PK
-        int estabelecimento_id FK
-        string nome
-        decimal preco
-        int duracao_estimada_minutos
-        boolean is_active "Soft Delete"
-    }
-
-    %% CORE DO SISTEMA
-    ORDEM_SERVICO {
-        int id PK
-        int estabelecimento_id FK
-        int veiculo_id FK
-        int servico_id FK
-        int funcionario_id FK
-
-        enum status "PATIO, VISTORIA_INICIAL, EM_EXECUCAO, LIBERACAO, FINALIZADO, BLOQUEADO_INCIDENTE, CANCELADO"
-        datetime data_hora "criação automática"
-
-        text laudo_vistoria "opcional"
-        text comentario_lavagem "opcional"
-        text comentario_acabamento "opcional"
-        text observacoes "opcional"
-        string vaga_patio "obrigatório na finalização"
-
-        datetime horario_lavagem "preenchido ao iniciar execução"
-        datetime horario_acabamento "preenchido ao concluir acabamento"
-        datetime horario_finalizacao "preenchido ao finalizar"
-    }
-
-    %% VISTORIA E TAGS
-    TAG_PECA {
-        int id PK
-        int estabelecimento_id FK
-        string nome "Ex: Capô, Porta Dianteira Esq"
-        enum categoria "INTERNO, EXTERNO"
-    }
-
-    VISTORIA_ITEM {
-        int id PK
-        int ordem_servico_id FK
-        int tag_peca_id FK
-        boolean possui_avaria
-        string foto_url "opcional"
-    }
-
-    %% MÍDIAS
-    MIDIA_ORDEM_SERVICO {
-        int id PK
-        int ordem_servico_id FK
-        string arquivo "caminho no storage"
-        enum momento "VISTORIA_GERAL, AVARIA_PREVIA, EXECUCAO, FINALIZADO"
-    }
-
-    %% EXCEÇÕES / INCIDENTES
-    %% ⚠️ PENDENTE: campo status_anterior_os ainda não foi adicionado via migration.
-    %% Necessário para restaurar o status correto da OS ao resolver o incidente (CA-08).
-    INCIDENTE_OS {
-        int id PK
-        int ordem_servico_id FK
-        int tag_peca_id FK
-        string descricao "Relato detalhado do operador"
-        string foto_url "Evidência do dano causado"
-        boolean resolvido "Controle para liberação pelo Gestor"
-        text observacoes_resolucao "Justificativa do Gestor para o desbloqueio"
-        datetime data_registro
-        datetime data_resolucao
-    }
+  IncidenteOS }|--|| User : gestor_resolucao
+  IncidenteOS }|--|| TagPeca : tag_peca
+  IncidenteOS }|--|| OrdemServico : ordem_servico
+  MidiaOrdemServico }|--|| OrdemServico : ordem_servico
+  OrdemServico }|--|| User : funcionario
+  OrdemServico }|--|| Servico : servico
+  OrdemServico }|--|| Veiculo : veiculo
+  OrdemServico }|--|| Estabelecimento : estabelecimento
+  OrdemServico }|--|| IncidenteOS : incidentes
+  OrdemServico }|--|| MidiaOrdemServico : midias
+  OrdemServico }|--|| VistoriaItem : vistoria_items
+  VistoriaItem }|--|| TagPeca : tag_peca
+  VistoriaItem }|--|| OrdemServico : ordem_servico
+  TagPeca }|--|| Estabelecimento : estabelecimento
+  TagPeca }|--|| IncidenteOS : incidenteos
+  TagPeca }|--|| VistoriaItem : vistoriaitem
+  Veiculo }|--|| Cliente : cliente
+  Veiculo }|--|| Estabelecimento : estabelecimento
+  Veiculo }|--|| OrdemServico : ordemservico
+  Servico }|--|| Estabelecimento : estabelecimento
+  Servico }|--|| OrdemServico : ordemservico
+  Gestor }|--|| Estabelecimento : estabelecimento
+  Gestor }|--|| User : user
+  Funcionario }|--|| Estabelecimento : estabelecimento
+  Funcionario }|--|| User : user
+  Cliente }|--|| User : user
+  Cliente }|--|| Veiculo : veiculos
+  User }|--|| Permission : user_permissions
+  User }|--|| Group : groups
+  User }|--|| IncidenteOS : incidentes_resolvidos
+  User }|--|| OrdemServico : ordemservico
+  User }|--|| Gestor : perfil_gestor
+  User }|--|| Funcionario : perfil_funcionario
+  User }|--|| Cliente : perfil_cliente
+  User }|--|| Token : auth_token
+  User }|--|| LogEntry : logentry
+  Estabelecimento }|--|| OrdemServico : ordemservico
+  Estabelecimento }|--|| TagPeca : tagpeca
+  Estabelecimento }|--|| Veiculo : veiculo
+  Estabelecimento }|--|| Servico : servicos
+  Estabelecimento }|--|| Gestor : gestores
+  Estabelecimento }|--|| Funcionario : funcionarios
+  TokenProxy }|--|| User : user
+  Token }|--|| User : user
+  ContentType }|--|| Permission : permission
+  ContentType }|--|| LogEntry : logentry
+  Group }|--|| Permission : permissions
+  Group }|--|| User : user
+  Permission }|--|| ContentType : content_type
+  Permission }|--|| User : user
+  Permission }|--|| Group : group
+  LogEntry }|--|| ContentType : content_type
+  LogEntry }|--|| User : user
+  LogEntry {
+    AutoField id
+    DateTimeField action_time
+    TextField object_id
+    CharField object_repr
+    PositiveSmallIntegerField action_flag
+    TextField change_message
+  }
+  Permission {
+    AutoField id
+    CharField name
+    CharField codename
+  }
+  Group {
+    AutoField id
+    CharField name
+  }
+  ContentType {
+    AutoField id
+    CharField app_label
+    CharField model
+  }
+  Session {
+    CharField session_key
+    TextField session_data
+    DateTimeField expire_date
+  }
+  Token {
+    CharField key
+    DateTimeField created
+  }
+  TokenProxy {
+    CharField key
+    DateTimeField created
+  }
+  Estabelecimento {
+    BigAutoField id
+    CharField nome_fantasia
+    CharField cnpj
+    CharField endereco_completo
+    BooleanField is_active
+    SlugField slug
+    ImageField logo
+    TimeField horario_abertura
+    TimeField horario_fechamento
+  }
+  User {
+    BigAutoField id
+    CharField password
+    DateTimeField last_login
+    BooleanField is_superuser
+    CharField username
+    CharField first_name
+    CharField last_name
+    BooleanField is_staff
+    BooleanField is_active
+    DateTimeField date_joined
+    EmailField email
+    CharField name
+  }
+  Cliente {
+    BigAutoField id
+    CharField telefone_whatsapp
+    CharField endereco_padrao
+  }
+  Funcionario {
+    BigAutoField id
+    CharField cargo
+  }
+  Gestor {
+    BigAutoField id
+  }
+  Servico {
+    BigAutoField id
+    CharField nome
+    DecimalField preco
+    PositiveIntegerField duracao_estimada_minutos
+    BooleanField is_active
+  }
+  Veiculo {
+    BigAutoField id
+    CharField placa
+    CharField modelo
+    CharField marca
+    CharField cor
+    CharField nome_dono
+    CharField celular_dono
+  }
+  TagPeca {
+    BigAutoField id
+    CharField nome
+    CharField categoria
+  }
+  VistoriaItem {
+    BigAutoField id
+    BooleanField possui_avaria
+    ImageField foto_url
+  }
+  OrdemServico {
+    BigAutoField id
+    CharField status
+    DateTimeField data_hora
+    TextField laudo_vistoria
+    DateTimeField horario_lavagem
+    DateTimeField horario_acabamento
+    TextField comentario_lavagem
+    TextField comentario_acabamento
+    CharField vaga_patio
+    DateTimeField horario_finalizacao
+    TextField observacoes
+    UUIDField slug_cancelamento
+    DateTimeField cancelado_em
+    TextField motivo_cancelamento
+    CharField cancelado_por
+  }
+  MidiaOrdemServico {
+    BigAutoField id
+    ImageField arquivo
+    CharField momento
+  }
+  IncidenteOS {
+    BigAutoField id
+    TextField descricao
+    ImageField foto_url
+    CharField status_anterior_os
+    BooleanField resolvido
+    DateTimeField data_registro
+    DateTimeField data_resolucao
+    TextField observacoes_resolucao
+  }
+\n```
