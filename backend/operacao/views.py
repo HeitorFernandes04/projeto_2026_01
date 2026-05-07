@@ -1,24 +1,32 @@
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied, ValidationError
+from core.utils import formatar_placa
+from operacao.constants import STATUS_ATIVOS, STATUS_HISTORICO, HISTORICO_CLIENTE_LIMITE
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.models import TagPeca, Servico
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
-from .serializers import TagPecaSerializer, IncidenteOSSerializer
+from agendamento_publico.views import EstabelecimentoPublicoRateThrottle
+from .serializers import TagPecaSerializer, IncidenteOSSerializer, CheckoutPublicoSerializer
 from .services import IncidenteService
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from .permissions import IsFuncionarioDaOS, IsGestor
+from accounts.permissions import IsCliente
 from .serializers import (
+    ClienteGaleriaMidiaSerializer,
     KanbanCardSerializer,
     OrdemServicoSerializer,
+    OrdemServicoClienteSerializer,
     CriarOrdemServicoSerializer,
     HistoricoOrdemServicoFiltroSerializer,
     HistoricoGestorFiltroSerializer,
@@ -33,7 +41,13 @@ from .serializers import (
     IncidentePendenteSerializer,
     ResolverIncidenteSerializer,
 )
-from .services import OrdemServicoService, MidiaOrdemServicoService, KanbanService, HistoricoGestorService
+from .services import (
+    ClienteGaleriaService,
+    OrdemServicoService,
+    MidiaOrdemServicoService,
+    KanbanService,
+    HistoricoGestorService,
+)
 
 
 class OrdensServicoHojeView(APIView):
@@ -46,11 +60,17 @@ class OrdensServicoHojeView(APIView):
 
         estabelecimento = request.user.perfil_funcionario.estabelecimento
         # Exibe OS sem funcionário ou do próprio usuário (fila do pátio)
+        # Inclui: OS do dia atual + pendentes de dias anteriores (em execução)
+        hoje_local = timezone.localdate()
         ordens = (
             OrdemServico.objects
             .filter(
-                Q(funcionario__isnull=True) | Q(funcionario=request.user),
-                estabelecimento=estabelecimento,
+                (Q(funcionario__isnull=True) | Q(funcionario=request.user)) &
+                Q(estabelecimento=estabelecimento) &
+                (
+                    Q(data_hora__date=hoje_local) | 
+                    Q(data_hora__date__lt=hoje_local, status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE'])
+                )
             )
             .exclude(status__in=['FINALIZADO', 'CANCELADO'])
             .select_related('veiculo', 'servico')
@@ -71,9 +91,19 @@ class HistoricoOrdemServicoView(APIView):
         filtro_serializer = HistoricoOrdemServicoFiltroSerializer(data=request.query_params)
         filtro_serializer.is_valid(raise_exception=True)
 
+        # Obter estabelecimento do usuário (Axioma 5 - Multi-tenancy)
+        estabelecimento = None
+        if hasattr(request.user, 'perfil_gestor'):
+            estabelecimento = request.user.perfil_gestor.estabelecimento
+        elif hasattr(request.user, 'perfil_funcionario'):
+            estabelecimento = request.user.perfil_funcionario.estabelecimento
+        else:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Usuário sem estabelecimento vinculado.")
+
         try:
             ordens = OrdemServicoService.listar_historico_por_periodo(
-                funcionario=request.user,
+                estabelecimento=estabelecimento,
                 data_inicial=filtro_serializer.validated_data['data_inicial'],
                 data_final=filtro_serializer.validated_data['data_final'],
                 status=filtro_serializer.validated_data['status'],
@@ -217,20 +247,34 @@ class ServicoListView(APIView):
 
 
 class HorariosLivresView(APIView):
+    """
+    RF-22: Consulta de horários para o Funcionário (Mobile).
+    Utiliza o mesmo motor de disponibilidade do Cliente.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data_str = request.query_params.get('data')
         servico_id = request.query_params.get('servico_id')
+        
         if not data_str or not servico_id:
             return Response({'detail': 'Data e serviço são obrigatórios.'}, status=400)
 
-        try:
-            horarios = OrdemServicoService.get_horarios_livres(data_str, servico_id)
-            return Response({'horarios': horarios})
-        except Exception as e:
-            return Response({'detail': str(e)}, status=400)
+        data_alvo = parse_date(data_str)
+        if not data_alvo:
+            return Response({'detail': 'Data inválida.'}, status=400)
+
+        estabelecimento = request.user.estabelecimento
+        if not estabelecimento:
+             return Response({'detail': 'Usuário sem estabelecimento vinculado.'}, status=403)
+
+        servico = get_object_or_404(Servico, id=servico_id, estabelecimento=estabelecimento, is_active=True)
+        
+        from agendamento_publico.services import DisponibilidadeService
+        horarios = DisponibilidadeService.calcular_horarios_livres(estabelecimento, servico, data_alvo)
+        
+        return Response({'horarios': horarios})
 
 
 class KanbanAPIView(APIView):
@@ -280,7 +324,7 @@ class EntradasRecentesAPIView(APIView):
         data = [
             {
                 'id': os.id,
-                'placa': f"{os.veiculo.placa[:3]}-{os.veiculo.placa[3:]}" if len(os.veiculo.placa) == 7 else os.veiculo.placa,
+                'placa': formatar_placa(os.veiculo.placa),
                 'modelo': os.veiculo.modelo,
                 'servico': os.servico.nome,
                 'data_hora': os.data_hora,
@@ -440,3 +484,82 @@ class HistoricoGestorFotosView(APIView):
             'estado_meio':    MidiaGaleriaSerializer(galeria['estado_meio'],    many=True, context=ctx).data,
             'estado_final':   MidiaGaleriaSerializer(galeria['estado_final'],   many=True, context=ctx).data,
         })
+
+
+class CheckoutPublicoView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [EstabelecimentoPublicoRateThrottle] # Proteção RNF-02
+
+    def post(self, request):
+        serializer = CheckoutPublicoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            os = OrdemServicoService.finalizar_checkout_publico(serializer.validated_data)
+            return Response(OrdemServicoSerializer(os).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ── RF-25: Painel do Cliente ─────────────────────────────────────────────────
+
+
+class ClienteHistoricoView(APIView):
+    """RF-25: Retorna OSs do cliente autenticado por titularidade veiculo__cliente."""
+    permission_classes = [IsAuthenticated, IsCliente]
+
+    def get(self, request):
+        cliente = request.user.perfil_cliente
+        base_qs = (
+            OrdemServico.objects
+            .filter(veiculo__cliente=cliente)
+            .select_related('veiculo', 'servico', 'estabelecimento')
+            .order_by('-data_hora')
+        )
+
+        ativos = base_qs.filter(status__in=STATUS_ATIVOS)
+        historico_qs = base_qs.filter(status__in=STATUS_HISTORICO)
+        total_historico = historico_qs.count()
+        historico = historico_qs[:HISTORICO_CLIENTE_LIMITE]
+
+        ctx = {'request': request}
+        return Response({
+            'cliente_nome': request.user.name,
+            'ativos': OrdemServicoClienteSerializer(ativos, many=True, context=ctx).data,
+            'historico': OrdemServicoClienteSerializer(historico, many=True, context=ctx).data,
+            'historico_meta': {
+                'total': total_historico,
+                'limit': HISTORICO_CLIENTE_LIMITE,
+                'has_more': total_historico > HISTORICO_CLIENTE_LIMITE,
+            },
+        })
+
+
+class ClienteGaleriaView(APIView):
+    """RF-26: Retorna galeria publica da OS finalizada integrada ao historico RF-25."""
+    permission_classes = [IsAuthenticated, IsCliente]
+
+    def get(self, request, pk):
+        cliente = request.user.perfil_cliente
+
+        try:
+            galeria = ClienteGaleriaService.montar_galeria_pos_venda(
+                ordem_servico_id=pk,
+                cliente=cliente,
+            )
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+        except ValidationError as exc:
+            detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+            return Response({'detail': detail}, status=status.HTTP_400_BAD_REQUEST)
+
+        ctx = {'request': request}
+        return Response({
+            'ordem_servico_id': pk,
+            'entrada': ClienteGaleriaMidiaSerializer(
+                galeria['entrada'], many=True, context=ctx,
+            ).data,
+            'finalizacao': ClienteGaleriaMidiaSerializer(
+                galeria['finalizacao'], many=True, context=ctx,
+            ).data,
+            'laudo_tecnico': galeria['laudo_tecnico'],
+        }, status=status.HTTP_200_OK)

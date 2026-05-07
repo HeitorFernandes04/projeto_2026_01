@@ -1,0 +1,210 @@
+.historico-container {
+  padding: 0;
+}
+
+.historico-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.historico-item {
+  background: #1a1f2e;
+  border: 1px solid #2d3748;
+  border-radius: 12px;
+  padding: 20px;
+  
+  /* ALTERAÇÃO: Removido os 20px laterais para garantir o alinhamento unificado */
+  margin: 0 0 20px; 
+  
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: #4a5568;
+  }
+
+  .status-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+
+    .status-icon {
+      width: 40px;
+      height: 40px;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .material-symbols-outlined {
+        color: #8b949e;
+        font-size: 20px;
+      }
+    }
+
+    .status-info {
+      .status-label {
+        color: #8b949e;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+      }
+
+      .status-text {
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .progress-section {
+    margin-bottom: 20px;
+
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 12px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 20px;
+        right: 20px;
+        height: 2px;
+        background: #2d3748;
+        z-index: 0;
+      }
+
+      .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+        flex: 1;
+
+        .step-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #2d3748;
+          border: 2px solid #1a1f2e;
+          margin-bottom: 6px;
+          transition: all 0.3s ease;
+        }
+
+        .step-label {
+          color: #8b949e;
+          font-size: 10px;
+          text-align: center;
+          font-weight: 500;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
+        }
+
+        &.active {
+          .step-dot {
+            background: #0066ff;
+            border-color: #0066ff;
+          }
+
+          .step-label {
+            color: #ffffff;
+          }
+        }
+      }
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: #2d3748;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0066ff, #00aaff);
+        transition: width 0.5s ease;
+      }
+    }
+  }
+
+  .service-details {
+    margin-bottom: 20px;
+
+    .detail-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: #8b949e;
+      font-size: 12px;
+
+      .material-symbols-outlined {
+        font-size: 16px;
+        color: #4a5568;
+      }
+    }
+  }
+
+  .delivery-eta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #8b949e;
+    font-size: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #2d3748;
+
+    .material-symbols-outlined {
+      font-size: 16px;
+      color: #4a5568;
+    }
+
+    strong {
+      color: #ffffff;
+      font-weight: 500;
+    }
+  }
+
+  .item-actions {
+    margin-top: 16px;
+    text-align: center;
+
+    .btn-ver-dossie {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid #3182ce;
+      color: #3182ce;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #3182ce;
+        color: #ffffff;
+      }
+
+      .material-symbols-outlined {
+        font-size: 16px;
+      }
+    }
+  }
+}

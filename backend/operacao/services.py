@@ -1,4 +1,5 @@
 import datetime
+import re
 from io import BytesIO
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -7,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca, VistoriaItem
+from accounts.models import Estabelecimento, Cliente
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
@@ -92,28 +94,39 @@ class OrdemServicoService:
     """Serviço responsável pelas operações de criação e transição de Ordens de Serviço."""
 
     @staticmethod
-    def listar_historico_por_periodo(funcionario, data_inicial, data_final, status='todos'):
-        """RF-10: Lista histórico restrito ao funcionário com validação de datas."""
+    def listar_historico_por_periodo(estabelecimento, data_inicial, data_final, status='todos'):
+        """RF-10: Lista histórico por estabelecimento (Axioma 5 - Multi-tenancy)."""
         if data_inicial > data_final:
             raise ValidationError("A data inicial não pode ser maior que a data final.")
 
         filtros = {
-            'funcionario': funcionario,
+            'estabelecimento': estabelecimento,
             'data_hora__date__gte': data_inicial,
             'data_hora__date__lte': data_final,
         }
         if status and status != 'todos':
             filtros['status'] = status
 
-        return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico').order_by('-data_hora')
+        return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico', 'funcionario').order_by('-data_hora')
 
     @staticmethod
-    def verificar_conflito(data_hora, duracao):
-        """Verifica sobreposição de horários no pátio."""
+    def verificar_conflito(estabelecimento, data_hora, duracao):
+        """Valida se o slot está disponível e não é retroativo com isolamento SaaS."""
+        if data_hora < timezone.now():
+            raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
+
         fim = data_hora + duracao
+        
+        # Trava Rígida (REQUISITOS_RF22_HORARIOS.pdf - 1.2)
+        limite_operacional = data_hora.replace(hour=18, minute=0, second=0, microsecond=0)
+        if fim > limite_operacional:
+            raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
+
+        # Isolamento SaaS: verifica conflitos apenas no mesmo estabelecimento
         conflitos = OrdemServico.objects.filter(
+            estabelecimento=estabelecimento,
             data_hora__date=data_hora.date(),
-            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO']
+            status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']
         ).select_related('servico')
 
         for os in conflitos:
@@ -123,10 +136,16 @@ class OrdemServicoService:
                 raise ValidationError(f'Conflito com OS das {os_inicio.strftime("%H:%M")} às {os_fim.strftime("%H:%M")}.')
 
     @staticmethod
+    @transaction.atomic
     def criar_com_veiculo(dados, funcionario):
-        """Cria OS garantindo apenas uma ativa por vez."""
+        """Cria OS garantindo apenas uma ativa por vez e validando disponibilidade."""
         servico = get_object_or_404(Servico, pk=dados['servico_id'])
-        OrdemServicoService.verificar_conflito(dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
+        
+        # Lock pessimista no estabelecimento para evitar race condition na reserva de horários
+        # (Axioma 14 / PR-Review RF-22)
+        Estabelecimento.objects.select_for_update().get(id=servico.estabelecimento_id)
+        
+        OrdemServicoService.verificar_conflito(servico.estabelecimento, dados['data_hora'], datetime.timedelta(minutes=servico.duracao_estimada_minutos))
 
         veiculo, _ = Veiculo.objects.update_or_create(
             placa=dados['placa'],
@@ -213,9 +232,63 @@ class OrdemServicoService:
         os.status = 'FINALIZADO'
         os.vaga_patio = dados.get('vaga_patio')
         os.horario_finalizacao = timezone.now()
+        os.observacoes = dados.get('observacoes', os.observacoes)
         os.save()
 
         return os
+    
+
+
+    @staticmethod
+    @transaction.atomic
+    def finalizar_checkout_publico(dados):
+        """RF-23: Cria agendamento B2C garantindo integridade e atomicidade."""
+        estabelecimento = Estabelecimento.objects.filter(slug=dados['slug'], is_active=True).first()
+        if not estabelecimento:
+            raise ValidationError("Estabelecimento não encontrado")
+        
+        servico = Servico.objects.filter(id=dados['servico_id'], estabelecimento=estabelecimento).first()
+        if not servico:
+            raise ValidationError("Serviço não encontrado")
+
+        # LOCK PESSIMISTA (Sugerido no Report RF-22) para evitar Race Condition
+        Estabelecimento.objects.select_for_update().get(id=estabelecimento.id)
+
+        # Validação de disponibilidade (RF-22)
+        OrdemServicoService.verificar_conflito(
+            estabelecimento,
+            dados['data_hora'], 
+            datetime.timedelta(minutes=servico.duracao_estimada_minutos)
+        )
+
+        # Cria ou atualiza o veículo (Cadastro Dinâmico)
+        veiculo, _ = Veiculo.objects.update_or_create(
+            placa=dados['placa'],
+            defaults={
+                'modelo': dados['modelo'],
+                'cor': dados['cor'],
+                'nome_dono': dados['nome_cliente'],
+                'celular_dono': dados['whatsapp'],
+                'estabelecimento': estabelecimento
+            }
+        )
+
+        # RF-25: linka ao perfil Cliente se já existe conta com esse telefone
+        cliente_existente = Cliente.objects.filter(
+            telefone_whatsapp=dados['whatsapp']
+        ).first()
+        if cliente_existente and veiculo.cliente_id != cliente_existente.pk:
+            veiculo.cliente = cliente_existente
+            veiculo.save(update_fields=['cliente'])
+
+        # Cria a Ordem de Serviço inicial no Pátio
+        return OrdemServico.objects.create(
+            estabelecimento=estabelecimento,
+            veiculo=veiculo,
+            servico=servico,
+            data_hora=dados['data_hora'],
+            status='PATIO'
+        )
 
 
 class HistoricoGestorService:
@@ -280,6 +353,75 @@ class HistoricoGestorService:
         }
 
 
+class ClienteGaleriaService:
+    """RF-26: galeria pos-venda visivel ao cliente final."""
+
+    MOMENTOS_ENTRADA = ('VISTORIA_GERAL', 'AVARIA_PREVIA', 'ENTRADA')
+    MOMENTOS_FINALIZACAO = ('FINALIZADO', 'FINALIZACAO')
+
+    @staticmethod
+    def _normalizar_telefone(telefone):
+        return re.sub(r'\D', '', telefone or '')
+
+    @classmethod
+    def _cliente_tem_titularidade(cls, ordem_servico, cliente):
+        if ordem_servico.veiculo.cliente_id == cliente.id:
+            return True
+
+        telefone_cliente = cls._normalizar_telefone(cliente.telefone_whatsapp)
+        telefone_veiculo = cls._normalizar_telefone(ordem_servico.veiculo.celular_dono)
+        return bool(telefone_cliente and telefone_cliente == telefone_veiculo)
+
+    @staticmethod
+    def _calcular_tempo_execucao_minutos(ordem_servico):
+        if not ordem_servico.horario_lavagem or not ordem_servico.horario_finalizacao:
+            return None
+        delta = ordem_servico.horario_finalizacao - ordem_servico.horario_lavagem
+        return max(0, int(delta.total_seconds() // 60))
+
+    @classmethod
+    def _montar_laudo_tecnico(cls, ordem_servico):
+        return {
+            'servico_realizado': ordem_servico.servico.nome,
+            'tempo_execucao_minutos': cls._calcular_tempo_execucao_minutos(ordem_servico),
+            'observacoes': ordem_servico.observacoes or '',
+            'status_final': ordem_servico.status,
+            'status_final_display': ordem_servico.get_status_display(),
+            'placa': ordem_servico.veiculo.placa,
+            'veiculo_modelo': ordem_servico.veiculo.modelo,
+            'unidade': ordem_servico.estabelecimento.nome_fantasia,
+            'data_servico': ordem_servico.data_hora,
+        }
+
+    @classmethod
+    def montar_galeria_pos_venda(cls, ordem_servico_id, cliente):
+        ordem_servico = get_object_or_404(
+            OrdemServico.objects.select_related('veiculo', 'servico', 'estabelecimento'),
+            id=ordem_servico_id,
+        )
+
+        if not cls._cliente_tem_titularidade(ordem_servico, cliente):
+            raise PermissionDenied("Esta OS nao pertence ao cliente autenticado.")
+
+        if ordem_servico.status != 'FINALIZADO':
+            raise ValidationError("Galeria disponivel apenas para ordens finalizadas.")
+
+        midias = (
+            MidiaOrdemServico.objects
+            .filter(
+                ordem_servico=ordem_servico,
+                momento__in=(*cls.MOMENTOS_ENTRADA, *cls.MOMENTOS_FINALIZACAO),
+            )
+            .order_by('id')
+        )
+
+        return {
+            'entrada': [m for m in midias if m.momento in cls.MOMENTOS_ENTRADA],
+            'finalizacao': [m for m in midias if m.momento in cls.MOMENTOS_FINALIZACAO],
+            'laudo_tecnico': cls._montar_laudo_tecnico(ordem_servico),
+        }
+
+
 class KanbanService:
     """RF-14: Agrupa OS operacionais por status para o quadro Kanban."""
 
@@ -290,12 +432,16 @@ class KanbanService:
     def listar_por_estabelecimento(estabelecimento):
         from django.db.models import Q
         hoje = timezone.localdate()
-        # OS ativas (qualquer data) + finalizadas somente hoje
+        # OS do dia atual + pendentes de dias anteriores (em execução) + finalizadas somente hoje
         return (
             OrdemServico.objects
             .filter(estabelecimento=estabelecimento)
             .filter(
-                Q(status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                # OS do dia atual (qualquer status ativo)
+                Q(data_hora__date=hoje, status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                # Pendentes de dias anteriores (em execução)
+                Q(data_hora__date__lt=hoje, status__in=['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE']) |
+                # Finalizadas somente hoje
                 Q(status='FINALIZADO', horario_finalizacao__date=hoje)
             )
             .select_related('veiculo', 'servico')

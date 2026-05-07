@@ -26,6 +26,11 @@ function inlineAngularComponentResources() {
         "styles: ['']",
       );
 
+      transformed = transformed.replace(
+        /styleUrls:\s*\[[^\]]*?\]/g,
+        "styles: ['']",
+      );
+
       return transformed === code ? null : { code: transformed, map: null };
     },
   };

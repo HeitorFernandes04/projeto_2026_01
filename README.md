@@ -57,6 +57,7 @@ O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um *
 | Dashboard Financeiro | Faturamento diário, semanal e mensal com gráficos | Alta |
 | Controle de Status | Atualização do status do serviço em tempo real (Aguardando / Em andamento / Finalizado) | Média |
 | Gestão de Incidentes | Registro, auditoria com evidências e aprovação de avarias e retrabalhos | Alta |
+| Identidade Visual | Upload de logo e sincronização reativa global (Web/Mobile/Portal) | Alta |
 | Notificações | Alertas de novos agendamentos e confirmações automáticas | Média |
 | Avaliações | Visualização e resposta às avaliações recebidas dos clientes | Baixa |
 

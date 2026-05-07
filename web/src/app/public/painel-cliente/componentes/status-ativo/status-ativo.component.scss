@@ -1,0 +1,146 @@
+.status-card {
+  background: #1a1f2e;
+  border: 1px solid #2d3748;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 0 20px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+
+  .status-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    .status-icon {
+      width: 40px;
+      height: 40px;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .material-symbols-outlined {
+        color: #8b949e;
+        font-size: 20px;
+      }
+    }
+
+    .status-info {
+      .status-label {
+        color: #8b949e;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+      }
+
+      .status-text {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 700;
+      }
+    }
+  }
+
+  .progress-section {
+    margin-bottom: 16px;
+
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 12px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 20px;
+        right: 20px;
+        height: 2px;
+        background: #2d3748;
+        z-index: 0;
+      }
+
+      .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+        flex: 1;
+
+        .step-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #2d3748;
+          border: 2px solid #1a1f2e;
+          margin-bottom: 6px;
+          transition: all 0.3s ease;
+        }
+
+        .step-label {
+          color: #8b949e;
+          font-size: 10px;
+          text-align: center;
+          font-weight: 500;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
+        }
+
+        &.active {
+          .step-dot {
+            background: #0066ff;
+            border-color: #0066ff;
+          }
+
+          .step-label {
+            color: #ffffff;
+          }
+        }
+      }
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: #2d3748;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0066ff, #00aaff);
+        transition: width 0.5s ease;
+      }
+    }
+  }
+
+  .delivery-eta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #8b949e;
+    font-size: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #2d3748;
+
+    .material-symbols-outlined {
+      font-size: 18px;
+      color: #4a5568;
+    }
+
+    strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+  }
+}

@@ -1,0 +1,70 @@
+<div class="historico-container">
+  <div class="historico-list">
+    <!-- Loop de itens do histórico vindo do Painel -->
+    <div class="historico-item" *ngFor="let item of historico">
+      <!-- Header com ícone e status -->
+      <div class="status-header">
+        <div class="status-icon">
+          <span class="material-symbols-outlined">inventory_2</span>
+        </div>
+        <div class="status-info">
+          <div class="status-label">Status do Serviço</div>
+          <div class="status-text">Serviço Concluído</div>
+        </div>
+      </div>
+
+      <!-- Progresso com etapas -->
+      <div class="progress-section">
+        <div class="progress-steps">
+          <div class="step active">
+            <div class="step-dot"></div>
+            <span class="step-label">Veículo Recebido</span>
+          </div>
+          <div class="step active">
+            <div class="step-dot"></div>
+            <span class="step-label">Check-list</span>
+          </div>
+          <div class="step active">
+            <div class="step-dot"></div>
+            <span class="step-label">Limpando</span>
+          </div>
+          <div class="step active">
+            <div class="step-dot"></div>
+            <span class="step-label">Pronto para Retirar</span>
+          </div>
+        </div>
+        
+        <!-- Barra de progresso -->
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <!-- Informações do serviço -->
+      <div class="service-details">
+        <div class="detail-row">
+          <span class="material-symbols-outlined">directions_car</span>
+          <span>{{ item.placa || 'PLACA' }} - {{ item.modelo || 'Modelo não informado' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="material-symbols-outlined">local_car_wash</span>
+          <span>{{ item.servico || 'Serviço' }}</span>
+        </div>
+      </div>
+
+      <!-- Previsão de entrega -->
+      <div class="delivery-eta">
+        <span class="material-symbols-outlined">schedule</span>
+        Concluído em: <strong>{{ item.data || '--/--/----' }} às {{ item.horario || '--:--' }}</strong>
+      </div>
+
+      <!-- Botão de ação -->
+      <div class="item-actions">
+        <button class="btn-ver-dossie" (click)="verDossie(item.id)">
+          <span class="material-symbols-outlined">visibility</span>
+          Ver Dossiê
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,137 @@
+<div class="galeria-transparencia-wrapper">
+  <header class="portal-header">
+    <div class="header-inner">
+      <img src="/logo.jpeg" class="brand-logo" alt="Lava-Me Logo">
+      <button class="btn-sair-publico" (click)="sair()">Sair</button>
+    </div>
+  </header>
+
+  <main class="content-body">
+    <button class="btn-voltar-link" (click)="voltar()">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Voltar
+    </button>
+
+    <section class="hero-section">
+      <h1 class="titulo-galeria">Galeria de Transparencia</h1>
+      <p class="subtitulo-galeria">Fotos finais e laudo tecnico do atendimento</p>
+    </section>
+
+    @if (carregando) {
+      <section class="state-card" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Carregando galeria...</p>
+      </section>
+    } @else if (erro) {
+      <section class="state-card erro-state" aria-live="polite">
+        <span class="material-symbols-outlined">error_outline</span>
+        <p>{{ erro }}</p>
+        @if (osId) {
+          <button class="btn-primary" (click)="carregarGaleria()">Tentar novamente</button>
+        }
+      </section>
+    } @else {
+      <div class="card-container-transparencia">
+        <div class="section-header">
+          <div class="icon-circle blue-bg">
+            <span class="material-symbols-outlined">fact_check</span>
+          </div>
+          <div class="text-group">
+            <h2 class="section-title">Fotos da auditoria inicial</h2>
+            <p class="section-subtitle">Registro do estado antes do servico</p>
+          </div>
+        </div>
+
+        @if (fotosEntrada().length === 0) {
+          <p class="sem-fotos">Nenhuma foto inicial foi liberada para esta OS.</p>
+        } @else {
+          <div class="fotos-grid">
+            @for (foto of fotosEntrada(); track foto.id) {
+              <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
+                <img [src]="foto.arquivo_url" [alt]="'Foto inicial ' + foto.id" class="foto-img" loading="lazy">
+                <span class="foto-label">{{ formatarMomentoFoto(foto.momento) }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="card-container-transparencia">
+        <div class="section-header">
+          <div class="icon-circle green-bg">
+            <span class="material-symbols-outlined">verified</span>
+          </div>
+          <div class="text-group">
+            <h2 class="section-title">Fotos do estado final</h2>
+            <p class="section-subtitle">Entrega e conferencia de qualidade</p>
+          </div>
+        </div>
+
+        @if (fotosFinalizacao().length === 0) {
+          <p class="sem-fotos">Nenhuma foto final foi liberada para esta OS.</p>
+        } @else {
+          <div class="fotos-grid">
+            @for (foto of fotosFinalizacao(); track foto.id) {
+              <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
+                <img [src]="foto.arquivo_url" [alt]="'Foto final ' + foto.id" class="foto-img" loading="lazy">
+                <span class="foto-label">{{ formatarMomentoFoto(foto.momento) }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="card-container-transparencia">
+        <div class="section-header">
+          <div class="icon-circle blue-bg">
+            <span class="material-symbols-outlined">description</span>
+          </div>
+          <div class="text-group">
+            <h2 class="section-title">Laudo tecnico</h2>
+            <p class="section-subtitle">Resumo operacional liberado ao cliente</p>
+          </div>
+        </div>
+
+        <div class="laudo-grid">
+          <div class="laudo-item">
+            <span class="label">Veiculo</span>
+            <strong>{{ laudoTecnico()?.veiculo_modelo }} - {{ laudoTecnico()?.placa }}</strong>
+          </div>
+          <div class="laudo-item">
+            <span class="label">Unidade</span>
+            <strong>{{ laudoTecnico()?.unidade }}</strong>
+          </div>
+          <div class="laudo-item">
+            <span class="label">Data do servico</span>
+            <strong>{{ laudoTecnico()?.data_servico | date:'dd/MM/yyyy HH:mm' }}</strong>
+          </div>
+          <div class="laudo-item">
+            <span class="label">Servico realizado</span>
+            <strong>{{ laudoTecnico()?.servico_realizado }}</strong>
+          </div>
+          <div class="laudo-item">
+            <span class="label">Tempo de execucao</span>
+            <strong>{{ tempoExecucao() }}</strong>
+          </div>
+          <div class="laudo-item laudo-status-final" [ngClass]="statusFinalClasse()">
+            <span class="label">Status final</span>
+            <div class="status-row" [ngClass]="statusFinalClasse()">
+              <strong>{{ laudoTecnico()?.status_final_display || laudoTecnico()?.status_final }}</strong>
+              <span>{{ statusFinalDescricao() }}</span>
+            </div>
+          </div>
+          <div class="laudo-item full">
+            <span class="label">Observacoes da vistoria final</span>
+            <p>{{ laudoTecnico()?.observacoes || 'Sem observacoes registradas.' }}</p>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+
+  @if (fotoAmpliada) {
+    <button class="lightbox" (click)="fecharFoto()" aria-label="Fechar foto ampliada">
+      <img [src]="fotoAmpliada" alt="Foto ampliada">
+    </button>
+  }
+</div>

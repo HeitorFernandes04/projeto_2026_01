@@ -1,4 +1,6 @@
 import '@testing-library/jest-dom';
+import 'zone.js';
+import 'zone.js/testing';
 import { getTestBed } from '@angular/core/testing';
 import {
   BrowserTestingModule,
@@ -9,6 +11,11 @@ getTestBed().initTestEnvironment(
   BrowserTestingModule,
   platformBrowserTesting(),
 );
+
+Object.defineProperty(window, 'scrollTo', {
+  value: vi.fn(),
+  writable: true,
+});
 
 // Global test setup for Vitest with Angular-like syntax
 declare global {

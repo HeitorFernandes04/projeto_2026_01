@@ -1,5 +1,4 @@
-// A URL base é lida do arquivo .env (variável VITE_API_URL).
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
+const BASE_URL = 'http://127.0.0.1:8000';
 
 // --- INTERFACES DE TIPAGEM ---
 
@@ -112,7 +111,9 @@ export async function registerUsuario(dados: {
 
 /** RF-03 — Lista Ordens de Serviço do dia (Pátio) */
 export async function getOrdensServicoHoje() {
-  return request('/api/ordens-servico/hoje/');
+  return request('/api/ordens-servico/hoje/', {
+    cache: 'no-store'
+  });
 }
 
 /** RF-10 — Lista histórico por período */
@@ -139,9 +140,14 @@ export async function uploadFotos(
 ) {
   const formData = new FormData();
   formData.append('momento', momento);
+  
   fotoBlobs.forEach((blob, i) => {
+    console.log(`Blob ${i + 1}: tamanho=${blob.size} bytes, tipo=${blob.type}`);
     formData.append('arquivos', blob, `foto_${i + 1}.jpg`);
   });
+
+  console.log(`Enviando FormData para OS ${id}, momento: ${momento}`);
+  console.log('FormData entries:', Array.from(formData.entries()));
 
   return request(`/api/ordens-servico/${id}/fotos/`, {
     method: 'POST',
@@ -150,7 +156,9 @@ export async function uploadFotos(
 }
 
 export async function getMeuPerfil() {
-  return request('/api/auth/meu_perfil/');
+  return request('/api/auth/meu_perfil/', {
+    cache: 'no-store'
+  });
 }
 
 /** RF-04 — Cria uma nova Ordem de Serviço */

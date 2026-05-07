@@ -138,11 +138,6 @@ GitHub.sublime-settings
 !.vscode/launch.json 
 !.vscode/extensions.json 
 
-# Documentação e Logs de IA IA-Generated #
-documentos\ de\ organização\ desenvolvimento/
-.chroma_db/
-.agents/
-
 # Node.js
 node_modules/
 npm-debug.log
@@ -157,3 +152,5 @@ out-tsc/
 .capacitor/
 android/
 ios/
+
+.planning/

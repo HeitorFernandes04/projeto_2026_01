@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -9,38 +9,42 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss',
 })
 export class LoginComponent {
-  // Propriedades vinculadas ao formulário via [(ngModel)]
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
+
   email = '';
   password = '';
+  erro = '';
 
-  constructor(
-    private router: Router,
-    private authService: AuthService
-  ) {}
-
-  /**
-   * Realiza a autenticação real no backend Django.
-   * Substitui a simulação anterior para garantir o cumprimento do Axioma 14.
-   */
-  acessar() {
+  acessar(): void {
+    this.erro = '';
     const credentials = {
       email: this.email,
-      password: this.password
+      password: this.password,
     };
 
     this.authService.login(credentials).subscribe({
-      next: (response) => {
+      next: () => {
         console.log('Login realizado com sucesso. Token armazenado.');
-        // Redireciona para o fluxo de gestão após obter o token
         this.router.navigate(['/gestao/dashboard']);
       },
       error: (err) => {
-        console.error('Falha na autenticação:', err);
-        alert('Credenciais inválidas ou erro de conexão com o servidor.');
-      }
+        console.error('Falha na autenticacao:', err);
+        this.erro = this.mensagemErro(err);
+        this.cdr.detectChanges();
+      },
     });
+  }
+
+  private mensagemErro(err: any): string {
+    if (err?.status === 400 || err?.status === 401 || err?.status === 403) {
+      return 'Senha incorreta. Confira seus dados e tente novamente.';
+    }
+
+    return 'Nao foi possivel acessar agora. Tente novamente em instantes.';
   }
 }

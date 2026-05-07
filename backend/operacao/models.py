@@ -1,4 +1,6 @@
+import uuid
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 from core.models import Servico, Veiculo, TagPeca # IMPORTANDO DO CORE
 from accounts.models import Estabelecimento
@@ -19,7 +21,7 @@ class OrdemServico(models.Model):
     servico = models.ForeignKey(Servico, on_delete=models.PROTECT)
     funcionario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='PATIO')
-    data_hora = models.DateTimeField(auto_now_add=True)
+    data_hora = models.DateTimeField(default=timezone.now)
     
     # Campos adicionais para controle do fluxo industrial
     laudo_vistoria = models.TextField(blank=True, null=True)
@@ -31,10 +33,28 @@ class OrdemServico(models.Model):
     horario_finalizacao = models.DateTimeField(null=True, blank=True)
     observacoes = models.TextField(blank=True, null=True)
 
+    # RF-24: Campos de cancelamento autônomo pelo cliente portal
+    slug_cancelamento   = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True, editable=False)
+    cancelado_em        = models.DateTimeField(null=True, blank=True)
+    motivo_cancelamento = models.TextField(blank=True, null=True)
+    cancelado_por       = models.CharField(max_length=50, blank=True, null=True)
+
 class MidiaOrdemServico(models.Model):
+    MOMENTO_CHOICES = [
+        ('VISTORIA_GERAL', 'Vistoria geral'),
+        ('AVARIA_PREVIA', 'Avaria previa'),
+        ('FINALIZADO', 'Finalizado'),
+        ('EXECUCAO', 'Execucao'),
+        ('ENTRADA', 'Entrada'),
+        ('FINALIZACAO', 'Finalizacao'),
+        ('INCIDENTE', 'Incidente'),
+        ('ACABAMENTO', 'Acabamento'),
+        ('PROCESSO', 'Processo'),
+    ]
+
     ordem_servico = models.ForeignKey(OrdemServico, on_delete=models.CASCADE, related_name='midias')
     arquivo = models.ImageField(upload_to='os/')
-    momento = models.CharField(max_length=20)
+    momento = models.CharField(max_length=20, choices=MOMENTO_CHOICES)
     
 class IncidenteOS(models.Model):
     """Registro de incidentes operacionais que bloqueiam a OS."""
