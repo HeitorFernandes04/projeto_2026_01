@@ -1,4 +1,5 @@
 import os
+import uuid
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -43,7 +44,6 @@ class Estabelecimento(models.Model):
         Usa uuid4 curto como sufixo em caso de colisão para garantir
         unicidade de forma atômica (sem necessidade de dois saves).
         """
-        import uuid
         base = slugify(self.nome_fantasia)
         slug_candidato = base
         qs = Estabelecimento.objects.filter(slug=slug_candidato)

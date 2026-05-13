@@ -53,7 +53,6 @@ class MidiaOrdemServico(models.Model):
         ('ENTRADA', 'Entrada'),
         ('FINALIZACAO', 'Finalizacao'),
         ('INCIDENTE', 'Incidente'),
-        ('ACABAMENTO', 'Acabamento'),
         ('PROCESSO', 'Processo'),
     ]
 

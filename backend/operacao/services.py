@@ -205,6 +205,12 @@ class OrdemServicoService:
             os.status = 'LIBERACAO'
             os.save()
 
+        else:
+            raise ValueError(
+                f"Não é possível avançar a etapa de uma OS com status '{status_atual}'. "
+                "Use finalizar_ordem_servico_industrial para concluir uma OS em LIBERACAO."
+            )
+
         return os
 
     @staticmethod

@@ -42,11 +42,11 @@ class TestStateMachineSemAcabamento:
         os_atualizada = OrdemServicoService.avancar_etapa(os.id, {})
         assert os_atualizada.status == 'LIBERACAO'
 
-    def test_avancar_em_liberacao_nao_altera_status(self):
-        """LIBERACAO não tem próxima etapa — avancar_etapa não deve mudar o status."""
+    def test_avancar_em_liberacao_levanta_value_error(self):
+        """LIBERACAO não tem próxima etapa — avancar_etapa deve lançar ValueError."""
         os = OrdemServicoFactory(status='LIBERACAO')
-        os_apos = OrdemServicoService.avancar_etapa(os.id, {})
-        assert os_apos.status == 'LIBERACAO'
+        with pytest.raises(ValueError, match="LIBERACAO"):
+            OrdemServicoService.avancar_etapa(os.id, {})
 
 
 # ---------------------------------------------------------------------------
