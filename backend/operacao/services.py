@@ -200,14 +200,8 @@ class OrdemServicoService:
             os.comentario_lavagem = dados.get('comentario_lavagem', '')
             os.save()
 
-        # ETAPA 3: EM_EXECUCAO sub-fase lavagem → acabamento (status permanece EM_EXECUCAO)
-        elif status_atual == 'EM_EXECUCAO' and not os.horario_acabamento:
-            os.horario_acabamento = agora
-            os.save()
-
-        # ETAPA 4: EM_EXECUCAO (acabamento concluído) → LIBERACAO
-        elif status_atual == 'EM_EXECUCAO' and os.horario_acabamento:
-            os.comentario_acabamento = dados.get('comentario_acabamento', '')
+        # ETAPA 3: EM_EXECUCAO → LIBERACAO (RF-27/RF-30: etapa de acabamento removida)
+        elif status_atual == 'EM_EXECUCAO':
             os.status = 'LIBERACAO'
             os.save()
 

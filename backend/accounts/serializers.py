@@ -8,7 +8,7 @@ class EstabelecimentoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Estabelecimento
-        fields = ['id', 'nome_fantasia', 'cnpj', 'endereco_completo', 'is_active', 'slug', 'logo', 'logo_url']
+        fields = ['id', 'nome_fantasia', 'cnpj', 'endereco_completo', 'is_active', 'slug', 'logo', 'logo_url', 'latitude', 'longitude']
 
     def get_logo_url(self, obj):
         if obj.logo:
@@ -25,7 +25,7 @@ class EstabelecimentoUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Estabelecimento
-        fields = ['nome_fantasia', 'cnpj', 'endereco_completo', 'slug', 'logo', 'logo_url']
+        fields = ['nome_fantasia', 'cnpj', 'endereco_completo', 'slug', 'logo', 'logo_url', 'latitude', 'longitude']
         read_only_fields = ['slug']
 
     def get_logo_url(self, obj):

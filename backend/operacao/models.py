@@ -1,4 +1,5 @@
 import uuid
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -26,12 +27,16 @@ class OrdemServico(models.Model):
     # Campos adicionais para controle do fluxo industrial
     laudo_vistoria = models.TextField(blank=True, null=True)
     horario_lavagem = models.DateTimeField(null=True, blank=True)
-    horario_acabamento = models.DateTimeField(null=True, blank=True)
     comentario_lavagem = models.TextField(blank=True, null=True)
-    comentario_acabamento = models.TextField(blank=True, null=True)
     vaga_patio = models.CharField(max_length=20, blank=True, null=True)
     horario_finalizacao = models.DateTimeField(null=True, blank=True)
     observacoes = models.TextField(blank=True, null=True)
+
+    # RF-27.2: Progresso percentual para acompanhamento B2C em tempo real
+    etapa_atual = models.PositiveSmallIntegerField(
+        default=0,
+        validators=[MaxValueValidator(100)],
+    )
 
     # RF-24: Campos de cancelamento autônomo pelo cliente portal
     slug_cancelamento   = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True, editable=False)

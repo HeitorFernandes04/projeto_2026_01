@@ -47,33 +47,17 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
     midias = MidiaOrdemServicoSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
-    # Campo virtual para controlar a esteira no Frontend
-    etapa_atual = serializers.SerializerMethodField()
-
     class Meta:
         model = OrdemServico
         fields = [
             'id', 'veiculo', 'servico', 'data_hora', 'status', 'status_display',
             'etapa_atual',
-            'laudo_vistoria', 'comentario_lavagem', 'comentario_acabamento',
+            'laudo_vistoria', 'comentario_lavagem',
             'vaga_patio', 'horario_lavagem',
-            'horario_acabamento', 'horario_finalizacao', 'observacoes', 'midias',
+            'horario_finalizacao', 'observacoes', 'midias',
             'slug_cancelamento',  # RF-24: UUID para cancelamento autônomo pelo cliente portal
         ]
-        read_only_fields = [
-            'horario_lavagem',
-            'horario_acabamento', 'horario_finalizacao'
-        ]
-
-    def get_etapa_atual(self, obj):
-        """Lógica de Redirecionamento Cronológica Estrita."""
-        if obj.status in ('FINALIZADO', 'LIBERACAO') or obj.horario_finalizacao or obj.comentario_acabamento:
-            return 4
-        if obj.horario_acabamento:
-            return 3
-        if obj.horario_lavagem:
-            return 2
-        return 1
+        read_only_fields = ['horario_lavagem', 'horario_finalizacao']
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +145,7 @@ class HistoricoOrdemServicoFiltroSerializer(serializers.Serializer):
 class ProximaEtapaSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrdemServico
-        fields = ['laudo_vistoria', 'comentario_lavagem', 'comentario_acabamento']
+        fields = ['laudo_vistoria', 'comentario_lavagem']
 
 
 class FinalizarIndustrialSerializer(serializers.ModelSerializer):
@@ -201,9 +185,9 @@ class KanbanCardSerializer(serializers.ModelSerializer):
                 ultimo = max(incidentes, key=lambda i: i.data_registro)
                 delta = ultimo.data_registro - obj.horario_lavagem
                 return max(0, int(delta.total_seconds() / 60))
-        # RN: LIBERACAO — execução encerrada, congela no fim do acabamento
-        if obj.status == 'LIBERACAO' and obj.horario_acabamento:
-            delta = obj.horario_acabamento - obj.horario_lavagem
+        # RN: LIBERACAO — fluxo direto de EM_EXECUCAO (RF-27/RF-30), conta até finalização
+        if obj.status == 'LIBERACAO' and obj.horario_finalizacao:
+            delta = obj.horario_finalizacao - obj.horario_lavagem
             return max(0, int(delta.total_seconds() / 60))
         # RN: FINALIZADO — congela no horário de finalização real
         if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
@@ -289,7 +273,6 @@ class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
             'funcionario_responsavel_nome',
             'servico',
             'horario_lavagem',
-            'horario_acabamento',
             'horario_finalizacao',
         ]
 
@@ -505,13 +488,4 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
         return formatar_placa(obj.veiculo.placa)
 
     def get_etapa_atual(self, obj):
-        mapa = {
-            'PATIO': 1,
-            'VISTORIA_INICIAL': 2,
-            'EM_EXECUCAO': 3,
-            'LIBERACAO': 4,
-            'FINALIZADO': 4,
-            'CANCELADO': 0,
-            'BLOQUEADO_INCIDENTE': 3,
-        }
-        return mapa.get(obj.status, 1)
+        return obj.etapa_atual

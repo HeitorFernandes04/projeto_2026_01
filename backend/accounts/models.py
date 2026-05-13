@@ -20,6 +20,10 @@ class Estabelecimento(models.Model):
     horario_abertura = models.TimeField(default="08:00")
     horario_fechamento = models.TimeField(default="18:00")
 
+    # RF-27.1: Geolocalização para o mapa do app B2C
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
     class Meta:
         verbose_name = "Estabelecimento"
         verbose_name_plural = "Estabelecimentos"
@@ -85,7 +89,6 @@ class User(AbstractUser):
 class CargoChoices(models.TextChoices):
     GESTOR = 'GESTOR', 'Gestor'
     LAVADOR = 'LAVADOR', 'Lavador'
-    DETALHISTA = 'DETALHISTA', 'Detalhista'
 
 
 class Cliente(models.Model):
