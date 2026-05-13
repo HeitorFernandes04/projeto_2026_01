@@ -103,19 +103,19 @@ Antes de gerar a release com a RF-21 e Portal do Cliente, confirme:
 - **Arquivos:** `backend/core/models.py`
 - **O que é:** `Veiculo` possui `nome_dono` e `celular_dono` mesmo possuindo uma ForeignKey para `Cliente`. Fere o princípio *Single Source of Truth*.
 - **O que fazer:** Remover os campos duplicados e puxar esses dados diretamente do relacionamento (`veiculo.cliente.telefone_whatsapp`). Exigirá janela de migração (`makemigrations`).
-- **Status:** 🟡 Aberta (Média Severidade)
+- **Status:** 🟡 Aberta (Média Severidade) — **Confirmada em 10/05/2026**
 
 ### [DT-007] API: Poluição e Redundância de Endpoints
 - **Arquivos:** `backend/*/urls.py`
 - **O que é:** O sistema possui quatro endpoints de histórico diferentes (`api/cliente/historico/`, `api/publico/historico/`, `api/ordens-servico/historico/`, `api/ordens-servico/gestor/historico/`). Além disso, o ViewSet `TagsPeca` é registrado duas vezes (em `gestao/` e `ordens-servico/`).
 - **O que fazer:** Consolidar numa única API de histórico usando um ViewSet dinâmico com `get_queryset()` que diferencie pelo tipo de permissão (`request.user.role`). Desduplicar registro do ViewSet.
-- **Status:** 🔴 Aberta (Alta Severidade / Arquitetura)
+- **Status:** 🔴 Aberta (Alta Severidade / Arquitetura) — **Confirmada em 10/05/2026**
 
 ### [DT-008] DB: Fragmentação de Perfis de Colaborador
 - **Arquivos:** `backend/accounts/models.py`
 - **O que é:** `Gestor` e `Funcionario` são tabelas diferentes que resolvem exatamente o mesmo relacionamento OneToOne com `User` e `Estabelecimento`.
 - **O que fazer:** Unificar em `PerfilColaborador` e usar um campo `role` enum.
-- **Status:** 🟡 Aberta (Média prioridade)
+- **Status:** 🟡 Aberta (Média prioridade) — **Confirmada em 10/05/2026**
 
 ---
 
@@ -125,31 +125,31 @@ Antes de gerar a release com a RF-21 e Portal do Cliente, confirme:
 - **Arquivos:** `backend/operacao/models.py`, `backend/agendamento_publico/services.py`
 - **O que é:** O frontend espera um campo `etapa_atual` (0-100) para exibir a barra de progresso no painel do cliente. Atualmente, o backend não possui este campo no modelo `OrdemServico` e envia um valor fixo `0` via `AuthB2CService.montar_painel_cliente`.
 - **O que fazer:** Criar campo `etapa_atual` no modelo `OrdemServico` e implementar a lógica de atualização automática baseada na mudança de status ou finalização de tarefas.
-- **Status:** 🔴 Aberta (Alta Prioridade - Sprint 4)
+- **Status:** 🔴 Aberta (Alta Prioridade - Sprint 4) — **Confirmada em 10/05/2026**
 
 ### [DT-011] Qualidade: Cobertura Mobile Crítica e Conflito de Dependências
 - **Arquivos:** `mobile/package.json`, `mobile/vitest.config.ts`
 - **O que é:** O projeto Mobile possui apenas 3 arquivos de teste. Além disso, há um conflito de versões do Vitest (`0.34` vs `4.1`) que impede a geração de relatórios de cobertura (ERESOLVE).
 - **O que fazer:** Sincronizar as versões do Vitest entre Web e Mobile (Upgrade para v4+) e iniciar suíte de testes para as telas de Painel e Checkout Mobile.
-- **Status:** 🔴 Aberta (Alta Prioridade - QA)
+- **Status:** 🔴 Aberta (Alta Prioridade - QA) — **Confirmada em 10/05/2026**
 
 ### [DT-012] Limpeza: Logs de Depuração em Produção
 - **Arquivos:** `backend/core/views.py`, `web/src/app/services/servico.service.ts`, `web/src/app/public/painel-cliente/painel.component.ts`
 - **O que é:** Presença de `print()` e `console.log()` com dados de depuração que poluem o log de produção e podem expor estrutura de dados interna.
 - **O que fazer:** Substituir `print()` por `logger.info/error` no backend e remover `console.log` no frontend.
-- **Status:** 🔴 Aberta (Baixa Prioridade)
+- **Status:** 🔴 Aberta (Baixa Prioridade) — **Confirmada em 10/05/2026**
 
 ### [DT-013] Organização: Scripts de Manutenção Órfãos
 - **Arquivos:** `backend/limpar_tabelas_antigas.py`, `backend/manual_test_register_deprecated.py`
 - **O que é:** Scripts de utilidade técnica estão soltos na raiz do projeto backend.
 - **O que fazer:** Mover para um diretório `backend/scripts/utils/` ou deletar se não forem mais necessários após a migração para PostgreSQL.
-- **Status:** 🟡 Aberta (Baixa Prioridade)
+- **Status:** 🟡 Aberta (Baixa Prioridade) — **Confirmada em 10/05/2026**
 
 ### [DT-014] Limpeza: Descontinuação do Fluxo de "Acabamento"
 - **Arquivos:** `backend/accounts/models.py`, `backend/operacao/models.py`, `mobile/src/components/EstadoAcabamento.tsx`
 - **O que é:** Conforme *ESPECIFICACAO_LIMPEZA_ARQUITETURAL.pdf*, o fluxo de acabamento e o cargo de Detalhista devem ser removidos para agilizar a esteira industrial. O código atual ainda mantém esses resíduos.
 - **O que fazer:** Remover `DETALHISTA` de `CargoChoices`, deletar campos de acabamento em `OrdemServico`, refatorar `avancar_etapa` para pular de `EM_EXECUCAO` direto para `LIBERACAO` e remover componentes/imports no Mobile.
-- **Status:** 🔴 Aberta (Alta Prioridade - Sprint 4)
+- **Status:** 🔴 Aberta (Alta Prioridade - Sprint 4) — **Confirmada em 10/05/2026**
 
 ### [DT-015] Mobile: Padronização de Dados e Melhoria de UX
 - **Arquivos:** `mobile/src/pages/atendimento/NovaOrdemServico.tsx`
@@ -159,7 +159,19 @@ Antes de gerar a release com a RF-21 e Portal do Cliente, confirme:
 
 ### [DT-016] UX/Arquitetura: Sistema de Temas (Dark/Light Mode) Cross-Platform
 - **Arquivos:** Global (Web e Mobile)
-- **O que é:** Necessidade de permitir que cada usuário (Gestor no Web, Funcionário no Mobile e futuro Cliente no Mobile) escolha seu tema visual de preferência.
-- **O que fazer:** Implementar design system baseado em variáveis CSS (`:root` vs `.dark-theme`), criar serviço de persistência de tema no `localStorage` por dispositivo e adicionar toggle de troca (Sol/Lua) em todas as interfaces.
+- **O que é:** Necessidade de permitir que cada usuário escolha seu tema visual.
+- **O que fazer:** Implementar design system baseado em variáveis CSS e serviço de persistência.
 - **Status:** 🔴 Aberta (Nova - Sprint 4)
+
+### [DT-017] Segurança: Vulnerabilidades Críticas em Dependências (Web/Mobile)
+- **Arquivos:** `mobile/package.json`, `web/package.json`
+- **O que é:** Auditoria identificou riscos de execução de código arbitrário (`@babel/plugin-transform-modules-systemjs` no Mobile) e Path Traversal (`fast-uri` no Web).
+- **O que fazer:** Executar `npm audit fix` e validar compatibilidade de breaking changes (`vite@8`, `jsdom@29`).
+- **Status:** 🔴 Aberta (Alta Severidade - Auditoria 10/05)
+
+### [DT-018] Infraestrutura: Persistência Local do RAG na Raiz do Backend
+- **Arquivos:** `backend/.chroma_db/`
+- **O que é:** O banco de vetores do RAG está sendo persistido diretamente na raiz do projeto backend, poluindo o diretório de trabalho e dificultando a gestão de ignore do Git.
+- **O que fazer:** Mover a persistência para um diretório de cache/dados persistentes (`backend/data/rag_db/`) e atualizar as configurações do MCP/Scripts.
+- **Status:** 🟡 Aberta (Baixa Prioridade - Auditoria 10/05)
 

@@ -3,7 +3,7 @@
 > **Plataforma inteligente de gestão e agendamento para lava-jatos e estéticas automotivas**
 
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
-![Versão](https://img.shields.io/badge/versão-2.0.0-blue)
+![Versão](https://img.shields.io/badge/versão-3.0.0--rc-blue)
 ![Licença](https://img.shields.io/badge/licença-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![Django](https://img.shields.io/badge/Django-5.x-green?logo=django)
@@ -39,7 +39,7 @@ O **Lava-Me** é uma plataforma completa que conecta proprietários de lava-jato
 
 **Para o cliente:** Encontrar um lava-jato de confiança, verificar disponibilidade de horários e fazer um agendamento ainda exige ligações telefônicas ou deslocamento físico até o estabelecimento.
 
-O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um **painel de gestão web** para a gerência, um **aplicativo mobile** focado exclusivamente na operação do **funcionário** (lavadores, atendentes), e um **portal de autoagendamento via link** para o cliente final, dispensando a necessidade de instalação de aplicativos.
+O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um **painel de gestão web** para a gerência, um **aplicativo mobile B2B** focado na operação do **funcionário** (lavadores, atendentes), e um **aplicativo mobile B2C** focado na jornada do **cliente final** (agendamento e acompanhamento).
 
 > 📌 Projeto desenvolvido na disciplina de **Projeto de Sistemas** — Curso de Ciência da Computação, Universidade Federal do Tocantins (UFT), sob orientação do Prof. Dr. Edeilson Milhomem da Silva.
 
@@ -49,33 +49,39 @@ O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um *
 
 ### 🏢 Módulo do Estabelecimento (Web)
 
-| Funcionalidade | Descrição | Prioridade |
+| Funcionalidade | Descrição | RF Relacionado |
 |---|---|---|
-| Agenda de Serviços | Visualização e gestão de todos os agendamentos do dia/semana | Alta |
-| Cadastro de Serviços | Registro de tipos de serviço, duração estimada e valores | Alta |
-| Gestão de Clientes | Histórico de veículos e atendimentos por cliente | Alta |
-| Dashboard Financeiro | Faturamento diário, semanal e mensal com gráficos | Alta |
-| Controle de Status | Atualização do status do serviço em tempo real (Aguardando / Em andamento / Finalizado) | Média |
-| Gestão de Incidentes | Registro, auditoria com evidências e aprovação de avarias e retrabalhos | Alta |
-| Identidade Visual | Upload de logo e sincronização reativa global (Web/Mobile/Portal) | Alta |
-| Notificações | Alertas de novos agendamentos e confirmações automáticas | Média |
-| Avaliações | Visualização e resposta às avaliações recebidas dos clientes | Baixa |
+| Kanban de Pista | Visualização em colunas (Pátio, Execução, Liberação) para gestão em tempo real | RF-14 |
+| Gestão de Serviços | Cadastro de tipos de lavagem, preços e tempos estimados | RF-11 |
+| Administração de Equipe | Controle de acesso e permissões para funcionários da pista | RF-12 |
+| Configurações | Personalização de logotipo e dados do estabelecimento | RF-13 |
+| Central de Incidentes | Auditoria fotográfica side-by-side e resolução de sinistros | RF-15, RF-31 |
+| Histórico e Auditoria | Consulta detalhada de OS passadas com galeria de vistorias | RF-17, RF-18 |
+| Dashboard Executivo | Indicadores de faturamento, volume de serviços e eficiência da equipe | RF-19, RF-20 |
+| Saneamento de Dados | Unificação de APIs de histórico para performance e segurança | RF-31 |
 
 ### 📱 Módulo do Funcionário (Mobile)
 
-| Funcionalidade | Descrição | Prioridade |
+| Funcionalidade | Descrição | RF Relacionado |
 |---|---|---|
-| Execução de Serviços | Acesso às ordens de serviço designadas, com checklist de tarefas | Alta |
-| Apontamento e Avarias | Registro fotográfico do veículo antes e durante o serviço | Alta |
-| Status Operacional | Alteração de status (Iniciado, Pausado, Concluído) em tempo real | Alta |
+| Esteira de Produção | Fluxo guiado por abas (Vistoria -> Execução -> Entrega) | RF-05 |
+| Vistoria e Avarias | Registro obrigatório de fotos e grid de danos prévios | RF-06 |
+| Entrada Rápida | Check-in expresso de veículos sem agendamento prévio | RF-08, RF-30 |
+| Registro de Incidente | Botão de pânico para reportar danos durante a operação | RF-09 |
+| Sincronização Offline | Upload de fotos em background para lidar com sinal oscilante | RF-10 |
+| Otimização de Fluxo | Pulo automático da etapa de acabamento para ganho de agilidade | RF-30 |
 
-### 🌐 Módulo do Cliente (Portal Web B2C)
+### 🌐 Módulo do Cliente (App Mobile B2C)
 
-| Funcionalidade | Descrição | Prioridade |
+| Funcionalidade | Descrição | RF Relacionado |
 |---|---|---|
-| Autoagendamento | Interface acessível via link (ex: `/agendar/meu-lava-jato`) para marcar serviços | Alta |
-| Perfil do Estabelecimento | Visualização dos serviços disponíveis, preços e informações do local | Alta |
-| Acompanhamento | Verificação do status do agendamento (Confirmado, Finalizado) | Média |
+| Busca e Mapa | Localização de estabelecimentos próximos via integração com Maps | RF-28 |
+| Agendamento Mobile | Fluxo de reserva (Veículo, Serviço, Horário) via aplicativo | RF-23, RF-29 |
+| Login via OTP | Autenticação simplificada e segura via código no WhatsApp | RF-29 |
+| Acompanhamento Real-Time | Barra de progresso animada baseada na etapa atual do serviço | RF-29 |
+| Histórico de Veículos | Gestão de frotas pessoais e consulta de lavagens passadas | RF-25 |
+| Galeria de Qualidade | Visualização das fotos do veículo pronto antes da retirada | RF-26 |
+| Cancelamento Autônomo | Gestão de agendamentos futuros com liberação automática de vaga | RF-24 |
 
 ---
 
@@ -94,24 +100,22 @@ Este projeto adota práticas avançadas de desenvolvimento auxiliado por agentes
 O sistema segue uma arquitetura de **três camadas** com separação clara entre backend, frontend web e aplicativo mobile:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      CLIENTES                           │
-│         App Mobile (Ionic)   │   Painel Web (Angular)   │
-└──────────────────┬──────────────────────┬───────────────┘
-                   │                      │
-                   └──────────┬───────────┘
-                              │  REST API (JSON)
-                   ┌──────────▼───────────┐
-                   │   Backend Django      │
-                   │   (API REST)          │
-                   │   Django REST         │
-                   │   Framework           │
-                   └──────────┬───────────┘
-                              │
-                   ┌──────────▼───────────┐
-                   │   Banco de Dados      │
-                   │   PostgreSQL          │
-                   └──────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                CLIENTES                                 │
+│  App B2B (Staff)   │   App B2C (Cliente)   │   Painel Web (Gestão)      │
+└─────────┬──────────┴───────────┬───────────┴───────────┬─────────────────┘
+          │                      │                       │
+          └──────────────────────┼───────────────────────┘
+                                 │  REST API (JSON)
+                      ┌──────────▼───────────┐
+                      │   Backend Django      │
+                      │   (API REST)          │
+                      └──────────┬───────────┘
+                                 │
+                      ┌──────────▼───────────┐
+                      │   Banco de Dados      │
+                      │   SQLite (Dev) / PG   │
+                      └──────────────────────┘
 ```
 
 ---
@@ -143,7 +147,11 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 - **Figma** — Prototipagem e design de interfaces
 
 ---
-## 📋 User Stories — Documentação do Projeto
+- [**write_feature**](./.agents/workflows/write_feature.md): Cria especificações técnicas blindadas (TDD-First).
+- [**review_pr**](./.agents/workflows/review_pr.md): Auditoria técnica e semântica de código.
+- [**audit_isolation**](./.agents/workflows/audit_isolation.md): Validação rigorosa de separação B2C/B2B e IDOR.
+- [**audit_frontend**](./.agents/workflows/audit_frontend.md): Auditoria de UI, componentes B2C/B2B e testes unitários.
+- [**audit_backend**](./.agents/workflows/audit_backend.md): Auditoria da unificação de rotas, banco de dados e testes pytest.
 
 [Clique aqui para ir ao documento de planejamento e entregas](./Planejamento%20e%20Entregas.md)
 
@@ -157,29 +165,17 @@ lava-me/
 │   ├── core/                 # Configurações do projeto
 │   ├── accounts/             # Autenticação e multitenant
 │   ├── operacao/             # Ordens de serviço e incidentes
-│   ├── mensageria/           # Notificações e comunicação
-│   ├── agendamento_publico/  # Módulo de autoagendamento
-│   └── requirements.txt
+│   └── ...
 │
-├── web/                      # Painel Web Angular
-│   ├── src/
-│   │   ├── app/              # Componentes, serviços e páginas
-│   │   └── assets/           # Imagens e arquivos estáticos
-│   └── package.json
+├── web/                      # Painel Web Angular (Gestão)
 │
-├── mobile/                   # App Ionic (React)
-│   ├── src/
-│   │   ├── pages/
-│   │   └── components/
-│   └── package.json
+├── mobile/                   # App Mobile B2B (Operacional/Staff)
+│
+├── mobile-cliente/           # App Mobile B2C (Cliente Final)
 │
 ├── docs/                     # Documentação do projeto
-│   ├── 3_regras_negocio/     # RFs, glossário e especificações
-│   │   ├── sprint_1/         # Planejamentos da Sprint 1
-│   │   ├── sprint_2/         # Planejamentos da Sprint 2
-│   │   └── sprint_3/         # Planejamentos da Sprint 3
-│   ├── 6_banco_dados/        # Diagramas e schemas
-│   └── templates/            # Templates Markdown para RFs e PRs
+│   ├── 3_regras_negocio/     # RFs e Especificações (sprint_atual)
+│   └── ...
 │
 └── README.md
 ```
@@ -277,8 +273,8 @@ ionic serve
 
 - [x] **Sprint 1** — Experiência do Funcionário
 - [x] **Sprint 2** — Gestão e Controle Operacional
-- [ ] **Sprint 3** — Experiência do Cliente
-- [ ] **Sprint 4** — Comunicação, Relatórios e Recursos Avançados
+- [x] **Sprint 3** — Experiência do Cliente (Portal Web)
+- [ ] **Sprint 4** — Refatoração, Isolamento B2C/B2B e Qualidade
 - [ ] **Evento Final** — Apresentação pública do produto
 
 ---

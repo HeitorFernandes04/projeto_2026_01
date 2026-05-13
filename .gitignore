@@ -154,3 +154,8 @@ android/
 ios/
 
 .planning/
+
+# Projeto Lava-Me Specific
+documentos de organização desenvolvimento/
+backend/.chroma_db/
+backend/logs/
