@@ -1,5 +1,6 @@
 import os
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 from django.dispatch import receiver
@@ -21,8 +22,14 @@ class Estabelecimento(models.Model):
     horario_fechamento = models.TimeField(default="18:00")
 
     # RF-27.1: Geolocalização para o mapa do app B2C
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
+    latitude = models.FloatField(
+        null=True, blank=True,
+        validators=[MinValueValidator(-90.0), MaxValueValidator(90.0)],
+    )
+    longitude = models.FloatField(
+        null=True, blank=True,
+        validators=[MinValueValidator(-180.0), MaxValueValidator(180.0)],
+    )
 
     class Meta:
         verbose_name = "Estabelecimento"

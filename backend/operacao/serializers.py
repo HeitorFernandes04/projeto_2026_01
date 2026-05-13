@@ -59,6 +59,11 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['horario_lavagem', 'horario_finalizacao']
 
+    def validate_etapa_atual(self, value):
+        if not 0 <= value <= 100:
+            raise serializers.ValidationError("etapa_atual deve estar entre 0 e 100.")
+        return value
+
 
 # ---------------------------------------------------------------------------
 #  RF-04 - Criar OS (COM VALIDAÇÃO DE DATA E STATUS)
