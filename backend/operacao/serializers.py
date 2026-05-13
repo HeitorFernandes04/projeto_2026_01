@@ -475,8 +475,6 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
     veiculo_modelo = serializers.CharField(source='veiculo.modelo', read_only=True)
     estabelecimento = EstabelecimentoResumoSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    etapa_atual = serializers.SerializerMethodField()
-
     class Meta:
         model = OrdemServico
         fields = [
@@ -486,6 +484,3 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
 
     def get_veiculo_placa(self, obj):
         return formatar_placa(obj.veiculo.placa)
-
-    def get_etapa_atual(self, obj):
-        return obj.etapa_atual
