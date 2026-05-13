@@ -30,6 +30,7 @@ Para garantir a blindagem do sistema, todos devem seguir estas regras:
 | **DEV 3** | **RF-29** | Jornada B2C (Login, Checkout e Painel RT). |
 | **DEV 4** | **RF-30** | Operacional B2B (Esteira Otimizada). |
 | **DEV 5** | **RF-31** | Unificação de APIs e Segurança (npm audit). |
+| **EXTRA** | **RF-32** | Painel Financeiro Básico (Bônus/Opcional). |
 
 ---
 
@@ -50,6 +51,7 @@ Para garantir a blindagem do sistema, todos devem seguir estas regras:
 
 ### Fase 3: Validação (Dias 9-10)
 - QA Integrado e Geração da Release v4.0.0.
+- **Implementação Extra (RF-32):** Caso as RFs principais estejam concluídas.
 
 ---
 
@@ -57,5 +59,6 @@ Para garantir a blindagem do sistema, todos devem seguir estas regras:
 - **1 PR por Desenvolvedor:** Cada dev é dono da sua PR vinculada à sua RF.
 - **Reuso:** Blocos B2C (RF-28/29) devem consumir a lógica do portal web (`autoagendamento.component.ts`).
 - **Review:** Nenhuma PR será aceita sem cobertura de testes condizente com a RF.
+- **RF-32 (Extra):** Segue o mesmo rigor de TDD e Docs-First se for iniciada.
 
 ---
