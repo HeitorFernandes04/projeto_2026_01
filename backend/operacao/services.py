@@ -190,12 +190,14 @@ class OrdemServicoService:
                 raise ValueError(f"Ação negada: mínimo de 5 fotos de vistoria exigidas. (Atual: {contagem_fotos})")
 
             os.status = 'VISTORIA_INICIAL'
+            os.etapa_atual = 20
             os.laudo_vistoria = dados.get('laudo_vistoria', '')
             os.save()
 
         # ETAPA 2: VISTORIA_INICIAL → EM_EXECUCAO (operador inicia lavagem)
         elif status_atual == 'VISTORIA_INICIAL':
             os.status = 'EM_EXECUCAO'
+            os.etapa_atual = 50
             os.horario_lavagem = agora
             os.comentario_lavagem = dados.get('comentario_lavagem', '')
             os.save()
@@ -203,6 +205,7 @@ class OrdemServicoService:
         # ETAPA 3: EM_EXECUCAO → LIBERACAO (RF-27/RF-30: etapa de acabamento removida)
         elif status_atual == 'EM_EXECUCAO':
             os.status = 'LIBERACAO'
+            os.etapa_atual = 80
             os.save()
 
         else:
@@ -230,6 +233,7 @@ class OrdemServicoService:
             raise ValueError("A vaga de saída é obrigatória.")
 
         os.status = 'FINALIZADO'
+        os.etapa_atual = 100
         os.vaga_patio = dados.get('vaga_patio')
         os.horario_finalizacao = timezone.now()
         os.observacoes = dados.get('observacoes', os.observacoes)
