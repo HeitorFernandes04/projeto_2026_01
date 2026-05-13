@@ -1117,12 +1117,10 @@ components:
       enum:
       - GESTOR
       - LAVADOR
-      - DETALHISTA
       type: string
       description: |-
         * `GESTOR` - Gestor
         * `LAVADOR` - Lavador
-        * `DETALHISTA` - Detalhista
     CategoriaEnum:
       enum:
       - INTERNO
@@ -1192,6 +1190,18 @@ components:
         logo_url:
           type: string
           readOnly: true
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+          nullable: true
       required:
       - cnpj
       - endereco_completo
@@ -1256,6 +1266,18 @@ components:
         logo_url:
           type: string
           readOnly: true
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+          nullable: true
       required:
       - cnpj
       - endereco_completo
@@ -1383,6 +1405,18 @@ components:
         logo_url:
           type: string
           readOnly: true
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+          nullable: true
     PatchedIncidentePendente:
       type: object
       properties:

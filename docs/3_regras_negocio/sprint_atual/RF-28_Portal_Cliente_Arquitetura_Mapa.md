@@ -13,7 +13,7 @@
 ### 1.2 Requisitos Funcionais (RFs)
 | Número | Requisito | Descrição |
 | :--- | :--- | :--- |
-| **RF-28.1** | Setup Mobile-Cliente | Criar o repositório isolado `mobile-cliente` com Ionic/React e configuração base de roteamento e temas. |
+| **RF-28.1** | Setup Mobile-Cliente | Criar o diretório `mobile-cliente` na raiz do projeto com Ionic/React e configuração base de roteamento e temas. |
 | **RF-28.2** | Mapa Interativo (Home) | Implementar componente de mapa (Leaflet/Capacitor) que carrega pins com base na geolocalização do backend. |
 | **RF-28.3** | Pins Dinâmicos | Os pins devem ser renderizados apenas para estabelecimentos com `is_active=True`. |
 | **RF-28.4** | Drawer de Resumo (Bottom Sheet) | Ao clicar em um pin, abrir um menu inferior (Drawer) exibindo Foto (Logo), Nome, Endereço e botão "Ver Serviços". |
@@ -21,6 +21,16 @@
 > [!NOTE]
 > **O que é um Drawer (ou Bottom Sheet)?**
 > É um componente de interface que "desliza" de baixo para cima na tela do celular. No Lava-Me, ele será usado para mostrar as informações do lava-jato sem que o usuário precise sair do mapa. É ideal para manter o contexto visual da localização enquanto o usuário decide se quer agendar naquele local.
+
+> [!IMPORTANT]
+> **Checklist Técnico - RF-28.1 (Setup Mobile-Cliente):**
+> Para considerar a fundação do frontend B2C como concluída, as seguintes configurações implícitas devem ser implementadas no diretório `mobile-cliente`:
+> - **Scaffolding e Limpeza:** Geração do projeto base via CLI do Ionic (tipo React/Vite) e remoção do boilerplate genérico.
+> - **Roteamento:** Configuração do `react-router-dom` e `App.tsx` com a estrutura base de navegação e placeholder da Home.
+> - **Design System:** Definição das variáveis CSS globais de marca (ex: `var(--lm-primary)`) e suporte básico a Dark Mode nativo.
+> - **Qualidade e TDD:** Instalação e configuração do **Vitest** (junto com `@testing-library/react` e `setupTests.ts`), além do ESLint e Prettier padronizados com o monorepo.
+> - **Integração:** Criação do `.env` (`VITE_API_BASE_URL`), configuração de Path Aliases (`@/`) e instância base do Axios/Fetch.
+> - **Ponte Nativa:** Inicialização base do Capacitor (`npx cap init`).
 
 ### 1.3 Requisitos Não Funcionais (RNFs)
 | Número | Requisito | Descrição |
@@ -35,7 +45,7 @@
 ### 1.5 Critérios de Aceitação
 | Critério | Descrição |
 | :--- | :--- |
-| **CA-01** | O comando `ionic serve` no diretório `mobile-cliente` abre o app sem erros. |
+| **CA-01** | O comando `ionic serve` no diretório `mobile-cliente` abre o app sem erros, com as fundações de teste (Vitest), linting e roteamento prontas. |
 | **CA-02** | O mapa exibe marcadores nas posições geográficas corretas definidas no backend. |
 | **CA-03** | O clique no pin abre o Drawer com os dados reais do estabelecimento clicado. |
 | **CA-04** | O botão "Ver Serviços" redireciona para a tela de escolha de serviços (RF-29). |
