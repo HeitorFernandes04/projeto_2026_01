@@ -190,26 +190,29 @@ class OrdemServicoService:
                 raise ValueError(f"Ação negada: mínimo de 5 fotos de vistoria exigidas. (Atual: {contagem_fotos})")
 
             os.status = 'VISTORIA_INICIAL'
+            os.etapa_atual = 20
             os.laudo_vistoria = dados.get('laudo_vistoria', '')
             os.save()
 
         # ETAPA 2: VISTORIA_INICIAL → EM_EXECUCAO (operador inicia lavagem)
         elif status_atual == 'VISTORIA_INICIAL':
             os.status = 'EM_EXECUCAO'
+            os.etapa_atual = 50
             os.horario_lavagem = agora
             os.comentario_lavagem = dados.get('comentario_lavagem', '')
             os.save()
 
-        # ETAPA 3: EM_EXECUCAO sub-fase lavagem → acabamento (status permanece EM_EXECUCAO)
-        elif status_atual == 'EM_EXECUCAO' and not os.horario_acabamento:
-            os.horario_acabamento = agora
+        # ETAPA 3: EM_EXECUCAO → LIBERACAO (RF-27/RF-30: etapa de acabamento removida)
+        elif status_atual == 'EM_EXECUCAO':
+            os.status = 'LIBERACAO'
+            os.etapa_atual = 80
             os.save()
 
-        # ETAPA 4: EM_EXECUCAO (acabamento concluído) → LIBERACAO
-        elif status_atual == 'EM_EXECUCAO' and os.horario_acabamento:
-            os.comentario_acabamento = dados.get('comentario_acabamento', '')
-            os.status = 'LIBERACAO'
-            os.save()
+        else:
+            raise ValueError(
+                f"Não é possível avançar a etapa de uma OS com status '{status_atual}'. "
+                "Use finalizar_ordem_servico_industrial para concluir uma OS em LIBERACAO."
+            )
 
         return os
 
@@ -230,6 +233,7 @@ class OrdemServicoService:
             raise ValueError("A vaga de saída é obrigatória.")
 
         os.status = 'FINALIZADO'
+        os.etapa_atual = 100
         os.vaga_patio = dados.get('vaga_patio')
         os.horario_finalizacao = timezone.now()
         os.observacoes = dados.get('observacoes', os.observacoes)

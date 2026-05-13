@@ -1,5 +1,7 @@
 import os
+import uuid
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 from django.dispatch import receiver
@@ -20,6 +22,16 @@ class Estabelecimento(models.Model):
     horario_abertura = models.TimeField(default="08:00")
     horario_fechamento = models.TimeField(default="18:00")
 
+    # RF-27.1: Geolocalização para o mapa do app B2C
+    latitude = models.FloatField(
+        null=True, blank=True,
+        validators=[MinValueValidator(-90.0), MaxValueValidator(90.0)],
+    )
+    longitude = models.FloatField(
+        null=True, blank=True,
+        validators=[MinValueValidator(-180.0), MaxValueValidator(180.0)],
+    )
+
     class Meta:
         verbose_name = "Estabelecimento"
         verbose_name_plural = "Estabelecimentos"
@@ -32,7 +44,6 @@ class Estabelecimento(models.Model):
         Usa uuid4 curto como sufixo em caso de colisão para garantir
         unicidade de forma atômica (sem necessidade de dois saves).
         """
-        import uuid
         base = slugify(self.nome_fantasia)
         slug_candidato = base
         qs = Estabelecimento.objects.filter(slug=slug_candidato)
@@ -85,7 +96,6 @@ class User(AbstractUser):
 class CargoChoices(models.TextChoices):
     GESTOR = 'GESTOR', 'Gestor'
     LAVADOR = 'LAVADOR', 'Lavador'
-    DETALHISTA = 'DETALHISTA', 'Detalhista'
 
 
 class Cliente(models.Model):

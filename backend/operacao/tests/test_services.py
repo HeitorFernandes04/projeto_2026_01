@@ -43,7 +43,7 @@ class TestOrdemServicoServiceEtapas:
         assert os_atualizada.horario_lavagem is not None
 
     def test_fluxo_completo_patio_ate_liberacao(self):
-        """Garante que o fluxo de 4 etapas finaliza em LIBERACAO sem pular status."""
+        """Garante que o fluxo de 3 etapas finaliza em LIBERACAO (RF-27: acabamento removido)."""
         os = OrdemServicoFactory(status='PATIO')
         for _ in range(5):
             MidiaOrdemServicoFactory(ordem_servico=os, momento='VISTORIA_GERAL')
@@ -56,10 +56,6 @@ class TestOrdemServicoServiceEtapas:
         assert os.horario_lavagem is not None
 
         os = OrdemServicoService.avancar_etapa(os.id, {})
-        assert os.status == 'EM_EXECUCAO'
-        assert os.horario_acabamento is not None
-
-        os = OrdemServicoService.avancar_etapa(os.id, {'comentario_acabamento': 'OK'})
         assert os.status == 'LIBERACAO'
 
     def test_nao_deve_avancar_vistoria_sem_cinco_fotos(self):

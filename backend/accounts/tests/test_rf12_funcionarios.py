@@ -43,17 +43,17 @@ class FuncionariosAPITestCase(APITestCase):
             'username': 'operador_novo',
             'password': 'senha_segura_123',
             'name': 'João Operador',
-            'cargo': CargoChoices.DETALHISTA
+            'cargo': CargoChoices.LAVADOR
         }
-        
+
         response = self.client.post(self.url, payload, format='json')
-        
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        
+
         # Verificar se o usuário e o perfil foram criados corretamente
         user_criado = User.objects.get(email='novo_operador@lavame.com.br')
         self.assertEqual(user_criado.perfil_funcionario.estabelecimento, self.estabelecimento_a)
-        self.assertEqual(user_criado.perfil_funcionario.cargo, CargoChoices.DETALHISTA)
+        self.assertEqual(user_criado.perfil_funcionario.cargo, CargoChoices.LAVADOR)
 
     def test_prevencao_idor_na_listagem_de_funcionarios(self):
         """Teste 2.4/RNF-01: Gestor não pode ver funcionários de outro estabelecimento"""
