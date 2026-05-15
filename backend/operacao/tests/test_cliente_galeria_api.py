@@ -17,9 +17,13 @@ def _auth(client, user):
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(token.access_token)}')
 
 
+def _payload(response):
+    return response.data['data']
+
+
 @pytest.mark.django_db
 class TestClienteGaleriaAPI:
-    URL_TEMPLATE = '/api/cliente/historico/{}/galeria/'
+    URL_TEMPLATE = '/api/shared/historico/{}/galeria/'
 
     def setup_method(self):
         self.api = APIClient()
@@ -60,27 +64,28 @@ class TestClienteGaleriaAPI:
         resp = self.api.get(self.URL_TEMPLATE.format(self.ordem.id))
 
         assert resp.status_code == 200
-        assert set(resp.data.keys()) == {
+        data = _payload(resp)
+        assert set(data.keys()) == {
             'ordem_servico_id',
             'entrada',
             'finalizacao',
             'laudo_tecnico',
         }
-        assert len(resp.data['entrada']) == 2
-        assert len(resp.data['finalizacao']) == 1
-        momentos_entrada = {foto['momento'] for foto in resp.data['entrada']}
-        momentos_finalizacao = {foto['momento'] for foto in resp.data['finalizacao']}
+        assert len(data['entrada']) == 2
+        assert len(data['finalizacao']) == 1
+        momentos_entrada = {foto['momento'] for foto in data['entrada']}
+        momentos_finalizacao = {foto['momento'] for foto in data['finalizacao']}
         assert momentos_entrada == {'VISTORIA_GERAL', 'AVARIA_PREVIA'}
         assert momentos_finalizacao == {'FINALIZADO'}
-        assert 'EXECUCAO' not in str(resp.data)
-        assert 'INCIDENTE' not in str(resp.data)
-        assert resp.data['laudo_tecnico']['servico_realizado'] == self.servico.nome
-        assert resp.data['laudo_tecnico']['status_final'] == 'FINALIZADO'
-        assert resp.data['laudo_tecnico']['placa'] == self.veiculo.placa
-        assert resp.data['laudo_tecnico']['veiculo_modelo'] == self.veiculo.modelo
-        assert resp.data['laudo_tecnico']['unidade'] == self.ordem.estabelecimento.nome_fantasia
-        assert 'data_servico' in resp.data['laudo_tecnico']
-        assert 'produtos_utilizados' not in resp.data['laudo_tecnico']
+        assert 'EXECUCAO' not in str(data)
+        assert 'INCIDENTE' not in str(data)
+        assert data['laudo_tecnico']['servico_realizado'] == self.servico.nome
+        assert data['laudo_tecnico']['status_final'] == 'FINALIZADO'
+        assert data['laudo_tecnico']['placa'] == self.veiculo.placa
+        assert data['laudo_tecnico']['veiculo_modelo'] == self.veiculo.modelo
+        assert data['laudo_tecnico']['unidade'] == self.ordem.estabelecimento.nome_fantasia
+        assert 'data_servico' in data['laudo_tecnico']
+        assert 'produtos_utilizados' not in data['laudo_tecnico']
 
     def test_cliente_nao_acessa_galeria_de_outro_cliente(self):
         outro_cliente = ClienteFactory(telefone_whatsapp='11911110000')
@@ -98,4 +103,4 @@ class TestClienteGaleriaAPI:
         resp = self.api.get(self.URL_TEMPLATE.format(self.ordem.id))
 
         assert resp.status_code == 400
-        assert 'finalizadas' in resp.data['detail']
+        assert 'finalizadas' in resp.data['errors'][0]['detail']

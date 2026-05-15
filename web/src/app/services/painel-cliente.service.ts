@@ -72,6 +72,12 @@ export interface ApiErroResponse {
   error?: string;
 }
 
+interface ApiEnvelope<T> {
+  data: T;
+  meta: Record<string, string | number | null | undefined>;
+  errors: Array<{ detail?: string }>;
+}
+
 export class GaleriaClienteErro extends Error {
   constructor(
     message: string,
@@ -86,7 +92,7 @@ export class GaleriaClienteErro extends Error {
 export class PainelClienteService {
   private readonly http = inject(HttpClient);
   private readonly painelUrl = '/api/cliente/painel/';
-  private readonly historicoUrl = '/api/cliente/historico/';
+  private readonly historicoUrl = '/api/shared/historico/';
 
   getDadosPainel(): Observable<PainelStatus> {
     return this.http.get<PainelStatus>(this.painelUrl).pipe(
@@ -101,8 +107,11 @@ export class PainelClienteService {
 
   getGaleriaTransparencia(osId: number): Observable<GaleriaClienteResponse> {
     return this.http
-      .get<GaleriaClienteResponse>(`${this.historicoUrl}${osId}/galeria/`)
-      .pipe(catchError((error: HttpErrorResponse) => throwError(() => this.normalizarErroGaleria(error))));
+      .get<ApiEnvelope<GaleriaClienteResponse>>(`${this.historicoUrl}${osId}/galeria/`)
+      .pipe(
+        map(response => response.data),
+        catchError((error: HttpErrorResponse) => throwError(() => this.normalizarErroGaleria(error))),
+      );
   }
 
   private normalizarErroGaleria(error: HttpErrorResponse): GaleriaClienteErro {

@@ -251,7 +251,7 @@ class TestHistoricoAPI(APITestCase):
         self.funcionario = UserFactory(estabelecimento=self.estabelecimento)
         self.client = APIClient()
         self.client.force_authenticate(user=self.funcionario)
-        self.url = reverse('os-historico')
+        self.url = '/api/shared/historico/'
 
     def test_historico_erro_data_inicial_maior_que_final(self):
         """Valida bloqueio de datas invertidas."""

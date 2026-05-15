@@ -109,7 +109,7 @@ Antes de gerar a release com a RF-21 e Portal do Cliente, confirme:
 - **Arquivos:** `backend/*/urls.py`
 - **O que é:** O sistema possui quatro endpoints de histórico diferentes (`api/cliente/historico/`, `api/publico/historico/`, `api/ordens-servico/historico/`, `api/ordens-servico/gestor/historico/`). Além disso, o ViewSet `TagsPeca` é registrado duas vezes (em `gestao/` e `ordens-servico/`).
 - **O que fazer:** Consolidar numa única API de histórico usando um ViewSet dinâmico com `get_queryset()` que diferencie pelo tipo de permissão (`request.user.role`). Desduplicar registro do ViewSet.
-- **Status:** 🔴 Aberta (Alta Severidade / Arquitetura) — **Confirmada em 10/05/2026**
+- **Status:** 🟡 Parcialmente mitigada em 15/05/2026 — a RF-31 consolidou o histórico autenticado em `/api/shared/historico/` e removeu as rotas autenticadas duplicadas. Permanecem fora do escopo desta RF a rota pública `/api/publico/historico/` e a desduplicação do registro de `TagsPeca`.
 
 ### [DT-008] DB: Fragmentação de Perfis de Colaborador
 - **Arquivos:** `backend/accounts/models.py`

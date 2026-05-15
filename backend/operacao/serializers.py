@@ -363,6 +363,19 @@ class IncidenteAuditoriaSerializer(serializers.ModelSerializer):
         return ret
 
 
+class IncidenteComparativoFotoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    arquivo_url = serializers.SerializerMethodField()
+    momento = serializers.CharField(default='INCIDENTE')
+
+    def get_arquivo_url(self, obj):
+        request = self.context.get('request')
+        arquivo = getattr(obj, 'arquivo', None) or getattr(obj, 'foto_url', None)
+        if request and arquivo:
+            return request.build_absolute_uri(arquivo.url)
+        return None
+
+
 class ResolverIncidenteSerializer(serializers.Serializer):
     observacoes_resolucao = serializers.CharField(
         allow_blank=False,

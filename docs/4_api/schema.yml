@@ -203,39 +203,6 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/cliente/historico/:
-    get:
-      operationId: cliente_historico_retrieve
-      description: 'RF-25: Retorna OSs do cliente autenticado por titularidade veiculo__cliente.'
-      tags:
-      - cliente
-      security:
-      - jwtAuth: []
-      - cookieAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/cliente/historico/{id}/galeria/:
-    get:
-      operationId: cliente_historico_galeria_retrieve
-      description: 'RF-26: Retorna galeria publica da OS finalizada integrada ao historico
-        RF-25.'
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - cliente
-      security:
-      - jwtAuth: []
-      - cookieAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          description: No response body
   /api/cliente/painel/:
     get:
       operationId: cliente_painel_retrieve
@@ -355,6 +322,23 @@ paths:
       - jwtAuth: []
       - cookieAuth: []
       - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/incidentes/{id}/comparativo/:
+    get:
+      operationId: gestao_incidentes_comparativo_retrieve
+      description: 'RF-31: GET /api/gestao/incidentes/{id}/comparativo/.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -856,45 +840,6 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/ordens-servico/gestor/historico/:
-    get:
-      operationId: ordens_servico_gestor_historico_retrieve
-      description: GET /api/ordens-servico/gestor/historico/
-      tags:
-      - ordens-servico
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/ordens-servico/gestor/historico/{id}/fotos/:
-    get:
-      operationId: ordens_servico_gestor_historico_fotos_retrieve
-      description: GET /api/ordens-servico/gestor/historico/{id}/fotos/
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - ordens-servico
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/ordens-servico/historico/:
-    get:
-      operationId: ordens_servico_historico_retrieve
-      description: GET /api/ordens-servico/historico/
-      tags:
-      - ordens-servico
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
   /api/ordens-servico/hoje/:
     get:
       operationId: ordens_servico_hoje_retrieve
@@ -1108,6 +1053,34 @@ paths:
       - jwtAuth: []
       - cookieAuth: []
       - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shared/historico/:
+    get:
+      operationId: shared_historico_retrieve
+      description: 'RF-31: GET /api/shared/historico/.'
+      tags:
+      - shared
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shared/historico/{id}/galeria/:
+    get:
+      operationId: shared_historico_galeria_retrieve
+      description: 'RF-31: GET /api/shared/historico/{id}/galeria/.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - shared
+      security:
+      - jwtAuth: []
       responses:
         '200':
           description: No response body

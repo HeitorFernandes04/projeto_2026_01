@@ -27,6 +27,20 @@ interface DadosNovaOS {
   iniciar_agora?: boolean;
 }
 
+interface ApiEnvelope<T> {
+  data: T;
+  meta: Record<string, string | number | null | undefined>;
+  errors: Array<{ detail?: string }>;
+}
+
+interface OrdemServicoHistoricoResponse {
+  id: number;
+  veiculo: { placa: string; modelo: string; marca: string };
+  servico: { nome: string; duracao_estimada_minutos: number };
+  horario_finalizacao: string;
+  status: string;
+}
+
 // --- FUNÇÃO BASE DE REQUISIÇÃO ---
 
 async function request(endpoint: string, options: RequestInit = {}) {
@@ -117,14 +131,18 @@ export async function getOrdensServicoHoje() {
 }
 
 /** RF-10 — Lista histórico por período */
-export async function getHistoricoOrdemServico(dataInicial: string, dataFinal: string) {
+export async function getHistoricoOrdemServico(
+  dataInicial: string,
+  dataFinal: string
+): Promise<OrdemServicoHistoricoResponse[]> {
   const params = new URLSearchParams({
     data_inicial: dataInicial,
     data_final: dataFinal,
   });
-  return request(`/api/ordens-servico/historico/?${params.toString()}`, {
+  const response = await request(`/api/shared/historico/?${params.toString()}`, {
     cache: 'no-store',
-  });
+  }) as ApiEnvelope<OrdemServicoHistoricoResponse[]>;
+  return response.data;
 }
 
 /** Busca detalhes de uma OS pelo ID */

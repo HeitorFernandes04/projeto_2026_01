@@ -9,6 +9,7 @@ from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca, VistoriaItem
 from accounts.models import Estabelecimento, Cliente
+from operacao.constants import STATUS_ATIVOS, STATUS_HISTORICO, HISTORICO_CLIENTE_LIMITE
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
@@ -357,6 +358,86 @@ class HistoricoGestorService:
         }
 
 
+class HistoricoUnificadoService:
+    """RF-31: ponto unico de consulta de historico por perfil autenticado."""
+
+    PERFIL_CLIENTE = 'CLIENTE'
+    PERFIL_GESTOR = 'GESTOR'
+    PERFIL_FUNCIONARIO = 'FUNCIONARIO'
+
+    @classmethod
+    def identificar_perfil(cls, user):
+        if hasattr(user, 'perfil_cliente'):
+            return cls.PERFIL_CLIENTE
+        if hasattr(user, 'perfil_gestor'):
+            return cls.PERFIL_GESTOR
+        if hasattr(user, 'perfil_funcionario'):
+            return cls.PERFIL_FUNCIONARIO
+        raise PermissionDenied("Usuario sem perfil habilitado para consultar historico.")
+
+    @staticmethod
+    def listar_painel_cliente(user):
+        cliente = user.perfil_cliente
+        base_qs = (
+            OrdemServico.objects
+            .filter(veiculo__cliente=cliente)
+            .select_related('veiculo', 'servico', 'estabelecimento')
+            .order_by('-data_hora')
+        )
+
+        historico_qs = base_qs.filter(status__in=STATUS_HISTORICO)
+        total_historico = historico_qs.count()
+
+        return {
+            'cliente_nome': user.name,
+            'ativos': base_qs.filter(status__in=STATUS_ATIVOS),
+            'historico': historico_qs[:HISTORICO_CLIENTE_LIMITE],
+            'historico_meta': {
+                'total': total_historico,
+                'limit': HISTORICO_CLIENTE_LIMITE,
+                'has_more': total_historico > HISTORICO_CLIENTE_LIMITE,
+            },
+        }
+
+    @staticmethod
+    def listar_historico_gestor(user, filtros):
+        return HistoricoGestorService.listar_historico_gestor(
+            estabelecimento=user.perfil_gestor.estabelecimento,
+            data_inicio=filtros.get('data_inicio'),
+            data_fim=filtros.get('data_fim'),
+            placa=filtros.get('placa'),
+            status=filtros.get('status'),
+            com_incidente_resolvido=filtros.get('com_incidente_resolvido', False),
+        )
+
+    @staticmethod
+    def listar_historico_funcionario(user, filtros):
+        return OrdemServicoService.listar_historico_por_periodo(
+            estabelecimento=user.perfil_funcionario.estabelecimento,
+            data_inicial=filtros['data_inicial'],
+            data_final=filtros['data_final'],
+            status=filtros.get('status', 'todos'),
+        )
+
+    @staticmethod
+    def montar_galeria_por_perfil(ordem_servico_id, user):
+        perfil = HistoricoUnificadoService.identificar_perfil(user)
+
+        if perfil == HistoricoUnificadoService.PERFIL_CLIENTE:
+            return perfil, ClienteGaleriaService.montar_galeria_pos_venda(
+                ordem_servico_id=ordem_servico_id,
+                cliente=user.perfil_cliente,
+            )
+
+        if perfil == HistoricoUnificadoService.PERFIL_GESTOR:
+            return perfil, HistoricoGestorService.montar_galeria_os(
+                ordem_servico_id,
+                user.perfil_gestor.estabelecimento,
+            )
+
+        raise PermissionDenied("A galeria do historico esta disponivel apenas para Cliente ou Gestor.")
+
+
 class ClienteGaleriaService:
     """RF-26: galeria pos-venda visivel ao cliente final."""
 
@@ -495,6 +576,35 @@ class IncidenteService:
             .first()
         )
         return incidente
+
+    @staticmethod
+    def montar_comparativo(incidente_id, estabelecimento):
+        incidente = get_object_or_404(
+            IncidenteOS.objects.select_related(
+                'ordem_servico__veiculo',
+                'ordem_servico__servico',
+                'tag_peca',
+            ),
+            id=incidente_id,
+        )
+
+        if incidente.ordem_servico.estabelecimento_id != estabelecimento.id:
+            raise PermissionDenied("Este incidente nao pertence ao seu estabelecimento.")
+
+        fotos_entrada = (
+            MidiaOrdemServico.objects
+            .filter(
+                ordem_servico=incidente.ordem_servico,
+                momento__in=('VISTORIA_GERAL', 'AVARIA_PREVIA', 'ENTRADA'),
+            )
+            .order_by('id')[:MAX_FOTOS_POR_MOMENTO]
+        )
+
+        return {
+            'incidente': incidente,
+            'ordem_servico': incidente.ordem_servico,
+            'entrada': list(fotos_entrada),
+        }
 
     @staticmethod
     def resolver_incidente(incidente_id, estabelecimento, gestor_user, observacoes_resolucao):

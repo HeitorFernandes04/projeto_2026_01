@@ -58,27 +58,31 @@ describe('Workflow do Cliente (Portal B2C)', () => {
     }).as('getPainel');
 
     // Intercepta Galeria Pós-Venda (Corrigido para GaleriaClienteResponse)
-    cy.intercept('GET', '**/api/cliente/historico/99/galeria/', {
+    cy.intercept('GET', '**/api/shared/historico/99/galeria/', {
       statusCode: 200,
       body: {
-        ordem_servico_id: 99,
-        entrada: [
-          { id: 1, arquivo_url: 'https://via.placeholder.com/150', momento: 'VISTORIA_GERAL' }
-        ],
-        finalizacao: [
-          { id: 2, arquivo_url: 'https://via.placeholder.com/150', momento: 'FINALIZADO' }
-        ],
-        laudo_tecnico: {
-          servico_realizado: 'Polimento Cristalizado',
-          tempo_execucao_minutos: 120,
-          observacoes: 'Veículo entregue em perfeitas condições.',
-          status_final: 'FINALIZADO',
-          status_final_display: 'Concluído',
-          placa: 'OLD1234',
-          veiculo_modelo: 'Fusca',
-          unidade: 'Lava-Me Matriz',
-          data_servico: '2026-05-01'
-        }
+        data: {
+          ordem_servico_id: 99,
+          entrada: [
+            { id: 1, arquivo_url: 'https://via.placeholder.com/150', momento: 'VISTORIA_GERAL' }
+          ],
+          finalizacao: [
+            { id: 2, arquivo_url: 'https://via.placeholder.com/150', momento: 'FINALIZADO' }
+          ],
+          laudo_tecnico: {
+            servico_realizado: 'Polimento Cristalizado',
+            tempo_execucao_minutos: 120,
+            observacoes: 'Veiculo entregue em perfeitas condicoes.',
+            status_final: 'FINALIZADO',
+            status_final_display: 'Concluido',
+            placa: 'OLD1234',
+            veiculo_modelo: 'Fusca',
+            unidade: 'Lava-Me Matriz',
+            data_servico: '2026-05-01'
+          }
+        },
+        meta: { perfil: 'CLIENTE' },
+        errors: []
       }
     }).as('getGaleria');
   });

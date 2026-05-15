@@ -53,9 +53,9 @@ describe('PainelClienteService - RF-26 Galeria Pos-Venda', () => {
 
     service.getGaleriaTransparencia(42).subscribe(data => (resultado = data));
 
-    const req = httpMock.expectOne('/api/cliente/historico/42/galeria/');
+    const req = httpMock.expectOne('/api/shared/historico/42/galeria/');
     expect(req.request.method).toBe('GET');
-    req.flush(galeriaMock);
+    req.flush({ data: galeriaMock, meta: { perfil: 'CLIENTE' }, errors: [] });
 
     expect(resultado).toEqual(galeriaMock);
   });
@@ -67,7 +67,7 @@ describe('PainelClienteService - RF-26 Galeria Pos-Venda', () => {
       error: error => (erroRecebido = error),
     });
 
-    httpMock.expectOne('/api/cliente/historico/42/galeria/').flush(
+    httpMock.expectOne('/api/shared/historico/42/galeria/').flush(
       { detail: 'Galeria disponivel apenas para ordens finalizadas.' },
       { status: 400, statusText: 'Bad Request' },
     );
