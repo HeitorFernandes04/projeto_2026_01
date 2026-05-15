@@ -135,7 +135,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-25: Retorna histórico de OSs do cliente autenticado, separando ativos e concluídos. */
+        /** @description RF-25: Retorna OSs do cliente autenticado por titularidade veiculo__cliente. */
         get: operations["cliente_historico_retrieve"];
         put?: never;
         post?: never;
@@ -152,7 +152,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-26: Retorna somente midias publicas da OS finalizada do cliente. */
+        /** @description RF-26: Retorna galeria publica da OS finalizada integrada ao historico RF-25. */
         get: operations["cliente_historico_galeria_retrieve"];
         put?: never;
         post?: never;
@@ -169,6 +169,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description RF-25: Painel B2C filtrado por Veiculo.cliente, com reparo por telefone normalizado. */
         get: operations["cliente_painel_retrieve"];
         put?: never;
         post?: never;
@@ -825,6 +826,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description RF-25: Painel B2C filtrado por Veiculo.cliente, com reparo por telefone normalizado. */
         get: operations["publico_historico_retrieve"];
         put?: never;
         post?: never;
@@ -841,10 +843,9 @@ export interface components {
         /**
          * @description * `GESTOR` - Gestor
          *     * `LAVADOR` - Lavador
-         *     * `DETALHISTA` - Detalhista
          * @enum {string}
          */
-        CargoEnum: "GESTOR" | "LAVADOR" | "DETALHISTA";
+        CargoEnum: "GESTOR" | "LAVADOR";
         /**
          * @description * `INTERNO` - Interno
          *     * `EXTERNO` - Externo
@@ -875,6 +876,10 @@ export interface components {
             /** Format: uri */
             logo?: string | null;
             readonly logo_url: string;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
         };
         /**
          * @description Exposição pública e segura do Estabelecimento para o Portal de Autoagendamento.
@@ -898,6 +903,10 @@ export interface components {
             /** Format: uri */
             logo?: string | null;
             readonly logo_url: string;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
         };
         Funcionario: {
             readonly id: number;
@@ -951,6 +960,10 @@ export interface components {
             /** Format: uri */
             logo?: string | null;
             readonly logo_url?: string;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
         };
         PatchedIncidentePendente: {
             readonly id?: number;

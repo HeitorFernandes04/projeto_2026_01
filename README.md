@@ -59,6 +59,7 @@ O Lava-Me centraliza toda a operação em uma única plataforma, oferecendo um *
 | Histórico e Auditoria | Consulta detalhada de OS passadas com galeria de vistorias | RF-17, RF-18 |
 | Dashboard Executivo | Indicadores de faturamento, volume de serviços e eficiência da equipe | RF-19, RF-20 |
 | Saneamento de Dados | Unificação de APIs de histórico para performance e segurança | RF-31 |
+| Painel Financeiro | Relatório simples de faturamento com filtros e exportação PDF | RF-32 |
 
 ### 📱 Módulo do Funcionário (Mobile)
 

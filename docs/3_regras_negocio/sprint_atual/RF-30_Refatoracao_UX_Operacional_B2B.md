@@ -17,6 +17,13 @@
 | **RF-30.2** | Renomeação de Fluxos | Alterar todos os textos de "Atendimento Avulso" para "Entrada Rápida" em botões e títulos. |
 | **RF-30.3** | UI de Execução Única | Consolidar a tela de "Lavagem" para que inclua as notas finais (que antes ficavam no acabamento). |
 
+> [!IMPORTANT]
+> **Checklist Técnico - RF-30 (Refatoração de Máquina de Estados e UX B2B):**
+> Para garantir que a remoção do "Acabamento" não deixe lixo no código ou gere bugs silenciosos (ex: tela em branco), as seguintes ações são mandatórias:
+> - **Exclusão Física de Código Órfão:** Componentes e estilos antigos (ex: `EstadoAcabamento.tsx`) devem ser fisicamente **deletados** do repositório, e não apenas comentados ou deixados sem roteamento.
+> - **Sanitização da "Entrada Rápida" (Resolução DT-015):** Ao alterar os fluxos de "Avulso" para "Entrada", o desenvolvedor deve substituir a digitação livre no campo **"Cor"** do veículo por um componente de múltipla escolha (`<IonSelect>` com dicionários predefinidos), impedindo erros de digitação ("Branco" vs "branco"). Os campos "Marca" e "Modelo" permanecem como texto livre.
+> - **Ajuste de Geometria Visual (Stepper):** O componente visual de progresso (a barra horizontal) que antes calculava larguras para 4 passos precisará ter seu CSS/flexbox ajustado para 3 passos, garantindo um layout harmonioso.
+
 ### 1.3 Requisitos Não Funcionais (RNFs)
 | Número | Requisito | Descrição |
 | :--- | :--- | :--- |
@@ -30,9 +37,10 @@
 ### 1.5 Critérios de Aceitação
 | Critério | Descrição |
 | :--- | :--- |
-| **CA-01** | O operador não consegue mais visualizar a aba "Acabamento" no histórico ou na esteira ativa. |
-| **CA-02** | Ao finalizar a Lavagem, o veículo aparece automaticamente na fila de "Aguardando Retirada" (Liberação). |
-| **CA-03** | O botão de "Entrada Rápida" na Home do App B2B funciona conforme esperado. |
+| **CA-01** | O operador não consegue mais visualizar a aba "Acabamento", e os componentes de código relacionados a ela foram fisicamente deletados da base do App B2B. |
+| **CA-02** | Ao finalizar a Lavagem, o veículo vai direto para "Aguardando Retirada" (Liberação). |
+| **CA-03** | O botão de "Entrada Rápida" exibe a nova nomenclatura consistentemente por todo o App B2B. |
+| **CA-04** | O formulário de "Entrada Rápida" utiliza seletor do Ionic (`<IonSelect>`) exclusivamente para a "Cor", enquanto "Marca" e "Modelo" aceitam texto livre. |
 
 ---
 

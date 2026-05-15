@@ -15,7 +15,7 @@
 | :--- | :--- | :--- |
 | **RF-27.1** | Geolocalização do Estabelecimento | Adicionar campos `latitude` e `longitude` (ambos `FloatField`) ao modelo `Estabelecimento`. |
 | **RF-27.2** | Acompanhamento de Progresso | Adicionar o campo `etapa_atual` (inteiro de 0 a 100) ao modelo `OrdemServico` para representar o percentual de conclusão. |
-| **RF-27.3** | Limpeza de Legado (Backend) | Remover os campos `horario_acabamento` e `comentario_acabamento` do modelo `OrdemServico`. |
+| **RF-27.3** | Limpeza de Legado (Backend) | Remover os campos `horario_acabamento` e `comentario_acabamento` do modelo `OrdemServico`. Remover também a opção `ACABAMENTO` do campo de *choices* do `status` da OS. |
 | **RF-27.4** | Saneamento de Cargos | Atualizar as `choices` do campo `cargo` em `Funcionario` para remover a opção 'DETALHISTA'. |
 | **RF-27.5** | Reset e Seed de Dados | Realizar o reset do banco de dados em ambiente de desenvolvimento e atualizar o script de `seed` com dados compatíveis com o novo schema. |
 
@@ -35,8 +35,8 @@
 | :--- | :--- |
 | **CA-01** | O comando `python manage.py migrate` executa sem erros após o reset do banco. |
 | **CA-02** | O Django Admin exibe os novos campos de latitude e longitude no Estabelecimento. |
-| **CA-03** | Consultas GET em `/api/operacao/os/` retornam o campo `etapa_atual`. |
-| **CA-04** | Tentativas de salvar o cargo 'DETALHISTA' via API ou Admin retornam erro de validação. |
+| **CA-03** | Consultas GET em `/api/operacao/os/` retornam o campo `etapa_atual`. O endpoint de transição de estado (`avancar`) atualiza esse percentual automaticamente no banco. |
+| **CA-04** | Tentativas de salvar o cargo 'DETALHISTA' ou o status 'ACABAMENTO' via API ou Admin retornam erro de validação (Choices). |
 
 ---
 

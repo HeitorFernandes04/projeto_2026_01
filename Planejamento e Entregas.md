@@ -488,3 +488,21 @@ Responsáveis: Lucas José
 * [ ] Implementação de auditoria "Side-by-Side" no Painel Web (fotos de entrada vs incidente).
 
 Responsáveis: Marcos Barbosa
+
+---
+
+### TRILHA 5: Gestão Financeira
+
+### RF-32 · Painel Financeiro Básico (Web)
+
+**Como** gestor,
+**quero** visualizar um resumo simples do faturamento por período,
+**para** acompanhar a saúde financeira do meu negócio sem precisar de planilhas externas.
+
+**Critérios de Aceitação:**
+* [ ] Card de totalização exibindo a soma das Ordens de Serviço finalizadas no período.
+* [ ] Tabela de transações detalhando Data, Veículo, Serviço e Valor.
+* [ ] Filtros de data (Inicial/Final) para consulta de períodos específicos.
+* [ ] Botão de exportação para PDF (Relatório de Fechamento).
+
+Responsáveis: ---
