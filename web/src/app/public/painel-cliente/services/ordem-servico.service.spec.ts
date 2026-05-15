@@ -54,19 +54,19 @@ describe('OrdemServicoService', () => {
   });
 
   describe('getDadosPainel()', () => {
-    it('deve fazer GET em /api/cliente/historico/', () => {
+    it('deve fazer GET em /api/shared/historico/', () => {
       service.getDadosPainel().subscribe();
-      const req = httpMock.expectOne('/api/cliente/historico/');
+      const req = httpMock.expectOne('/api/shared/historico/');
       expect(req.request.method).toBe('GET');
-      req.flush(painelMock);
+      req.flush({ data: painelMock, meta: { perfil: 'CLIENTE' }, errors: [] });
     });
 
     it('deve retornar PainelResponse completo com cliente_nome, ativos e historico', () => {
       let resultado: PainelResponse | undefined;
       service.getDadosPainel().subscribe(r => (resultado = r));
 
-      const req = httpMock.expectOne('/api/cliente/historico/');
-      req.flush(painelMock);
+      const req = httpMock.expectOne('/api/shared/historico/');
+      req.flush({ data: painelMock, meta: { perfil: 'CLIENTE' }, errors: [] });
 
       expect(resultado).toBeTruthy();
       expect(resultado!.cliente_nome).toBe('João Silva');
@@ -78,7 +78,7 @@ describe('OrdemServicoService', () => {
       let resultado: PainelResponse | undefined;
       service.getDadosPainel().subscribe(r => (resultado = r));
 
-      httpMock.expectOne('/api/cliente/historico/').flush(painelMock);
+      httpMock.expectOne('/api/shared/historico/').flush({ data: painelMock, meta: { perfil: 'CLIENTE' }, errors: [] });
 
       const ativa = resultado!.ativos[0];
       expect(ativa.id).toBe(1);
@@ -96,7 +96,7 @@ describe('OrdemServicoService', () => {
       let resultado: PainelResponse | undefined;
 
       service.getDadosPainel().subscribe(r => (resultado = r));
-      httpMock.expectOne('/api/cliente/historico/').flush(semOrdens);
+      httpMock.expectOne('/api/shared/historico/').flush({ data: semOrdens, meta: { perfil: 'CLIENTE' }, errors: [] });
 
       expect(resultado!.ativos).toEqual([]);
       expect(resultado!.historico).toEqual([]);
@@ -106,7 +106,7 @@ describe('OrdemServicoService', () => {
       let erroRecebido: unknown;
       service.getDadosPainel().subscribe({ error: e => (erroRecebido = e) });
 
-      httpMock.expectOne('/api/cliente/historico/').flush(
+      httpMock.expectOne('/api/shared/historico/').flush(
         { detail: 'Não autorizado' },
         { status: 401, statusText: 'Unauthorized' }
       );
@@ -118,7 +118,7 @@ describe('OrdemServicoService', () => {
       let erroRecebido: unknown;
       service.getDadosPainel().subscribe({ error: e => (erroRecebido = e) });
 
-      httpMock.expectOne('/api/cliente/historico/').flush(
+      httpMock.expectOne('/api/shared/historico/').flush(
         { detail: 'Proibido' },
         { status: 403, statusText: 'Forbidden' }
       );

@@ -40,7 +40,7 @@ describe('GaleriaFotos', () => {
     } as any);
 
     // Mock do global fetch para converter o dataUrl em Blob
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
     });
 
@@ -65,7 +65,7 @@ describe('GaleriaFotos', () => {
       dataUrl: 'data:image/jpeg;base64,dGVzdA==',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    global.fetch = vi.fn().mockResolvedValue({ blob: () => Promise.resolve(new Blob()) });
+    globalThis.fetch = vi.fn().mockResolvedValue({ blob: () => Promise.resolve(new Blob()) });
 
     render(<GaleriaFotos {...defaultProps} />);
     

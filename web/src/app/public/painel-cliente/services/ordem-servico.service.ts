@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface OrdemServicoAPI {
   id: number;
@@ -21,13 +22,21 @@ export interface PainelResponse {
   historico: OrdemServicoAPI[];
 }
 
+interface ApiEnvelope<T> {
+  data: T;
+  meta: Record<string, string | number | null | undefined>;
+  errors: Array<{ detail?: string }>;
+}
+
 
 @Injectable({ providedIn: 'root' })
 export class OrdemServicoService {
   private readonly http = inject(HttpClient);
 
   getDadosPainel(): Observable<PainelResponse> {
-    return this.http.get<PainelResponse>('/api/cliente/historico/');
+    return this.http
+      .get<ApiEnvelope<PainelResponse>>('/api/shared/historico/')
+      .pipe(map((response) => response.data));
   }
 
   /**

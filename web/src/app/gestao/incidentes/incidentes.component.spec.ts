@@ -60,6 +60,26 @@ const mockAuditoria: IncidenteAuditoria = {
   },
 };
 
+const mockComparativo = {
+  entrada: Array.from({ length: 5 }, (_, index) => ({
+    id: index + 1,
+    arquivo_url: `https://cdn.lavame.test/entrada/${index + 1}.jpg`,
+    momento: 'VISTORIA_GERAL',
+  })),
+  incidente: [
+    {
+      id: 11,
+      arquivo_url: 'https://cdn.lavame.test/incidentes/11.jpg',
+      momento: 'INCIDENTE',
+    },
+  ],
+  ordem_servico: {
+    id: 1024,
+    placa: 'BRA-2E19',
+    modelo: 'Audi A3',
+  },
+};
+
 describe('IncidentesComponent - RF-16', () => {
   let fixture: ComponentFixture<IncidentesComponent>;
   let component: IncidentesComponent;
@@ -70,6 +90,7 @@ describe('IncidentesComponent - RF-16', () => {
     pararMonitoramentoPendentes: ReturnType<typeof vi.fn>;
     recarregarPendentes: ReturnType<typeof vi.fn>;
     obterAuditoria: ReturnType<typeof vi.fn>;
+    obterComparativo: ReturnType<typeof vi.fn>;
     resolverIncidente: ReturnType<typeof vi.fn>;
   };
 
@@ -100,6 +121,7 @@ describe('IncidentesComponent - RF-16', () => {
       pararMonitoramentoPendentes: vi.fn(),
       recarregarPendentes: vi.fn().mockImplementation(() => of(pendentesSubject.value)),
       obterAuditoria: vi.fn().mockReturnValue(of(mockAuditoria)),
+      obterComparativo: vi.fn().mockReturnValue(of(mockComparativo)),
       resolverIncidente: vi.fn().mockReturnValue(of({
         detail: 'Incidente resolvido com sucesso.',
         id: 11,
@@ -149,8 +171,66 @@ describe('IncidentesComponent - RF-16', () => {
     expect(fixture.nativeElement.textContent).toContain('Lavador Responsavel');
     expect(fixture.nativeElement.textContent).toContain('Parachoque Dianteiro');
     expect(fixture.nativeElement.textContent).not.toContain('Status anterior');
-    expect(fixture.nativeElement.querySelector('[data-testid="vistoria-foto"]')?.getAttribute('src'))
-      .toBe('https://cdn.lavame.test/vistoria/11.jpg');
+    expect(fixture.nativeElement.querySelector('[data-testid="entrada-foto"]')?.getAttribute('src'))
+      .toBe('https://cdn.lavame.test/entrada/1.jpg');
+  });
+
+  it('deve renderizar auditoria side-by-side com 5 fotos de entrada e evidencias do incidente', async () => {
+    await criarComponente();
+
+    fixture.nativeElement.querySelector('[data-testid="incidente-card"]').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(incidentesServiceSpy.obterComparativo).toHaveBeenCalledWith(11);
+    expect(fixture.nativeElement.textContent).toContain('Entrada');
+    expect(fixture.nativeElement.textContent).toContain('Incidente');
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="entrada-foto"]').length).toBe(5);
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="incidente-foto"]').length).toBe(1);
+  });
+
+  it('deve ampliar uma foto ao clicar na miniatura e permitir fechar a visualizacao', async () => {
+    await criarComponente();
+
+    fixture.nativeElement.querySelector('[data-testid="incidente-card"]').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const botaoAmpliar = fixture.nativeElement.querySelector(
+      '[aria-label="Ampliar foto de entrada 1"]',
+    ) as HTMLButtonElement;
+    botaoAmpliar.click();
+    fixture.detectChanges();
+
+    const visualizacao = fixture.nativeElement.querySelector('[data-testid="foto-ampliada"]') as HTMLImageElement;
+    expect(visualizacao).toBeTruthy();
+    expect(visualizacao.getAttribute('src')).toBe('https://cdn.lavame.test/entrada/1.jpg');
+    expect(fixture.nativeElement.querySelector('[role="dialog"][aria-label="Visualizacao ampliada da foto"]'))
+      .toBeTruthy();
+
+    fixture.nativeElement.querySelector('[aria-label="Fechar foto ampliada"]').click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="foto-ampliada"]')).toBeNull();
+  });
+
+  it('deve exibir placeholder elegante quando OS antiga nao possui fotos de entrada', async () => {
+    incidentesServiceSpy.obterComparativo.mockReturnValue(of({
+      ...mockComparativo,
+      entrada: [],
+    }));
+
+    await criarComponente();
+
+    fixture.nativeElement.querySelector('[data-testid="incidente-card"]').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="entrada-placeholder"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Sem fotos de entrada vinculadas a esta OS.');
   });
 
   it('deve manter botao resolver desabilitado enquanto a nota estiver vazia', async () => {

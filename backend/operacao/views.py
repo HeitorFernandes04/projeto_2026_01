@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -37,7 +38,9 @@ from .serializers import (
     ServicoSerializer,
     ProximaEtapaSerializer,
     FinalizarIndustrialSerializer,
+    IncidenteAuditoriaOrdemServicoSerializer,
     IncidenteAuditoriaSerializer,
+    IncidenteComparativoFotoSerializer,
     IncidentePendenteSerializer,
     ResolverIncidenteSerializer,
 )
@@ -47,7 +50,20 @@ from .services import (
     MidiaOrdemServicoService,
     KanbanService,
     HistoricoGestorService,
+    HistoricoUnificadoService,
 )
+
+
+def envelope(data=None, meta=None, errors=None):
+    return {
+        'data': data,
+        'meta': meta or {},
+        'errors': errors or [],
+    }
+
+
+def error_envelope(detail):
+    return envelope(data=None, meta={}, errors=[{'detail': detail}])
 
 
 class OrdensServicoHojeView(APIView):
@@ -83,7 +99,7 @@ class OrdensServicoHojeView(APIView):
 
 
 class HistoricoOrdemServicoView(APIView):
-    """GET /api/ordens-servico/historico/"""
+    """Legado RF31: removido das URLs; use /api/shared/historico/."""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -405,6 +421,52 @@ class IncidenteViewSet(viewsets.GenericViewSet):
         )
 
 
+class IncidenteComparativoView(APIView):
+    """RF-31: GET /api/gestao/incidentes/{id}/comparativo/."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsGestor]
+
+    def get(self, request, pk):
+        estabelecimento = request.user.perfil_gestor.estabelecimento
+
+        try:
+            comparativo = IncidenteService.montar_comparativo(pk, estabelecimento)
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+
+        ctx = {'request': request}
+        entrada = IncidenteComparativoFotoSerializer(
+            comparativo['entrada'],
+            many=True,
+            context=ctx,
+        ).data
+        incidente = IncidenteComparativoFotoSerializer(
+            [comparativo['incidente']],
+            many=True,
+            context=ctx,
+        ).data
+        ordem_servico = IncidenteAuditoriaOrdemServicoSerializer(
+            comparativo['ordem_servico'],
+            context=ctx,
+        ).data
+
+        return Response(
+            envelope(
+                data={
+                    'entrada': entrada,
+                    'incidente': incidente,
+                    'ordem_servico': ordem_servico,
+                },
+                meta={
+                    'total_entrada': len(entrada),
+                    'total_incidente': len(incidente),
+                },
+            ),
+            status=status.HTTP_200_OK,
+        )
+
+
 @api_view(['POST'])
 def registrar_incidente(request, pk):
     """Endpoint para o operador relatar um dano e travar a OS."""
@@ -414,7 +476,10 @@ def registrar_incidente(request, pk):
             dados=request.data,
             arquivo_foto=request.FILES.get('foto_url')
         )
-        return Response({'status': 'OS bloqueada por incidente'}, status=status.HTTP_201_CREATED)
+        return Response(
+            envelope(data={'status': 'OS bloqueada por incidente'}),
+            status=status.HTTP_201_CREATED,
+        )
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -423,8 +488,116 @@ def registrar_incidente(request, pk):
 #  RF-17 — Histórico Consolidado de Atendimentos (Gestor)
 # ---------------------------------------------------------------------------
 
+class HistoricoUnificadoView(APIView):
+    """RF-31: GET /api/shared/historico/."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            perfil = HistoricoUnificadoService.identificar_perfil(request.user)
+        except DjangoPermissionDenied as exc:
+            raise DRFPermissionDenied(str(exc))
+
+        ctx = {'request': request}
+
+        if perfil == HistoricoUnificadoService.PERFIL_CLIENTE:
+            painel = HistoricoUnificadoService.listar_painel_cliente(request.user)
+            data = {
+                'cliente_nome': painel['cliente_nome'],
+                'ativos': OrdemServicoClienteSerializer(painel['ativos'], many=True, context=ctx).data,
+                'historico': OrdemServicoClienteSerializer(painel['historico'], many=True, context=ctx).data,
+                'historico_meta': painel['historico_meta'],
+            }
+            return Response(envelope(data=data, meta={'perfil': perfil}), status=status.HTTP_200_OK)
+
+        if perfil == HistoricoUnificadoService.PERFIL_GESTOR:
+            filtro = HistoricoGestorFiltroSerializer(data=request.query_params)
+            filtro.is_valid(raise_exception=True)
+            try:
+                queryset = HistoricoUnificadoService.listar_historico_gestor(
+                    request.user,
+                    filtro.validated_data,
+                )
+            except ValidationError as exc:
+                detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+                return Response(error_envelope(detail), status=status.HTTP_400_BAD_REQUEST)
+
+            paginator = PageNumberPagination()
+            paginator.page_size = 15
+            page = paginator.paginate_queryset(queryset, request)
+            serializer = HistoricoGestorItemSerializer(page, many=True, context=ctx)
+            return Response(
+                envelope(
+                    data=serializer.data,
+                    meta={
+                        'perfil': perfil,
+                        'count': paginator.page.paginator.count,
+                        'next': paginator.get_next_link(),
+                        'previous': paginator.get_previous_link(),
+                    },
+                ),
+                status=status.HTTP_200_OK,
+            )
+
+        filtro = HistoricoOrdemServicoFiltroSerializer(data=request.query_params)
+        filtro.is_valid(raise_exception=True)
+        try:
+            queryset = HistoricoUnificadoService.listar_historico_funcionario(
+                request.user,
+                filtro.validated_data,
+            )
+        except ValidationError as exc:
+            detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+            return Response(error_envelope(detail), status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = OrdemServicoSerializer(queryset, many=True, context=ctx)
+        return Response(
+            envelope(
+                data=serializer.data,
+                meta={'perfil': perfil, 'count': len(serializer.data)},
+            ),
+            status=status.HTTP_200_OK,
+        )
+
+
+class HistoricoGaleriaUnificadaView(APIView):
+    """RF-31: GET /api/shared/historico/{id}/galeria/."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            perfil, galeria = HistoricoUnificadoService.montar_galeria_por_perfil(pk, request.user)
+        except DjangoPermissionDenied:
+            raise DRFPermissionDenied()
+        except ValidationError as exc:
+            detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
+            return Response(error_envelope(detail), status=status.HTTP_400_BAD_REQUEST)
+
+        ctx = {'request': request}
+
+        if perfil == HistoricoUnificadoService.PERFIL_CLIENTE:
+            data = {
+                'ordem_servico_id': pk,
+                'entrada': ClienteGaleriaMidiaSerializer(galeria['entrada'], many=True, context=ctx).data,
+                'finalizacao': ClienteGaleriaMidiaSerializer(galeria['finalizacao'], many=True, context=ctx).data,
+                'laudo_tecnico': galeria['laudo_tecnico'],
+            }
+            return Response(envelope(data=data, meta={'perfil': perfil}), status=status.HTTP_200_OK)
+
+        data = {
+            'estado_inicial': MidiaGaleriaSerializer(galeria['estado_inicial'], many=True, context=ctx).data,
+            'estado_meio': MidiaGaleriaSerializer(galeria['estado_meio'], many=True, context=ctx).data,
+            'estado_final': MidiaGaleriaSerializer(galeria['estado_final'], many=True, context=ctx).data,
+        }
+        return Response(envelope(data=data, meta={'perfil': perfil}), status=status.HTTP_200_OK)
+
+
 class HistoricoGestorListView(APIView):
-    """GET /api/ordens-servico/gestor/historico/"""
+    """Legado RF31: removido das URLs; use /api/shared/historico/."""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsGestor]
 
@@ -463,7 +636,7 @@ class HistoricoGestorListView(APIView):
 # ---------------------------------------------------------------------------
 
 class HistoricoGestorFotosView(APIView):
-    """GET /api/ordens-servico/gestor/historico/{id}/fotos/"""
+    """Legado RF31: removido das URLs; use /api/shared/historico/{id}/galeria/."""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsGestor]
 

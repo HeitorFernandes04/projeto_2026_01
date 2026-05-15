@@ -5,8 +5,10 @@ import { Subscription } from 'rxjs';
 
 import {
   IncidenteAuditoria,
+  IncidenteComparativo,
   IncidentePendente,
   IncidentesService,
+  MidiaComparativoIncidente,
 } from '../../services/incidentes.service';
 
 @Component({
@@ -30,6 +32,8 @@ export class IncidentesComponent implements OnInit, OnDestroy {
   incidentes: IncidentePendente[] = [];
   incidenteSelecionado: IncidentePendente | null = null;
   auditoriaSelecionada: IncidenteAuditoria | null = null;
+  comparativoSelecionado: IncidenteComparativo | null = null;
+  fotoAmpliada: { url: string; alt: string } | null = null;
 
   private readonly incidentesService = inject(IncidentesService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -49,6 +53,14 @@ export class IncidentesComponent implements OnInit, OnDestroy {
 
   get podeResolver(): boolean {
     return !!this.incidenteSelecionado && this.notaResolucao.trim().length > 0 && !this.resolvendo;
+  }
+
+  fotosEntradaComparativo(): MidiaComparativoIncidente[] {
+    return this.comparativoSelecionado?.entrada ?? [];
+  }
+
+  fotosIncidenteComparativo(): MidiaComparativoIncidente[] {
+    return this.comparativoSelecionado?.incidente ?? [];
   }
 
   ngOnInit(): void {
@@ -95,8 +107,10 @@ export class IncidentesComponent implements OnInit, OnDestroy {
     this.erroResolucao = '';
     this.notaResolucao = '';
     this.auditoriaSelecionada = null;
+    this.comparativoSelecionado = null;
     this.mensagemSucesso = '';
     this.carregarAuditoria(incidente.id);
+    this.carregarComparativo(incidente.id);
     this.cdr.markForCheck();
   }
 
@@ -104,11 +118,27 @@ export class IncidentesComponent implements OnInit, OnDestroy {
     this.modalAberto = false;
     this.incidenteSelecionado = null;
     this.auditoriaSelecionada = null;
+    this.comparativoSelecionado = null;
     this.carregandoAuditoria = false;
     this.erroAuditoria = false;
     this.resolvendo = false;
     this.erroResolucao = '';
     this.notaResolucao = '';
+    this.fotoAmpliada = null;
+    this.cdr.markForCheck();
+  }
+
+  abrirFotoAmpliada(url: string | null, alt: string): void {
+    if (!url) {
+      return;
+    }
+
+    this.fotoAmpliada = { url, alt };
+    this.cdr.markForCheck();
+  }
+
+  fecharFotoAmpliada(): void {
+    this.fotoAmpliada = null;
     this.cdr.markForCheck();
   }
 
@@ -127,6 +157,27 @@ export class IncidentesComponent implements OnInit, OnDestroy {
         this.auditoriaSelecionada = null;
         this.carregandoAuditoria = false;
         this.erroAuditoria = true;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  carregarComparativo(incidenteId: number): void {
+    this.incidentesService.obterComparativo(incidenteId).subscribe({
+      next: (comparativo) => {
+        this.comparativoSelecionado = comparativo;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.comparativoSelecionado = {
+          entrada: [],
+          incidente: [],
+          ordem_servico: {
+            id: this.incidenteSelecionado?.ordem_servico_id ?? incidenteId,
+            placa: this.incidenteSelecionado?.placa ?? '',
+            modelo: this.incidenteSelecionado?.modelo ?? '',
+          },
+        };
         this.cdr.markForCheck();
       },
     });

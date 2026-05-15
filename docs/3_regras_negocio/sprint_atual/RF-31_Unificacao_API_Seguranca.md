@@ -62,6 +62,38 @@
 
 ## 3. Esboço de Usabilidade (Web)
 ### Modal de Auditoria de Incidentes
-- **Layout:** Duas colunas. A coluna "Entrada" exibe um grid projetado para as 5 fotos obrigatórias. Ambas as colunas possuem zoom ao passar o mouse (magnifier).
+- **Layout:** Duas colunas. A coluna "Entrada" exibe um grid projetado para as 5 fotos obrigatórias. As miniaturas podem ser clicadas para abrir uma visualização ampliada da evidência.
 - **Controles:** Manter os botões de ação atuais do modal de auditoria sem alterações.
 ---
+
+## 4. Status de Implementação
+
+**Status:** Implementada em 15/05/2026.
+
+### 4.1 Entregas Realizadas
+- Histórico autenticado consolidado em `GET /api/shared/historico/`.
+- Galeria autenticada consolidada em `GET /api/shared/historico/{id}/galeria/`.
+- Rotas antigas autenticadas removidas das `urls.py`:
+  - `/api/cliente/historico/`
+  - `/api/ordens-servico/historico/`
+  - `/api/ordens-servico/gestor/historico/`
+- Novo endpoint `GET /api/gestao/incidentes/{id}/comparativo/`.
+- Envelope padrão `{ data, meta, errors }` aplicado aos endpoints unificados.
+- Filtragem por perfil preservando isolamento entre Cliente, Gestor e Funcionário.
+- Modal Web com comparativo side-by-side, fallback para OS antigas sem fotos de entrada e visualização ampliada por clique.
+- Services Web e Mobile migrados para a nova rota compartilhada.
+
+### 4.2 Impacto em Dados e Modelagem
+- **Sem alteração de models ou migrations nesta RF.**
+- A RF reutiliza os models existentes `OrdemServico`, `MidiaOrdemServico` e `IncidenteOS`.
+- O impacto documental ficou restrito ao contrato de API e ao comportamento de interface.
+
+### 4.3 Evidências de Validação
+- Backend: `228 passed`.
+- Web unitário: `207 passed`.
+- Mobile unitário: `10 passed`.
+- Web build: aprovado.
+- Mobile build: aprovado.
+- Web `npm audit --audit-level=high`: `0 vulnerabilities`.
+- Mobile `npm audit --audit-level=high`: `0 vulnerabilities`.
+- E2E Cypress: scripts existentes identificados, mas a execução local foi bloqueada por problema do binário/cache do Cypress no Windows antes da abertura dos testes.

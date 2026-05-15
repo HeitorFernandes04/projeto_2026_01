@@ -57,6 +57,28 @@ export interface IncidenteAuditoria {
   vistoria_item: IncidenteAuditoriaVistoriaItem | null;
 }
 
+export interface MidiaComparativoIncidente {
+  id: number;
+  arquivo_url: string | null;
+  momento: string;
+}
+
+export interface IncidenteComparativo {
+  entrada: MidiaComparativoIncidente[];
+  incidente: MidiaComparativoIncidente[];
+  ordem_servico: {
+    id: number;
+    placa: string;
+    modelo: string;
+  };
+}
+
+interface ApiEnvelope<T> {
+  data: T;
+  meta: Record<string, string | number | null | undefined>;
+  errors: Array<{ detail?: string }>;
+}
+
 export interface ResolverIncidenteResponse {
   detail: string;
   id: number;
@@ -136,6 +158,14 @@ export class IncidentesService {
     return this.http.get<IncidenteAuditoria>(`${this.apiUrl}${id}/auditoria/`, {
       headers: this.getHeaders(),
     });
+  }
+
+  obterComparativo(id: number): Observable<IncidenteComparativo> {
+    return this.http
+      .get<ApiEnvelope<IncidenteComparativo>>(`/api/gestao/incidentes/${id}/comparativo/`, {
+        headers: this.getHeaders(),
+      })
+      .pipe(map((response) => response.data));
   }
 
   resolverIncidente(id: number, observacoes_resolucao: string): Observable<ResolverIncidenteResponse> {

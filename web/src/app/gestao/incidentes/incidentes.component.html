@@ -188,47 +188,78 @@
               <p>{{ auditoriaSelecionada.descricao }}</p>
             </div>
 
-            <div class="photo-grid">
+            <div class="photo-grid side-by-side">
               <div class="photo-section">
                 <div class="label-row">
-                  <span class="dot red"></span>
-                  Evidencia do incidente
+                  <span class="dot"></span>
+                  Entrada
                 </div>
 
-                @if (auditoriaSelecionada.foto_url) {
-                  <div class="photo-card border-red">
-                    <img
-                      [src]="auditoriaSelecionada.foto_url"
-                      [alt]="'Foto do incidente da OS #' + auditoriaSelecionada.ordem_servico.id"
-                      data-testid="incidente-foto"
-                    >
+                @if (fotosEntradaComparativo().length) {
+                  <div class="entrada-grid">
+                    @for (foto of fotosEntradaComparativo(); track foto.id) {
+                      <button
+                        class="photo-card compact"
+                        type="button"
+                        [attr.aria-label]="'Ampliar foto de entrada ' + foto.id"
+                        (click)="abrirFotoAmpliada(foto.arquivo_url, 'Foto de entrada da OS #' + auditoriaSelecionada.ordem_servico.id)"
+                      >
+                        <img
+                          [src]="foto.arquivo_url"
+                          [alt]="'Foto de entrada da OS #' + auditoriaSelecionada.ordem_servico.id"
+                          data-testid="entrada-foto"
+                        >
+                      </button>
+                    }
                   </div>
                 } @else {
-                  <div class="photo-card border-red placeholder">
-                    <span class="material-symbols-outlined">image</span>
-                    <span class="caption">Sem foto vinculada a este incidente.</span>
+                  <div class="photo-card placeholder" data-testid="entrada-placeholder">
+                    <span class="material-symbols-outlined">photo_camera</span>
+                    <span class="caption">Sem fotos de entrada vinculadas a esta OS.</span>
                   </div>
                 }
               </div>
 
               <div class="photo-section">
                 <div class="label-row">
-                  <span class="dot"></span>
-                  Comparativo com a vistoria inicial
+                  <span class="dot red"></span>
+                  Incidente
                 </div>
 
-                @if (auditoriaSelecionada.vistoria_item?.foto_url || auditoriaSelecionada.vista_inicial_foto_url) {
-                  <div class="photo-card">
-                    <img
-                      [src]="auditoriaSelecionada.vistoria_item?.foto_url || auditoriaSelecionada.vista_inicial_foto_url"
-                      [alt]="'Foto da vistoria inicial da OS #' + auditoriaSelecionada.ordem_servico.id"
-                      data-testid="vistoria-foto"
-                    >
+                @if (fotosIncidenteComparativo().length) {
+                  <div class="incidente-grid">
+                    @for (foto of fotosIncidenteComparativo(); track foto.id) {
+                      <button
+                        class="photo-card border-red"
+                        type="button"
+                        [attr.aria-label]="'Ampliar foto do incidente ' + foto.id"
+                        (click)="abrirFotoAmpliada(foto.arquivo_url, 'Foto do incidente da OS #' + auditoriaSelecionada.ordem_servico.id)"
+                      >
+                        <img
+                          [src]="foto.arquivo_url"
+                          [alt]="'Foto do incidente da OS #' + auditoriaSelecionada.ordem_servico.id"
+                          data-testid="incidente-foto"
+                        >
+                      </button>
+                    }
                   </div>
+                } @else if (auditoriaSelecionada.foto_url) {
+                  <button
+                    class="photo-card border-red"
+                    type="button"
+                    aria-label="Ampliar foto do incidente"
+                    (click)="abrirFotoAmpliada(auditoriaSelecionada.foto_url, 'Foto do incidente da OS #' + auditoriaSelecionada.ordem_servico.id)"
+                  >
+                    <img
+                      [src]="auditoriaSelecionada.foto_url"
+                      [alt]="'Foto do incidente da OS #' + auditoriaSelecionada.ordem_servico.id"
+                      data-testid="incidente-foto"
+                    >
+                  </button>
                 } @else {
-                  <div class="photo-card placeholder">
-                    <span class="material-symbols-outlined">photo_camera</span>
-                    <span class="caption">Sem foto registrada na vistoria inicial para esta peca.</span>
+                  <div class="photo-card border-red placeholder">
+                    <span class="material-symbols-outlined">image</span>
+                    <span class="caption">Sem foto vinculada a este incidente.</span>
                   </div>
                 }
               </div>
@@ -272,5 +303,29 @@
         </footer>
       </div>
     </div>
+
+    @if (fotoAmpliada) {
+      <div
+        class="photo-lightbox"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Visualizacao ampliada da foto"
+      >
+        <button
+          class="lightbox-close"
+          type="button"
+          aria-label="Fechar foto ampliada"
+          (click)="fecharFotoAmpliada()"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <img
+          [src]="fotoAmpliada.url"
+          [alt]="fotoAmpliada.alt"
+          data-testid="foto-ampliada"
+        >
+      </div>
+    }
   }
 </div>

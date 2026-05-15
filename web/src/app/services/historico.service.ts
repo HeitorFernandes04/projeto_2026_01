@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface HistoricoItem {
   id: number;
@@ -42,11 +43,17 @@ export interface GaleriaOS {
   estado_final: MidiaGaleria[];
 }
 
+interface ApiEnvelope<T> {
+  data: T;
+  meta: Record<string, string | number | null | undefined>;
+  errors: Array<{ detail?: string }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class HistoricoService {
-  private readonly urlHistorico = '/api/ordens-servico/gestor/historico/';
+  private readonly urlHistorico = '/api/shared/historico/';
 
   constructor(private http: HttpClient) {}
 
@@ -64,14 +71,23 @@ export class HistoricoService {
     if (filtros.page)                     params = params.set('page', String(filtros.page));
     if (filtros.com_incidente_resolvido)  params = params.set('com_incidente_resolvido', 'true');
 
-    return this.http.get<HistoricoResponse>(this.urlHistorico, {
+    return this.http.get<ApiEnvelope<HistoricoItem[]>>(this.urlHistorico, {
       headers: this.getHeaders(),
       params,
-    });
+    }).pipe(
+      map((response) => ({
+        count: Number(response.meta?.['count'] ?? response.data.length),
+        next: (response.meta?.['next'] as string | null | undefined) ?? null,
+        previous: (response.meta?.['previous'] as string | null | undefined) ?? null,
+        results: response.data,
+      })),
+    );
   }
 
   buscarGaleria(osId: number): Observable<GaleriaOS> {
-    const url = `${this.urlHistorico}${osId}/fotos/`;
-    return this.http.get<GaleriaOS>(url, { headers: this.getHeaders() });
+    const url = `${this.urlHistorico}${osId}/galeria/`;
+    return this.http
+      .get<ApiEnvelope<GaleriaOS>>(url, { headers: this.getHeaders() })
+      .pipe(map((response) => response.data));
   }
 }
