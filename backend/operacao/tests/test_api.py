@@ -180,6 +180,14 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.data,
+            {
+                'data': {'status': 'OS bloqueada por incidente'},
+                'meta': {},
+                'errors': [],
+            },
+        )
 
         os.refresh_from_db()
         incidente = IncidenteOS.objects.get(ordem_servico=os)

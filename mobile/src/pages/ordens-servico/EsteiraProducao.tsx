@@ -43,7 +43,7 @@ const EsteiraProducao: React.FC = () => {
     }
   }, [id]);
 
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isAtivoRef = useRef(false);
 
   // Axioma: Limpeza agressiva ao sair da página (Prevenção de Ghost Polling)

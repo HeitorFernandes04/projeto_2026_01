@@ -476,7 +476,10 @@ def registrar_incidente(request, pk):
             dados=request.data,
             arquivo_foto=request.FILES.get('foto_url')
         )
-        return Response({'status': 'OS bloqueada por incidente'}, status=status.HTTP_201_CREATED)
+        return Response(
+            envelope(data={'status': 'OS bloqueada por incidente'}),
+            status=status.HTTP_201_CREATED,
+        )
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
