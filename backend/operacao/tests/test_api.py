@@ -33,8 +33,8 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.funcionario)
 
-    def test_criar_ordem_servico_avulso_com_sucesso(self):
-        """Valida a criação de um ordem_servico 'na hora' (AVULSO)."""
+    def test_criar_ordem_servico_entrada_rapida_com_sucesso(self):
+        """Valida a criação de um ordem_servico 'na hora' (ENTRADA RÁPIDA)."""
         # Garante horário comercial (08:00-17:00) para evitar falhas intermitentes
         agora = timezone.now()
         if agora.hour < 8:
