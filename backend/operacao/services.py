@@ -113,7 +113,9 @@ class OrdemServicoService:
     @staticmethod
     def verificar_conflito(estabelecimento, data_hora, duracao):
         """Valida se o slot está disponível e não é retroativo com isolamento SaaS."""
-        if data_hora < timezone.now():
+        # RF-22: Validação de horário retroativo com margem de segurança (Grace Period)
+        # Permite 5 minutos de atraso entre o envio do Mobile e o processamento no Servidor
+        if data_hora < (timezone.now() - datetime.timedelta(minutes=5)):
             raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
 
         fim = data_hora + duracao

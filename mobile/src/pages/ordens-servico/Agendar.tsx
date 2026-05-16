@@ -1,7 +1,9 @@
 import { 
   IonContent, 
   IonPage, 
-  IonSpinner 
+  IonSpinner,
+  IonSelect,
+  IonSelectOption
 } from '@ionic/react';
 import { LogOut, Check } from 'lucide-react'; 
 import React, { useState, useEffect } from 'react';
@@ -145,12 +147,18 @@ const Agendar: React.FC = () => {
               type="tel"
               inputMode="numeric"
             />
-            <input 
+            <IonSelect 
               value={form.cor} 
-              onChange={e => setForm({...form, cor: e.target.value})}
-              style={styles.input} 
-              placeholder="COR DO VEÍCULO *" 
-            />
+              onIonChange={e => setForm({...form, cor: e.detail.value})}
+              style={styles.selectInput} 
+              placeholder="COR DO VEÍCULO *"
+              interface="action-sheet"
+              toggleIcon={Check}
+            >
+              {['Branco', 'Preto', 'Cinza', 'Prata', 'Vermelho', 'Azul', 'Amarelo', 'Verde', 'Bege', 'Outro'].map(cor => (
+                <IonSelectOption key={cor} value={cor}>{cor}</IonSelectOption>
+              ))}
+            </IonSelect>
           </div>
 
           <label style={styles.sectionLabel}>SERVIÇO</label>
@@ -223,6 +231,17 @@ const styles: Record<string, React.CSSProperties> = {
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '16px' },
   inputMain: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '18px', borderRadius: '16px', fontSize: '18px', fontWeight: 900, outline: 'none' },
   input: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '18px', borderRadius: '16px', fontSize: '16px', outline: 'none' },
+  selectInput: { 
+    background: 'var(--lm-card)', 
+    border: '1px solid var(--lm-border)', 
+    color: '#fff', 
+    padding: '12px 18px', 
+    borderRadius: '16px', 
+    fontSize: '16px', 
+    width: '100%',
+    '--placeholder-color': '#666',
+    '--placeholder-opacity': '1'
+  } as React.CSSProperties,
   inputDate: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', color: '#fff', padding: '14px', borderRadius: '12px', width: '100%', colorScheme: 'dark', outline: 'none' },
   sectionLabel: { color: '#fff', fontSize: '12px', fontWeight: 900, display: 'block', margin: '32px 0 16px', textTransform: 'uppercase' },
   selectableCard: { background: 'var(--lm-card)', padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' },
