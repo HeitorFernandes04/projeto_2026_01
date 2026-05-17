@@ -1,122 +1,289 @@
-.agend-toolbar {
-  --background: var(--lm-bg);
+/* ═══════════════════════════════════════════════════════════════════
+   AGENDAMENTO SCREEN — Dark Premium / Cyberpunk Clean
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ag-bg: #0F172A;
+  --ag-card: #1E293B;
+  --ag-primary: #38BDF8;
+  --ag-foreground: #F1F5F9;
+  --ag-muted: #94A3B8;
+  --ag-radius-lg: 24px;
+  --ag-radius-md: 12px;
+}
+
+.ag-page {
+  --background: var(--ag-bg);
+  background: var(--ag-bg);
+  font-family: 'Inter', sans-serif;
+}
+
+.ag-header {
+  --background: var(--ag-bg);
+  background: var(--ag-bg);
+}
+
+.ag-toolbar {
+  --background: var(--ag-bg);
   --border-width: 0;
 }
 
-.agend-title {
-  color: var(--lm-text);
-  font-weight: 800;
-}
-
-/* Resumo */
-.agend-resumo {
-  margin-bottom: 20px;
-}
-
-.agend-resumo-label {
-  color: var(--lm-text-muted);
-  font-size: 12px;
+.ag-title {
+  color: var(--ag-foreground);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin: 0 0 10px 0;
 }
 
-.agend-resumo-item {
-  color: var(--lm-text);
-  font-size: 15px;
-  margin: 0 0 6px 0;
+.ag-back-button {
+  color: var(--ag-foreground);
+  --color: var(--ag-foreground);
 }
 
-.agend-resumo-preco {
-  color: var(--lm-primary);
-  font-size: 22px;
-  font-weight: 800;
-  margin: 10px 0 0 0;
+.ag-content {
+  --background: transparent;
+  --padding-bottom: 120px; /* Space for the fixed footer */
 }
 
-/* Labels de seção */
-.agend-section-label {
-  color: var(--lm-text);
-  font-size: 15px;
-  font-weight: 700;
-  margin: 20px 0 10px 0;
+/* ── Resumo ── */
+.ag-resumo-card {
+  background: var(--ag-card);
+  border-radius: var(--ag-radius-lg);
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Input de data */
-.agend-date-input {
-  width: 100%;
-  background: var(--lm-card);
-  border: 1px solid var(--lm-border);
-  border-radius: 16px;
-  color: var(--lm-text);
-  padding: 14px 16px;
+.ag-resumo-title {
+  color: var(--ag-foreground);
   font-size: 16px;
-  outline: none;
-  box-sizing: border-box;
-  color-scheme: dark;
+  font-weight: 700;
+  margin: 0 0 16px 0;
 }
 
-/* Grid de horários */
-.agend-horarios-grid {
+.ag-resumo-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.agend-horario-chip {
-  padding: 10px 18px;
-  border-radius: 12px;
+.ag-resumo-row:last-child {
+  margin-bottom: 0;
+}
+
+.ag-resumo-label {
+  color: var(--ag-muted);
   font-size: 14px;
+}
+
+.ag-resumo-value {
+  color: var(--ag-foreground);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ag-resumo-total-label {
+  color: var(--ag-muted);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ag-resumo-total-value {
+  color: var(--ag-primary);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* ── Section Headers ── */
+.ag-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ag-foreground);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+}
+
+.ag-section-icon {
+  color: var(--ag-primary);
+  font-size: 18px;
+}
+
+/* ── Calendário ── */
+.ag-calendar {
+  background: var(--ag-card);
+  border-radius: var(--ag-radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.ag-cal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ag-cal-month {
+  color: var(--ag-foreground);
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.ag-cal-nav-btn {
+  background: transparent;
+  color: var(--ag-muted);
+  font-size: 20px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.ag-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.ag-cal-weekday {
+  color: var(--ag-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ag-cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.ag-cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ag-foreground);
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  transition: all 0.2s;
+}
+
+.ag-cal-day.empty {
+  visibility: hidden;
+}
+
+.ag-cal-day.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.ag-cal-day.selected {
+  background: var(--ag-primary);
+  color: #0F172A;
+  font-weight: 700;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+/* ── Horários ── */
+.ag-horarios-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.ag-chip {
+  background: var(--ag-card);
+  color: var(--ag-muted);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--ag-radius-md);
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.ag-chip.active {
+  background: var(--ag-primary);
+  color: #0F172A;
+  border-color: var(--ag-primary);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+}
+
+.ag-chip:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.ag-sem-horarios {
+  color: var(--ag-muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ── Footer / Botão Finalizar ── */
+.ag-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 24px 32px;
+  background: var(--ag-bg);
+  z-index: 10;
+}
+
+.ag-btn-finalizar {
+  width: 100%;
+  height: 64px;
+  border-radius: var(--ag-radius-lg);
+  font-size: 16px;
   font-weight: 700;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.ag-btn-finalizar:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.ag-btn-finalizar:not(:disabled) {
+  background: var(--ag-card);
+  color: var(--ag-muted);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.chip-disponivel {
-  background: var(--lm-card);
-  color: var(--lm-text);
-  border: 1px solid var(--lm-border);
+.ag-btn-finalizar.enabled-action {
+  background: var(--ag-primary) !important;
+  color: #0F172A !important;
+  box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3);
 }
 
-.chip-ativo {
-  background: var(--lm-primary);
-  color: #ffffff;
+.ag-btn-finalizar.enabled-action:active {
+  transform: scale(0.98);
 }
 
-.chip-indisponivel {
-  background: var(--lm-border);
-  color: var(--lm-text-muted);
-  cursor: not-allowed;
-  opacity: 0.5;
+/* ── Animações ── */
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out;
 }
 
-.agend-sem-horarios {
-  color: var(--lm-text-muted);
-  font-size: 14px;
-}
-
-.agend-aviso {
-  color: var(--lm-amber);
-  font-size: 14px;
-  margin-top: 16px;
-}
-
-.agend-link {
-  background: none;
-  border: none;
-  color: var(--lm-primary);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-}
-
-/* Footer fixo */
-.agend-footer {
-  padding: 16px 20px 32px;
-  background: var(--lm-bg);
-  border-top: 1px solid var(--lm-border);
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

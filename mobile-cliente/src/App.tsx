@@ -6,13 +6,14 @@ import { IonReactRouter } from '@ionic/react-router';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setUnauthorizedHandler } from './services/http';
 
-import Home from './pages/home/Home';
+import Welcome from './pages/welcome/Welcome';
 import PermissaoLocalizacao from './pages/permissao/PermissaoLocalizacao';
+import Home from './pages/home/Home';
+import Servicos from './pages/servicos/Servicos';
+import Agendamento from './pages/agendamento/Agendamento';
 import AuthGate from './pages/auth/AuthGate';
 import LoginWhatsApp from './pages/auth/LoginWhatsApp';
 import VerificacaoOTP from './pages/auth/VerificacaoOTP';
-import Servicos from './pages/servicos/Servicos';
-import Agendamento from './pages/agendamento/Agendamento';
 import Confirmacao from './pages/agendamento/Confirmacao';
 import SeuVeiculo from './pages/veiculos/SeuVeiculo';
 import TabLayout from './components/TabLayout/TabLayout';
@@ -45,26 +46,32 @@ const AppRoutes: React.FC = () => {
     setUnauthorizedHandler(logout);
   }, [logout]);
 
-  const localizacaoSolicitada =
-    localStorage.getItem('lm_localizacao_solicitada') === 'true';
-
   return (
     <IonRouterOutlet>
-      <Route exact path="/">
-        {localizacaoSolicitada
-          ? <Redirect to="/mapa" />
-          : <Redirect to="/permissao" />}
-      </Route>
+      {/* 1. Rota Raiz (/) e Welcome */}
+      <Route exact path="/" render={() => <Redirect to="/welcome" />} />
+      <Route exact path="/welcome" component={Welcome} />
 
+      {/* 2. Fluxo de Geolocalização (Base RF-28) */}
       <Route exact path="/permissao" component={PermissaoLocalizacao} />
       <Route exact path="/mapa" component={Home} />
 
+      {/* 3. Seleção Pública de Serviços (Início da RF-29) */}
+      <Route exact path="/servicos/:slug" component={Servicos} />
+
+      {/* 4. Calendário e Horários */}
+      <Route exact path="/agendamento" component={Agendamento} />
+
+      {/* 5. Barreira de Autenticação Obrigatória (Auth Gate) */}
       <Route exact path="/auth" component={AuthGate} />
+
+      {/* 6. Captura de Dados (WhatsApp + Nome) */}
       <Route exact path="/auth/whatsapp" component={LoginWhatsApp} />
+
+      {/* 7. Validação do Código PIN (OTP) */}
       <Route exact path="/auth/verificacao" component={VerificacaoOTP} />
 
-      <Route exact path="/servicos/:slug" component={Servicos} />
-      <Route exact path="/agendamento" component={Agendamento} />
+      {/* Demais Rotas de Continuidade (Checkout e Perfil) */}
       <Route exact path="/agendamento/confirmacao" component={Confirmacao} />
       <Route exact path="/veiculo/novo" component={SeuVeiculo} />
       <Route exact path="/veiculo/:id" component={SeuVeiculo} />

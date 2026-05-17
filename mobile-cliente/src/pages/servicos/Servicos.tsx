@@ -7,9 +7,10 @@ import {
   IonBackButton,
   IonTitle,
   IonContent,
-  IonButton,
+  IonIcon,
 } from '@ionic/react';
 import { useParams, useHistory } from 'react-router-dom';
+import { checkmarkOutline } from 'ionicons/icons';
 import { getEstabelecimento, getVeiculos } from '../../services/api';
 import type { Servico } from '../../services/api';
 import './Servicos.css';
@@ -47,54 +48,66 @@ const Servicos: React.FC = () => {
   };
 
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="servicos-toolbar">
+    <IonPage className="sv-page">
+      <IonHeader className="ion-no-border sv-header">
+        <IonToolbar className="sv-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/mapa" text="Voltar" />
+            <IonBackButton defaultHref="/mapa" text="Voltar" className="sv-back-button" />
           </IonButtons>
-          <IonTitle className="servicos-title">Serviços</IonTitle>
+          <IonTitle className="sv-title">Serviços</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
+      <IonContent className="ion-padding sv-content">
         {estabelecimentoNome && (
-          <p className="servicos-estab">{estabelecimentoNome}</p>
+          <p className="sv-estab">{estabelecimentoNome}</p>
         )}
 
-        {loading && <p className="servicos-carregando">Carregando serviços...</p>}
+        {loading && <p className="sv-carregando">Carregando serviços...</p>}
 
         {servicos.map(s => (
           <div
             key={s.id}
-            className={`lm-card servico-card ${selecionado?.id === s.id ? 'servico-card-ativo' : ''}`}
+            className={`sv-card ${selecionado?.id === s.id ? 'sv-card-ativo' : ''}`}
             onClick={() => setSelecionado(s)}
           >
-            <div className="servico-card-header">
-              <span className="servico-nome">{s.nome}</span>
-              <div className={`servico-radio ${selecionado?.id === s.id ? 'radio-ativo' : ''}`} />
+            <div className="sv-card-header">
+              <span className="sv-nome">{s.nome}</span>
+              <div className={`sv-radio ${selecionado?.id === s.id ? 'sv-radio-ativo' : ''}`}>
+                {selecionado?.id === s.id && (
+                  <IonIcon icon={checkmarkOutline} className="sv-check-icon" />
+                )}
+              </div>
             </div>
-            <p className="servico-descricao">{s.descricao}</p>
-            <div className="servico-footer">
-              <span className="servico-preco">R$ {Number(s.preco).toFixed(2)}</span>
-              <span className="servico-duracao">{s.duracao_estimada_min} min</span>
+            <p className="sv-descricao">{s.descricao}</p>
+            <div className="sv-footer">
+              <span className="sv-preco">R$ {Number(s.preco).toFixed(2)}</span>
+              <span className="sv-duracao">{s.duracao_estimada_min} min</span>
             </div>
           </div>
         ))}
       </IonContent>
 
-      {selecionado && (
-        <div className="servicos-footer">
-          <div className="servicos-total">
-            <span className="total-label">Total:</span>
-            <span className="total-valor">R$ {Number(selecionado.preco).toFixed(2)}</span>
-            <span className="total-duracao">| {selecionado.duracao_estimada_min} min</span>
+      <div className="sv-checkout">
+        <div className="sv-checkout-info">
+          <div className="sv-checkout-total">
+            <span className="sv-checkout-total-label">Total</span>
+            <span className="sv-checkout-total-valor">
+              R$ {selecionado ? Number(selecionado.preco).toFixed(2) : '0.00'}
+            </span>
           </div>
-          <IonButton className="lm-btn-primary" expand="block" onClick={handleContinuar}>
-            Continuar
-          </IonButton>
+          <div className="sv-checkout-duracao">
+            {selecionado ? `${selecionado.duracao_estimada_min} min estimativa` : '--'}
+          </div>
         </div>
-      )}
+        <button 
+          className="sv-btn-continuar" 
+          disabled={!selecionado} 
+          onClick={handleContinuar}
+        >
+          Continuar
+        </button>
+      </div>
     </IonPage>
   );
 };

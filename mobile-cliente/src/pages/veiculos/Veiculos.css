@@ -1,115 +1,187 @@
-.veiculo-toolbar {
-  --background: var(--lm-bg);
+/* ═══════════════════════════════════════════════════════════════════
+   VEICULOS SCREEN — Grid de Espaçamentos Calibrados (Fidelidade Figma)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --veic-bg: #0F172A;
+  --veic-card: #1E293B;
+  --veic-primary: #38BDF8;
+  --veic-foreground: #F8FAFC;
+  --veic-muted: #64748B;
+  --veic-radius: 24px;
+}
+
+.veiculo-page {
+  --background: var(--veic-bg) !important;
+  background: var(--veic-bg) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Força o fundo cinza do retângulo superior do Figma no Header do Ionic */
+.veiculo-header {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+}
+
+/* Container do Toolbar com fundo cinza do Figma e respiro do celular */
+.veiculo-toolbar-fluid {
+  --background: #1E293B !important;
+  background: #1E293B !important;
   --border-width: 0;
+  padding-top: 44px !important;   /* Altura para a barra de status do celular */
+  padding-bottom: 20px !important; /* Espaçamento interno do retângulo cinza */
 }
 
-.veiculo-title {
-  color: var(--lm-text);
-  font-weight: 800;
+/* Alinhamento lateral perfeito de 24px igual ao Figma */
+.header-content-fluid {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
 }
 
-/* SeuVeiculo */
-.veiculo-icon-container {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 24px;
-  padding: 0;
+/* Título equilibrado e limpo */
+.veiculo-title-premium {
+  color: #F8FAFC !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 32px !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
 }
 
-.veiculo-emoji {
-  font-size: 40px;
+/* Subtítulo fosco vindo do Figma */
+.veiculo-subtitle-premium {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  margin-top: 4px !important;
+  margin-bottom: 0 !important;
 }
 
-.campo-label {
-  color: var(--lm-text-muted) !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
+.veiculo-content-premium {
+  --background: #0F172A !important;
 }
 
-.campo-erro {
-  color: var(--lm-red);
-  font-size: 12px;
-  margin: -8px 16px 8px;
-}
-
-/* MeusVeiculos */
-.veiculos-subtitulo {
-  color: var(--lm-text-muted);
-  font-size: 14px;
-  margin: 0 0 20px 0;
-}
-
-.veiculos-vazio {
+/* ── ALTERAÇÃO: Container com mais respiro e margens simétricas ── */
+.veiculos-main-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 0;
+  /* AUMENTADO: padding-top foi para 32px para descer a lista de cards com harmonia */
+  padding: 32px 24px 40px 24px;
+  box-sizing: border-box;
+}
+
+.veiculos-lista-vertical {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.veiculos-vazio-emoji {
-  font-size: 56px;
-}
-
-.veiculos-vazio-texto {
-  color: var(--lm-text-muted);
-  font-size: 15px;
-  text-align: center;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.veiculo-card {
+/* Cards dos veículos cadastrados */
+.veiculo-card-interactive {
+  background: var(--veic-card);
+  border-radius: var(--veic-radius);
+  padding: 20px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  cursor: pointer;
-  padding: 16px 20px;
-  margin-bottom: 12px;
+  gap: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
-.veiculo-card-icon {
+.card-left-box {
+  width: 64px;
+  height: 64px;
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 28px;
+  color: var(--veic-primary);
   flex-shrink: 0;
 }
 
-.veiculo-card-info {
+.card-center-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
 }
 
-.veiculo-card-nome {
-  color: var(--lm-text);
-  font-size: 15px;
-  font-weight: 700;
+.card-vehicle-title {
+  color: var(--veic-foreground);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
 }
 
-.veiculo-card-detalhe {
-  color: var(--lm-text-muted);
-  font-size: 13px;
+.card-mini-grid {
+  display: flex;
+  gap: 32px;
 }
 
-.veiculo-card-chevron {
-  color: var(--lm-text-muted);
+.grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.column-label {
+  color: var(--veic-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.column-value {
+  color: var(--veic-foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-right-chevron {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── ALTERAÇÃO: Botão de Adição com mais afastamento ── */
+.btn-add-vehicle-premium {
+  width: 100%;
+  background: var(--veic-primary);
+  color: #0F172A;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--veic-radius);
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  /* AUMENTADO: de 8px para 24px para criar um intervalo elegante abaixo dos cards */
+  margin-top: 24px;
+  box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25);
+  cursor: pointer;
+}
+
+.btn-add-vehicle-premium .btn-icon {
   font-size: 22px;
-  font-weight: 300;
 }
 
-.veiculos-add-btn {
-  --border-color: var(--lm-border);
-  --color: var(--lm-text);
-  --border-radius: 20px;
-  height: 56px;
-  font-weight: 700;
+/* Caixa informativa de rodapé */
+.footer-tip-box-premium {
+  background: var(--veic-card);
+  border-radius: var(--veic-radius);
+  padding: 20px;
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  text-align: center;
   margin-top: 16px;
+}
+
+.footer-tip-box-premium p {
+  color: var(--veic-muted);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
 }

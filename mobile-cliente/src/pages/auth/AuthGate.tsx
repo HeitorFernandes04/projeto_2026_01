@@ -1,51 +1,75 @@
-import React, { useEffect } from 'react';
-import { IonPage, IonContent, IonButton } from '@ionic/react';
+import React, { useState } from 'react';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonContent,
+  IonIcon,
+} from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { lockClosedOutline, warningOutline } from 'ionicons/icons';
 import './Auth.css';
 
 const AuthGate: React.FC = () => {
-  const { token } = useAuth();
   const history = useHistory();
+  const [mostrarAvisoRecusa, setMostrarAvisoRecusa] = useState(false);
 
-  useEffect(() => {
-    if (token) {
-      const destino = localStorage.getItem('lm_destino_pos_auth') ?? '/inicio';
-      localStorage.removeItem('lm_destino_pos_auth');
-      history.replace(destino);
+  const handleRecusa = () => {
+    if (!mostrarAvisoRecusa) {
+      // Primeiro clique: mostra o aviso
+      setMostrarAvisoRecusa(true);
+    } else {
+      // Segundo clique: retorna para o calendário
+      history.push('/agendamento');
     }
-  }, [token, history]);
+  };
 
-  const irParaWhatsApp = () => history.push('/auth/whatsapp');
+  const handleAvancar = () => {
+    history.push('/auth/whatsapp');
+  };
 
   return (
-    <IonPage className="lm-page">
-      <IonContent className="ion-padding">
-        <div className="auth-container">
-          <div className="auth-icon lm-card">
-            <span className="auth-emoji">🔒</span>
-          </div>
+    <IonPage className="auth-page">
+      <IonHeader className="ion-no-border auth-header">
+        <IonToolbar className="auth-toolbar">
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/agendamento" text="" className="auth-back-button" />
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
 
-          <h1 className="auth-titulo">Autenticação necessária</h1>
-
-          <p className="auth-descricao">
-            Para continuar com seu agendamento, você precisa entrar ou criar uma conta.
-          </p>
-
-          <IonButton className="lm-btn-primary" expand="block" onClick={irParaWhatsApp}>
-            💬 Entrar com WhatsApp
-          </IonButton>
-
-          <IonButton
-            fill="outline"
-            expand="block"
-            onClick={irParaWhatsApp}
-            className="auth-btn-outline"
-          >
-            👤 Criar conta
-          </IonButton>
+      <IonContent className="ion-padding auth-content">
+        <div className="auth-icon-box glow-primary">
+          <IonIcon icon={lockClosedOutline} />
         </div>
+        
+        <h1 className="auth-title">Identificação Necessária</h1>
+        
+        <p className="auth-subtitle">
+          Para garantir a reserva da sua vaga no lava-jato e permitir o acompanhamento do status do serviço em tempo real, precisamos de uma identificação rápida.
+        </p>
+
+        {mostrarAvisoRecusa && (
+          <div className="auth-alert-card">
+            <p className="auth-alert-text">
+              <IonIcon icon={warningOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              Atenção: De acordo com as diretrizes do sistema, a validação do WhatsApp é obrigatória para vincular o veículo à vaga. Sem a identificação, o agendamento não poderá ser concluído.
+            </p>
+          </div>
+        )}
       </IonContent>
+
+      <div className="auth-footer">
+        <button className="auth-btn-primary" onClick={handleAvancar}>
+          Avançar para o WhatsApp
+        </button>
+        
+        <button className="auth-btn-secondary" onClick={handleRecusa}>
+          Não quero me identificar agora
+        </button>
+      </div>
     </IonPage>
   );
 };

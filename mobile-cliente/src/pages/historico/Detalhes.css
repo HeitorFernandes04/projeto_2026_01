@@ -1,0 +1,266 @@
+/* ═══════════════════════════════════════════════════════════════════
+   LAVA-ME — TELA DE DETALHAMENTO DE SERVIÇO (Antes e Depois — 5 Fotos)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.detalhes-page {
+  --background: #0F172A !important;
+  background: #0F172A !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Header Premium */
+.detalhes-header {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+}
+
+.detalhes-toolbar-fluid {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+  --border-width: 0;
+  padding-top: 44px !important;   /* Respiro para a barra de status do celular */
+  padding-bottom: 20px !important; /* Altura do retângulo cinza do Figma */
+}
+
+.header-content-fluid-flex {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+.detalhes-back-btn {
+  background: none;
+  border: none;
+  color: #F8FAFC;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.detalhes-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.detalhes-title-premium {
+  color: #F8FAFC !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 32px !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+
+.detalhes-subtitle-premium {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 13px !important;
+  margin: 4px 0 0 0 !important;
+}
+
+/* Container de Layout */
+.detalhes-main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Cards Informativos */
+.detalhes-info-card {
+  background: #1E293B;
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.detalhes-section-header {
+  color: #64748B;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.detalhes-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #F8FAFC;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.detalhes-row ion-icon {
+  font-size: 18px;
+  color: #38BDF8;
+  flex-shrink: 0;
+}
+
+.detalhes-preco-tag {
+  font-size: 26px;
+  font-weight: 800;
+  color: #38BDF8;
+  margin-top: 6px;
+}
+
+/* Esteira de Rolagem Horizontal para as 5 Fotos */
+.detalhes-photos-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.detalhes-photos-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.detalhes-image-wrapper {
+  width: 140px;
+  height: 105px;
+  aspect-ratio: 4 / 3;
+  background: #0F172A;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Nova Animação e Efeito de Toque nas Fotos Interativas ── */
+.interactive-photo {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
+}
+
+.interactive-photo:active {
+  transform: scale(0.95);
+  filter: brightness(0.85);
+}
+
+.detalhes-img-render {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Card de Observações do Operador */
+.detalhes-obs-card {
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 24px;
+  padding: 20px;
+  border: 1px solid rgba(56, 189, 248, 0.1);
+}
+
+.detalhes-obs-text {
+  color: #94A3B8;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Botão de Fechar */
+.btn-close-detalhes {
+  width: 100%;
+  background: #38BDF8;
+  color: #0F172A;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 24px;
+  padding: 18px;
+  border: none;
+  margin-top: 12px;
+  box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25);
+  cursor: pointer;
+}
+
+/* ── overlay Customizado para Visualização da Foto Expandida (Zoom) ── */
+.foto-detalhe-zoom-modal {
+  --background: rgba(15, 23, 42, 0.95) !important;
+  --height: 100%;
+  --width: 100%;
+}
+
+.foto-zoom-overlay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.98);
+  position: relative;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.foto-zoom-close-btn {
+  position: absolute;
+  top: 48px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #F8FAFC;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 25;
+}
+
+.foto-zoom-wrapper {
+  width: 100%;
+  max-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.6);
+}
+
+.foto-zoom-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  max-height: 70vh;
+  /* Animação pop suave de abertura baseada no figma */
+  animation: zoomInReveal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.foto-zoom-hint {
+  color: #64748B;
+  font-size: 14px;
+  margin-top: 24px;
+  font-weight: 500;
+}
+
+@keyframes zoomInReveal {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

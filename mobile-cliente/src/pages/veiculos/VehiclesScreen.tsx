@@ -11,6 +11,7 @@ import { carOutline, chevronForwardOutline, addOutline } from 'ionicons/icons';
 import { motion } from 'framer-motion';
 import './Veiculos.css';
 
+// Interface estrita para eliminar o erro do ESLint (no-explicit-any)
 interface Veiculo {
   id: number;
   marca: string;
@@ -19,7 +20,8 @@ interface Veiculo {
   cor: string;
 }
 
-const MeusVeiculos: React.FC = () => {
+const VehiclesScreen: React.FC = () => {
+  // Estado tipado corretamente com a interface Veiculo
   const [veiculos] = useState<Veiculo[]>([
     { id: 1, marca: 'Toyota', modelo: 'Corolla', placa: 'ABC-1234', cor: 'Preto' },
     { id: 2, marca: 'Honda', modelo: 'Civic', placa: 'XYZ-5678', cor: 'Prata' }
@@ -28,8 +30,8 @@ const MeusVeiculos: React.FC = () => {
 
   return (
     <IonPage className="veiculo-page">
-      {/* Header Premium com a classe de ancoragem de cor corrigida */}
-      <IonHeader className="ion-no-border veiculo-header">
+      {/* Header Premium com alinhamento lateral fluido de 24px */}
+      <IonHeader className="ion-no-border">
         <IonToolbar className="veiculo-toolbar-fluid">
           <div className="header-content-fluid">
             <h1 className="veiculo-title-premium">Meus Veículos</h1>
@@ -38,11 +40,11 @@ const MeusVeiculos: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      {/* Conteúdo com o fundo azul escuro fluido */}
+      {/* CORREÇÃO: Removido o 'ion-padding' para eliminar a margem dupla e expandir os cards horizontalmente */}
       <IonContent className="veiculo-content-premium" scrollY={true}>
         <div className="veiculos-main-container">
 
-          {/* Lista de Veículos */}
+          {/* Lista de Veículos (Cards Premium) */}
           <div className="veiculos-lista-vertical">
             {veiculos.map(v => (
               <motion.div
@@ -51,10 +53,12 @@ const MeusVeiculos: React.FC = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => history.push(`/veiculo/${v.id}`)}
               >
+                {/* Box do Ícone à Esquerda */}
                 <div className="card-left-box">
                   <IonIcon icon={carOutline} />
                 </div>
 
+                {/* Informações Centrais do Grid */}
                 <div className="card-center-info">
                   <h3 className="card-vehicle-title">{v.marca} {v.modelo}</h3>
                   <div className="card-mini-grid">
@@ -69,6 +73,7 @@ const MeusVeiculos: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Chevron Indicativo da Direita */}
                 <div className="card-right-chevron">
                   <IonIcon icon={chevronForwardOutline} />
                 </div>
@@ -76,7 +81,7 @@ const MeusVeiculos: React.FC = () => {
             ))}
           </div>
 
-          {/* Botão de Adicionar */}
+          {/* Botão Premium de Adicionar com efeito Glow */}
           <motion.button
             className="btn-add-vehicle-premium"
             whileTap={{ scale: 0.96 }}
@@ -86,7 +91,7 @@ const MeusVeiculos: React.FC = () => {
             Adicionar Veículo
           </motion.button>
 
-          {/* Dica de Rodapé */}
+          {/* Caixa de Dica Outline de Rodapé */}
           <div className="footer-tip-box-premium">
             <p>Cadastre seus veículos para agilizar futuros agendamentos</p>
           </div>
@@ -97,4 +102,4 @@ const MeusVeiculos: React.FC = () => {
   );
 };
 
-export default MeusVeiculos;
+export default VehiclesScreen;

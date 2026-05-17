@@ -1,153 +1,152 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
   IonToolbar,
-  IonTitle,
   IonContent,
-  IonButton,
-  useIonViewWillEnter,
+  IonIcon,
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { getOrdemAtiva, getOrdens, getVeiculos } from '../../services/api';
-import type { OrdemAtiva, OrdemServico, Veiculo } from '../../services/api';
+import {
+  carOutline,
+  timeOutline,
+  calendarOutline,
+  cubeOutline,
+  checkmarkCircleOutline,
+} from 'ionicons/icons';
+// CORREÇÃO: Sintaxe correta de importação ES Modules para Vite e TypeScript
+import logoImg from '../welcome/logo.jpeg';
 import './HomeDashboard.css';
 
-const STATUS_LABEL: Record<string, string> = {
-  AGENDADO: 'Agendado',
-  PATIO: 'No Pátio',
-  VISTORIA_INICIAL: 'Em Vistoria',
-  EM_EXECUCAO: 'Em Execução',
-  LIBERACAO: 'Liberação',
-  FINALIZADO: 'Finalizado',
-  CANCELADO: 'Cancelado',
-  BLOQUEADO_INCIDENTE: 'Bloqueado',
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  AGENDADO: 'agendado',
-  PATIO: 'andamento',
-  VISTORIA_INICIAL: 'andamento',
-  EM_EXECUCAO: 'andamento',
-  LIBERACAO: 'andamento',
-  FINALIZADO: 'finalizado',
-  CANCELADO: 'cancelado',
-  BLOQUEADO_INCIDENTE: 'cancelado',
-};
+// Altere para `true` para simular o card de "Veículo finalizado, pronto para retirada"
+const isServiceFinished = false;
 
 const HomeDashboard: React.FC = () => {
-  const { user } = useAuth();
   const history = useHistory();
-  const [ordemAtiva, setOrdemAtiva] = useState<OrdemAtiva | null>(null);
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
-
-  useIonViewWillEnter(() => {
-    Promise.all([
-      getOrdemAtiva().catch(() => null),
-      getOrdens().catch(() => []),
-      getVeiculos().catch(() => []),
-    ]).then(([ativa, listaOrdens, listaVeiculos]) => {
-      setOrdemAtiva(ativa);
-      setOrdens(listaOrdens.slice(0, 3));
-      setVeiculos(listaVeiculos.slice(0, 2));
-    });
-  });
-
-  const nome = user?.nome?.split(' ')[0] ?? 'Cliente';
 
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="dashboard-toolbar">
-          <IonTitle className="dashboard-title">Início</IonTitle>
+    <IonPage className="home-page">
+      {/* HEADER PREMIUM: Retângulo superior cinza idêntico ao padrão das outras telas */}
+      <IonHeader className="ion-no-border veiculo-header">
+        <IonToolbar className="veiculo-toolbar-fluid">
+          <div className="home-header-content-flex">
+            <div className="home-greeting-group">
+              <h1 className="home-greeting-title">Olá, Letícia!</h1>
+              <p className="home-greeting-subtitle">Bem-vindo de volta</p>
+            </div>
+            <div className="home-logo-box">
+              <img 
+                src={logoImg} 
+                alt="Lava-Me Logo" 
+                className="home-logo-img" 
+                draggable={false} 
+              />
+            </div>
+          </div>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <p className="dashboard-saudacao">Olá, {nome}!</p>
-        <p className="dashboard-subtitulo">Bem-vindo de volta</p>
-
-        {/* Card de Serviço Ativo */}
-        {ordemAtiva && (
-          <div className="lm-card dashboard-ativo-card">
-            <div className="ativo-header">
-              <span className="ativo-badge lm-badge lm-badge-andamento btn-pulse">
-                🔵 SERVIÇO ATIVO
-              </span>
+      {/* Conteúdo rolável com container interno seguro */}
+      <IonContent className="home-content-premium" scrollY={true}>
+        <div className="home-main-container">
+          
+          {/* COMPONENTE 1: CARD DE STATUS DO SERVIÇO ATIVO */}
+          <div className="home-card-ativo">
+            
+            {/* Header do Status */}
+            <div className="status-header">
+              <div className="status-icon-box">
+                <IonIcon icon={cubeOutline} />
+              </div>
+              <div className="status-titles">
+                <span className="status-subtitle">Status do Serviço</span>
+                <h2 className="status-title">
+                  {isServiceFinished ? "Serviço finalizado" : "Lavagem em andamento"}
+                </h2>
+              </div>
             </div>
-            <p className="ativo-descricao">Seu veículo está em execução</p>
-            <p className="ativo-info">📍 {ordemAtiva.estabelecimento_nome}</p>
-            <p className="ativo-info">🚗 {ordemAtiva.veiculo_modelo} {ordemAtiva.veiculo_placa}</p>
-            {ordemAtiva.tempo_estimado_min && (
-              <p className="ativo-info">⏱ ~{ordemAtiva.tempo_estimado_min} min restantes</p>
-            )}
-            <div className="ativo-progress-container">
-              <div
-                className="ativo-progress-bar"
-                style={{ width: `${ordemAtiva.progresso}%` }}
-              />
-            </div>
-            <span className="ativo-progresso-label">{ordemAtiva.progresso}%</span>
-            <IonButton
-              className="lm-btn-primary"
-              expand="block"
-              onClick={() => history.push('/acompanhamento')}
-            >
-              ⚡ Acompanhar
-            </IonButton>
-          </div>
-        )}
 
-        {/* Agendamentos Recentes */}
-        {ordens.length > 0 && (
-          <>
-            <h3 className="dashboard-section-title">Agendamentos recentes</h3>
-            {ordens.map(os => (
-              <div key={os.id} className="lm-card dashboard-os-card">
-                <div className="os-card-header">
-                  <span className="os-servico">{os.servico_nome}</span>
-                  <span className={`lm-badge lm-badge-${STATUS_BADGE[os.status] ?? 'agendado'}`}>
-                    {STATUS_LABEL[os.status] ?? os.status}
+            {/* Informações do Veículo */}
+            <div className="status-veiculo-info">
+              <IonIcon icon={carOutline} className="veiculo-icon" />
+              <span className="veiculo-text">Toyota Corolla - ABC-1234</span>
+            </div>
+
+            {/* Andamento vs Finalizado */}
+            {!isServiceFinished ? (
+              <>
+                {/* Linha do Tempo Horizontal (Stepper) */}
+                <div className="status-stepper">
+                  <div className="stepper-track">
+                    <div className="stepper-fill" style={{ width: '66%' }} />
+                  </div>
+
+                  <div className="stepper-steps">
+                    <div className="step-item completed">
+                      <div className="step-circle"><div className="step-dot" /></div>
+                      <span className="step-label">No pátio</span>
+                    </div>
+                    
+                    <div className="step-item completed">
+                      <div className="step-circle"><div className="step-dot" /></div>
+                      <span className="step-label">Em vistoria</span>
+                    </div>
+                    
+                    <div className="step-item pulsing">
+                      <div className="step-circle"><div className="step-dot" /></div>
+                      <span className="step-label">Em execução</span>
+                    </div>
+                    
+                    <div className="step-item">
+                      <div className="step-circle"><div className="step-dot" /></div>
+                      <span className="step-label">Em liberação</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Horário Estimado */}
+                <div className="status-footer">
+                  <IonIcon icon={timeOutline} className="status-time-icon" />
+                  <span className="status-time-text">
+                    Previsão de entrega: <strong>14:30</strong>
                   </span>
                 </div>
-                <p className="os-info">📅 {os.data_agendamento} 🕐 {os.horario}</p>
-                <p className="os-info">📍 {os.estabelecimento_nome}</p>
-                <p className="os-valor">R$ {Number(os.valor).toFixed(2)}</p>
+              </>
+            ) : (
+              <div className="status-success-banner">
+                <IonIcon icon={checkmarkCircleOutline} className="success-icon" />
+                <p className="success-text">Veículo finalizado,<br/>pronto para retirada.</p>
               </div>
-            ))}
-          </>
-        )}
+            )}
+          </div>
 
-        {/* Veículos */}
-        {veiculos.length > 0 && (
-          <>
-            <h3 className="dashboard-section-title">Meus veículos</h3>
-            {veiculos.map(v => (
-              <div
-                key={v.id}
-                className="lm-card dashboard-veiculo-card"
-                onClick={() => history.push(`/veiculo/${v.id}`)}
-              >
-                <span className="veiculo-icon">🚗</span>
-                <div className="veiculo-info">
-                  <span className="veiculo-nome">{v.marca} {v.modelo}</span>
-                  <span className="veiculo-placa">{v.placa} · {v.cor}</span>
-                </div>
-                <span className="veiculo-chevron">›</span>
+          {/* COMPONENTE 2: SEÇÃO DE PRÓXIMOS AGENDAMENTOS */}
+          <h3 className="home-section-title">Próximos agendamentos</h3>
+          <div className="home-card-futuro">
+            <div className="home-futuro-left">
+              <p className="home-futuro-servico">Lavagem Completa</p>
+              <div className="home-futuro-info-row">
+                <IonIcon icon={carOutline} className="home-futuro-icon" />
+                <span>Corolla Branco</span>
               </div>
-            ))}
-          </>
-        )}
+            </div>
+            <div className="home-futuro-right">
+              <span className="home-futuro-badge">Amanhã, 14:00</span>
+            </div>
+          </div>
 
-        <IonButton
-          className="lm-btn-primary dashboard-agendar-btn"
-          expand="block"
-          onClick={() => history.push('/mapa')}
-        >
-          📅 Agendar nova lavagem
-        </IonButton>
+          {/* COMPONENTE 3: BOTÃO PRINCIPAL DE AGENDAMENTO CORRIGIDO */}
+          <div className="home-footer-action">
+            <button
+              className="home-btn-agendar-premium"
+              onClick={() => history.push('/permissao')}
+            >
+              <IonIcon icon={calendarOutline} className="home-btn-icon-large" />
+              Agendar Nova Lavagem
+            </button>
+          </div>
+
+        </div>
       </IonContent>
     </IonPage>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
-import { IonPage, IonContent, IonButton } from '@ionic/react';
+import { IonPage, IonContent, IonButton, IonIcon } from '@ionic/react';
+import { locationOutline, navigateOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { Geolocation } from '@capacitor/geolocation';
 import './PermissaoLocalizacao.css';
@@ -27,7 +28,7 @@ const PermissaoLocalizacao: React.FC = () => {
       <IonContent className="ion-padding">
         <div className="permissao-container">
           <div className="permissao-icon lm-card">
-            <span className="permissao-emoji">📍</span>
+            <span className="permissao-emoji"><IonIcon icon={locationOutline} /></span>
           </div>
 
           <h1 className="permissao-titulo">
@@ -44,7 +45,8 @@ const PermissaoLocalizacao: React.FC = () => {
             expand="block"
             onClick={handlePermitir}
           >
-            ✈️ Permitir localização
+            <IonIcon icon={navigateOutline} style={{ marginRight: '8px', fontSize: '18px' }} />
+            Permitir localização
           </IonButton>
 
           <button className="permissao-link" onClick={handleAgoraNao}>

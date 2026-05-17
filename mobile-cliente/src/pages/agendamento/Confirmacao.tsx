@@ -8,7 +8,11 @@ import {
   IonButton,
   IonAlert,
   IonToast,
+  IonButtons,
+  IonBackButton,
+  IonIcon,
 } from '@ionic/react';
+import { locationOutline, constructOutline, calendarOutline, carOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import { createAgendamento } from '../../services/api';
 import type { Servico, Veiculo } from '../../services/api';
@@ -39,17 +43,21 @@ const Confirmacao: React.FC = () => {
   const [erroMsg, setErroMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
 
+  // Segurança de Fluxo: Garante que só carrega a tela com os dados
   if (!state) {
-    history.replace('/mapa');
+    history.replace('/inicio');
     return null;
   }
 
   const { slug, servico, estabelecimento_nome, data, horario, veiculo } = state;
 
   const handleConfirmar = async () => {
+    // 1. Prevenção de Duplo Clique Instantânea
     if (loading) return;
     setLoading(true);
+    
     try {
+      // 2. Acionamento real do Monolito via API service
       await createAgendamento({
         slug,
         servico_id: servico.id,
@@ -57,56 +65,74 @@ const Confirmacao: React.FC = () => {
         data,
         horario,
       });
+      
+      // 3. Sucesso: Remoção limpa de vestígios do fluxo anônimo (Checkout Sem Fricção)
+      localStorage.removeItem('lm_agendamento_temporario');
+      localStorage.removeItem('lm_agendamento_pendente');
+      
+      // 4. Sucesso: Redirecionamento IMEDIATO e disparo do Toast
       setShowToast(true);
-      setTimeout(() => history.replace('/inicio'), 1500);
+      history.replace('/inicio');
     } catch (e) {
+      // Tratamento de Erro: liberação da trava de UI e alerta ao usuário
       const err = e as Error & { status?: number };
-      if (err.status === 409) {
-        setErroMsg('Este horário acabou de ser ocupado. Volte e selecione outro.');
-      } else {
-        setErroMsg(err.message ?? 'Erro ao confirmar agendamento.');
-      }
-      setShowAlerta(true);
-    } finally {
       setLoading(false);
+      setErroMsg(err.message ?? 'Erro ao comunicar com o servidor.');
+      setShowAlerta(true);
     }
   };
 
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
+    <IonPage className="confirm-page">
+      <IonHeader className="ion-no-border confirm-header">
         <IonToolbar className="confirm-toolbar">
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/agendamento" text="" className="confirm-back-button" />
+          </IonButtons>
           <IonTitle className="confirm-title">Confirmação</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <div className="lm-card confirm-card">
-          <p className="confirm-card-label">Serviço</p>
-          <p className="confirm-info">📍 {estabelecimento_nome}</p>
-          <p className="confirm-info">🔧 {servico.nome}</p>
-          <p className="confirm-info">📅 {formatarData(data)}</p>
-          <p className="confirm-info">🕐 {horario}</p>
+      <IonContent className="ion-padding confirm-content">
+        
+        {/* Bloco 1: Serviço (Estabelecimento, Nome, Data, Hora) */}
+        <div className="confirm-card">
+          <p className="confirm-card-header">Detalhes do Serviço</p>
+          <p className="confirm-info-row">
+            <span className="confirm-icon"><IonIcon icon={locationOutline} /></span> {estabelecimento_nome}
+          </p>
+          <p className="confirm-info-row">
+            <span className="confirm-icon"><IonIcon icon={constructOutline} /></span> {servico.nome}
+          </p>
+          <p className="confirm-info-row">
+            <span className="confirm-icon"><IonIcon icon={calendarOutline} /></span> {formatarData(data)} às {horario}
+          </p>
         </div>
 
-        <div className="lm-card confirm-card">
-          <p className="confirm-card-label">Veículo</p>
-          <p className="confirm-info">🚗 {veiculo.marca} {veiculo.modelo} · {veiculo.cor}</p>
-          <p className="confirm-info">{veiculo.placa}</p>
-        </div>
-
-        <div className="lm-card confirm-card confirm-card-total">
-          <div className="confirm-total-row">
-            <span className="confirm-total-label">$ Total</span>
-            <span className="confirm-total-valor">R$ {Number(servico.preco).toFixed(2)}</span>
+        {/* Bloco 2: Veículo (Marca, Modelo, Cor e Placa em caixa alta) */}
+        <div className="confirm-card">
+          <p className="confirm-card-header">Seu Veículo</p>
+          <div className="confirm-info-row">
+            <span className="confirm-icon"><IonIcon icon={carOutline} /></span> 
+            {veiculo.marca} {veiculo.modelo} ({veiculo.cor})
+            <span className="confirm-placa">{veiculo.placa}</span>
           </div>
-          <p className="confirm-duracao">Duração: {servico.duracao_estimada_min} min</p>
         </div>
+
+        {/* Bloco 3: Total e Tempo */}
+        <div className="confirm-card confirm-card-total">
+          <div className="confirm-total-row">
+            <span className="confirm-total-label">Total</span>
+            <span className="confirm-total-valor">R$ {Number(servico.preco).toFixed(2).replace('.', ',')}</span>
+          </div>
+          <p className="confirm-duracao">Duração estimada: {servico.duracao_estimada_min} min</p>
+        </div>
+
       </IonContent>
 
       <div className="confirm-footer">
         <IonButton
-          className="lm-btn-primary"
+          className="confirm-btn-primary"
           expand="block"
           disabled={loading}
           onClick={handleConfirmar}
@@ -115,17 +141,19 @@ const Confirmacao: React.FC = () => {
         </IonButton>
       </div>
 
+      {/* Alerta Nativo para Falhas de API */}
       <IonAlert
         isOpen={showAlerta}
-        header="Erro no agendamento"
+        header="Atenção"
         message={erroMsg}
-        buttons={['OK']}
+        buttons={['Entendi']}
         onDidDismiss={() => setShowAlerta(false)}
       />
 
+      {/* Toast Nativo de Sucesso */}
       <IonToast
         isOpen={showToast}
-        message="Agendamento confirmado! ✅"
+        message="Agendamento confirmado!"
         duration={1500}
         color="success"
         onDidDismiss={() => setShowToast(false)}
