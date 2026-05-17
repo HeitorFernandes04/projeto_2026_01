@@ -8,7 +8,7 @@ import { useParams, useHistory } from 'react-router-dom';
 import { getOrdemServico } from '../../services/api';
 import { 
   chevronBackOutline, carOutline, 
-  clipboardOutline, waterOutline, sparklesOutline, keyOutline 
+  clipboardOutline, waterOutline, keyOutline 
 } from 'ionicons/icons';
 import GaleriaFotos from '../../components/GaleriaFotos';
 import '../../theme/lava-me.css';
@@ -27,7 +27,6 @@ interface OrdemServico {
   observacoes: string;
   laudo_vistoria?: string;
   comentario_lavagem?: string;
-  comentario_acabamento?: string;
   vaga_patio?: string;
   midias: MidiaOrdemServico[];
 }
@@ -124,21 +123,7 @@ const DetalhesOrdemServico: React.FC = () => {
               </IonAccordion>
             )}
 
-            {/* ETAPA: ACABAMENTO (Condicional: só aparece se houver comentário) */}
-            {ordemServico.comentario_acabamento && (
-              <IonAccordion value="a" className="item-esteira">
-                <IonItem slot="header" lines="none" className="header-esteira">
-                  <IonIcon icon={sparklesOutline} slot="start" color="primary" />
-                  <IonLabel className="label-esteira">Acabamento</IonLabel>
-                </IonItem>
-                <div slot="content" style={styles.accordionContent}>
-                  <p style={styles.comentarioText}>
-                    <strong style={{ color: '#fff' }}>Notas de Finalização:</strong><br/>
-                    {ordemServico.comentario_acabamento}
-                  </p>
-                </div>
-              </IonAccordion>
-            )}
+
 
             {/* ETAPA: LIBERAÇÃO (Sempre visível no histórico) */}
             <IonAccordion value="f" className="item-esteira">

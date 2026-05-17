@@ -76,8 +76,8 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
       if (onFotosStaged) {
         onFotosStaged(fotosAtualizadas.map((f) => f.blob), momento);
       }
-    } catch (e) {
-      console.log('Captura cancelada:', e);
+    } catch {
+      // ignore
     }
   };
 
@@ -96,12 +96,10 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
     if (fotosStaged.length === 0 || enviando) return;
     setEnviando(true);
     try {
-      console.log(`Enviando ${fotosStaged.length} fotos para OS ${ordemServicoId}, momento: ${momento}`);
       await uploadFotos(ordemServicoId, momento, fotosStaged.map((f) => f.blob));
       // Limpa o staging após sucesso (sem revokeObjectURL porque usamos DataUrl)
       setFotosStaged([]);
       if (onUploadSuccess) onUploadSuccess();
-      console.log('Upload de fotos concluído com sucesso');
     } catch (e: unknown) {
       console.error('Erro no upload em lote:', e);
 
@@ -170,7 +168,6 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
                     const img = e.target as HTMLImageElement;
                     if (srcPreview && !srcPreview.startsWith('http') && !srcPreview.startsWith('data:')) {
                       const urlCompleta = `http://127.0.0.1:8000${srcPreview}`;
-                      console.log('Tentando URL completa:', urlCompleta);
                       img.src = urlCompleta;
                     } else {
                       // Se já falhou com URL completa, mostra placeholder

@@ -49,8 +49,8 @@ const ModalOcorrencia: React.FC<ModalOcorrenciaProps> = ({ isOpen, onClose, onCo
       // Converte dataUrl em Blob para envio posterior
       const res = await fetch(foto.dataUrl);
       setFotoBlob(await res.blob());
-    } catch (e) {
-      console.log('Captura cancelada ou falhou:', e);
+    } catch {
+      // ignore
     }
   };
 

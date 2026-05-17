@@ -153,7 +153,6 @@ const Agendar: React.FC = () => {
               style={styles.selectInput} 
               placeholder="COR DO VEÍCULO *"
               interface="action-sheet"
-              toggleIcon={Check}
             >
               {['Branco', 'Preto', 'Cinza', 'Prata', 'Vermelho', 'Azul', 'Amarelo', 'Verde', 'Bege', 'Outro'].map(cor => (
                 <IonSelectOption key={cor} value={cor}>{cor}</IonSelectOption>

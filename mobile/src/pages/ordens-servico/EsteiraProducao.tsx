@@ -6,7 +6,6 @@ import {
   logOutOutline, 
   clipboardOutline, 
   waterOutline, 
-  sparklesOutline, 
   keyOutline,
   warningOutline,
   homeOutline
@@ -57,10 +56,8 @@ const EsteiraProducao: React.FC = () => {
   useIonViewWillEnter(() => {
     isAtivoRef.current = true;
 
-    // Carregamento inicial silencioso se já houver dados
-    if (!ordemServico) {
-      carregarOrdemServico();
-    }
+    // Carregamento inicial (remove o if para evitar stale data ao voltar para a página)
+    carregarOrdemServico();
 
     // Inicia Polling apenas se a página estiver ativa
     if (!pollingRef.current) {
