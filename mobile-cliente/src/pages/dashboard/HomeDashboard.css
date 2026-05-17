@@ -1,0 +1,150 @@
+.dashboard-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.dashboard-title {
+  color: var(--lm-text);
+  font-weight: 800;
+}
+
+.dashboard-saudacao {
+  color: var(--lm-text);
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+}
+
+.dashboard-subtitulo {
+  color: var(--lm-text-muted);
+  font-size: 15px;
+  margin: 0 0 20px 0;
+}
+
+.dashboard-section-title {
+  color: var(--lm-text);
+  font-size: 17px;
+  font-weight: 700;
+  margin: 20px 0 12px 0;
+}
+
+/* Card serviço ativo */
+.dashboard-ativo-card {
+  margin-bottom: 24px;
+}
+
+.ativo-header {
+  margin-bottom: 12px;
+}
+
+.ativo-badge {
+  font-size: 12px;
+}
+
+.ativo-descricao {
+  color: var(--lm-text);
+  font-size: 15px;
+  margin: 0 0 10px 0;
+}
+
+.ativo-info {
+  color: var(--lm-text-muted);
+  font-size: 14px;
+  margin: 0 0 6px 0;
+}
+
+.ativo-progress-container {
+  height: 8px;
+  background: var(--lm-border);
+  border-radius: 4px;
+  margin: 14px 0 6px;
+  overflow: hidden;
+}
+
+.ativo-progress-bar {
+  height: 100%;
+  background: var(--lm-primary);
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.ativo-progresso-label {
+  font-size: 12px;
+  color: var(--lm-text-muted);
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: block;
+}
+
+/* Cards de OS */
+.dashboard-os-card {
+  margin-bottom: 12px;
+}
+
+.os-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.os-servico {
+  color: var(--lm-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.os-info {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+  margin: 0 0 4px 0;
+}
+
+.os-valor {
+  color: var(--lm-primary);
+  font-size: 16px;
+  font-weight: 800;
+  margin: 6px 0 0 0;
+}
+
+/* Cards de veículo */
+.dashboard-veiculo-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.veiculo-icon {
+  font-size: 28px;
+}
+
+.veiculo-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.veiculo-nome {
+  color: var(--lm-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.veiculo-placa {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+}
+
+.veiculo-chevron {
+  color: var(--lm-text-muted);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.dashboard-agendar-btn {
+  margin-top: 24px;
+}

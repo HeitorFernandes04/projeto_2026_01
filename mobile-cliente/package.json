@@ -1,0 +1,46 @@
+{
+  "name": "mobile-cliente",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test.unit": "vitest",
+    "test.unit:run": "vitest run",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.3.0",
+    "@capacitor/geolocation": "^8.0.0",
+    "@ionic/react": "^8.5.0",
+    "@ionic/react-router": "^8.5.0",
+    "leaflet": "^1.9.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-leaflet": "^5.0.0",
+    "react-router": "^5.3.4",
+    "react-router-dom": "^5.3.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.3.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.4.3",
+    "@types/leaflet": "^1.9.8",
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.4",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "eslint": "^9.20.1",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "jsdom": "^28.1.0",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^4.1.6"
+  },
+  "description": "Lava-Me — App Mobile B2C (Portal do Cliente)"
+}

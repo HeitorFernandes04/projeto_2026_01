@@ -1,0 +1,211 @@
+.acomp-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.acomp-title {
+  color: var(--lm-text);
+  font-weight: 800;
+}
+
+.acomp-header {
+  margin-bottom: 20px;
+}
+
+.acomp-estabelecimento {
+  color: var(--lm-text);
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+}
+
+.acomp-tempo {
+  color: var(--lm-text-muted);
+  font-size: 14px;
+  margin: 0 0 10px 0;
+}
+
+.acomp-carro-container {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.acomp-carro-emoji {
+  font-size: 64px;
+}
+
+@keyframes bounce-carro {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+.acomp-carro-animado {
+  animation: bounce-carro 1.5s ease-in-out infinite;
+}
+
+.acomp-finalizado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.acomp-check {
+  font-size: 40px;
+}
+
+.acomp-finalizado-texto {
+  color: var(--lm-green);
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+}
+
+.acomp-progresso-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.acomp-progresso-label {
+  color: var(--lm-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.acomp-progresso-pct {
+  color: var(--lm-primary);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.acomp-progress-container {
+  height: 10px;
+  background: var(--lm-border);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.acomp-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lm-primary), var(--lm-green));
+  border-radius: 5px;
+  transition: width 0.8s ease;
+}
+
+/* Timeline */
+.acomp-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.acomp-etapa {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 56px;
+}
+
+.acomp-etapa-linha {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.acomp-etapa-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.dot-concluida {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--lm-green);
+  font-size: 14px;
+}
+
+.dot-atual {
+  background: var(--lm-primary);
+  color: #ffffff;
+  animation: pulse-glow 2s infinite;
+}
+
+.dot-futura {
+  background: var(--lm-border);
+  color: var(--lm-text-muted);
+}
+
+.acomp-etapa-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 24px;
+  margin: 2px 0;
+}
+
+.connector-concluida {
+  background: var(--lm-green);
+}
+
+.connector-futura {
+  background: var(--lm-border);
+}
+
+.acomp-etapa-texto {
+  padding: 4px 0 20px;
+}
+
+.acomp-etapa-nome {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.etapa-atual {
+  color: var(--lm-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.acomp-incidente-alerta {
+  color: var(--lm-amber);
+  font-size: 12px;
+  display: block;
+  margin-top: 4px;
+}
+
+.acomp-sem-os {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 16px;
+}
+
+.acomp-sem-os-emoji {
+  font-size: 56px;
+  margin: 0;
+}
+
+.acomp-sem-os-texto {
+  color: var(--lm-text-muted);
+  font-size: 16px;
+  text-align: center;
+  margin: 0;
+}

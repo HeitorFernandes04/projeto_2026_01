@@ -1,0 +1,122 @@
+.agend-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.agend-title {
+  color: var(--lm-text);
+  font-weight: 800;
+}
+
+/* Resumo */
+.agend-resumo {
+  margin-bottom: 20px;
+}
+
+.agend-resumo-label {
+  color: var(--lm-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 10px 0;
+}
+
+.agend-resumo-item {
+  color: var(--lm-text);
+  font-size: 15px;
+  margin: 0 0 6px 0;
+}
+
+.agend-resumo-preco {
+  color: var(--lm-primary);
+  font-size: 22px;
+  font-weight: 800;
+  margin: 10px 0 0 0;
+}
+
+/* Labels de seção */
+.agend-section-label {
+  color: var(--lm-text);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 20px 0 10px 0;
+}
+
+/* Input de data */
+.agend-date-input {
+  width: 100%;
+  background: var(--lm-card);
+  border: 1px solid var(--lm-border);
+  border-radius: 16px;
+  color: var(--lm-text);
+  padding: 14px 16px;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+  color-scheme: dark;
+}
+
+/* Grid de horários */
+.agend-horarios-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.agend-horario-chip {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chip-disponivel {
+  background: var(--lm-card);
+  color: var(--lm-text);
+  border: 1px solid var(--lm-border);
+}
+
+.chip-ativo {
+  background: var(--lm-primary);
+  color: #ffffff;
+}
+
+.chip-indisponivel {
+  background: var(--lm-border);
+  color: var(--lm-text-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.agend-sem-horarios {
+  color: var(--lm-text-muted);
+  font-size: 14px;
+}
+
+.agend-aviso {
+  color: var(--lm-amber);
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.agend-link {
+  background: none;
+  border: none;
+  color: var(--lm-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* Footer fixo */
+.agend-footer {
+  padding: 16px 20px 32px;
+  background: var(--lm-bg);
+  border-top: 1px solid var(--lm-border);
+}

@@ -1,0 +1,115 @@
+.veiculo-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.veiculo-title {
+  color: var(--lm-text);
+  font-weight: 800;
+}
+
+/* SeuVeiculo */
+.veiculo-icon-container {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  padding: 0;
+}
+
+.veiculo-emoji {
+  font-size: 40px;
+}
+
+.campo-label {
+  color: var(--lm-text-muted) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.campo-erro {
+  color: var(--lm-red);
+  font-size: 12px;
+  margin: -8px 16px 8px;
+}
+
+/* MeusVeiculos */
+.veiculos-subtitulo {
+  color: var(--lm-text-muted);
+  font-size: 14px;
+  margin: 0 0 20px 0;
+}
+
+.veiculos-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  gap: 16px;
+}
+
+.veiculos-vazio-emoji {
+  font-size: 56px;
+}
+
+.veiculos-vazio-texto {
+  color: var(--lm-text-muted);
+  font-size: 15px;
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.veiculo-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.veiculo-card-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.veiculo-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.veiculo-card-nome {
+  color: var(--lm-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.veiculo-card-detalhe {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+}
+
+.veiculo-card-chevron {
+  color: var(--lm-text-muted);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.veiculos-add-btn {
+  --border-color: var(--lm-border);
+  --color: var(--lm-text);
+  --border-radius: 20px;
+  height: 56px;
+  font-weight: 700;
+  margin-top: 16px;
+}

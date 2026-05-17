@@ -65,6 +65,24 @@ class EstabelecimentoPublicoSerializer(serializers.ModelSerializer):
         return ServicoPublicoSerializer(servicos_ativos, many=True).data
 
 
+class EstabelecimentoMapaSerializer(serializers.ModelSerializer):
+    """
+    RF-28: Serializer para o mapa B2C. Expõe apenas os campos necessários
+    para renderizar os pins e o Drawer de resumo do estabelecimento.
+    """
+    logo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Estabelecimento
+        fields = ['id', 'nome_fantasia', 'slug', 'latitude', 'longitude', 'logo', 'endereco_completo']
+
+    def get_logo(self, obj):
+        request = self.context.get('request')
+        if obj.logo and request:
+            return request.build_absolute_uri(obj.logo.url)
+        return None
+
+
 class CancelamentoSerializer(serializers.Serializer):
     """
     RF-24: Serializer de entrada para cancelamento autônomo pelo cliente.

@@ -1,3 +1,4 @@
+from rest_framework import generics
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -15,6 +16,7 @@ from .serializers import (
     AuthB2CLoginSerializer,
     AuthB2CSetupSerializer,
     EstabelecimentoPublicoSerializer,
+    EstabelecimentoMapaSerializer,
     CancelamentoSerializer,
 )
 from .services import AuthB2CService, DisponibilidadeService, CancelamentoService
@@ -82,6 +84,17 @@ class PainelClienteView(APIView):
             return Response({'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(data, status=status.HTTP_200_OK)
+
+
+class EstabelecimentoListaMapaView(generics.ListAPIView):
+    """
+    RF-28: GET /api/publico/estabelecimentos/
+    Lista pública de estabelecimentos ativos com geolocalização para o mapa B2C.
+    """
+    serializer_class = EstabelecimentoMapaSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = [EstabelecimentoPublicoRateThrottle]
+    queryset = Estabelecimento.objects.filter(is_active=True)
 
 
 class EstabelecimentoPublicoDetailView(RetrieveAPIView):
