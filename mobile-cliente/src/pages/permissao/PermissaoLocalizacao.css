@@ -1,0 +1,50 @@
+.permissao-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 24px;
+  padding: 32px 16px;
+}
+
+.permissao-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.permissao-emoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.permissao-titulo {
+  color: var(--lm-text);
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.permissao-descricao {
+  color: var(--lm-text-muted);
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.permissao-link {
+  background: none;
+  border: none;
+  color: var(--lm-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 8px;
+}

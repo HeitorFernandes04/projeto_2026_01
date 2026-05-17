@@ -1,0 +1,123 @@
+.perfil-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.perfil-title {
+  color: var(--lm-text);
+  font-weight: 800;
+}
+
+/* Avatar row */
+.perfil-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.perfil-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.perfil-avatar-emoji {
+  font-size: 32px;
+}
+
+.perfil-avatar-info {
+  flex: 1;
+}
+
+.perfil-nome {
+  color: var(--lm-text);
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+}
+
+.perfil-membro {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Section labels */
+.perfil-section-label {
+  color: var(--lm-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0 0 10px 0;
+}
+
+/* Cards de item */
+.perfil-item-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  padding: 16px 20px;
+  margin-bottom: 10px;
+}
+
+.perfil-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.perfil-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perfil-item-label {
+  color: var(--lm-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.perfil-item-valor {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+}
+
+.perfil-item-valor-muted {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+}
+
+.perfil-item-chevron {
+  color: var(--lm-text-muted);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+/* Logout */
+.perfil-logout {
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.perfil-logout-texto {
+  color: var(--lm-red);
+  font-size: 15px;
+  font-weight: 700;
+  width: 100%;
+}
+
+/* Versão */
+.perfil-versao {
+  color: var(--lm-text-muted);
+  font-size: 12px;
+  text-align: center;
+  margin: 28px 0 16px 0;
+}

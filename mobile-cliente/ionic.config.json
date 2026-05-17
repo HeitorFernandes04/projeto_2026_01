@@ -1,0 +1,7 @@
+{
+  "name": "mobile-cliente",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}

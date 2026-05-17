@@ -1,0 +1,76 @@
+/* Cores e estilos globais do tema Lava-Me - Industrial Dark Mode */
+
+:root {
+  --lm-bg:           #0b0e11;
+  --lm-card:         #161b22;
+  --lm-card-hover:   #1f242c;
+  --lm-border:       #21262d;
+
+  --lm-primary:      #0066ff;
+  --lm-primary-dark: #0052cc;
+  --lm-primary-glow: rgba(0, 102, 255, 0.4);
+
+  --lm-text:         #f0f6fc;
+  --lm-text-muted:   #8b949e;
+
+  --lm-amber:        #ff9500;
+  --lm-blue:         #0066ff;
+  --lm-green:        #00ff88;
+  --lm-red:          #ff3b30;
+}
+
+.lm-page {
+  --background: var(--lm-bg);
+  background-color: var(--lm-bg);
+}
+
+.lm-card {
+  background: var(--lm-card);
+  border: 1px solid var(--lm-border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.lm-input {
+  --background: var(--lm-card) !important;
+  --color: var(--lm-text);
+  --placeholder-color: var(--lm-text-muted);
+  --border-radius: 16px;
+  border: 1px solid var(--lm-border);
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.lm-btn-primary {
+  --background: var(--lm-primary);
+  --color: #ffffff;
+  --border-radius: 20px;
+  font-weight: 800;
+  height: 64px;
+  text-transform: uppercase;
+  box-shadow: 0 8px 25px var(--lm-primary-glow);
+}
+
+.lm-badge {
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.lm-badge-agendado   { background: rgba(255, 149, 0, 0.1); color: var(--lm-amber); }
+.lm-badge-andamento  { background: rgba(0, 102, 255, 0.1); color: var(--lm-blue); }
+.lm-badge-finalizado { background: rgba(0, 255, 136, 0.1); color: var(--lm-green); }
+.lm-badge-cancelado  { background: rgba(255, 59, 48, 0.1);  color: var(--lm-red); }
+
+@keyframes pulse-glow {
+  0%   { box-shadow: 0 0 10px rgba(0, 102, 255, 0.3); }
+  50%  { box-shadow: 0 0 25px rgba(0, 102, 255, 0.6); }
+  100% { box-shadow: 0 0 10px rgba(0, 102, 255, 0.3); }
+}
+
+.btn-pulse {
+  animation: pulse-glow 2.5s infinite;
+}

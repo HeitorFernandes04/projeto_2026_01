@@ -1,0 +1,6 @@
+.lm-tab-bar {
+  --background: var(--lm-card);
+  --border: 1px solid var(--lm-border);
+  --color: var(--lm-text-muted);
+  --color-selected: var(--lm-primary);
+}
