@@ -325,7 +325,7 @@ export class SetupComponent implements OnInit, OnDestroy {
    * Salva dados da unidade (RF-13 + RF-21)
    * Usa FormData para suportar upload de logo junto com os dados cadastrais.
    */
-  salvarUnidade() {
+  async salvarUnidade() {
     this.erroUnidade = '';
     this.sucessoUnidade = '';
 
@@ -342,11 +342,31 @@ export class SetupComponent implements OnInit, OnDestroy {
 
     this.salvandoUnidade = true;
 
+    const endereco = this.unidade.endereco_completo?.trim() ?? '';
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+
+    if (endereco) {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(endereco)}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data: Array<{ lat: string; lon: string }> = await res.json();
+        if (data.length > 0) {
+          latitude = parseFloat(data[0].lat);
+          longitude = parseFloat(data[0].lon);
+        }
+      } catch {
+        // Geocodificação falhou — coordenadas omitidas sem bloquear o save
+      }
+    }
+
     const formData = new FormData();
     formData.append('nome_fantasia', this.unidade.nome_fantasia.trim());
     formData.append('cnpj', cnpjLimpo);
-    formData.append('endereco_completo', this.unidade.endereco_completo?.trim() ?? '');
-    
+    formData.append('endereco_completo', endereco);
+    if (latitude !== null) formData.append('latitude', String(latitude));
+    if (longitude !== null) formData.append('longitude', String(longitude));
+
     if (this.logoParaUpload) {
       formData.append('logo', this.logoParaUpload);
     } else if (this.logoRemovida) {
