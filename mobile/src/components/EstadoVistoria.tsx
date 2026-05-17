@@ -58,7 +58,6 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
       }
 
       // Verificação crítica: testar se cada imagem realmente existe (não 404)
-      console.log('Verificando existência física das imagens...');
       
       const verificarImagem = async (foto: Midia): Promise<{url: string, ok: boolean, status?: number, error?: string}> => {
         const urlsParaTestar = [
@@ -69,7 +68,6 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
         
         for (const url of urlsParaTestar) {
           try {
-            console.log(`Testando URL: ${url}`);
             const response = await fetch(url, { 
               method: 'HEAD',
               mode: 'cors',
@@ -77,13 +75,10 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
             });
             
             if (response.ok) {
-              console.log(`✅ Imagem acessível: ${url}`);
               return { url, ok: true, status: response.status };
-            } else {
-              console.log(`❌ Falha ${response.status}: ${url}`);
             }
-          } catch (error) {
-            console.log(`❌ Erro ao acessar ${url}:`, error);
+          } catch {
+            // ignore
           }
         }
         
@@ -118,7 +113,6 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
         return;
       }
 
-      console.log('✅ Todas as 5 imagens foram verificadas e existem no servidor');
     } catch (err) {
       console.error('Erro ao verificar estado atual:', err);
       alert('Erro ao verificar estado das fotos. Tente novamente.');

@@ -5,7 +5,6 @@ const BASE_URL = 'http://127.0.0.1:8000';
 interface DadosAvancoEtapa {
   laudo_vistoria?: string;
   comentario_lavagem?: string;
-  comentario_acabamento?: string;
 }
 
 interface DadosIncidente {
@@ -160,12 +159,9 @@ export async function uploadFotos(
   formData.append('momento', momento);
   
   fotoBlobs.forEach((blob, i) => {
-    console.log(`Blob ${i + 1}: tamanho=${blob.size} bytes, tipo=${blob.type}`);
     formData.append('arquivos', blob, `foto_${i + 1}.jpg`);
   });
 
-  console.log(`Enviando FormData para OS ${id}, momento: ${momento}`);
-  console.log('FormData entries:', Array.from(formData.entries()));
 
   return request(`/api/ordens-servico/${id}/fotos/`, {
     method: 'POST',

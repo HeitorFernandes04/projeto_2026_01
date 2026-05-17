@@ -113,15 +113,25 @@ class OrdemServicoService:
     @staticmethod
     def verificar_conflito(estabelecimento, data_hora, duracao):
         """Valida se o slot está disponível e não é retroativo com isolamento SaaS."""
-        if data_hora < timezone.now():
+        # RF-22: Validação de horário retroativo com margem de segurança (Grace Period)
+        # Permite 5 minutos de atraso entre o envio do Mobile e o processamento no Servidor
+        if data_hora < (timezone.now() - datetime.timedelta(minutes=5)):
             raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
 
         fim = data_hora + duracao
         
         # Trava Rígida (REQUISITOS_RF22_HORARIOS.pdf - 1.2)
-        limite_operacional = data_hora.replace(hour=18, minute=0, second=0, microsecond=0)
+        hora_fechamento = getattr(estabelecimento, 'horario_fechamento', None) or HORARIO_FECHAMENTO
+        limite_operacional = data_hora.replace(
+            hour=hora_fechamento.hour, minute=hora_fechamento.minute,
+            second=0, microsecond=0,
+        )
         if fim > limite_operacional:
-            raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
+            raise ValidationError(
+                f"O serviço ultrapassa o limite operacional das "
+                f"{hora_fechamento.strftime('%H:%M')} "
+                f"(Término previsto: {fim.strftime('%H:%M')})."
+            )
 
         # Isolamento SaaS: verifica conflitos apenas no mesmo estabelecimento
         conflitos = OrdemServico.objects.filter(

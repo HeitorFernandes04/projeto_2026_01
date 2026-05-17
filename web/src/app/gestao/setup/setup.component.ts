@@ -71,7 +71,7 @@ export class SetupComponent implements OnInit, OnDestroy {
     username: '',
     cargo: 'LAVADOR'
   };
-  cargosDisponiveis = ['LAVADOR', 'DETALHISTA'];
+  cargosDisponiveis = ['LAVADOR'];
   exibirInativos: boolean = false;
   funcionarioEmEdicao: Funcionario | null = null;
 

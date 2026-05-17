@@ -175,9 +175,8 @@ class DisponibilidadeService:
             return []
 
         # 2. Definir limites operacionais (RF-22)
-        # Trava rígida de 18:00 conforme REQUISITOS_RF22_HORARIOS.pdf
-        limite_operacional = datetime.time(18, 0)
-        hora_fechamento = min(estabelecimento.horario_fechamento, limite_operacional)
+        # Trava rígida conforme configuração do estabelecimento
+        hora_fechamento = estabelecimento.horario_fechamento
         
         abertura = timezone.make_aware(datetime.datetime.combine(data_alvo, estabelecimento.horario_abertura))
         fechamento = timezone.make_aware(datetime.datetime.combine(data_alvo, hora_fechamento))
