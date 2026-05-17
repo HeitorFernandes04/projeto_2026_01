@@ -30,14 +30,11 @@ const GradeHorarios: React.FC<GradeProps> = ({ data, servicoId, onSelectHora, ho
     
     try {
       // Busca os horários livres da API
-      console.log('Fetching horarios for data:', data, 'servicoId:', servicoId);
       getHorariosLivres(data, servicoId) 
         .then(res => {
-          console.log('API response:', res);
           // API retorna lista de objetos {inicio, fim}, extrair apenas os horários de início
           const slots = res?.horarios || [];
           const todosHorarios: string[] = slots.map((slot: HorarioSlot) => slot.inicio || (slot as unknown as string));
-          console.log('todosHorarios:', todosHorarios);
         
           // --- LÓGICA DE FILTRO DINÂMICO ---
           const agora = new Date();
@@ -72,7 +69,6 @@ const GradeHorarios: React.FC<GradeProps> = ({ data, servicoId, onSelectHora, ho
   }, [data, servicoId]);
 
   // Debug do estado final antes do render
-  console.log('Estado final - loading:', loading, 'horarios:', horarios);
 
   return (
     <div className="grade-horarios-wrapper">

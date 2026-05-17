@@ -159,3 +159,4 @@ ios/
 documentos de organização desenvolvimento/
 backend/.chroma_db/
 backend/logs/
+cypress/screenshots/

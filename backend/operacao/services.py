@@ -121,9 +121,17 @@ class OrdemServicoService:
         fim = data_hora + duracao
         
         # Trava Rígida (REQUISITOS_RF22_HORARIOS.pdf - 1.2)
-        limite_operacional = data_hora.replace(hour=18, minute=0, second=0, microsecond=0)
+        hora_fechamento = getattr(estabelecimento, 'horario_fechamento', None) or HORARIO_FECHAMENTO
+        limite_operacional = data_hora.replace(
+            hour=hora_fechamento.hour, minute=hora_fechamento.minute,
+            second=0, microsecond=0,
+        )
         if fim > limite_operacional:
-            raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
+            raise ValidationError(
+                f"O serviço ultrapassa o limite operacional das "
+                f"{hora_fechamento.strftime('%H:%M')} "
+                f"(Término previsto: {fim.strftime('%H:%M')})."
+            )
 
         # Isolamento SaaS: verifica conflitos apenas no mesmo estabelecimento
         conflitos = OrdemServico.objects.filter(
