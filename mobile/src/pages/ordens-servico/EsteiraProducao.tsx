@@ -6,7 +6,6 @@ import {
   logOutOutline, 
   clipboardOutline, 
   waterOutline, 
-  sparklesOutline, 
   keyOutline,
   warningOutline,
   homeOutline
@@ -14,7 +13,6 @@ import {
 import { getOrdemServico } from '../../services/api';
 import EstadoVistoria from '../../components/EstadoVistoria';
 import EstadoLavagem from '../../components/EstadoLavagem';
-import EstadoAcabamento from '../../components/EstadoAcabamento';
 import EstadoLiberacao from '../../components/EstadoLiberacao';
 import TabBar from '../../components/TabBar';
 
@@ -58,10 +56,8 @@ const EsteiraProducao: React.FC = () => {
   useIonViewWillEnter(() => {
     isAtivoRef.current = true;
 
-    // Carregamento inicial silencioso se já houver dados
-    if (!ordemServico) {
-      carregarOrdemServico();
-    }
+    // Carregamento inicial (remove o if para evitar stale data ao voltar para a página)
+    carregarOrdemServico();
 
     // Inicia Polling apenas se a página estiver ativa
     if (!pollingRef.current) {
@@ -118,7 +114,14 @@ const EsteiraProducao: React.FC = () => {
     );
   }
 
-  const etapaAtiva = ordemServico.etapa_atual || 1;
+  // Axioma: Mapeamento de % do Backend (20, 50, 80) para Step do Frontend (1, 2, 3)
+  const getEtapaAtiva = (percent: number) => {
+    if (percent <= 20) return 1; // Vistoria Inicial
+    if (percent <= 50) return 2; // Lavagem / Execução
+    return 3; // Liberação
+  };
+
+  const etapaAtiva = getEtapaAtiva(ordemServico.etapa_atual || 0);
 
   return (
     <IonPage className="lm-page-dark">
@@ -142,10 +145,9 @@ const EsteiraProducao: React.FC = () => {
         <div style={styles.stepperContainer}>
           <div style={styles.stepLine} />
           {[
-            { step: 1, icon: clipboardOutline, label: 'VISTORIA INICIAL' },
+            { step: 1, icon: clipboardOutline, label: 'VISTORIA' },
             { step: 2, icon: waterOutline, label: 'LAVAGEM' },
-            { step: 3, icon: sparklesOutline, label: 'ACABAMENTO' },
-            { step: 4, icon: keyOutline, label: 'LIBERAÇÃO' }
+            { step: 3, icon: keyOutline, label: 'LIBERAÇÃO' }
           ].map((item) => (
             <div key={item.step} style={styles.stepItem}>
               <div style={{
@@ -166,8 +168,7 @@ const EsteiraProducao: React.FC = () => {
         <div style={{ padding: '0 20px 120px' }}>
           {etapaAtiva === 1 && <EstadoVistoria ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
           {etapaAtiva === 2 && <EstadoLavagem ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
-          {etapaAtiva === 3 && <EstadoAcabamento ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
-          {etapaAtiva >= 4 && <EstadoLiberacao ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
+          {etapaAtiva >= 3 && <EstadoLiberacao ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
         </div>
         <TabBar activeTab="pátio" />
       </IonContent>
@@ -183,7 +184,7 @@ const styles: Record<string, React.CSSProperties> = {
   carSubtitle: { color: '#888', fontSize: '14px', fontWeight: 700, margin: '4px 0 0', textTransform: 'uppercase' },
   btnExit: { background: 'var(--lm-card)', border: '1px solid var(--lm-border)', padding: '10px', borderRadius: '12px', color: '#666' },
   stepperContainer: { display: 'flex', justifyContent: 'space-between', padding: '20px 30px 40px', position: 'relative' },
-  stepLine: { position: 'absolute', top: '40px', left: '60px', right: '60px', height: '2px', background: 'var(--lm-border)', zIndex: 0 },
+  stepLine: { position: 'absolute', top: '40px', left: '75px', right: '75px', height: '2px', background: 'var(--lm-border)', zIndex: 0 },
   stepItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', zIndex: 1 },
   stepCircle: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', transition: 'all 0.3s ease' },
   stepLabel: { fontSize: '9px', fontWeight: 800, letterSpacing: '0.5px' },

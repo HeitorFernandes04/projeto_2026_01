@@ -56,7 +56,11 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
     cy.get('input[placeholder*="PLACA"]').type('ABC1234');
     cy.get('input[placeholder*="MODELO"]').type('Gol');
     cy.get('input[placeholder*="MARCA"]').type('VW');
-    cy.get('input[placeholder*="COR"]').type('Branco');
+    
+    // Interação com IonSelect de Cor (Action Sheet)
+    cy.get('ion-select').click({ force: true });
+    cy.get('button.action-sheet-button').contains('Branco').click({ force: true });
+    
     cy.contains('Lavagem Completa').click();
     
     // Aguarda estabilidade antes de clicar no botão
@@ -82,79 +86,53 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
     cy.contains('Fotos da Vistoria').should('be.visible');
     cy.contains('5/5 Fotos no Banco').should('be.visible');
 
-    // Mock PATCH Vistoria -> EM_EXECUCAO
+    // Mock PATCH Vistoria -> EM_EXECUCAO (Passo 2)
     cy.intercept('PATCH', '**/api/ordens-servico/123/avancar-etapa/', {
       statusCode: 200,
-      body: { status: 'VISTORIA_INICIAL', etapa_atual: 2 }
-    }).as('avancarExecucao');
-
-    cy.intercept('GET', '**/api/ordens-servico/123/', {
-      statusCode: 200,
-      body: {
-        id: 123,
-        status: 'VISTORIA_INICIAL',
-        etapa_atual: 2,
-        veiculo: { placa: 'ABC1234', modelo: 'Gol', cor: 'Branco' },
-        servico: { nome: 'Lavagem Completa' },
-        midias: Array(5).fill({ momento: 'VISTORIA_GERAL', arquivo: 'mock.jpg' })
-      }
-    }).as('getOSExecucao');
-
-    cy.get('ion-textarea, textarea').type('Veículo sem avarias aparentes na entrada.', { force: true });
-    cy.get('button').contains('CONCLUIR VISTORIA').click();
-    cy.wait('@avancarExecucao');
-
-    // 4. Em Execução — Lavagem
-    cy.contains('Tempo Decorrido').should('exist');
-    cy.contains('Pausar').should('exist');
-    cy.contains('Relatar Problema').should('exist');
-
-    cy.intercept('PATCH', '**/api/ordens-servico/123/avancar-etapa/', {
-      statusCode: 200,
-      body: { status: 'EM_EXECUCAO', etapa_atual: 3 }
-    }).as('avancarAcabamento');
+      body: { status: 'VISTORIA_INICIAL', etapa_atual: 50 }
+    }).as('avancarLavagem');
 
     cy.intercept('GET', '**/api/ordens-servico/123/', {
       statusCode: 200,
       body: {
         id: 123,
         status: 'EM_EXECUCAO',
-        etapa_atual: 3,
+        etapa_atual: 50,
         veiculo: { placa: 'ABC1234', modelo: 'Gol', cor: 'Branco' },
         servico: { nome: 'Lavagem Completa' },
         midias: Array(5).fill({ momento: 'VISTORIA_GERAL', arquivo: 'mock.jpg' })
       }
-    }).as('getOSAcabamento');
+    }).as('getOSLavagem');
 
+    cy.get('ion-textarea, textarea').type('Veículo sem avarias aparentes na entrada.', { force: true });
+    cy.get('button').contains('CONCLUIR VISTORIA').click();
+    cy.wait('@avancarLavagem');
+
+    // 4. Lavagem -> Liberação (Pula Acabamento)
     cy.contains('Tempo Decorrido').should('be.visible');
-    cy.get('ion-textarea, textarea').scrollIntoView().type('Lavagem finalizada com shampoo neutro.', { force: true });
-    cy.get('button').contains(/Finalizar Lavagem/i).click();
-    cy.wait('@avancarAcabamento');
-
-    // 5. Acabamento
+    
     cy.intercept('PATCH', '**/api/ordens-servico/123/avancar-etapa/', {
       statusCode: 200,
-      body: { status: 'EM_EXECUCAO', etapa_atual: 4 }
+      body: { status: 'EM_EXECUCAO', etapa_atual: 80 }
     }).as('avancarLiberacao');
 
     cy.intercept('GET', '**/api/ordens-servico/123/', {
       statusCode: 200,
       body: {
         id: 123,
-        status: 'EM_EXECUCAO',
-        etapa_atual: 4,
+        status: 'LIBERACAO',
+        etapa_atual: 80,
         veiculo: { placa: 'ABC1234', modelo: 'Gol', cor: 'Branco' },
         servico: { nome: 'Lavagem Completa' },
         midias: Array(5).fill({ momento: 'FINALIZADO', arquivo: 'mock.jpg' })
       }
     }).as('getOSLiberacao');
 
-    cy.get('ion-textarea, textarea').scrollIntoView().type('Acabamento interno realizado.', { force: true });
-    cy.get('button').contains(/Relatar Problema/i).should('exist');
-    cy.get('button').contains(/FINALIZAR ETAPA/i).click();
+    cy.get('ion-textarea, textarea').scrollIntoView().type('Lavagem finalizada.', { force: true });
+    cy.get('button').contains(/Finalizar Lavagem/i).click();
     cy.wait('@avancarLiberacao');
 
-    // 6. Liberação
+    // 5. Liberação
     cy.contains('Fotos de Entrega').should('be.visible');
   });
 
@@ -168,6 +146,14 @@ describe('Workflow do Operador (Ordem de Serviço)', () => {
       statusCode: 200,
       body: { id: 123, status: 'BLOQUEADO_INCIDENTE' }
     }).as('getOSBloqueada');
+
+    // Login prévio
+    cy.visit('/login');
+    cy.get('input[type="email"]').type('funcionario@lava.me');
+    cy.get('input[type="password"]').type('123456');
+    cy.get('button').contains('Entrar').click();
+    cy.wait('@loginRequest');
+    cy.window().its('localStorage.access').should('exist');
 
     cy.visit('/ordens-servico/123/esteira');
     cy.wait('@getOSBloqueada');

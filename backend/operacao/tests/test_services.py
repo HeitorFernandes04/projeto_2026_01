@@ -5,9 +5,11 @@ from PIL import Image
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
+import datetime
+from django.utils import timezone
 from operacao.models import IncidenteOS, OrdemServico
 from operacao.services import IncidenteService, MidiaOrdemServicoService, OrdemServicoService
-from operacao.tests.factories import MidiaOrdemServicoFactory, OrdemServicoFactory, TagPecaFactory
+from operacao.tests.factories import MidiaOrdemServicoFactory, OrdemServicoFactory, TagPecaFactory, EstabelecimentoFactory
 
 
 def gerar_foto_valida(nome='foto.jpg'):
@@ -133,3 +135,21 @@ class TestIncidenteServiceRegistro:
         assert incidente.tag_peca_id == tag_peca.id
         assert os.status == 'BLOQUEADO_INCIDENTE'
         assert IncidenteOS.objects.filter(id=incidente.id).exists()
+
+@pytest.mark.django_db
+class TestVerificarConflitoGracePeriod:
+    def test_verificar_conflito_grace_period(self):
+        """RF-22: Validação de grace period de 5 minutos para horário retroativo."""
+        estabelecimento = EstabelecimentoFactory(horario_fechamento=datetime.time(23, 59))
+        agora = timezone.now()
+        
+        # Passa: horário atual
+        OrdemServicoService.verificar_conflito(estabelecimento, agora, datetime.timedelta(minutes=30))
+        
+        # Passa: retroativo dentro da margem (4 minutos)
+        OrdemServicoService.verificar_conflito(estabelecimento, agora - datetime.timedelta(minutes=4), datetime.timedelta(minutes=30))
+        
+        # Falha: retroativo fora da margem (6 minutos)
+        with pytest.raises(ValidationError) as exc:
+            OrdemServicoService.verificar_conflito(estabelecimento, agora - datetime.timedelta(minutes=6), datetime.timedelta(minutes=30))
+        assert 'retroativo' in str(exc.value)

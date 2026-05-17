@@ -18,9 +18,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
+    # Redirect admin/auth/user to admin/accounts/user
+    path('admin/auth/user/', RedirectView.as_view(url='/admin/accounts/user/', permanent=True)),
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/shared/', include('operacao.shared_urls')),

@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
@@ -13,7 +13,7 @@ Chart.register(...registerables);
   templateUrl: './dashboard-apiview.html',
   styleUrl: './dashboard-apiview.component.scss'
 })
-export class DashboardAPIView implements OnInit, AfterViewInit {
+export class DashboardAPIView implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('receitaChart') receitaChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('veiculosChart') veiculosChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -39,8 +39,15 @@ export class DashboardAPIView implements OnInit, AfterViewInit {
       .toUpperCase();
   }
 
+  private intervalo?: ReturnType<typeof setInterval>;
+
   ngOnInit() {
     this.carregarDados();
+    this.intervalo = setInterval(() => this.carregarDados(), 20000);
+  }
+
+  ngOnDestroy() {
+    clearInterval(this.intervalo);
   }
 
   ngAfterViewInit() {
