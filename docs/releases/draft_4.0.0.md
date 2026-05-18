@@ -23,11 +23,4 @@ Nesta release, a equipe Lava-Me concluiu mais uma Sprint, entregando ferramentas
 * Docs: Sincronização da RF-32 e Roadmap Sprint 4 (#42) por @WandersonAMello
 * Feature/rf 27 core e banco de dados (#41) por @MontDeP
 * docs: Planejamento Sprint 4 e Workflows de Auditoria (#40) por @WandersonAMello
-* Feature/rf 26 galeria fotos (#39) por @eziors
-* Feature/rf 24 cancelamento autonomo (#37) por @MontDeP
-* Feature/auth b2c (#36) por @eziors
-* Feat/fix vazamento timezone (#35) por @LeticiaGLopes-151
-* feat(RF-25): implementa painel do cliente com histórico de ordens de … (#34) por @HeitorFernandes04
-* Feat/rf23 checkout publico (#33) por @LeticiaGLopes-151
-* Feat/rf22 motor disponibilidade (#32) por @yamatosz
-* Revert "feat(rf-26): implementar Galeria Pós-Venda)" (#31) por @yamatosz
+
