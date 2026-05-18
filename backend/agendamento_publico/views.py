@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import AnonRateThrottle
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 
@@ -54,7 +55,7 @@ class AuthB2CSetupView(APIView):
             tokens = AuthB2CService.setup_cliente(**serializer.validated_data)
         except PermissionDenied as exc:
             return Response({'detail': str(exc)}, status=status.HTTP_404_NOT_FOUND)
-        except ValidationError as exc:
+        except DjangoValidationError as exc:
             detail = exc.messages[0] if hasattr(exc, 'messages') else str(exc)
             if 'ja possui PIN cadastrado' in detail:
                 return Response({'detail': detail}, status=status.HTTP_409_CONFLICT)
@@ -84,28 +85,43 @@ class AuthB2CWhatsAppView(APIView):
     throttle_classes = [AuthB2CRateThrottle]
 
     def post(self, request):
+        import logging
+        logger = logging.getLogger('agendamento_publico')
+        logger.info(f"AuthB2CWhatsAppView | Data: {request.data}")
+
         serializer = AuthB2CWhatsAppSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
             res = AuthB2CService.solicitar_otp(**serializer.validated_data)
-        except ValidationError as exc:
+        except DjangoValidationError as exc:
             return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(res, status=status.HTTP_200_OK)
 
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+
 class AuthB2CVerificacaoView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
     throttle_classes = [AuthB2CRateThrottle]
 
     def post(self, request):
         serializer = AuthB2CVerificacaoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        import logging
+        logger = logging.getLogger('agendamento_publico')
+        logger.info(f"AuthB2CVerificacaoView | User: {request.user} | Auth: {request.user.is_authenticated}")
+
         try:
-            tokens = AuthB2CService.verificar_otp(**serializer.validated_data)
-        except ValidationError as exc:
+            tokens = AuthB2CService.verificar_otp(
+                **serializer.validated_data,
+                current_user=request.user if request.user.is_authenticated else None
+            )
+        except DjangoValidationError as exc:
             return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(tokens, status=status.HTTP_200_OK)
@@ -202,7 +218,7 @@ class CancelamentoView(APIView):
         except PermissionError as e:
             # RF-24.1: status já iniciado → 403
             return Response({'detail': str(e)}, status=status.HTTP_403_FORBIDDEN)
-        except ValidationError as e:
+        except DjangoValidationError as e:
             # RF-24.2: antecedência insuficiente / slug não encontrado → 400
             detail = e.messages[0] if hasattr(e, 'messages') else str(e)
             return Response({'detail': detail}, status=status.HTTP_400_BAD_REQUEST)
@@ -224,10 +240,15 @@ class ClienteVeiculoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         slug = self.request.data.get('estabelecimento_slug')
         if not slug:
-            raise ValidationError({'estabelecimento_slug': 'Este campo é obrigatório para criar um veículo no fluxo público.'})
+            # Fallback para o primeiro estabelecimento ativo se criado avulso (Axioma B2C)
+            est = Estabelecimento.objects.filter(is_active=True).first()
+            if not est:
+                raise DRFValidationError({'estabelecimento_slug': 'Nenhum estabelecimento ativo disponível.'})
+        else:
+            est = get_object_or_404(Estabelecimento, slug=slug)
         
-        est = get_object_or_404(Estabelecimento, slug=slug)
         serializer.save(cliente=self.request.user.perfil_cliente, estabelecimento=est)
+
 
 
 class ClienteAgendamentoView(APIView):
@@ -243,5 +264,38 @@ class ClienteAgendamentoView(APIView):
                 cliente=request.user.perfil_cliente
             )
             return Response(OrdemServicoSerializer(os, context={'request': request}).data, status=status.HTTP_201_CREATED)
-        except ValidationError as e:
+        except DjangoValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClientePerfilView(APIView):
+    permission_classes = [IsCliente]
+
+    def get(self, request):
+        user = request.user
+        cliente = user.perfil_cliente
+        return Response({
+            'id': user.id,
+            'nome': user.name,
+            'email': user.email,
+            'telefone': cliente.telefone_whatsapp,
+            'membro_desde': user.date_joined,
+        })
+
+    def patch(self, request):
+        user = request.user
+        
+        nome = request.data.get('nome')
+        if nome:
+            user.name = nome
+            user.save()
+            
+        cliente = user.perfil_cliente
+        return Response({
+            'id': user.id,
+            'nome': user.name,
+            'email': user.email,
+            'telefone': cliente.telefone_whatsapp,
+            'membro_desde': user.date_joined,
+        })
+

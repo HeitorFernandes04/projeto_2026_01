@@ -107,7 +107,7 @@ const Perfil: React.FC = () => {
             <motion.div 
               className="perfil-item-card"
               whileTap={{ scale: 0.98 }}
-              onClick={() => history.push('/auth/whatsapp')}
+              onClick={() => history.push('/auth/whatsapp', { redirect_to: '/perfil', nome: nome })}
             >
               <div className="card-item-left-icon">
                 <IonIcon icon={callOutline} />

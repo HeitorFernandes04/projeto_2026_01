@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonContent,
   IonIcon,
+  useIonViewWillEnter,
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { carOutline, chevronForwardOutline, addOutline } from 'ionicons/icons';
@@ -18,12 +19,14 @@ const MeusVeiculos: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const history = useHistory();
 
-  useEffect(() => {
+  useIonViewWillEnter(() => {
+    setLoading(true);
     getVeiculos()
       .then(setVeiculos)
       .catch(() => setVeiculos([]))
       .finally(() => setLoading(false));
-  }, []);
+  });
+
 
   return (
     <IonPage className="veiculo-page">
@@ -46,38 +49,49 @@ const MeusVeiculos: React.FC = () => {
           ) : (
             <>
               {/* Lista de Veículos */}
-              <div className="veiculos-lista-vertical">
-                {veiculos.map(v => (
-              <motion.div
-                key={v.id}
-                className="veiculo-card-interactive"
-                whileTap={{ scale: 0.98 }}
-                onClick={() => history.push(`/veiculo/${v.id}`)}
-              >
-                <div className="card-left-box">
-                  <IonIcon icon={carOutline} />
-                </div>
-
-                <div className="card-center-info">
-                  <h3 className="card-vehicle-title">{v.marca} {v.modelo}</h3>
-                  <div className="card-mini-grid">
-                    <div className="grid-column">
-                      <span className="column-label">Placa</span>
-                      <span className="column-value">{v.placa}</span>
-                    </div>
-                    <div className="grid-column">
-                      <span className="column-label">Cor</span>
-                      <span className="column-value">{v.cor}</span>
-                    </div>
+              {veiculos.length === 0 ? (
+                <div className="empty-state-container">
+                  <div className="empty-radar-box">
+                    <IonIcon icon={carOutline} className="empty-radar-icon" />
                   </div>
+                  <h2 className="empty-title">Nenhum veículo cadastrado</h2>
+                  <p className="empty-subtitle">Cadastre seus veículos para agilizar seus agendamentos.</p>
                 </div>
+              ) : (
+                <div className="veiculos-lista-vertical">
+                  {veiculos.map(v => (
+                    <motion.div
+                      key={v.id}
+                      className="veiculo-card-interactive"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => history.push(`/veiculo/${v.id}`)}
+                    >
+                      <div className="card-left-box">
+                        <IonIcon icon={carOutline} />
+                      </div>
 
-                <div className="card-right-chevron">
-                  <IonIcon icon={chevronForwardOutline} />
+                      <div className="card-center-info">
+                        <h3 className="card-vehicle-title">{v.marca} {v.modelo}</h3>
+                        <div className="card-mini-grid">
+                          <div className="grid-column">
+                            <span className="column-label">Placa</span>
+                            <span className="column-value">{v.placa}</span>
+                          </div>
+                          <div className="grid-column">
+                            <span className="column-label">Cor</span>
+                            <span className="column-value">{v.cor}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="card-right-chevron">
+                        <IonIcon icon={chevronForwardOutline} />
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-              </motion.div>
-            ))}
-          </div>
+              )}
+
 
           {/* Botão de Adicionar */}
           <motion.button

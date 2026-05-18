@@ -185,25 +185,52 @@
 .hist-badge.cancelado  { background: rgba(239, 68, 68, 0.12); color: #EF4444; }
 .hist-badge.andamento  { background: rgba(56, 189, 248, 0.12); color: #38BDF8; }
 
-/* Feedback de Lista Vazia */
+/* Feedback de Lista Vazia Premium */
 .hist-vazio {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 24px;
-  gap: 16px;
+  padding: 60px 24px;
+  gap: 20px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  text-align: center;
 }
 
-.hist-vazio-emoji {
-  font-size: 56px;
+.hist-vazio-icon {
+  font-size: 64px;
+  color: #38BDF8;
+  filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5));
 }
 
 .hist-vazio-texto {
-  color: var(--hist-muted);
+  color: #94A3B8;
   font-size: 15px;
+  line-height: 22px;
   margin: 0;
+  max-width: 280px;
 }
+
+.hist-cta-btn {
+  background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+  color: #0F172A;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+  transition: transform 0.2s;
+}
+
+.hist-cta-btn:active {
+  transform: scale(0.95);
+}
+
 
 /* Modal de Detalhes Internos */
 .hist-modal-content {

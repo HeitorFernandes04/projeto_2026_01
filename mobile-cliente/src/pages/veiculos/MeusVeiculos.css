@@ -185,3 +185,46 @@
   margin: 0;
   line-height: 1.4;
 }
+
+/* ── EMPTY STATE ── */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  box-sizing: border-box;
+}
+
+.empty-radar-box {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+}
+
+.empty-radar-icon {
+  font-size: 40px;
+  color: var(--veic-primary);
+}
+
+.empty-title {
+  color: var(--veic-foreground);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.empty-subtitle {
+  color: var(--veic-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 32px;
+  max-width: 300px;
+}

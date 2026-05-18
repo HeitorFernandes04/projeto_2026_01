@@ -1,37 +1,66 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonContent,
   IonIcon,
+  useIonViewWillEnter,
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
   carOutline,
-  timeOutline,
   calendarOutline,
   cubeOutline,
-  checkmarkCircleOutline,
 } from 'ionicons/icons';
-// CORREÇÃO: Sintaxe correta de importação ES Modules para Vite e TypeScript
 import logoImg from '../welcome/logo.jpeg';
+import { getPainelCliente, PainelClienteResponse } from '../../services/api';
 import './HomeDashboard.css';
-
-// Altere para `true` para simular o card de "Veículo finalizado, pronto para retirada"
-const isServiceFinished = false;
 
 const HomeDashboard: React.FC = () => {
   const history = useHistory();
+  const [painelData, setPainelData] = useState<PainelClienteResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useIonViewWillEnter(() => {
+    setLoading(true);
+    getPainelCliente()
+      .then(data => {
+        setPainelData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Erro ao carregar painel:', err);
+        setLoading(false);
+      });
+  });
+
+  const ativos = painelData?.ativos ?? [];
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const ativo = ativos.find(a => {
+    if (a.status === 'PATIO') {
+      const dateStr = a.data_hora.split('T')[0];
+      return dateStr === todayStr;
+    }
+    return ['VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE'].includes(a.status);
+  });
+  
+  const temAtivo = !!ativo;
+
+  // Agendamentos futuros são aqueles que não são o ativo atual
+  const futuros = ativos.filter(a => a.id !== ativo?.id);
+  const clienteNome = painelData?.cliente_nome ?? 'Cliente';
+
+
 
   return (
     <IonPage className="home-page">
-      {/* HEADER PREMIUM: Retângulo superior cinza idêntico ao padrão das outras telas */}
       <IonHeader className="ion-no-border veiculo-header">
         <IonToolbar className="veiculo-toolbar-fluid">
           <div className="home-header-content-flex">
             <div className="home-greeting-group">
-              <h1 className="home-greeting-title">Olá, Letícia!</h1>
+              <h1 className="home-greeting-title">Olá, {clienteNome}!</h1>
               <p className="home-greeting-subtitle">Bem-vindo de volta</p>
             </div>
             <div className="home-logo-box">
@@ -46,100 +75,112 @@ const HomeDashboard: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      {/* Conteúdo rolável com container interno seguro */}
       <IonContent className="home-content-premium" scrollY={true}>
         <div className="home-main-container">
           
           {/* COMPONENTE 1: CARD DE STATUS DO SERVIÇO ATIVO */}
-          <div className="home-card-ativo">
-            
-            {/* Header do Status */}
-            <div className="status-header">
-              <div className="status-icon-box">
-                <IonIcon icon={cubeOutline} />
+          {temAtivo && (
+            <div className="home-card-ativo">
+              <div className="status-header">
+                <div className="status-icon-box">
+                  <IonIcon icon={cubeOutline} />
+                </div>
+                <div className="status-titles">
+                  <span className="status-subtitle">Status do Serviço</span>
+                  <h2 className="status-title">{ativo.status_display}</h2>
+                </div>
               </div>
-              <div className="status-titles">
-                <span className="status-subtitle">Status do Serviço</span>
-                <h2 className="status-title">
-                  {isServiceFinished ? "Serviço finalizado" : "Lavagem em andamento"}
-                </h2>
+
+              <div className="status-veiculo-info">
+                <IonIcon icon={carOutline} className="veiculo-icon" />
+                <span className="veiculo-text">{ativo.veiculo_modelo} - {ativo.veiculo_placa}</span>
+              </div>
+
+              <div className="status-veiculo-info">
+                <IonIcon icon={cubeOutline} className="veiculo-icon" />
+                <span className="veiculo-text">{ativo.servico_nome} | {ativo.estabelecimento.nome_fantasia}</span>
+              </div>
+
+              <div className="status-stepper">
+                <div className="stepper-track">
+                  <div className="stepper-fill" style={{ width: `${ativo.etapa_atual}%`, transition: 'width 0.8s ease' }} />
+                </div>
+                <div style={{ marginTop: '8px', textAlign: 'right', color: 'var(--auth-primary)', fontSize: '14px' }}>
+                  {ativo.etapa_atual}%
+                </div>
+              </div>
+
+              <div className="status-footer" style={{ marginTop: '16px' }}>
+                <button 
+                  className="home-btn-agendar-premium" 
+                  style={{ height: '44px', fontSize: '14px' }}
+                  onClick={() => history.push('/acompanhamento')}
+                >
+                  Acompanhar
+                </button>
               </div>
             </div>
+          )}
 
-            {/* Informações do Veículo */}
-            <div className="status-veiculo-info">
-              <IonIcon icon={carOutline} className="veiculo-icon" />
-              <span className="veiculo-text">Toyota Corolla - ABC-1234</span>
-            </div>
-
-            {/* Andamento vs Finalizado */}
-            {!isServiceFinished ? (
-              <>
-                {/* Linha do Tempo Horizontal (Stepper) */}
-                <div className="status-stepper">
-                  <div className="stepper-track">
-                    <div className="stepper-fill" style={{ width: '66%' }} />
+          {/* COMPONENTE: PRÓXIMOS AGENDAMENTOS */}
+          {futuros.length > 0 && (
+            <>
+              <h3 className="home-section-title">Próximos agendamentos</h3>
+              {futuros.map(f => (
+                <div key={f.id} className="home-card-futuro" style={{ marginBottom: '12px' }}>
+                  <div className="home-futuro-left">
+                    <p className="home-futuro-servico">{f.servico_nome}</p>
+                    <div className="home-futuro-info-row">
+                      <IonIcon icon={carOutline} className="home-futuro-icon" />
+                      <span>{f.veiculo_modelo} ({f.veiculo_placa})</span>
+                    </div>
+                    <div className="home-futuro-info-row">
+                      <IonIcon icon={cubeOutline} className="home-futuro-icon" />
+                      <span>{f.estabelecimento.nome_fantasia}</span>
+                    </div>
                   </div>
+                  <div className="home-futuro-right">
+                    <span className="home-futuro-badge">{f.status === 'PATIO' ? 'Agendado' : f.status_display}</span>
 
-                  <div className="stepper-steps">
-                    <div className="step-item completed">
-                      <div className="step-circle"><div className="step-dot" /></div>
-                      <span className="step-label">No pátio</span>
-                    </div>
-                    
-                    <div className="step-item completed">
-                      <div className="step-circle"><div className="step-dot" /></div>
-                      <span className="step-label">Em vistoria</span>
-                    </div>
-                    
-                    <div className="step-item pulsing">
-                      <div className="step-circle"><div className="step-dot" /></div>
-                      <span className="step-label">Em execução</span>
-                    </div>
-                    
-                    <div className="step-item">
-                      <div className="step-circle"><div className="step-dot" /></div>
-                      <span className="step-label">Em liberação</span>
-                    </div>
                   </div>
                 </div>
+              ))}
+            </>
+          )}
 
-                {/* Horário Estimado */}
-                <div className="status-footer">
-                  <IonIcon icon={timeOutline} className="status-time-icon" />
-                  <span className="status-time-text">
-                    Previsão de entrega: <strong>14:30</strong>
-                  </span>
+          {/* COMPONENTE 2: SEÇÃO DE AGENDAMENTOS RECENTES */}
+          <h3 className="home-section-title">Agendamentos recentes</h3>
+          {painelData?.historico.map(h => (
+            <div key={h.id} className="home-card-futuro" style={{ marginBottom: '12px' }}>
+              <div className="home-futuro-left">
+                <p className="home-futuro-servico">{h.servico_nome}</p>
+                <div className="home-futuro-info-row">
+                  <IonIcon icon={carOutline} className="home-futuro-icon" />
+                  <span>{h.veiculo_modelo} ({h.veiculo_placa})</span>
                 </div>
-              </>
-            ) : (
-              <div className="status-success-banner">
-                <IonIcon icon={checkmarkCircleOutline} className="success-icon" />
-                <p className="success-text">Veículo finalizado,<br/>pronto para retirada.</p>
+                <div className="home-futuro-info-row">
+                  <IonIcon icon={cubeOutline} className="home-futuro-icon" />
+                  <span>{h.estabelecimento.nome_fantasia}</span>
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* COMPONENTE 2: SEÇÃO DE PRÓXIMOS AGENDAMENTOS */}
-          <h3 className="home-section-title">Próximos agendamentos</h3>
-          <div className="home-card-futuro">
-            <div className="home-futuro-left">
-              <p className="home-futuro-servico">Lavagem Completa</p>
-              <div className="home-futuro-info-row">
-                <IonIcon icon={carOutline} className="home-futuro-icon" />
-                <span>Corolla Branco</span>
+              <div className="home-futuro-right">
+                <span className="home-futuro-badge">{h.status_display}</span>
               </div>
             </div>
-            <div className="home-futuro-right">
-              <span className="home-futuro-badge">Amanhã, 14:00</span>
-            </div>
-          </div>
+          ))}
 
-          {/* COMPONENTE 3: BOTÃO PRINCIPAL DE AGENDAMENTO CORRIGIDO */}
+          {painelData?.historico.length === 0 && !temAtivo && futuros.length === 0 && !loading && (
+            <p style={{ color: 'var(--auth-muted)', textAlign: 'center', marginTop: '20px' }}>
+              Você ainda não possui agendamentos.
+            </p>
+          )}
+
+
+          {/* COMPONENTE 3: BOTÃO PRINCIPAL DE AGENDAMENTO */}
           <div className="home-footer-action">
             <button
               className="home-btn-agendar-premium"
-              onClick={() => history.push('/permissao')}
+              onClick={() => history.push('/mapa')}
             >
               <IonIcon icon={calendarOutline} className="home-btn-icon-large" />
               Agendar Nova Lavagem

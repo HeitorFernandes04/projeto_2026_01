@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IonToolbar, IonIcon, IonContent, IonHeader, IonModal } from '@ionic/react';
 import { calendarOutline, locationOutline, carOutline, documentTextOutline, chevronBackOutline, closeOutline } from 'ionicons/icons';
-import type { OrdemServico } from '../../services/api';
+import { getGaleriaHistorico, type OrdemServico, type GaleriaHistorico } from '../../services/api';
 import './Detalhes.css';
 
 interface DetalhesProps {
@@ -10,28 +10,22 @@ interface DetalhesProps {
 }
 
 const Detalhes: React.FC<DetalhesProps> = ({ ordem, onClose }) => {
-  // Estado para capturar e maximizar a foto selecionada em tela cheia
   const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
+  const [galeria, setGaleria] = useState<GaleriaHistorico | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock estático de 5 fotos da esteira de produção para o ANTES (Vistoria Inicial)
-  const fotosAntes = [
-    "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=600&q=80"
-  ];
-
-  // Mock estático de 5 fotos da esteira de produção para o DEPOIS (Liberação Final)
-  const fotosDepois = [
-    "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=300&q=80",
-    "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=600&q=80"
-  ];
-
-  const observacaoMock = "Lavagem técnica finalizada com sucesso. Remoção completa de resíduos ferrosos na lataria e aplicação de cera protetiva de carnaúba. Nenhuma pendência prévia identificada na vistoria de entrada.";
+  useEffect(() => {
+    setLoading(true);
+    getGaleriaHistorico(ordem.id)
+      .then(res => {
+        setGaleria(res);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [ordem.id]);
 
   return (
     /* CORREÇÃO CRÍTICA: Trocado IonPage por div com a classe 'ion-page' para não quebrar a navegação do Ionic */
@@ -78,35 +72,51 @@ const Detalhes: React.FC<DetalhesProps> = ({ ordem, onClose }) => {
             </div>
           </div>
 
-          {/* Bloco 2: Card Isolado do ANTES com as 5 fotos clicáveis */}
+          {/* Bloco 2: Card Isolado do ANTES */}
           <div className="detalhes-info-card">
             <span className="detalhes-section-header">Antes (Vistoria Inicial)</span>
             <div className="detalhes-photos-scroll">
-              {fotosAntes.map((foto, index) => (
-                <div 
-                  key={`antes-${index}`} 
-                  className="detalhes-image-wrapper interactive-photo"
-                  onClick={() => setFotoAmpliada(foto)}
-                >
-                  <img src={foto} alt={`Vistoria Inicial ${index + 1}`} className="detalhes-img-render" />
+              {loading ? (
+                <div className="detalhes-image-placeholder"><span>Carregando...</span></div>
+              ) : galeria?.entrada.length === 0 ? (
+                <div className="detalhes-image-placeholder">
+                  <span>Registro de imagem não disponível para este atendimento</span>
                 </div>
-              ))}
+              ) : (
+                galeria?.entrada.map((foto) => (
+                  <div 
+                    key={foto.id} 
+                    className="detalhes-image-wrapper interactive-photo"
+                    onClick={() => setFotoAmpliada(foto.arquivo)}
+                  >
+                    <img src={foto.arquivo} alt="Vistoria Inicial" className="detalhes-img-render" />
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Bloco 3: Card Isolado do DEPOIS com as 5 fotos clicáveis */}
+          {/* Bloco 3: Card Isolado do DEPOIS */}
           <div className="detalhes-info-card">
             <span className="detalhes-section-header">Depois (Vistoria Final)</span>
             <div className="detalhes-photos-scroll">
-              {fotosDepois.map((foto, index) => (
-                <div 
-                  key={`depois-${index}`} 
-                  className="detalhes-image-wrapper interactive-photo"
-                  onClick={() => setFotoAmpliada(foto)}
-                >
-                  <img src={foto} alt={`Entrega Final ${index + 1}`} className="detalhes-img-render" />
+              {loading ? (
+                <div className="detalhes-image-placeholder"><span>Carregando...</span></div>
+              ) : galeria?.finalizacao.length === 0 ? (
+                <div className="detalhes-image-placeholder">
+                  <span>Registro de imagem não disponível para este atendimento</span>
                 </div>
-              ))}
+              ) : (
+                galeria?.finalizacao.map((foto) => (
+                  <div 
+                    key={foto.id} 
+                    className="detalhes-image-wrapper interactive-photo"
+                    onClick={() => setFotoAmpliada(foto.arquivo)}
+                  >
+                    <img src={foto.arquivo} alt="Entrega Final" className="detalhes-img-render" />
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -117,7 +127,7 @@ const Detalhes: React.FC<DetalhesProps> = ({ ordem, onClose }) => {
               <span className="detalhes-section-header" style={{ color: '#38BDF8', margin: 0 }}>Observações do Operador</span>
             </div>
             <p className="detalhes-obs-text">
-              {observacaoMock ?? "Nenhuma observação registrada pelo operador nesta lavagem."}
+              {galeria?.laudo_tecnico.observacoes || ordem.observacoes || "Nenhuma observação registrada pelo operador nesta lavagem."}
             </p>
           </div>
 

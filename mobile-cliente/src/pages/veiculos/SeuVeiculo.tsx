@@ -67,8 +67,9 @@ const SeuVeiculo: React.FC = () => {
   });
 
   useIonViewWillLeave(() => {
-    if (!isEdit) resetForm();
+    resetForm();
   });
+
 
   const handlePlacaInput = (valor: string) => {
     const upper = valor.toUpperCase().replace(/[^A-Z0-9]/g, '');

@@ -11,8 +11,9 @@ import {
   IonIcon,
 } from '@ionic/react';
 import { sparklesOutline, warningOutline } from 'ionicons/icons';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { solicitarOTP } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 
 // Helper de formatação em tempo real
@@ -34,6 +35,9 @@ const LoginWhatsApp: React.FC = () => {
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const history = useHistory();
+  const { user } = useAuth();
+  const location = useLocation<{ redirect_to?: string, nome?: string }>();
+  const isPerfilFlow = location.state?.redirect_to === '/perfil';
 
   // Verifica se o usuário vem de um fluxo de agendamento (novo cadastro) ou login direto
   const hasAgendamento = !!(localStorage.getItem('lm_agendamento_temporario') || localStorage.getItem('lm_agendamento_pendente'));
@@ -57,13 +61,16 @@ const LoginWhatsApp: React.FC = () => {
     setLoading(true);
     setErro('');
     
+    const nomeParaEnvio = isPerfilFlow ? (location.state?.nome || user?.nome) : (hasAgendamento ? nome.trim() : undefined);
+    
     try {
-      const res = await solicitarOTP(`+55${telefoneLimpo}`, hasAgendamento ? nome.trim() : undefined);
+      const res = await solicitarOTP(`+55${telefoneLimpo}`, nomeParaEnvio);
       console.log('PIN_DEBUG:', res.pin_debug);
       
       history.push('/auth/verificacao', { 
         telefone: `+55${telefoneLimpo}`,
-        nome_cliente: hasAgendamento ? nome.trim() : undefined
+        nome_cliente: nomeParaEnvio,
+        redirect_to: isPerfilFlow ? '/perfil' : undefined
       });
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Falha na comunicação. Verifique sua conexão e tente novamente.');
@@ -87,11 +94,13 @@ const LoginWhatsApp: React.FC = () => {
           <IonIcon icon={sparklesOutline} />
         </div>
 
-        <h1 className="auth-title">Identificação</h1>
+        <h1 className="auth-title">{isPerfilFlow ? "Atualização" : "Identificação"}</h1>
         <p className="auth-subtitle">
-          {hasAgendamento 
-            ? "Insira seus dados para finalizar e acompanhar o seu agendamento em tempo real."
-            : "Insira seu número de WhatsApp para acessar sua conta."}
+          {isPerfilFlow
+            ? "Atualize seu número de WhatsApp."
+            : hasAgendamento 
+              ? "Insira seus dados para finalizar e acompanhar o seu agendamento em tempo real."
+              : "Insira seu número de WhatsApp para acessar sua conta."}
         </p>
 
         {/* Renderização Condicional do Nome */}

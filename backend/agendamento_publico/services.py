@@ -158,7 +158,7 @@ class AuthB2CService:
 
     @staticmethod
     @transaction.atomic
-    def verificar_otp(telefone, pin):
+    def verificar_otp(telefone, pin, current_user=None):
         telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
         cached_pin = cache.get(f'otp_{telefone_normalizado}')
         
@@ -167,6 +167,29 @@ class AuthB2CService:
         
         username = AuthB2CService.montar_username(telefone_normalizado)
         
+        # Se o usuário já está logado e quer atualizar o telefone
+        if current_user and current_user.is_authenticated:
+            if User.objects.filter(username=username).exclude(id=current_user.id).exists():
+                raise ValidationError('Este número de WhatsApp já está sendo usado por outra conta.')
+                
+            current_user.username = username
+            current_user.email = AuthB2CService.montar_email_fantasma(telefone_normalizado)
+            current_user.save()
+            
+            cliente = current_user.perfil_cliente
+            cliente.telefone_whatsapp = telefone_normalizado
+            cliente.save()
+            
+            # Atualiza o celular_dono dos veículos vinculados para manter a integridade
+            Veiculo.objects.filter(cliente=cliente).update(celular_dono=telefone_normalizado)
+            
+            AuthB2CService._linkar_veiculos_cliente_por_telefone(cliente, telefone_normalizado)
+            
+            cache.delete(f'otp_{telefone_normalizado}')
+            cache.delete(f'otp_nome_{telefone_normalizado}')
+            
+            return AuthB2CService._emitir_tokens(current_user)
+            
         user = User.objects.filter(username=username).first()
         
         if not user:
@@ -362,3 +385,26 @@ class CancelamentoService:
         )
 
         return os
+
+
+class VeiculoService:
+    CORES_VALIDAS = ['PRETO', 'BRANCO', 'PRATA', 'CINZA', 'VERMELHO', 'AZUL', 'VERDE', 'AMARELO', 'OUTRO']
+    
+    @staticmethod
+    def validar_placa(placa):
+        if not placa:
+            raise ValidationError('A placa é obrigatória.')
+        placa = placa.strip().upper()
+        if not re.match(r'^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$', placa):
+            raise ValidationError('Formato de placa inválido. Use AAA1234 ou AAA1A23.')
+        return placa
+
+    @staticmethod
+    def validar_cor(cor):
+        if not cor:
+            raise ValidationError('A cor é obrigatória.')
+        cor = cor.strip().upper()
+        if cor not in VeiculoService.CORES_VALIDAS:
+            raise ValidationError(f'Cor inválida. Escolha entre: {", ".join(VeiculoService.CORES_VALIDAS)}')
+        return cor
+

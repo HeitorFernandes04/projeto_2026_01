@@ -52,13 +52,21 @@ const Agendamento: React.FC = () => {
     // Buscar veículos apenas se o usuário estiver logado
     if (token && token !== 'null' && token !== 'undefined') {
       getVeiculos()
-        .then(vs => setVeiculo(vs[0] ?? null))
-        .catch(() => { });
+        .then(vs => {
+          if (vs.length === 0) {
+            // Opção A: Redireciona imediatamente para cadastrar veículo
+            // Não salvamos no localStorage para que o goBack() de SeuVeiculo volte para cá
+            history.push('/veiculo/novo');
+          } else {
+            setVeiculo(vs[0] ?? null);
+          }
+        })
+        .catch(() => {});
     } else {
       // Limpa o estado do veículo se não estiver autenticado
       setVeiculo(null);
     }
-  }, [token]);
+  }, [token, history]);
 
 
   useEffect(() => {

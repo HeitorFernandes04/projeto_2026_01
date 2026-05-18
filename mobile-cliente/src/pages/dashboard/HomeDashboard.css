@@ -316,14 +316,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748B;
+  color: #CBD5E1;
   font-size: 13px;
 }
 
 .home-futuro-icon {
   font-size: 16px;
-  color: #64748B;
+  color: #38BDF8;
 }
+
 
 .home-futuro-badge {
   color: #38BDF8;

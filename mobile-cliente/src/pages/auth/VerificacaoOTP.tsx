@@ -18,8 +18,9 @@ const TOTAL_DIGITS = 4;
 const COUNTDOWN_INICIAL = 45;
 
 const VerificacaoOTP: React.FC = () => {
-  const location = useLocation<{ telefone?: string }>();
+  const location = useLocation<{ telefone?: string, redirect_to?: string }>();
   const telefone = location.state?.telefone ?? '';
+  const isPerfilFlow = location.state?.redirect_to === '/perfil';
   const history = useHistory();
   const { login } = useAuth();
 
@@ -50,6 +51,10 @@ const VerificacaoOTP: React.FC = () => {
 
   // Inteligência Pós-Autenticação (Fricção Zero)
   const processarRedirecionamento = async () => {
+    if (isPerfilFlow) {
+      history.replace('/perfil');
+      return;
+    }
     // Verificamos ambas as chaves possíveis para garantir cobertura total
     const agendamentoStr = localStorage.getItem('lm_agendamento_pendente') || localStorage.getItem('lm_agendamento_temporario');
     
@@ -86,7 +91,8 @@ const VerificacaoOTP: React.FC = () => {
     setLoading(true);
     setErro('');
     try {
-      const { access, refresh, usuario } = await verificarOTP(telefone, codigo);
+      const token = localStorage.getItem('lm_access_token');
+      const { access, refresh, usuario } = await verificarOTP(telefone, codigo, token);
       // Salva no AuthContext global
       login(
         { id: usuario.id, nome: usuario.nome, telefone: usuario.telefone, membro_desde: usuario.membro_desde },

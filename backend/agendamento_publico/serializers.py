@@ -8,6 +8,15 @@ class ClienteVeiculoSerializer(serializers.ModelSerializer):
         model = Veiculo
         fields = ['id', 'placa', 'marca', 'modelo', 'cor']
 
+    def validate_placa(self, value):
+        from .services import VeiculoService
+        return VeiculoService.validar_placa(value)
+
+    def validate_cor(self, value):
+        from .services import VeiculoService
+        return VeiculoService.validar_cor(value)
+
+
 
 class ClienteAgendamentoSerializer(serializers.Serializer):
     slug = serializers.CharField()

@@ -6,6 +6,7 @@ import {
   IonContent,
   IonModal,
   IonIcon,
+  useIonViewWillEnter,
 } from '@ionic/react';
 import { 
   calendarOutline, 
@@ -13,10 +14,12 @@ import {
   carOutline, 
   checkmarkCircleOutline, 
   closeCircleOutline,
-  alertCircleOutline
+  alertCircleOutline,
+  clipboardOutline
 } from 'ionicons/icons';
 import { motion } from 'framer-motion';
-import type { OrdemServico } from '../../services/api';
+import { useHistory } from 'react-router-dom';
+import { getHistorico, type OrdemServico } from '../../services/api';
 import Detalhes from './Detalhes';
 import './Historico.css';
 
@@ -41,46 +44,23 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const Historico: React.FC = () => {
-  const [ordens] = useState<OrdemServico[]>([
-    {
-      id: 1,
-      servico_nome: 'Lavagem Completa',
-      estabelecimento_nome: 'Lava-Me Centro',
-      data_agendamento: '10/05/2026',
-      horario: '14:00',
-      valor: 80.00,
-      status: 'FINALIZADO',
-      veiculo_modelo: 'Toyota Corolla',
-      veiculo_placa: 'ABC-1234',
-      veiculo_cor: 'Preto'
-    },
-    {
-      id: 2,
-      servico_nome: 'Higienização Interna',
-      estabelecimento_nome: 'Lava Rápido Premium',
-      data_agendamento: '28/04/2026',
-      horario: '09:30',
-      valor: 150.00,
-      status: 'FINALIZADO',
-      veiculo_modelo: 'Honda Civic',
-      veiculo_placa: 'XYZ-5678',
-      veiculo_cor: 'Prata'
-    },
-    {
-      id: 3,
-      servico_nome: 'Enceramento Técnico',
-      estabelecimento_nome: 'Lava-Me Centro',
-      data_agendamento: '15/03/2026',
-      horario: '16:15',
-      valor: 120.00,
-      status: 'CANCELADO',
-      veiculo_modelo: 'Toyota Corolla',
-      veiculo_placa: 'ABC-1234',
-      veiculo_cor: 'Preto'
-    }
-  ]);
-
+  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
+  const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<OrdemServico | null>(null);
+  const history = useHistory();
+
+  useIonViewWillEnter(() => {
+    setLoading(true);
+    getHistorico()
+      .then(res => {
+        setOrdens(res);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  });
 
   const getStatusIcon = (status: string) => {
     if (status === 'FINALIZADO') return checkmarkCircleOutline;
@@ -102,10 +82,29 @@ const Historico: React.FC = () => {
       <IonContent className="veiculo-content-premium" scrollY={true}>
         <div className="historico-main-container">
 
-          {ordens.length === 0 ? (
+          {loading ? (
+            <div className="historico-lista-vertical">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="hist-card-interactive" style={{ opacity: 0.5 }}>
+                  <div className="hist-card-top">
+                    <div className="hist-icon-box andamento" style={{ background: '#334155' }}></div>
+                    <div className="hist-title-block">
+                      <div style={{ width: '120px', height: '16px', background: '#334155', borderRadius: '4px' }}></div>
+                      <div style={{ width: '60px', height: '16px', background: '#334155', borderRadius: '4px' }}></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : ordens.length === 0 ? (
             <div className="hist-vazio">
-              <span className="hist-vazio-emoji">📋</span>
-              <p className="hist-vazio-texto">Nenhum serviço realizado ainda.</p>
+              <IonIcon icon={clipboardOutline} className="hist-vazio-icon" />
+              <p className="hist-vazio-texto">
+                Sua folha de serviços está limpa. Que tal agendar um brilho especial para o seu veículo hoje?
+              </p>
+              <button className="hist-cta-btn" onClick={() => history.push('/mapa')}>
+                Encontrar um Lava-Me
+              </button>
             </div>
           ) : (
             <div className="historico-lista-vertical">
