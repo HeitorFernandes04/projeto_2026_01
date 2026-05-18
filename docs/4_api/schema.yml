@@ -1042,6 +1042,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/EstabelecimentoPublico'
           description: ''
+  /api/publico/estabelecimentos/:
+    get:
+      operationId: publico_estabelecimentos_list
+      description: |-
+        RF-28: GET /api/publico/estabelecimentos/
+        Lista pública de estabelecimentos ativos com geolocalização para o mapa B2C.
+      tags:
+      - publico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstabelecimentoMapa'
+          description: ''
   /api/publico/historico/:
     get:
       operationId: publico_historico_retrieve
@@ -1180,6 +1202,46 @@ components:
       - endereco_completo
       - id
       - logo_url
+      - nome_fantasia
+    EstabelecimentoMapa:
+      type: object
+      description: |-
+        RF-28: Serializer para o mapa B2C. Expõe apenas os campos necessários
+        para renderizar os pins e o Drawer de resumo do estabelecimento.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome_fantasia:
+          type: string
+          maxLength: 150
+        slug:
+          type: string
+          nullable: true
+          maxLength: 150
+          pattern: ^[-a-zA-Z0-9_]+$
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+          nullable: true
+        logo:
+          type: string
+          readOnly: true
+        endereco_completo:
+          type: string
+          maxLength: 255
+      required:
+      - endereco_completo
+      - id
+      - logo
       - nome_fantasia
     EstabelecimentoPublico:
       type: object

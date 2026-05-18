@@ -25,27 +25,28 @@ ion-fab {
   color: #ffffff;
 }
 
-/* Overlay flutuante no topo */
-.mapa-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  padding: 12px 16px 0;
-  pointer-events: none;
+/* Header fixo com os controles de busca — fora do mapa para evitar conflito de touch */
+.mapa-header {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 
-.mapa-overlay > * {
-  pointer-events: auto;
+.mapa-toolbar {
+  --background: var(--lm-card);
+  --border-width: 0;
+  --min-height: 0px;
+}
+
+.mapa-header-content {
+  padding: 12px 16px 10px;
+}
+
+/* Content full-height para o mapa preencher o espaço abaixo do header */
+.mapa-content::part(scroll) {
+  height: 100%;
+  overflow: hidden;
 }
 
 .mapa-titulo {
-  display: inline-block;
-  background: var(--lm-card);
-  border: 1px solid var(--lm-border);
-  border-radius: 12px;
-  padding: 8px 14px;
   color: var(--lm-text);
   font-size: 16px;
   font-weight: 800;
@@ -53,12 +54,12 @@ ion-fab {
 }
 
 .mapa-searchbar {
-  --background: var(--lm-card);
+  --background: var(--lm-bg);
   --color: var(--lm-text);
   --placeholder-color: var(--lm-text-muted);
   --icon-color: var(--lm-text-muted);
   --border-radius: 12px;
-  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   padding: 0;
   margin-bottom: 8px;
 }
@@ -93,7 +94,7 @@ ion-fab {
   display: inline-block;
   margin-top: 8px;
   padding: 4px 12px;
-  background: var(--lm-card);
+  background: var(--lm-bg);
   border: 1px solid var(--lm-border);
   border-radius: 20px;
   color: var(--lm-text-muted);

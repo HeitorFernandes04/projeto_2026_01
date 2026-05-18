@@ -53,7 +53,7 @@ const Agendamento: React.FC = () => {
     if (token && token !== 'null' && token !== 'undefined') {
       getVeiculos()
         .then(vs => setVeiculo(vs[0] ?? null))
-        .catch(() => {});
+        .catch(() => { });
     } else {
       // Limpa o estado do veículo se não estiver autenticado
       setVeiculo(null);
@@ -71,7 +71,7 @@ const Agendamento: React.FC = () => {
 
   const handleFinalizar = () => {
     if (!horarioSelecionado || !servico) return;
-    
+
     setLoading(true);
 
     const agendamentoData = {
@@ -165,7 +165,7 @@ const Agendamento: React.FC = () => {
         <h2 className="ag-section-title">
           <IonIcon icon={calendarOutline} className="ag-section-icon" /> Data
         </h2>
-        
+
         <div className="ag-calendar fade-in">
           <div className="ag-cal-header">
             <button className="ag-cal-nav-btn" onClick={prevMonth}>
@@ -176,7 +176,7 @@ const Agendamento: React.FC = () => {
               <IonIcon icon={chevronForwardOutline} />
             </button>
           </div>
-          
+
           <div className="ag-cal-weekdays">
             {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
               <span key={i} className="ag-cal-weekday">{d}</span>
@@ -188,7 +188,7 @@ const Agendamento: React.FC = () => {
             {Array.from({ length: startDay }).map((_, i) => (
               <div key={`empty-${i}`} className="ag-cal-day empty" />
             ))}
-            
+
             {/* Dias do mês */}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
@@ -214,7 +214,7 @@ const Agendamento: React.FC = () => {
         <h2 className="ag-section-title">
           <IonIcon icon={timeOutline} className="ag-section-icon" /> Horário
         </h2>
-        
+
         {horarios.length === 0 ? (
           <p className="ag-sem-horarios">Nenhum horário disponível para esta data.</p>
         ) : (

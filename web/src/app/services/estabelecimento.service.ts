@@ -11,6 +11,8 @@ export interface Estabelecimento {
   is_active: boolean;
   logo_url?: string;
   logo?: File | string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 @Injectable({

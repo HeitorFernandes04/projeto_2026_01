@@ -95,7 +95,7 @@ class OrdemServicoService:
     """Serviço responsável pelas operações de criação e transição de Ordens de Serviço."""
 
     @staticmethod
-    def listar_historico_por_periodo(estabelecimento, data_inicial, data_final, status='todos'):
+    def listar_historico_por_periodo(estabelecimento, data_inicial, data_final, status='todos', funcionario=None):
         """RF-10: Lista histórico por estabelecimento (Axioma 5 - Multi-tenancy)."""
         if data_inicial > data_final:
             raise ValidationError("A data inicial não pode ser maior que a data final.")
@@ -107,6 +107,8 @@ class OrdemServicoService:
         }
         if status and status != 'todos':
             filtros['status'] = status
+        if funcionario is not None:
+            filtros['funcionario'] = funcionario
 
         return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico', 'funcionario').order_by('-data_hora')
 

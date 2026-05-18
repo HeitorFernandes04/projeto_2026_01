@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react';
 import {
   IonPage,
+  IonHeader,
+  IonToolbar,
   IonContent,
   IonFab,
   IonFabButton,
@@ -117,11 +119,50 @@ const Home: React.FC = () => {
 
   return (
     <IonPage className="lm-page">
-      <IonContent>
+      <IonHeader className="ion-no-border mapa-header">
+        <IonToolbar className="mapa-toolbar">
+          <div className="mapa-header-content">
+            <p className="mapa-titulo">Encontre um Lava-Me próximo</p>
+
+            <IonSearchbar
+              value={busca}
+              onIonInput={e => setBusca(e.detail.value ?? '')}
+              placeholder="Buscar lava-jato..."
+              debounce={200}
+              className="mapa-searchbar"
+            />
+
+            <div className="mapa-filtros">
+              <IonChip
+                className={filtro === 'proximos' ? 'chip-ativo' : 'chip-inativo'}
+                onClick={() => toggleFiltro('proximos')}
+              >
+                <IonLabel>📍 Mais próximos</IonLabel>
+              </IonChip>
+              <IonChip
+                className={filtro === 'avaliados' ? 'chip-ativo' : 'chip-inativo'}
+                onClick={() => toggleFiltro('avaliados')}
+              >
+                <IonLabel>⭐ Melhor avaliados</IonLabel>
+              </IonChip>
+              <IonChip
+                className={filtro === 'abertos' ? 'chip-ativo' : 'chip-inativo'}
+                onClick={() => toggleFiltro('abertos')}
+              >
+                <IonLabel>🟢 Abertos</IonLabel>
+              </IonChip>
+            </div>
+
+            <span className="mapa-contador">{filtrados.length} encontrado{filtrados.length !== 1 ? 's' : ''}</span>
+          </div>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent scrollY={false} className="mapa-content">
         <MapContainer
           center={centro}
           zoom={13}
-          style={{ height: '100vh', width: '100%' }}
+          style={{ height: '100%', width: '100%' }}
           key={`${centro.join(',')}-${centroKey.current}`}
         >
           <TileLayer
@@ -137,41 +178,6 @@ const Home: React.FC = () => {
             />
           ))}
         </MapContainer>
-
-        <div className="mapa-overlay">
-          <p className="mapa-titulo">Encontre um Lava-Me próximo</p>
-
-          <IonSearchbar
-            value={busca}
-            onIonInput={e => setBusca(e.detail.value ?? '')}
-            placeholder="Buscar lava-jato..."
-            debounce={200}
-            className="mapa-searchbar"
-          />
-
-          <div className="mapa-filtros">
-            <IonChip
-              className={filtro === 'proximos' ? 'chip-ativo' : 'chip-inativo'}
-              onClick={() => toggleFiltro('proximos')}
-            >
-              <IonLabel>📍 Mais próximos</IonLabel>
-            </IonChip>
-            <IonChip
-              className={filtro === 'avaliados' ? 'chip-ativo' : 'chip-inativo'}
-              onClick={() => toggleFiltro('avaliados')}
-            >
-              <IonLabel>⭐ Melhor avaliados</IonLabel>
-            </IonChip>
-            <IonChip
-              className={filtro === 'abertos' ? 'chip-ativo' : 'chip-inativo'}
-              onClick={() => toggleFiltro('abertos')}
-            >
-              <IonLabel>🟢 Abertos</IonLabel>
-            </IonChip>
-          </div>
-
-          <span className="mapa-contador">{filtrados.length} encontrado{filtrados.length !== 1 ? 's' : ''}</span>
-        </div>
 
         <IonFab vertical="bottom" horizontal="end" slot="fixed">
           <IonFabButton onClick={centralizarNoUsuario}>

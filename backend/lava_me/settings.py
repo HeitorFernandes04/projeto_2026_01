@@ -173,7 +173,14 @@ AUTH_USER_MODEL = 'accounts.User'
 
 LOGIN_URL = '/'
 
+from corsheaders.defaults import default_headers
+
 CORS_ORIGIN_ALLOW_ALL = os.environ.get('CORS_ALLOW_ALL', 'True') == 'True'
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'cache-control',
+    'pragma',
+]
 
 LOGGING = {
     'version': 1,

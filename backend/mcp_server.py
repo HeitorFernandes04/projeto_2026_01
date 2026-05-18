@@ -12,6 +12,7 @@ LOG_FILE = BASE_DIR / "logs" / "dev.log"
 SCRIPTS_DIR = BASE_DIR / "scripts"
 DOCS_DIR = BASE_DIR.parent / "docs"
 MOBILE_DIR = BASE_DIR.parent / "mobile"
+MOBILE_CLIENTE_DIR = BASE_DIR.parent / "mobile-cliente"
 WEB_DIR = BASE_DIR.parent / "web"
 
 # Setup FastMCP
@@ -79,13 +80,11 @@ def read_mobile_standard() -> str:
 
 @mcp.tool()
 def list_mobile_components() -> str:
-    """Lista todos os componentes React compartilhados (mobile/src/components) que a IA deve reaproveitar."""
-    components_dir = MOBILE_DIR / "src" / "components"
-    if not components_dir.exists():
-        return "Nenhum componente base encontrado."
-        
-    files = list(components_dir.glob("*.tsx"))
-    file_list = [f"- {t.name}" for t in files]
+    """Lista todos os componentes React compartilhados (mobile/src/components e mobile-cliente/src/components) que a IA deve reaproveitar."""
+    components_b2b = list((MOBILE_DIR / "src" / "components").glob("*.tsx")) if (MOBILE_DIR / "src" / "components").exists() else []
+    components_b2c = list((MOBILE_CLIENTE_DIR / "src" / "components").glob("*.tsx")) if (MOBILE_CLIENTE_DIR / "src" / "components").exists() else []
+    
+    file_list = [f"- B2B: {t.name}" for t in components_b2b] + [f"- B2C: {t.name}" for t in components_b2c]
     return "Componentes React/Ionic Encontrados:\n" + "\n".join(file_list) + "\n\n(Reaproveite estes arquivos e respeite suas Props)"
 
 # ======== Ferramentas Web (Angular) ========
@@ -160,7 +159,7 @@ def run_backend_tests(test_path: str = "") -> str:
 
 @mcp.tool()
 def run_frontend_tests(test_file: str = "") -> str:
-    """Executa os testes unitários (Vitest/Jest) no frontend. Detecta automaticamente se é Mobile ou Web."""
+    """Executa os testes unitários (Vitest/Jest) no frontend. Detecta automaticamente se é Mobile (B2B/B2C) ou Web."""
     cwd = MOBILE_DIR
     cmd = ["npm", "run", "test.unit", "--", "--run"]
     
@@ -170,15 +169,22 @@ def run_frontend_tests(test_file: str = "") -> str:
             cwd = WEB_DIR
             # No Angular (Web), usamos npx vitest para testes isolados de spec.ts
             cmd = ["npx", "vitest", "run", test_file.replace("web/", "")]
+        elif "mobile-cliente/" in test_file:
+            cwd = MOBILE_CLIENTE_DIR
+            test_file = test_file.replace("mobile-cliente/", "")
+            cmd = ["npm", "run", "test.unit", "--", "--run", test_file]
         elif "mobile/" in test_file:
             cwd = MOBILE_DIR
             test_file = test_file.replace("mobile/", "")
             cmd = ["npm", "run", "test.unit", "--", "--run", test_file]
         else:
-            # Tenta inferir se o arquivo existe em algum dos dois
+            # Tenta inferir se o arquivo existe em algum
             if (WEB_DIR / test_file).exists():
                 cwd = WEB_DIR
                 cmd = ["npx", "vitest", "run", test_file]
+            elif (MOBILE_CLIENTE_DIR / test_file).exists():
+                cwd = MOBILE_CLIENTE_DIR
+                cmd = ["npm", "run", "test.unit", "--", "--run", test_file]
             elif (MOBILE_DIR / test_file).exists():
                 cwd = MOBILE_DIR
                 cmd = ["npm", "run", "test.unit", "--", "--run", test_file]
@@ -191,10 +197,11 @@ def run_frontend_tests(test_file: str = "") -> str:
 
 @mcp.tool()
 def run_frontend_linter() -> str:
-    """Executa o linter e checagem de tipos estáticos (ESLint e TSC) na pasta mobile."""
+    """Executa o linter e checagem de tipos estáticos (ESLint e TSC) nas pastas mobile e mobile-cliente."""
     try:
-        proc = subprocess.run(["npm", "run", "lint"], cwd=str(MOBILE_DIR), capture_output=True, text=True)
-        return proc.stdout if proc.stdout else proc.stderr
+        p1 = subprocess.run(["npm", "run", "lint"], cwd=str(MOBILE_DIR), capture_output=True, text=True)
+        p2 = subprocess.run(["npm", "run", "lint"], cwd=str(MOBILE_CLIENTE_DIR), capture_output=True, text=True)
+        return f"=== B2B (mobile) ===\\n{p1.stdout or p1.stderr}\\n\\n=== B2C (mobile-cliente) ===\\n{p2.stdout or p2.stderr}"
     except Exception as e:
         return f"Erro no linter front: {str(e)}"
 
@@ -223,7 +230,7 @@ print("\\n".join(get_urls(get_resolver())))'''
         
         # 2. Buscar URLs no Front (Busca simplificada por strings que parecem /api/)
         errors = []
-        for directory in [MOBILE_DIR, WEB_DIR]:
+        for directory in [MOBILE_DIR, MOBILE_CLIENTE_DIR, WEB_DIR]:
             if not directory.exists(): continue
             # Busca em arquivos de serviço/api
             p = subprocess.run(['grep', '-r', "/api/", str(directory)], capture_output=True, text=True)
@@ -417,8 +424,10 @@ def run_security_audit(target: str = "all") -> str:
     output = []
     try:
         if target in ["all", "mobile"]:
-            p = subprocess.run(["npm", "audit"], cwd=str(MOBILE_DIR), capture_output=True, text=True)
-            output.append("=== MOBILE AUDIT ===\\n" + p.stdout)
+            p1 = subprocess.run(["npm", "audit"], cwd=str(MOBILE_DIR), capture_output=True, text=True)
+            p2 = subprocess.run(["npm", "audit"], cwd=str(MOBILE_CLIENTE_DIR), capture_output=True, text=True)
+            output.append("=== MOBILE B2B AUDIT ===\\n" + p1.stdout)
+            output.append("=== MOBILE B2C AUDIT ===\\n" + p2.stdout)
         if target in ["all", "web"]:
             p = subprocess.run(["npm", "audit"], cwd=str(WEB_DIR), capture_output=True, text=True)
             output.append("=== WEB AUDIT ===\\n" + p.stdout)
@@ -463,17 +472,21 @@ def sync_typescript_models() -> str:
             
         web_models_dir = WEB_DIR / "src" / "app" / "models"
         mobile_models_dir = MOBILE_DIR / "src" / "models"
+        mobile_cliente_models_dir = MOBILE_CLIENTE_DIR / "src" / "models"
         web_models_dir.mkdir(exist_ok=True, parents=True)
         mobile_models_dir.mkdir(exist_ok=True, parents=True)
+        mobile_cliente_models_dir.mkdir(exist_ok=True, parents=True)
         
         # Usa o npx openapi-typescript para gerar interfaces brutas via CLI
         cmd_web = ["npx", "openapi-typescript", str(schema_path), "-o", str(web_models_dir / "schema.d.ts")]
         cmd_mobile = ["npx", "openapi-typescript", str(schema_path), "-o", str(mobile_models_dir / "schema.d.ts")]
+        cmd_mobile_cliente = ["npx", "openapi-typescript", str(schema_path), "-o", str(mobile_cliente_models_dir / "schema.d.ts")]
         
         p1 = subprocess.run(cmd_web, capture_output=True, text=True)
         p2 = subprocess.run(cmd_mobile, capture_output=True, text=True)
+        p3 = subprocess.run(cmd_mobile_cliente, capture_output=True, text=True)
         
-        return f"Tipagens OpenAPI sincronizadas com sucesso! O Front agora reflete o Backend exato.\\nWEB:\\n{p1.stdout[:100]}...\\nMOBILE:\\n{p2.stdout[:100]}..."
+        return f"Tipagens OpenAPI sincronizadas com sucesso! O Front agora reflete o Backend exato.\\nWEB:\\n{p1.stdout[:100]}...\\nMOBILE B2B:\\n{p2.stdout[:100]}...\\nMOBILE B2C:\\n{p3.stdout[:100]}..."
     except Exception as e:
         return f"Erro na sincronização de tipos: {str(e)}"
 

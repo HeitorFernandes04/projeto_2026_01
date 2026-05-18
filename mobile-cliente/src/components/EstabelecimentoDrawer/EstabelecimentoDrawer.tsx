@@ -76,6 +76,8 @@ const EstabelecimentoDrawer: React.FC<Props> = ({ estabelecimento, posicaoUsuari
                   src={estabelecimento.logo}
                   alt={`Logo ${estabelecimento.nome_fantasia}`}
                   className="drawer-logo"
+                  crossOrigin="anonymous"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
               )}
               <div className="drawer-header-info">
