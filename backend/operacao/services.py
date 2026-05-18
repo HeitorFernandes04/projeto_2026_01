@@ -429,7 +429,6 @@ class HistoricoUnificadoService:
             data_inicial=filtros['data_inicial'],
             data_final=filtros['data_final'],
             status=filtros.get('status', 'todos'),
-            funcionario=user.perfil_funcionario,
         )
 
     @staticmethod
