@@ -14,6 +14,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { timeOutline, calendarOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 import { getDisponibilidade, getVeiculos } from '../../services/api';
 import type { Disponibilidade, Servico, Veiculo } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './Agendamento.css';
 
 interface LocationState {
@@ -29,6 +30,7 @@ function dataHojeStr(): string {
 const Agendamento: React.FC = () => {
   const location = useLocation<LocationState>();
   const history = useHistory();
+  const { token } = useAuth();
   const { slug, servico, estabelecimento_nome } = location.state ?? {};
 
   const [data, setData] = useState(dataHojeStr());
@@ -48,13 +50,16 @@ const Agendamento: React.FC = () => {
 
   useEffect(() => {
     // Buscar veículos apenas se o usuário estiver logado
-    const token = localStorage.getItem('lm_access_token');
-    if (token) {
+    if (token && token !== 'null' && token !== 'undefined') {
       getVeiculos()
         .then(vs => setVeiculo(vs[0] ?? null))
         .catch(() => {});
+    } else {
+      // Limpa o estado do veículo se não estiver autenticado
+      setVeiculo(null);
     }
-  }, []);
+  }, [token]);
+
 
   useEffect(() => {
     if (!slug || !servico) return;
@@ -78,15 +83,14 @@ const Agendamento: React.FC = () => {
       veiculo,
     };
 
-    const token = localStorage.getItem('lm_access_token');
-    
     // Fricção Zero: Se não logado, salva state e vai pro login via whatsapp
-    if (!token) {
+    if (!token || token === 'null' || token === 'undefined') {
       localStorage.setItem('lm_agendamento_pendente', JSON.stringify(agendamentoData));
       history.push('/auth');
       setLoading(false);
       return;
     }
+
 
     // Se logado mas sem veículo cadastrado
     if (!veiculo) {
@@ -230,6 +234,7 @@ const Agendamento: React.FC = () => {
             })}
           </div>
         )}
+        <div style={{ height: '120px' }} />
       </IonContent>
 
       {/* Footer Sticky de Ação */}

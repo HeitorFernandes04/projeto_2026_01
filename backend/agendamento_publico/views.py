@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, viewsets
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,11 +11,17 @@ from django.utils.dateparse import parse_date
 
 from accounts.models import Estabelecimento
 from accounts.permissions import IsCliente
-from core.models import Servico
+from core.models import Servico, Veiculo
+from operacao.services import OrdemServicoService
+from operacao.serializers import OrdemServicoSerializer
 from .serializers import (
     AuthB2CLoginSerializer,
     AuthB2CSetupSerializer,
+    AuthB2CWhatsAppSerializer,
+    AuthB2CVerificacaoSerializer,
     EstabelecimentoPublicoSerializer,
+    ClienteVeiculoSerializer,
+    ClienteAgendamentoSerializer,
     EstabelecimentoMapaSerializer,
     CancelamentoSerializer,
 )
@@ -33,7 +39,7 @@ class EstabelecimentoPublicoRateThrottle(AnonRateThrottle):
 
 class AuthB2CRateThrottle(AnonRateThrottle):
     scope = 'auth_b2c'
-    rate = '5/hour'
+    rate = '100/min'
 
 
 class AuthB2CSetupView(APIView):
@@ -69,6 +75,38 @@ class AuthB2CLoginView(APIView):
             tokens = AuthB2CService.login_cliente(**serializer.validated_data)
         except PermissionDenied as exc:
             return Response({'detail': str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response(tokens, status=status.HTTP_200_OK)
+
+
+class AuthB2CWhatsAppView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [AuthB2CRateThrottle]
+
+    def post(self, request):
+        serializer = AuthB2CWhatsAppSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            res = AuthB2CService.solicitar_otp(**serializer.validated_data)
+        except ValidationError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(res, status=status.HTTP_200_OK)
+
+
+class AuthB2CVerificacaoView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [AuthB2CRateThrottle]
+
+    def post(self, request):
+        serializer = AuthB2CVerificacaoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            tokens = AuthB2CService.verificar_otp(**serializer.validated_data)
+        except ValidationError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(tokens, status=status.HTTP_200_OK)
 
@@ -174,3 +212,36 @@ class CancelamentoView(APIView):
             {'detail': 'Agendamento cancelado com sucesso.'},
             status=status.HTTP_200_OK,
         )
+
+
+class ClienteVeiculoViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsCliente]
+    serializer_class = ClienteVeiculoSerializer
+
+    def get_queryset(self):
+        return Veiculo.objects.filter(cliente=self.request.user.perfil_cliente)
+
+    def perform_create(self, serializer):
+        slug = self.request.data.get('estabelecimento_slug')
+        if not slug:
+            raise ValidationError({'estabelecimento_slug': 'Este campo é obrigatório para criar um veículo no fluxo público.'})
+        
+        est = get_object_or_404(Estabelecimento, slug=slug)
+        serializer.save(cliente=self.request.user.perfil_cliente, estabelecimento=est)
+
+
+class ClienteAgendamentoView(APIView):
+    permission_classes = [IsCliente]
+
+    def post(self, request):
+        serializer = ClienteAgendamentoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        try:
+            os = OrdemServicoService.criar_agendamento_cliente(
+                dados=serializer.validated_data,
+                cliente=request.user.perfil_cliente
+            )
+            return Response(OrdemServicoSerializer(os, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

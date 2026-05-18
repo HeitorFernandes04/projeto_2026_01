@@ -1,6 +1,8 @@
 import datetime
 import logging
+import random
 import re
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -37,9 +39,16 @@ class AuthB2CService:
     @staticmethod
     def _emitir_tokens(user):
         refresh = RefreshToken.for_user(user)
+        cliente = getattr(user, 'perfil_cliente', None)
         return {
             'access': str(refresh.access_token),
             'refresh': str(refresh),
+            'usuario': {
+                'id': user.id,
+                'nome': user.name or 'Cliente',
+                'telefone': cliente.telefone_whatsapp if cliente else '',
+                'membro_desde': user.date_joined.isoformat() if hasattr(user, 'date_joined') and user.date_joined else '',
+            }
         }
 
     @staticmethod
@@ -119,6 +128,69 @@ class AuthB2CService:
         if not user or not hasattr(user, 'perfil_cliente') or not user.check_password(pin):
             raise PermissionDenied('Telefone ou PIN incorretos.')
 
+        return AuthB2CService._emitir_tokens(user)
+
+    @staticmethod
+    def solicitar_otp(telefone, nome=None):
+
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        if len(telefone_normalizado) < 10:
+            raise ValidationError('Telefone invalido.')
+        
+        # Restrição RF-29: Se não passou o nome, é login direto. Usuário deve estar cadastrado.
+        if not nome:
+            username = AuthB2CService.montar_username(telefone_normalizado)
+            if not User.objects.filter(username=username).exists():
+                raise ValidationError('Usuário não cadastrado. Por favor, cadastre-se primeiro.')
+        
+        # Gerar PIN de 4 dígitos
+        pin = f"{random.randint(0, 9999):04d}"
+        
+        # Armazenar no cache por 5 minutos
+        cache.set(f'otp_{telefone_normalizado}', pin, timeout=300)
+        cache.set(f'otp_nome_{telefone_normalizado}', nome, timeout=300)
+
+        
+        # Logar o PIN (simulando envio de WhatsApp)
+        logger.info(f"RF-29 | OTP gerado para {telefone_normalizado}: {pin}")
+        
+        return {"detail": "PIN enviado com sucesso.", "pin_debug": pin}
+
+    @staticmethod
+    @transaction.atomic
+    def verificar_otp(telefone, pin):
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        cached_pin = cache.get(f'otp_{telefone_normalizado}')
+        
+        if not cached_pin or cached_pin != pin:
+            raise ValidationError('PIN invalido ou expirado.')
+        
+        username = AuthB2CService.montar_username(telefone_normalizado)
+        
+        user = User.objects.filter(username=username).first()
+        
+        if not user:
+            nome = cache.get(f'otp_nome_{telefone_normalizado}') or 'Cliente Lava-Me'
+            user = User.objects.create(
+                email=AuthB2CService.montar_email_fantasma(telefone_normalizado),
+                username=username,
+                name=nome,
+                is_staff=False,
+                is_superuser=False,
+            )
+            user.set_unusable_password()
+            user.save()
+            
+            cliente = Cliente.objects.create(
+                user=user,
+                telefone_whatsapp=telefone_normalizado,
+            )
+            AuthB2CService._linkar_veiculos_cliente_por_telefone(cliente, telefone_normalizado)
+        
+        # Limpar cache
+        cache.delete(f'otp_{telefone_normalizado}')
+        cache.delete(f'otp_nome_{telefone_normalizado}')
+        
         return AuthB2CService._emitir_tokens(user)
 
     @staticmethod

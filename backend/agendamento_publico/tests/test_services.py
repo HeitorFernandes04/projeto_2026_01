@@ -32,7 +32,7 @@ class TestAuthB2CService:
         assert Cliente.objects.get(user=user).telefone_whatsapp == '11999999999'
         veiculo.refresh_from_db()
         assert veiculo.cliente == user.perfil_cliente
-        assert set(result.keys()) == {'access', 'refresh'}
+        assert set(result.keys()) == {'access', 'refresh', 'usuario'}
 
     def test_setup_bloqueia_idor_quando_telefone_nao_pertence_a_placa(self):
         estabelecimento = EstabelecimentoFactory()
@@ -154,7 +154,7 @@ class TestAuthB2CService:
             pin='1234',
         )
 
-        assert set(result.keys()) == {'access', 'refresh'}
+        assert set(result.keys()) == {'access', 'refresh', 'usuario'}
 
     def test_login_cliente_b2c_rejeita_pin_incorreto(self):
         estabelecimento = EstabelecimentoFactory()
@@ -174,3 +174,71 @@ class TestAuthB2CService:
                 telefone='11999999999',
                 pin='9999',
             )
+
+    def test_solicitar_otp_sucesso(self):
+        result = AuthB2CService.solicitar_otp(
+            telefone='(11) 99999-9999',
+            nome='Teste OTP',
+        )
+        assert result['detail'] == 'PIN enviado com sucesso.'
+        assert 'pin_debug' in result
+        
+        from django.core.cache import cache
+        cached_pin = cache.get('otp_11999999999')
+        assert cached_pin == result['pin_debug']
+
+    def test_solicitar_otp_rejeita_usuario_nao_cadastrado_sem_nome(self):
+        with pytest.raises(ValidationError) as exc_info:
+            AuthB2CService.solicitar_otp(
+                telefone='11988887777',
+                nome=None,
+            )
+        assert 'Usuário não cadastrado' in str(exc_info.value)
+
+    def test_solicitar_otp_aceita_usuario_cadastrado_sem_nome(self):
+        # Primeiro cria o usuário
+        User.objects.create(
+            email='11988887777@cliente.lava.me',
+            username='b2c_11988887777',
+            name='Cliente Cadastrado',
+        )
+        
+        result = AuthB2CService.solicitar_otp(
+            telefone='11988887777',
+            nome=None,
+        )
+        assert result['detail'] == 'PIN enviado com sucesso.'
+
+
+    def test_verificar_otp_sucesso_novo_usuario(self):
+        AuthB2CService.solicitar_otp(
+            telefone='11999999999',
+            nome='Teste OTP',
+        )
+        from django.core.cache import cache
+        pin = cache.get('otp_11999999999')
+        
+        result = AuthB2CService.verificar_otp(
+            telefone='11999999999',
+            pin=pin,
+        )
+        
+        assert 'access' in result
+        assert 'refresh' in result
+        
+        user = User.objects.get(username='b2c_11999999999')
+        assert user.name == 'Teste OTP'
+        assert user.email == '11999999999@cliente.lava.me'
+
+    def test_verificar_otp_pin_invalido(self):
+        AuthB2CService.solicitar_otp(
+            telefone='11999999999',
+            nome='Teste OTP',
+        )
+        
+        with pytest.raises(ValidationError) as exc_info:
+            AuthB2CService.verificar_otp(
+                telefone='11999999999',
+                pin='0000',
+            )
+        assert 'PIN invalido ou expirado' in str(exc_info.value)

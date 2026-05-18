@@ -27,25 +27,17 @@ const Servicos: React.FC = () => {
     getEstabelecimento(slug)
       .then(e => {
         setEstabelecimentoNome(e.nome_fantasia);
-        setServicos(e.servicos.filter(s => s.is_active));
+        setServicos(e.servicos);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const handleContinuar = async () => {
+  const handleContinuar = () => {
     if (!selecionado) return;
-    try {
-      const veiculos = await getVeiculos();
-      if (veiculos.length === 0) {
-        history.push('/veiculo/novo', { next: 'agendamento', slug, servico: selecionado });
-      } else {
-        history.push('/agendamento', { slug, servico: selecionado, estabelecimento_nome: estabelecimentoNome });
-      }
-    } catch {
-      history.push('/agendamento', { slug, servico: selecionado, estabelecimento_nome: estabelecimentoNome });
-    }
+    history.push('/agendamento', { slug, servico: selecionado, estabelecimento_nome: estabelecimentoNome });
   };
+
 
   return (
     <IonPage className="sv-page">

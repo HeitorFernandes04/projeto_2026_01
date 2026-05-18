@@ -76,6 +76,9 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_RATES': {
+        'auth_b2c': '100/min',
+    }
 }
 
 SPECTACULAR_SETTINGS = {
@@ -204,5 +207,17 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'agendamento_publico': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'django_cache',
+    }
 }

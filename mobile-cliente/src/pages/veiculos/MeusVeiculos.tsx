@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -9,22 +9,21 @@ import {
 import { useHistory } from 'react-router-dom';
 import { carOutline, chevronForwardOutline, addOutline } from 'ionicons/icons';
 import { motion } from 'framer-motion';
-import './Veiculos.css';
-
-interface Veiculo {
-  id: number;
-  marca: string;
-  modelo: string;
-  placa: string;
-  cor: string;
-}
+import { getVeiculos } from '../../services/api';
+import type { Veiculo } from '../../services/api';
+import './MeusVeiculos.css';
 
 const MeusVeiculos: React.FC = () => {
-  const [veiculos] = useState<Veiculo[]>([
-    { id: 1, marca: 'Toyota', modelo: 'Corolla', placa: 'ABC-1234', cor: 'Preto' },
-    { id: 2, marca: 'Honda', modelo: 'Civic', placa: 'XYZ-5678', cor: 'Prata' }
-  ]);
+  const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
+  const [loading, setLoading] = useState(true);
   const history = useHistory();
+
+  useEffect(() => {
+    getVeiculos()
+      .then(setVeiculos)
+      .catch(() => setVeiculos([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <IonPage className="veiculo-page">
@@ -42,9 +41,13 @@ const MeusVeiculos: React.FC = () => {
       <IonContent className="veiculo-content-premium" scrollY={true}>
         <div className="veiculos-main-container">
 
-          {/* Lista de Veículos */}
-          <div className="veiculos-lista-vertical">
-            {veiculos.map(v => (
+          {loading ? (
+            <p style={{ textAlign: 'center', color: 'white', marginTop: '50px' }}>Carregando veículos...</p>
+          ) : (
+            <>
+              {/* Lista de Veículos */}
+              <div className="veiculos-lista-vertical">
+                {veiculos.map(v => (
               <motion.div
                 key={v.id}
                 className="veiculo-card-interactive"
@@ -90,7 +93,8 @@ const MeusVeiculos: React.FC = () => {
           <div className="footer-tip-box-premium">
             <p>Cadastre seus veículos para agilizar futuros agendamentos</p>
           </div>
-
+            </>
+          )}
         </div>
       </IonContent>
     </IonPage>

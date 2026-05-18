@@ -58,7 +58,8 @@ const LoginWhatsApp: React.FC = () => {
     setErro('');
     
     try {
-      await solicitarOTP(`+55${telefoneLimpo}`);
+      const res = await solicitarOTP(`+55${telefoneLimpo}`, hasAgendamento ? nome.trim() : undefined);
+      console.log('PIN_DEBUG:', res.pin_debug);
       
       history.push('/auth/verificacao', { 
         telefone: `+55${telefoneLimpo}`,
@@ -123,6 +124,7 @@ const LoginWhatsApp: React.FC = () => {
                 type="tel"
                 placeholder="(00) 00000-0000"
                 value={telefoneFormatado}
+                maxlength={15}
                 onIonInput={e => handleInputTelefone(String(e.detail.value ?? ''))}
               />
             </IonItem>
@@ -135,8 +137,18 @@ const LoginWhatsApp: React.FC = () => {
               <IonIcon icon={warningOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
               {erro}
             </p>
+            {erro.includes('Usuário não cadastrado') && (
+              <button 
+                onClick={() => history.push('/welcome')} 
+                className="auth-btn-secondary"
+                style={{ marginTop: '12px', color: 'var(--auth-primary)', textDecoration: 'underline' }}
+              >
+                Voltar para o Início
+              </button>
+            )}
           </div>
         )}
+
       </IonContent>
 
       <div className="auth-footer">

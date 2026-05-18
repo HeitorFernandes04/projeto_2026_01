@@ -27,15 +27,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/shared/', include('operacao.shared_urls')),
+    path('api/cliente/operacao/', include('operacao.cliente_urls')),
     path('api/cliente/', include('agendamento_publico.cliente_urls')),
+
     path('api/gestao/incidentes/', include('operacao.gestao_incidentes_urls')),
     path('api/gestao/', include('core.urls')),
     path('api/ordens-servico/', include('operacao.urls')),
     path('api/incidentes-os/', include('operacao.incidentes_urls')),
     # RF-21: Portal de Autoagendamento — rotas públicas (sem autenticação)
     path('api/publico/', include('agendamento_publico.urls')),
-    # RF-25: Painel do Cliente — rotas autenticadas (perfil CLIENTE)
-    path('api/cliente/', include('operacao.cliente_urls')),
     
     # Documentação da API (drf-spectacular)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

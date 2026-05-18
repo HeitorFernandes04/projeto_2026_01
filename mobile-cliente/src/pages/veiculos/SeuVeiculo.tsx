@@ -102,7 +102,13 @@ const SeuVeiculo: React.FC = () => {
       if (isEdit) {
         veiculoSalvo = await updateVeiculo(Number(id), { placa, marca, modelo, cor });
       } else {
-        veiculoSalvo = await createVeiculo({ placa, marca, modelo, cor });
+        const temAgendamento = localStorage.getItem('lm_agendamento_temporario') || localStorage.getItem('lm_agendamento_pendente');
+        let slug = '';
+        if (temAgendamento) {
+          const agendamentoData = JSON.parse(temAgendamento);
+          slug = agendamentoData.slug;
+        }
+        veiculoSalvo = await createVeiculo({ placa, marca, modelo, cor, estabelecimento_slug: slug });
       }
       
       if (!veiculoSalvo || !veiculoSalvo.id) {

@@ -85,8 +85,7 @@ export interface AgendamentoPayload {
   slug: string;
   servico_id: number;
   veiculo_id: number;
-  data: string;
-  horario: string;
+  data_hora: string; // Esperado pelo ClienteAgendamentoSerializer do Django
 }
 
 // — Public (sem auth) —
@@ -111,29 +110,34 @@ export async function getDisponibilidade(
   const params = new URLSearchParams({ slug, servicoId: String(servicoId), data });
   const res = await fetch(`${BASE_URL}/api/publico/agendamento/disponibilidade/?${params}`);
   if (!res.ok) throw new Error('Falha ao carregar disponibilidade.');
-  return res.json();
+  const dataJson = await res.json();
+  return dataJson.map((item: any) => ({
+    horario: item.inicio,
+    disponivel: true,
+  }));
 }
 
-export async function solicitarOTP(telefone: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/api/publico/auth/solicitar/`, {
+export async function solicitarOTP(telefone: string, nome?: string): Promise<{ detail: string; pin_debug?: string }> {
+  const res = await fetch(`${BASE_URL}/api/publico/auth/whatsapp/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ telefone }),
+    body: JSON.stringify({ telefone, nome }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error((body as Record<string, string>).detail ?? 'Falha ao solicitar código.');
   }
+  return res.json();
 }
 
 export async function verificarOTP(
   telefone: string,
   codigo: string,
 ): Promise<{ access: string; refresh: string; usuario: ClientePerfil }> {
-  const res = await fetch(`${BASE_URL}/api/publico/auth/verificar/`, {
+  const res = await fetch(`${BASE_URL}/api/publico/auth/verificacao/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ telefone, codigo }),
+    body: JSON.stringify({ telefone, pin: codigo }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -156,7 +160,7 @@ export const getVeiculos = () =>
 export const getVeiculo = (id: number) =>
   http.get<Veiculo>(`/api/cliente/veiculos/${id}/`);
 
-export const createVeiculo = (data: Omit<Veiculo, 'id'>) =>
+export const createVeiculo = (data: Omit<Veiculo, 'id'> & { estabelecimento_slug?: string }) =>
   http.post<Veiculo>('/api/cliente/veiculos/', data);
 
 export const updateVeiculo = (id: number, data: Partial<Omit<Veiculo, 'id'>>) =>

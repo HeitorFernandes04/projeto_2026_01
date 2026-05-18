@@ -208,3 +208,43 @@ class TestAuthB2CAPI:
         assert response.data['ativos'] == []
         assert len(response.data['historico']) == 1
         assert response.data['historico'][0]['veiculo_placa'] == 'HIS2026'
+
+    def test_solicitar_otp_via_api(self, api_client):
+        response = api_client.post(
+            reverse('auth-b2c-whatsapp'),
+            {
+                'telefone': '11999999999',
+                'nome': 'Teste API OTP',
+            },
+            format='json',
+        )
+        
+        assert response.status_code == 200
+        assert response.data['detail'] == 'PIN enviado com sucesso.'
+        assert 'pin_debug' in response.data
+
+    def test_verificar_otp_via_api(self, api_client):
+        api_client.post(
+            reverse('auth-b2c-whatsapp'),
+            {
+                'telefone': '11999999999',
+                'nome': 'Teste API OTP',
+            },
+            format='json',
+        )
+        
+        from django.core.cache import cache
+        pin = cache.get('otp_11999999999')
+        
+        response = api_client.post(
+            reverse('auth-b2c-verificacao'),
+            {
+                'telefone': '11999999999',
+                'pin': pin,
+            },
+            format='json',
+        )
+        
+        assert response.status_code == 200
+        assert 'access' in response.data
+        assert 'refresh' in response.data

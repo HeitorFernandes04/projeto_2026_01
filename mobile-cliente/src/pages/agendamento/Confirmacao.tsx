@@ -12,9 +12,9 @@ import {
   IonBackButton,
   IonIcon,
 } from '@ionic/react';
-import { locationOutline, constructOutline, calendarOutline, carOutline } from 'ionicons/icons';
+import { locationOutline, constructOutline, calendarOutline, carOutline, checkmarkCircleOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
-import { createAgendamento } from '../../services/api';
+import { createAgendamento, getVeiculos } from '../../services/api';
 import type { Servico, Veiculo } from '../../services/api';
 import './Confirmacao.css';
 
@@ -36,51 +36,113 @@ function formatarData(data: string): string {
 const Confirmacao: React.FC = () => {
   const location = useLocation<LocationState>();
   const history = useHistory();
-  const state = location.state;
+  
+  const [stateData, setStateData] = useState<LocationState | null>(location.state);
+  const [loadingData, setLoadingData] = useState(!location.state);
 
   const [loading, setLoading] = useState(false);
   const [showAlerta, setShowAlerta] = useState(false);
   const [erroMsg, setErroMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
 
-  // Segurança de Fluxo: Garante que só carrega a tela com os dados
-  if (!state) {
-    history.replace('/inicio');
+  React.useEffect(() => {
+    if (!stateData) {
+      const pending = localStorage.getItem('lm_agendamento_pendente') || localStorage.getItem('lm_agendamento_temporario');
+      if (pending) {
+        const agendamentoData = JSON.parse(pending);
+        getVeiculos().then(veiculos => {
+          if (veiculos.length > 0) {
+            setStateData({ ...agendamentoData, veiculo: veiculos[0] });
+          } else {
+            history.replace('/veiculo/novo');
+          }
+          setLoadingData(false);
+        }).catch(() => {
+          history.replace('/inicio');
+          setLoadingData(false);
+        });
+      } else {
+        history.replace('/inicio');
+        setLoadingData(false);
+      }
+    }
+  }, [stateData, history]);
+
+  if (loadingData) {
+    return (
+      <IonPage>
+        <IonContent className="ion-padding" style={{ textAlign: 'center', marginTop: '100px', color: 'white' }}>
+          Carregando dados do agendamento...
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  if (!stateData) {
     return null;
   }
 
-  const { slug, servico, estabelecimento_nome, data, horario, veiculo } = state;
+  const { slug, servico, estabelecimento_nome, data, horario, veiculo } = stateData;
 
   const handleConfirmar = async () => {
-    // 1. Prevenção de Duplo Clique Instantânea
     if (loading) return;
     setLoading(true);
-    
+
     try {
-      // 2. Acionamento real do Monolito via API service
       await createAgendamento({
         slug,
         servico_id: servico.id,
         veiculo_id: veiculo.id,
-        data,
-        horario,
+        data_hora: `${data}T${horario}:00`, // Combina "YYYY-MM-DD" e "HH:MM" para formato ISO válido
       });
-      
-      // 3. Sucesso: Remoção limpa de vestígios do fluxo anônimo (Checkout Sem Fricção)
+
       localStorage.removeItem('lm_agendamento_temporario');
       localStorage.removeItem('lm_agendamento_pendente');
-      
-      // 4. Sucesso: Redirecionamento IMEDIATO e disparo do Toast
-      setShowToast(true);
-      history.replace('/inicio');
+
+      setSucesso(true);
     } catch (e) {
-      // Tratamento de Erro: liberação da trava de UI e alerta ao usuário
       const err = e as Error & { status?: number };
       setLoading(false);
       setErroMsg(err.message ?? 'Erro ao comunicar com o servidor.');
       setShowAlerta(true);
     }
   };
+
+  if (sucesso) {
+    return (
+      <IonPage className="confirm-page">
+        <IonContent className="ion-padding confirm-content success-view">
+          <div className="success-container" style={{ textAlign: 'center', marginTop: '60px' }}>
+            <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: '80px', color: 'var(--ion-color-success)' }} />
+            <h1 style={{ color: 'white', marginTop: '20px' }}>Agendamento Confirmado!</h1>
+            <p style={{ color: 'var(--ion-color-medium)', marginBottom: '40px' }}>
+              Seu agendamento foi realizado com sucesso.
+            </p>
+
+            <div className="confirm-card">
+              <p className="confirm-card-header">Resumo</p>
+              <p className="confirm-info-row">
+                <span className="confirm-icon"><IonIcon icon={locationOutline} /></span> {estabelecimento_nome}
+              </p>
+              <p className="confirm-info-row">
+                <span className="confirm-icon"><IonIcon icon={calendarOutline} /></span> {formatarData(data)} às {horario}
+              </p>
+            </div>
+
+            <IonButton
+              className="confirm-btn-primary"
+              expand="block"
+              style={{ marginTop: '40px' }}
+              onClick={() => history.replace('/inicio')}
+            >
+              Ir para o Painel
+            </IonButton>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage className="confirm-page">
@@ -141,7 +203,6 @@ const Confirmacao: React.FC = () => {
         </IonButton>
       </div>
 
-      {/* Alerta Nativo para Falhas de API */}
       <IonAlert
         isOpen={showAlerta}
         header="Atenção"
@@ -150,7 +211,6 @@ const Confirmacao: React.FC = () => {
         onDidDismiss={() => setShowAlerta(false)}
       />
 
-      {/* Toast Nativo de Sucesso */}
       <IonToast
         isOpen={showToast}
         message="Agendamento confirmado!"

@@ -56,27 +56,29 @@ const VerificacaoOTP: React.FC = () => {
     if (agendamentoStr) {
       try {
         const agendamentoData = JSON.parse(agendamentoStr);
-        // Após login bem-sucedido, validamos a garagem do cliente
-        const veiculos = await getVeiculos();
         
-        // Limpar o cache temporário
-        localStorage.removeItem('lm_agendamento_pendente');
-        localStorage.removeItem('lm_agendamento_temporario');
-        
-        if (veiculos.length === 0) {
-          // Sem carro: Mandamos pro cadastro de carro passando o estado do agendamento
+        // Verifica se usuário já tem veículos cadastrados
+        try {
+          const veiculos = await getVeiculos();
+          if (veiculos.length > 0) {
+            // Já tem veículo, vai direto para confirmação
+            history.replace('/agendamento/confirmacao', { ...agendamentoData, veiculo: veiculos[0] });
+          } else {
+            // Não tem veículo, vai para cadastro
+            history.replace('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+          }
+        } catch {
+          // Erro ao buscar veículos, vai para cadastro
           history.replace('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
-        } else {
-          // Com carro: Vamos direto pra revisão e fechamento do pedido
-          history.replace('/agendamento/confirmacao', { ...agendamentoData, veiculo: veiculos[0] });
         }
       } catch {
-        history.replace('/inicio');
+        history.replace('/veiculo/novo');
       }
     } else {
-      // Fluxo normal de Login Direto vindo da Welcome
+      // Sem agendamento pendente, vai direto para a tela de início (Painel do Cliente)
       history.replace('/inicio');
     }
+
   };
 
   const submitOTP = async (codigo: string) => {
