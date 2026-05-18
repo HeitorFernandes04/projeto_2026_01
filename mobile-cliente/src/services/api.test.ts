@@ -37,7 +37,8 @@ describe('getEstabelecimentos', () => {
 
     await getEstabelecimentos();
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/publico/estabelecimentos/')
+      expect.stringContaining('/api/publico/estabelecimentos/'),
+      expect.any(Object)
     );
   });
 
