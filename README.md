@@ -3,7 +3,7 @@
 > **Plataforma inteligente de gestão e agendamento para lava-jatos e estéticas automotivas**
 
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
-![Versão](https://img.shields.io/badge/versão-3.0.0--rc-blue)
+![Versão](https://img.shields.io/badge/versão-4.0.0-blue)
 ![Licença](https://img.shields.io/badge/licença-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![Django](https://img.shields.io/badge/Django-5.x-green?logo=django)
@@ -275,7 +275,7 @@ ionic serve
 - [x] **Sprint 1** — Experiência do Funcionário
 - [x] **Sprint 2** — Gestão e Controle Operacional
 - [x] **Sprint 3** — Experiência do Cliente (Portal Web)
-- [ ] **Sprint 4** — Refatoração, Isolamento B2C/B2B e Qualidade
+- [x] **Sprint 4** — Refatoração, Isolamento B2C/B2B e Qualidade
 - [ ] **Evento Final** — Apresentação pública do produto
 
 ---
