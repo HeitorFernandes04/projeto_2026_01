@@ -3,16 +3,16 @@ import {
   IonPage,
   IonContent,
   IonIcon,
+  IonAlert,
+  IonToast,
   useIonViewWillEnter,
   useIonViewWillLeave,
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
   timeOutline,
-  carOutline,
-  cubeOutline,
 } from 'ionicons/icons';
-import { getOrdemAtiva, getAcompanhamento } from '../../services/api';
+import { getOrdemAtiva, getAcompanhamento, cancelarAgendamento, type OrdemAtiva } from '../../services/api';
 import './Acompanhamento.css';
 
 interface Etapa {
@@ -30,15 +30,19 @@ const ETAPAS: Etapa[] = [
 
 const Acompanhamento: React.FC = () => {
   const history = useHistory();
-  const [progresso, setProgresso] = useState(0);
   const [status, setStatus] = useState('PATIO');
   const [estabelecimento, setEstabelecimento] = useState('Lava Rápido');
   const [tempoEstimado, setTempoEstimado] = useState<number | null>(null);
   const [finalizado, setFinalizado] = useState(false);
   const [semOS, setSemOS] = useState(false);
   const [agendamentoFuturo, setAgendamentoFuturo] = useState(false);
-  const [dadosFuturo, setDadosFuturo] = useState<any>(null);
+  const [dadosFuturo, setDadosFuturo] = useState<OrdemAtiva | null>(null);
   const [isIncidente, setIsIncidente] = useState(false);
+  const [slugCancelamento, setSlugCancelamento] = useState<string | null>(null);
+  const [showCancelAlert, setShowCancelAlert] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getStatusIndex = (statusStr: string) => {
@@ -56,9 +60,9 @@ const Acompanhamento: React.FC = () => {
   const poll = async (id: number) => {
     try {
       const data = await getAcompanhamento(id);
-      setProgresso(data.status === 'FINALIZADO' ? 100 : data.etapa_atual);
       setStatus(data.status);
       setIsIncidente(data.status === 'BLOQUEADO_INCIDENTE');
+      setSlugCancelamento(data.slug_cancelamento || null);
 
       if (data.status === 'FINALIZADO') {
         setFinalizado(true);
@@ -88,15 +92,16 @@ const Acompanhamento: React.FC = () => {
         if (ativa.status === 'PATIO' && dateStr !== todayStr) {
           setAgendamentoFuturo(true);
           setDadosFuturo(ativa);
+          setSlugCancelamento(ativa.slug_cancelamento || null);
           return;
         }
 
         setEstabelecimento(ativa.estabelecimento_nome);
         setTempoEstimado(ativa.tempo_estimado_min);
         setStatus(ativa.status);
-        setProgresso(ativa.status === 'FINALIZADO' ? 100 : ativa.progresso);
         setIsIncidente(ativa.status === 'BLOQUEADO_INCIDENTE');
         setFinalizado(ativa.status === 'FINALIZADO');
+        setSlugCancelamento(ativa.slug_cancelamento || null);
 
         if (ativa.status !== 'FINALIZADO') {
           poll(ativa.id);
@@ -113,6 +118,27 @@ const Acompanhamento: React.FC = () => {
   });
 
   const statusIndex = getStatusIndex(status);
+
+  const executarCancelamento = async () => {
+    if (!slugCancelamento || cancelLoading) return;
+    setCancelLoading(true);
+    try {
+      await cancelarAgendamento(slugCancelamento, 'Cancelado pelo cliente pelo portal Mobile.');
+      setToastMessage('Agendamento cancelado com sucesso!');
+      setShowToast(true);
+      setSemOS(true);
+      setSlugCancelamento(null);
+      setStatus('CANCELADO');
+      setFinalizado(true);
+      pararPolling();
+    } catch (err: any) {
+      console.error(err);
+      setToastMessage('Falha ao cancelar o agendamento. Tente novamente.');
+      setShowToast(true);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   return (
     <IonPage className="acompanhamento-page">
@@ -237,9 +263,47 @@ const Acompanhamento: React.FC = () => {
                 <p style={{ margin: '4px 0 0 0', fontSize: '14px' }}>Pode passar para retirar.</p>
               </div>
             )}
+
+            {/* Botão de Cancelamento (Visível apenas em PÁTIO) */}
+            {!finalizado && status === 'PATIO' && slugCancelamento && (
+              <button
+                className="btn-cancelar-agendamento"
+                disabled={cancelLoading}
+                onClick={() => setShowCancelAlert(true)}
+              >
+                {cancelLoading ? 'Cancelando...' : 'Cancelar Agendamento'}
+              </button>
+            )}
           </div>
         )}
       </IonContent>
+
+      <IonAlert
+        isOpen={showCancelAlert}
+        onDidDismiss={() => setShowCancelAlert(false)}
+        header="Cancelar Agendamento"
+        message="Tem certeza que deseja cancelar seu agendamento de lavagem?"
+        buttons={[
+          {
+            text: 'Não, manter',
+            role: 'cancel',
+            cssClass: 'alert-cancel-keep-btn'
+          },
+          {
+            text: 'Sim, cancelar',
+            handler: () => {
+              executarCancelamento();
+            }
+          }
+        ]}
+      />
+
+      <IonToast
+        isOpen={showToast}
+        message={toastMessage}
+        duration={3000}
+        onDidDismiss={() => setShowToast(false)}
+      />
     </IonPage>
   );
 };

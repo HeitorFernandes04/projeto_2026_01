@@ -45,28 +45,39 @@ const Confirmacao: React.FC = () => {
   const [erroMsg, setErroMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [sucesso, setSucesso] = useState(false);
+  const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
 
   React.useEffect(() => {
-    if (!stateData) {
-      const pending = localStorage.getItem('lm_agendamento_pendente') || localStorage.getItem('lm_agendamento_temporario');
-      if (pending) {
-        const agendamentoData = JSON.parse(pending);
-        getVeiculos().then(veiculos => {
-          if (veiculos.length > 0) {
-            setStateData({ ...agendamentoData, veiculo: veiculos[0] });
+    getVeiculos()
+      .then(list => {
+        setVeiculos(list);
+        if (!stateData) {
+          const pending = localStorage.getItem('lm_agendamento_pendente') || localStorage.getItem('lm_agendamento_temporario');
+          if (pending) {
+            const agendamentoData = JSON.parse(pending);
+            if (list.length > 0) {
+              setStateData({ ...agendamentoData, veiculo: list[0] });
+            } else {
+              history.replace('/veiculo/novo');
+            }
+            setLoadingData(false);
           } else {
-            history.replace('/veiculo/novo');
+            history.replace('/inicio');
+            setLoadingData(false);
           }
+        } else {
           setLoadingData(false);
-        }).catch(() => {
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        if (!stateData) {
           history.replace('/inicio');
           setLoadingData(false);
-        });
-      } else {
-        history.replace('/inicio');
-        setLoadingData(false);
-      }
-    }
+        } else {
+          setLoadingData(false);
+        }
+      });
   }, [stateData, history]);
 
   if (loadingData) {
@@ -173,12 +184,65 @@ const Confirmacao: React.FC = () => {
 
         {/* Bloco 2: Veículo (Marca, Modelo, Cor e Placa em caixa alta) */}
         <div className="confirm-card">
-          <p className="confirm-card-header">Seu Veículo</p>
-          <div className="confirm-info-row">
-            <span className="confirm-icon"><IonIcon icon={carOutline} /></span> 
-            {veiculo.marca} {veiculo.modelo} ({veiculo.cor})
-            <span className="confirm-placa">{veiculo.placa}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <p className="confirm-card-header" style={{ margin: 0 }}>Seu Veículo</p>
+            <button 
+              className="confirm-add-veiculo-btn" 
+              onClick={() => {
+                const agendamentoData = {
+                  slug,
+                  servico,
+                  estabelecimento_nome,
+                  data,
+                  horario
+                };
+                localStorage.setItem('lm_agendamento_temporario', JSON.stringify(agendamentoData));
+                history.push('/veiculo/novo');
+              }}
+              style={{ background: 'none', border: 'none', color: '#38BDF8', fontWeight: 700, fontSize: '13px', cursor: 'pointer', padding: 0 }}
+            >
+              + Adicionar Novo
+            </button>
           </div>
+          
+          {veiculos.length > 1 ? (
+            <div className="confirm-info-row" style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: '8px' }}>
+              <span className="confirm-icon" style={{ marginRight: '8px', display: 'flex', alignItems: 'center' }}><IonIcon icon={carOutline} /></span> 
+              <select
+                value={veiculo.id}
+                onChange={e => {
+                  const selectedId = Number(e.target.value);
+                  const found = veiculos.find(v => v.id === selectedId);
+                  if (found) {
+                    setStateData(prev => prev ? { ...prev, veiculo: found } : null);
+                  }
+                }}
+                style={{
+                  background: 'rgba(30, 41, 59, 0.6)',
+                  border: '1px solid var(--lm-border)',
+                  color: 'white',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  width: '100%',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {veiculos.map(v => (
+                  <option key={v.id} value={v.id} style={{ background: '#1E293B', color: 'white' }}>
+                    {v.marca} {v.modelo} ({v.cor}) - {v.placa}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="confirm-info-row">
+              <span className="confirm-icon"><IonIcon icon={carOutline} /></span> 
+              {veiculo.marca} {veiculo.modelo} ({veiculo.cor})
+              <span className="confirm-placa">{veiculo.placa}</span>
+            </div>
+          )}
         </div>
 
         {/* Bloco 3: Total e Tempo */}

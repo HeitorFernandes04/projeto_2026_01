@@ -59,13 +59,20 @@ const Detalhes: React.FC<DetalhesProps> = ({ ordem, onClose }) => {
 
             <div className="detalhes-row">
               <IonIcon icon={calendarOutline} />
-              <span>Realizado em {ordem.data_agendamento} às {ordem.horario}</span>
+              <span>Realizado em {ordem.data_hora ? new Date(ordem.data_hora).toLocaleDateString('pt-BR') : ''} às {ordem.data_hora ? new Date(ordem.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
             </div>
 
             <div className="detalhes-row">
               <IonIcon icon={locationOutline} />
               <span>{ordem.estabelecimento_nome}</span>
             </div>
+
+            {ordem.vaga_patio && (
+              <div className="detalhes-row">
+                <IonIcon icon={locationOutline} />
+                <span>Devolvido na vaga: <strong>{ordem.vaga_patio}</strong></span>
+              </div>
+            )}
 
             <div className="detalhes-row">
               <span className="detalhes-preco-tag">R$ {Number(ordem.valor).toFixed(2).replace('.', ',')}</span>

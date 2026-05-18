@@ -489,7 +489,7 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'data_hora', 'status', 'status_display', 'etapa_atual',
             'servico_nome', 'veiculo_placa', 'veiculo_modelo', 'estabelecimento',
-            'estabelecimento_nome', 'valor', 'observacoes',
+            'estabelecimento_nome', 'valor', 'observacoes', 'vaga_patio',
         ]
 
     def get_veiculo_placa(self, obj):

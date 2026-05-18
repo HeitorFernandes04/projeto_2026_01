@@ -49,11 +49,11 @@ describe('SeuVeiculo', () => {
 
     const input = screen.getByPlaceholderText('ABC-1234');
     
-    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC1234' } }));
-    expect(screen.queryByText('Placa inválida. Ex: ABC1234 ou ABC1D23')).toBeNull();
+    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC-1234' } }));
+    expect(screen.queryByText('Placa inválida. Ex: ABC-1234 ou ABC1A23')).toBeNull();
 
-    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC123' } }));
-    expect(screen.getByText('Placa inválida. Ex: ABC1234 ou ABC1D23')).toBeInTheDocument();
+    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC-123' } }));
+    expect(screen.getByText('Placa inválida. Ex: ABC-1234 ou ABC1A23')).toBeInTheDocument();
   });
 
   it('deve validar placa Mercosul corretamente', () => {
@@ -67,8 +67,8 @@ describe('SeuVeiculo', () => {
 
     const input = screen.getByPlaceholderText('ABC-1234');
     
-    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC1D23' } }));
-    expect(screen.queryByText('Placa inválida. Ex: ABC1234 ou ABC1D23')).toBeNull();
+    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC1A23' } }));
+    expect(screen.queryByText('Placa inválida. Ex: ABC-1234 ou ABC1A23')).toBeNull();
   });
 
   it('Botao permanece desabilitado se a placa for invalida', async () => {

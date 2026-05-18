@@ -113,17 +113,26 @@
   margin-top: 6px;
 }
 
-/* Esteira de Rolagem Horizontal para as 5 Fotos */
 .detalhes-photos-scroll {
   display: flex;
   gap: 12px;
   overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
+  padding-bottom: 8px;
 }
 
 .detalhes-photos-scroll::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+  display: block;
+}
+
+.detalhes-photos-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.detalhes-photos-scroll::-webkit-scrollbar-thumb {
+  background: #38BDF8;
+  border-radius: 10px;
 }
 
 .detalhes-image-wrapper {

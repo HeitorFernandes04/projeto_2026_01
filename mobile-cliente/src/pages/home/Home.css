@@ -101,3 +101,27 @@ ion-fab {
   font-size: 12px;
   font-weight: 700;
 }
+
+.mapa-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.mapa-back-btn {
+  background: none;
+  border: none;
+  color: var(--lm-text);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  outline: none;
+}
+
+.mapa-back-btn:active {
+  opacity: 0.6;
+}

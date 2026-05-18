@@ -43,8 +43,8 @@ export interface OrdemServico {
   id: number;
   servico_nome: string;
   estabelecimento_nome: string;
-  data_agendamento: string;
-  horario: string;
+  data_agendamento?: string;
+  horario?: string;
   data_hora?: string;
   valor: number;
   status: string;
@@ -52,6 +52,7 @@ export interface OrdemServico {
   veiculo_modelo: string;
   veiculo_cor?: string;
   observacoes?: string;
+  vaga_patio?: string;
 }
 
 export interface OrdemAtiva {
@@ -63,6 +64,7 @@ export interface OrdemAtiva {
   status: string;
   progresso: number;
   tempo_estimado_min: number | null;
+  slug_cancelamento?: string | null;
   data_hora?: string;
 }
 
@@ -217,7 +219,8 @@ export const getOrdemAtiva = async (): Promise<OrdemAtiva | null> => {
     veiculo_modelo: ativo.veiculo_modelo,
     status: ativo.status,
     progresso: ativo.etapa_atual,
-    tempo_estimado_min: null,
+    tempo_estimado_min: ativo.tempo_estimado_min,
+    slug_cancelamento: ativo.slug_cancelamento,
     data_hora: ativo.data_hora
   };
 };
@@ -270,4 +273,7 @@ export interface GaleriaHistorico {
 export const getGaleriaHistorico = async (osId: number) => {
   const res = await http.get<{ data: GaleriaHistorico }>(`/api/shared/historico/${osId}/galeria/`);
   return res.data;
-};
+};
+
+export const cancelarAgendamento = (slugCancelamento: string, motivo: string = '') =>
+  http.patch<{ detail: string }>(`/api/publico/agendamento/ordens-servico/${slugCancelamento}/cancelar/`, { motivo_cancelamento: motivo });

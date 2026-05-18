@@ -247,6 +247,7 @@ class AuthB2CService:
                 'status_display': ordem.get_status_display(),
                 'data_hora': ordem.data_hora.isoformat(),
                 'etapa_atual': ordem.etapa_atual if hasattr(ordem, 'etapa_atual') else 0,
+                'tempo_estimado_min': ordem.servico.duracao_estimada_minutos,
                 # RF-24.3: slug exposto apenas para OS em PATIO (canceláveis)
                 'slug_cancelamento': str(ordem.slug_cancelamento) if ordem.status == 'PATIO' and ordem.slug_cancelamento else None,
             }

@@ -13,11 +13,13 @@ import {
   useIonViewWillEnter,
 } from '@ionic/react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { locateOutline } from 'ionicons/icons';
+import { locateOutline, chevronBackOutline } from 'ionicons/icons';
 import L from 'leaflet';
 import { Geolocation } from '@capacitor/geolocation';
 import { getEstabelecimentos, type EstabelecimentoMapa } from '../../services/api';
 import EstabelecimentoDrawer from '../../components/EstabelecimentoDrawer/EstabelecimentoDrawer';
+import { useAuth } from '../../contexts/AuthContext';
+import { useHistory } from 'react-router-dom';
 import './Home.css';
 
 // Fix obrigatório para ícones Leaflet com Vite
@@ -67,6 +69,8 @@ function criarPin(selecionado: boolean) {
 }
 
 const Home: React.FC = () => {
+  const { token } = useAuth();
+  const history = useHistory();
   const [estabelecimentos, setEstabelecimentos] = useState<EstabelecimentoMapa[]>([]);
   const [selecionado, setSelecionado] = useState<EstabelecimentoMapa | null>(null);
   const [centro, setCentro] = useState<[number, number]>(CENTRO_PADRAO);
@@ -122,7 +126,14 @@ const Home: React.FC = () => {
       <IonHeader className="ion-no-border mapa-header">
         <IonToolbar className="mapa-toolbar">
           <div className="mapa-header-content">
-            <p className="mapa-titulo">Encontre um Lava-Me próximo</p>
+            <div className="mapa-title-row">
+              {token && (
+                <button className="mapa-back-btn" onClick={() => history.push('/inicio')}>
+                  <IonIcon icon={chevronBackOutline} />
+                </button>
+              )}
+              <p className="mapa-titulo">Encontre um Lava-Me próximo</p>
+            </div>
 
             <IonSearchbar
               value={busca}
