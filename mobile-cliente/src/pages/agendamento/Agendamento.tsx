@@ -7,12 +7,14 @@ import {
   IonBackButton,
   IonTitle,
   IonContent,
-  IonButton,
+  IonIcon,
   IonAlert,
 } from '@ionic/react';
 import { useHistory, useLocation } from 'react-router-dom';
+import { timeOutline, calendarOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 import { getDisponibilidade, getVeiculos } from '../../services/api';
 import type { Disponibilidade, Servico, Veiculo } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './Agendamento.css';
 
 interface LocationState {
@@ -21,26 +23,51 @@ interface LocationState {
   estabelecimento_nome: string;
 }
 
-function dataHoje(): string {
+function dataHojeStr(): string {
   return new Date().toISOString().split('T')[0];
 }
 
 const Agendamento: React.FC = () => {
   const location = useLocation<LocationState>();
   const history = useHistory();
+  const { token } = useAuth();
   const { slug, servico, estabelecimento_nome } = location.state ?? {};
 
-  const [data, setData] = useState(dataHoje());
+  const [data, setData] = useState(dataHojeStr());
   const [horarios, setHorarios] = useState<Disponibilidade[]>([]);
   const [horarioSelecionado, setHorarioSelecionado] = useState('');
   const [veiculo, setVeiculo] = useState<Veiculo | null>(null);
   const [showAlerta, setShowAlerta] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Estado para o Calendário Mensal
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
 
   useEffect(() => {
-    getVeiculos()
-      .then(vs => setVeiculo(vs[0] ?? null))
-      .catch(() => { });
-  }, []);
+    // Buscar veículos apenas se o usuário estiver logado
+    if (token && token !== 'null' && token !== 'undefined') {
+      getVeiculos()
+        .then(vs => {
+          if (vs.length === 0) {
+            // Opção A: Redireciona imediatamente para cadastrar veículo
+            // Não salvamos no localStorage para que o goBack() de SeuVeiculo volte para cá
+            history.push('/veiculo/novo');
+          } else {
+            setVeiculo(vs[0] ?? null);
+          }
+        })
+        .catch(() => {});
+    } else {
+      // Limpa o estado do veículo se não estiver autenticado
+      setVeiculo(null);
+    }
+  }, [token, history]);
+
 
   useEffect(() => {
     if (!slug || !servico) return;
@@ -51,95 +78,182 @@ const Agendamento: React.FC = () => {
   }, [slug, servico, data]);
 
   const handleFinalizar = () => {
-    if (!horarioSelecionado || !veiculo || !servico) return;
-    history.push('/agendamento/confirmacao', {
+    if (!horarioSelecionado || !servico) return;
+
+    setLoading(true);
+
+    const agendamentoData = {
       slug,
       servico,
       estabelecimento_nome,
       data,
       horario: horarioSelecionado,
       veiculo,
-    });
+    };
+
+    // Fricção Zero: Se não logado, salva state e vai pro login via whatsapp
+    if (!token || token === 'null' || token === 'undefined') {
+      localStorage.setItem('lm_agendamento_pendente', JSON.stringify(agendamentoData));
+      history.push('/auth');
+      setLoading(false);
+      return;
+    }
+
+
+    // Se logado mas sem veículo cadastrado
+    if (!veiculo) {
+      history.push('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+      setLoading(false);
+      return;
+    }
+
+    // Com veículo, prossegue para confirmação
+    history.push('/agendamento/confirmacao', agendamentoData);
+    setLoading(false);
   };
 
-  const isFormValido = !!horarioSelecionado && !!veiculo;
+  const isFormValido = !!horarioSelecionado; // Habilita o botão apenas com a seleção do horário
+
+  // Lógica do Calendário
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = new Date(year, month, 1).getDay();
+
+  const prevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+
+  const formatMonthYear = (d: Date) => {
+    const m = d.toLocaleString('pt-BR', { month: 'long' });
+    return m.charAt(0).toUpperCase() + m.slice(1) + ' ' + d.getFullYear();
+  };
+
+  const isDayDisabled = (day: number) => {
+    const d = new Date(year, month, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+  };
+
+  const formatDateStr = (y: number, m: number, d: number) => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${y}-${pad(m + 1)}-${pad(d)}`;
+  };
 
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="agend-toolbar">
+    <IonPage className="ag-page">
+      <IonHeader className="ion-no-border ag-header">
+        <IonToolbar className="ag-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/mapa" text="Voltar" />
+            <IonBackButton defaultHref="/mapa" text="" className="ag-back-button" />
           </IonButtons>
-          <IonTitle className="agend-title">Agendamento</IonTitle>
+          <IonTitle className="ag-title">Agendamento</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        {/* Resumo */}
-        <div className="lm-card agend-resumo">
-          <p className="agend-resumo-label">Resumo</p>
-          <p className="agend-resumo-item">📍 {estabelecimento_nome}</p>
-          <p className="agend-resumo-item">🔧 {servico?.nome}</p>
-          <p className="agend-resumo-preco">R$ {Number(servico?.preco ?? 0).toFixed(2)}</p>
+      <IonContent className="ion-padding ag-content">
+        {/* Card de Resumo */}
+        <div className="ag-resumo-card">
+          <h2 className="ag-resumo-title">Resumo</h2>
+          <div className="ag-resumo-row">
+            <span className="ag-resumo-label">Estabelecimento</span>
+            <span className="ag-resumo-value">{estabelecimento_nome}</span>
+          </div>
+          <div className="ag-resumo-row">
+            <span className="ag-resumo-label">Serviços</span>
+            <span className="ag-resumo-value">{servico?.nome}</span>
+          </div>
+          <div className="ag-resumo-row" style={{ marginTop: '8px' }}>
+            <span className="ag-resumo-total-label">Total</span>
+            <span className="ag-resumo-total-value">R$ {Number(servico?.preco ?? 0).toFixed(2)}</span>
+          </div>
         </div>
 
-        {/* Data */}
-        <p className="agend-section-label">📅 Data</p>
-        <input
-          type="date"
-          className="agend-date-input"
-          value={data}
-          min={dataHoje()}
-          onChange={e => setData(e.target.value)}
-        />
+        {/* Seção Data (Calendário Grade Mensal) */}
+        <h2 className="ag-section-title">
+          <IonIcon icon={calendarOutline} className="ag-section-icon" /> Data
+        </h2>
 
-        {/* Horários */}
-        <p className="agend-section-label">🕐 Horário</p>
-        {horarios.length === 0 ? (
-          <p className="agend-sem-horarios">Nenhum horário disponível para esta data.</p>
-        ) : (
-          <div className="agend-horarios-grid">
-            {horarios.map(h => (
-              <button
-                key={h.horario}
-                disabled={!h.disponivel}
-                className={`agend-horario-chip ${h.disponivel
-                    ? horarioSelecionado === h.horario
-                      ? 'chip-ativo'
-                      : 'chip-disponivel'
-                    : 'chip-indisponivel'
-                  }`}
-                onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
-              >
-                {h.horario}
-              </button>
+        <div className="ag-calendar fade-in">
+          <div className="ag-cal-header">
+            <button className="ag-cal-nav-btn" onClick={prevMonth}>
+              <IonIcon icon={chevronBackOutline} />
+            </button>
+            <span className="ag-cal-month">{formatMonthYear(currentMonth)}</span>
+            <button className="ag-cal-nav-btn" onClick={nextMonth}>
+              <IonIcon icon={chevronForwardOutline} />
+            </button>
+          </div>
+
+          <div className="ag-cal-weekdays">
+            {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+              <span key={i} className="ag-cal-weekday">{d}</span>
             ))}
           </div>
-        )}
 
-        {!veiculo && (
-          <p className="agend-aviso">
-            Você não tem veículo cadastrado.{' '}
-            <button
-              className="agend-link"
-              onClick={() => history.push('/veiculo/novo')}
-            >
-              Cadastrar agora
-            </button>
-          </p>
+          <div className="ag-cal-days">
+            {/* Espaços em branco do início do mês */}
+            {Array.from({ length: startDay }).map((_, i) => (
+              <div key={`empty-${i}`} className="ag-cal-day empty" />
+            ))}
+
+            {/* Dias do mês */}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = formatDateStr(year, month, day);
+              const disabled = isDayDisabled(day);
+              const selected = data === dateStr;
+
+              return (
+                <button
+                  key={day}
+                  disabled={disabled}
+                  className={`ag-cal-day ${disabled ? 'disabled' : ''} ${selected ? 'selected' : ''}`}
+                  onClick={() => setData(dateStr)}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Seção Horário (Grade de Chips) */}
+        <h2 className="ag-section-title">
+          <IonIcon icon={timeOutline} className="ag-section-icon" /> Horário
+        </h2>
+
+        {horarios.length === 0 ? (
+          <p className="ag-sem-horarios">Nenhum horário disponível para esta data.</p>
+        ) : (
+          <div className="ag-horarios-grid">
+            {horarios.map(h => {
+              const isSelected = horarioSelecionado === h.horario;
+              return (
+                <button
+                  key={h.horario}
+                  disabled={!h.disponivel}
+                  className={`ag-chip ${isSelected ? 'active' : ''}`}
+                  onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
+                >
+                  {h.horario}
+                </button>
+              );
+            })}
+          </div>
         )}
+        <div style={{ height: '120px' }} />
       </IonContent>
 
-      <div className="agend-footer">
-        <IonButton
-          className="lm-btn-primary"
-          expand="block"
-          disabled={!isFormValido}
+      {/* Footer Sticky de Ação */}
+      <div className="ag-footer">
+        <button
+          className={`ag-btn-finalizar ${isFormValido ? 'enabled-action' : ''}`}
+          disabled={!isFormValido || loading}
           onClick={handleFinalizar}
         >
-          Finalizar Agendamento
-        </IonButton>
+          {loading ? 'Aguarde...' : 'Finalizar Agendamento'}
+        </button>
       </div>
 
       <IonAlert

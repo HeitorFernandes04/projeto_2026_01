@@ -1,6 +1,28 @@
 from rest_framework import serializers
 from accounts.models import Estabelecimento
-from core.models import Servico
+from core.models import Servico, Veiculo
+
+
+class ClienteVeiculoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Veiculo
+        fields = ['id', 'placa', 'marca', 'modelo', 'cor']
+
+    def validate_placa(self, value):
+        from .services import VeiculoService
+        return VeiculoService.validar_placa(value)
+
+    def validate_cor(self, value):
+        from .services import VeiculoService
+        return VeiculoService.validar_cor(value)
+
+
+
+class ClienteAgendamentoSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    servico_id = serializers.IntegerField()
+    data_hora = serializers.DateTimeField()
+    veiculo_id = serializers.IntegerField()
 
 
 class AuthB2CSetupSerializer(serializers.Serializer):
@@ -20,16 +42,29 @@ class AuthB2CLoginSerializer(serializers.Serializer):
     )
 
 
+class AuthB2CWhatsAppSerializer(serializers.Serializer):
+    telefone = serializers.CharField(max_length=20)
+    nome = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
+class AuthB2CVerificacaoSerializer(serializers.Serializer):
+    telefone = serializers.CharField(max_length=20)
+    pin = serializers.RegexField(
+        regex=r'^\d{4}$',
+        error_messages={'invalid': 'O PIN deve conter exatamente 4 digitos.'},
+    )
+
+
 class ServicoPublicoSerializer(serializers.ModelSerializer):
     """
     Exposição segura de serviços: apenas campos necessários para o portal B2C.
     Campos sensíveis (custo, markup, etc.) são omitidos por design.
     """
+    duracao_estimada_min = serializers.IntegerField(source='duracao_estimada_minutos')
 
     class Meta:
         model = Servico
-        # CA-02: Expor estritamente id, nome, preco e duracao_estimada_minutos
-        fields = ['id', 'nome', 'preco', 'duracao_estimada_minutos']
+        fields = ['id', 'nome', 'preco', 'duracao_estimada_min']
 
 
 class EstabelecimentoPublicoSerializer(serializers.ModelSerializer):

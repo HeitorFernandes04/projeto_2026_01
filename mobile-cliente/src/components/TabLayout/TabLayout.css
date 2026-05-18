@@ -1,6 +1,23 @@
+/* ═══════════════════════════════════════════════════════════════════
+   LAVA-ME — TAB BAR INFERIOR PREMIUM (Fidelidade de Cor ao Figma)
+   ═══════════════════════════════════════════════════════════════════ */
+
 .lm-tab-bar {
-  --background: var(--lm-card);
-  --border: 1px solid var(--lm-border);
-  --color: var(--lm-text-muted);
-  --color-selected: var(--lm-primary);
+  /* Altera a cor de fundo nativa para bater milimetricamente com os headers superiores */
+  --background: #1E293B !important;
+  background: #1E293B !important;
+  
+  /* Divisória superior bem fina e sutil para separar o conteúdo escuro do rodapé */
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  
+  /* Calibragem das cores dos ícones e textos (Inativo vs Selecionado) */
+  --color: #64748B !important;          /* Cinza suave para os botões apagados */
+  --color-selected: #38BDF8 !important; /* Azul Celeste Premium para o botão ativo */
+}
+
+/* Ajuste sutil de espaçamento interno para dar conforto ao clique em dispositivos móveis */
+.lm-tab-bar ion-tab-button {
+  --background: transparent !important;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }

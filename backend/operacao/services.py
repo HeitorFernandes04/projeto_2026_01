@@ -307,6 +307,40 @@ class OrdemServicoService:
             status='PATIO'
         )
 
+    @staticmethod
+    @transaction.atomic
+    def criar_agendamento_cliente(dados, cliente):
+        """RF-23: Cria agendamento para cliente logado garantindo integridade e atomicidade."""
+        estabelecimento = Estabelecimento.objects.filter(slug=dados['slug'], is_active=True).first()
+        if not estabelecimento:
+            raise ValidationError("Estabelecimento não encontrado")
+        
+        servico = Servico.objects.filter(id=dados['servico_id'], estabelecimento=estabelecimento).first()
+        if not servico:
+            raise ValidationError("Serviço não encontrado")
+
+        veiculo = Veiculo.objects.filter(id=dados['veiculo_id'], cliente=cliente).first()
+        if not veiculo:
+            raise ValidationError("Veículo não encontrado ou não pertence ao cliente.")
+
+        # LOCK PESSIMISTA
+        Estabelecimento.objects.select_for_update().get(id=estabelecimento.id)
+
+        # Validação de disponibilidade
+        OrdemServicoService.verificar_conflito(
+            estabelecimento,
+            dados['data_hora'], 
+            datetime.timedelta(minutes=servico.duracao_estimada_minutos)
+        )
+
+        return OrdemServico.objects.create(
+            estabelecimento=estabelecimento,
+            veiculo=veiculo,
+            servico=servico,
+            data_hora=dados['data_hora'],
+            status='PATIO'
+        )
+
 
 class HistoricoGestorService:
     """RF-17/RF-18: Histórico e galeria de OS para o Gestor."""

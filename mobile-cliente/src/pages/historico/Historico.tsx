@@ -3,20 +3,30 @@ import {
   IonPage,
   IonHeader,
   IonToolbar,
-  IonTitle,
   IonContent,
   IonModal,
-  IonButton,
+  IonIcon,
   useIonViewWillEnter,
 } from '@ionic/react';
-import { getHistorico } from '../../services/api';
-import type { OrdemServico } from '../../services/api';
+import { 
+  calendarOutline, 
+  locationOutline, 
+  carOutline, 
+  checkmarkCircleOutline, 
+  closeCircleOutline,
+  alertCircleOutline,
+  clipboardOutline
+} from 'ionicons/icons';
+import { motion } from 'framer-motion';
+import { useHistory } from 'react-router-dom';
+import { getHistorico, type OrdemServico } from '../../services/api';
+import Detalhes from './Detalhes';
 import './Historico.css';
 
 const STATUS_BADGE: Record<string, string> = {
   FINALIZADO: 'finalizado',
   CANCELADO: 'cancelado',
-  AGENDADO: 'agendado',
+  AGENDADO: 'andamento',
   EM_EXECUCAO: 'andamento',
   PATIO: 'andamento',
   VISTORIA_INICIAL: 'andamento',
@@ -35,84 +45,139 @@ const STATUS_LABEL: Record<string, string> = {
 
 const Historico: React.FC = () => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
+  const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<OrdemServico | null>(null);
+  const history = useHistory();
 
   useIonViewWillEnter(() => {
+    setLoading(true);
     getHistorico()
-      .then(setOrdens)
-      .catch(() => {});
+      .then(res => {
+        setOrdens(res);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
   });
 
+  const getStatusIcon = (status: string) => {
+    if (status === 'FINALIZADO') return checkmarkCircleOutline;
+    if (status === 'CANCELADO') return closeCircleOutline;
+    return alertCircleOutline;
+  };
+
+  const formatarData = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const formatarHora = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="hist-toolbar">
-          <IonTitle className="hist-title">Histórico</IonTitle>
+    <IonPage className="historico-page">
+      <IonHeader className="ion-no-border veiculo-header">
+        <IonToolbar className="veiculo-toolbar-fluid">
+          <div className="header-content-fluid">
+            <h1 className="veiculo-title-premium">Histórico</h1>
+            <p className="veiculo-subtitle-premium">Seus serviços realizados</p>
+          </div>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <p className="hist-subtitulo">Seus serviços realizados</p>
+      <IonContent className="veiculo-content-premium" scrollY={true}>
+        <div className="historico-main-container">
 
-        {ordens.length === 0 ? (
-          <div className="hist-vazio">
-            <span className="hist-vazio-emoji">📋</span>
-            <p className="hist-vazio-texto">Nenhum serviço realizado ainda.</p>
-          </div>
-        ) : (
-          ordens.map(os => (
-            <div key={os.id} className="lm-card hist-card">
-              <div className="hist-card-header">
-                <span className="hist-servico">{os.servico_nome}</span>
-                <span className="hist-preco">R$ {Number(os.valor).toFixed(2)}</span>
-              </div>
-              <p className="hist-info">📅 {os.data_agendamento} 🕐 {os.horario}</p>
-              <p className="hist-info">📍 {os.estabelecimento_nome}</p>
-              <p className="hist-info">🚗 {os.veiculo_modelo} {os.veiculo_placa}</p>
-
-              <div className="hist-card-footer">
-                <span className={`lm-badge lm-badge-${STATUS_BADGE[os.status] ?? 'agendado'}`}>
-                  {STATUS_LABEL[os.status] ?? os.status}
-                </span>
-                <button className="hist-detalhe-btn" onClick={() => setDetalhe(os)}>
-                  Ver detalhes ›
-                </button>
-              </div>
+          {loading ? (
+            <div className="historico-lista-vertical">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="hist-card-interactive" style={{ opacity: 0.5 }}>
+                  <div className="hist-card-top">
+                    <div className="hist-icon-box andamento" style={{ background: '#334155' }}></div>
+                    <div className="hist-title-block">
+                      <div style={{ width: '120px', height: '16px', background: '#334155', borderRadius: '4px' }}></div>
+                      <div style={{ width: '60px', height: '16px', background: '#334155', borderRadius: '4px' }}></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))
-        )}
+          ) : ordens.length === 0 ? (
+            <div className="hist-vazio">
+              <IonIcon icon={clipboardOutline} className="hist-vazio-icon" />
+              <p className="hist-vazio-texto">
+                Sua folha de serviços está limpa. Que tal agendar um brilho especial para o seu veículo hoje?
+              </p>
+              <button className="hist-cta-btn" onClick={() => history.push('/mapa')}>
+                Encontrar um Lava-Me
+              </button>
+            </div>
+          ) : (
+            <div className="historico-lista-vertical">
+              {ordens.map(os => (
+                <motion.div 
+                  key={os.id} 
+                  className="hist-card-interactive"
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="hist-card-top">
+                    <div className={`hist-icon-box ${STATUS_BADGE[os.status] ?? 'andamento'}`}>
+                      <IonIcon icon={getStatusIcon(os.status)} />
+                    </div>
+                    <div className="hist-title-block">
+                      <h3 className="hist-servico-nome">{os.servico_nome}</h3>
+                      <span className="hist-servico-preco">R$ {Number(os.valor).toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  </div>
+
+                  <div className="hist-details-body">
+                    <div className="hist-info-row">
+                      <IonIcon icon={calendarOutline} />
+                      <span>{os.data_agendamento || formatarData(os.data_hora)} às {os.horario || formatarHora(os.data_hora)}</span>
+                    </div>
+                    <div className="hist-info-row">
+                      <IonIcon icon={locationOutline} />
+                      <span>{os.estabelecimento_nome}</span>
+                    </div>
+                    <div className="hist-info-row">
+                      <IonIcon icon={carOutline} />
+                      <span>{os.veiculo_modelo} • Placa {os.veiculo_placa}</span>
+                    </div>
+                  </div>
+
+                  <div className="hist-card-footer-row">
+                    <span className={`hist-badge ${STATUS_BADGE[os.status] ?? 'andamento'}`}>
+                      {STATUS_LABEL[os.status] ?? os.status}
+                    </span>
+                    <button className="hist-detalhe-btn" onClick={() => setDetalhe(os)}>
+                      Ver detalhes ›
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+        </div>
       </IonContent>
 
-      {/* Modal de detalhe */}
+      {/* CORREÇÃO CRÍTICA: Removido 'breakpoints' para abrir em Tela Inteira Nativa */}
       <IonModal
         isOpen={!!detalhe}
         onDidDismiss={() => setDetalhe(null)}
-        breakpoints={[0, 0.75]}
-        initialBreakpoint={0.75}
       >
-        <IonContent className="lm-page ion-padding">
-          {detalhe && (
-            <div className="hist-modal-content">
-              <h2 className="hist-modal-titulo">{detalhe.servico_nome}</h2>
-              <p className="hist-modal-info">📍 {detalhe.estabelecimento_nome}</p>
-              <p className="hist-modal-info">📅 {detalhe.data_agendamento}</p>
-              <p className="hist-modal-info">🕐 {detalhe.horario}</p>
-              <p className="hist-modal-info">🚗 {detalhe.veiculo_modelo} {detalhe.veiculo_placa}</p>
-              <p className="hist-modal-preco">R$ {Number(detalhe.valor).toFixed(2)}</p>
-              <span className={`lm-badge lm-badge-${STATUS_BADGE[detalhe.status] ?? 'agendado'}`}>
-                {STATUS_LABEL[detalhe.status] ?? detalhe.status}
-              </span>
-              <IonButton
-                className="lm-btn-primary"
-                expand="block"
-                onClick={() => setDetalhe(null)}
-                style={{ marginTop: '24px' }}
-              >
-                Fechar
-              </IonButton>
-            </div>
-          )}
-        </IonContent>
+        {detalhe && (
+          <Detalhes 
+            ordem={detalhe} 
+            onClose={() => setDetalhe(null)} 
+          />
+        )}
       </IonModal>
     </IonPage>
   );

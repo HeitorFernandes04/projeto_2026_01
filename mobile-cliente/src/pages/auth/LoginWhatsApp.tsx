@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import {
   IonPage,
   IonContent,
-  IonButton,
   IonBackButton,
   IonButtons,
   IonHeader,
   IonToolbar,
   IonInput,
   IonItem,
+  IonIcon,
 } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import { sparklesOutline, warningOutline } from 'ionicons/icons';
+import { useHistory, useLocation } from 'react-router-dom';
 import { solicitarOTP } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 
+// Helper de formatação em tempo real
 function aplicarMascaraTelefone(valor: string): string {
   const digits = valor.replace(/\D/g, '').slice(0, 11);
   if (digits.length <= 10) {
@@ -27,80 +30,145 @@ function aplicarMascaraTelefone(valor: string): string {
 }
 
 const LoginWhatsApp: React.FC = () => {
+  const [nome, setNome] = useState('');
   const [telefoneFormatado, setTelefoneFormatado] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const history = useHistory();
+  const { user } = useAuth();
+  const location = useLocation<{ redirect_to?: string, nome?: string }>();
+  const isPerfilFlow = location.state?.redirect_to === '/perfil';
+
+  // Verifica se o usuário vem de um fluxo de agendamento (novo cadastro) ou login direto
+  const hasAgendamento = !!(localStorage.getItem('lm_agendamento_temporario') || localStorage.getItem('lm_agendamento_pendente'));
 
   const telefoneLimpo = telefoneFormatado.replace(/\D/g, '');
-  const isValido = telefoneLimpo.length === 10 || telefoneLimpo.length === 11;
+  
+  // Validação estrita: se for agendamento precisa de nome > 2. Se for login direto, apenas telefone.
+  const isTelefoneValido = telefoneLimpo.length === 10 || telefoneLimpo.length === 11;
+  const isValido = hasAgendamento 
+    ? isTelefoneValido && nome.trim().length >= 3 
+    : isTelefoneValido;
 
-  const handleInput = (valor: string) => {
+  const handleInputTelefone = (valor: string) => {
     setTelefoneFormatado(aplicarMascaraTelefone(valor));
     setErro('');
   };
 
   const handleContinuar = async () => {
     if (!isValido) return;
+    
     setLoading(true);
     setErro('');
+    
+    const nomeParaEnvio = isPerfilFlow ? (location.state?.nome || user?.nome) : (hasAgendamento ? nome.trim() : undefined);
+    
     try {
-      await solicitarOTP(`+55${telefoneLimpo}`);
-      history.push('/auth/verificacao', { telefone: `+55${telefoneLimpo}` });
+      const res = await solicitarOTP(`+55${telefoneLimpo}`, nomeParaEnvio);
+      console.log('PIN_DEBUG:', res.pin_debug);
+      
+      history.push('/auth/verificacao', { 
+        telefone: `+55${telefoneLimpo}`,
+        nome_cliente: nomeParaEnvio,
+        redirect_to: isPerfilFlow ? '/perfil' : undefined
+      });
     } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Erro ao enviar código.');
+      setErro(e instanceof Error ? e.message : 'Falha na comunicação. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
+    <IonPage className="auth-page">
+      <IonHeader className="ion-no-border auth-header">
         <IonToolbar className="auth-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/auth" text="Voltar" />
+            <IonBackButton defaultHref="/auth" text="" className="auth-back-button" />
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <div className="auth-container">
-          <div className="auth-icon lm-card">
-            <span className="auth-emoji">🚗</span>
-          </div>
+      <IonContent className="ion-padding auth-content">
+        <div className="auth-emoji-box glow-primary">
+          <IonIcon icon={sparklesOutline} />
+        </div>
 
-          <h1 className="auth-titulo">Digite seu número</h1>
-          <p className="auth-descricao">
-            Enviaremos um código de verificação via WhatsApp.
-          </p>
+        <h1 className="auth-title">{isPerfilFlow ? "Atualização" : "Identificação"}</h1>
+        <p className="auth-subtitle">
+          {isPerfilFlow
+            ? "Atualize seu número de WhatsApp."
+            : hasAgendamento 
+              ? "Insira seus dados para finalizar e acompanhar o seu agendamento em tempo real."
+              : "Insira seu número de WhatsApp para acessar sua conta."}
+        </p>
 
-          <div className="auth-telefone-row">
-            <IonItem className="auth-ddi lm-input" lines="none">
-              <IonInput value="+55" readonly />
+        {/* Renderização Condicional do Nome */}
+        {hasAgendamento && (
+          <div className="auth-form-group">
+            <label className="auth-label">Seu Nome completo</label>
+            <IonItem className="auth-input-item" lines="none">
+              <IonInput
+                type="text"
+                placeholder="Ex: João Silva"
+                value={nome}
+                onIonInput={e => {
+                  setNome(String(e.detail.value ?? ''));
+                  setErro('');
+                }}
+              />
             </IonItem>
-            <IonItem className="auth-numero lm-input" lines="none">
+          </div>
+        )}
+
+        <div className="auth-form-group">
+          <label className="auth-label">Número do WhatsApp</label>
+          <div className="auth-phone-row">
+            <IonItem className="auth-input-item auth-ddi-box" lines="none">
+              <IonInput value="+55" readonly className="ion-text-center" />
+            </IonItem>
+            
+            <IonItem className="auth-input-item auth-phone-box" lines="none">
               <IonInput
                 type="tel"
                 placeholder="(00) 00000-0000"
                 value={telefoneFormatado}
-                onIonInput={e => handleInput(String(e.detail.value ?? ''))}
+                maxlength={15}
+                onIonInput={e => handleInputTelefone(String(e.detail.value ?? ''))}
               />
             </IonItem>
           </div>
-
-          {erro && <p className="auth-erro">{erro}</p>}
-
-          <IonButton
-            className="lm-btn-primary"
-            expand="block"
-            disabled={!isValido || loading}
-            onClick={handleContinuar}
-          >
-            {loading ? 'Enviando...' : 'Continuar →'}
-          </IonButton>
         </div>
+
+        {erro && (
+          <div className="auth-alert-card">
+            <p className="auth-alert-text">
+              <IonIcon icon={warningOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              {erro}
+            </p>
+            {erro.includes('Usuário não cadastrado') && (
+              <button 
+                onClick={() => history.push('/welcome')} 
+                className="auth-btn-secondary"
+                style={{ marginTop: '12px', color: 'var(--auth-primary)', textDecoration: 'underline' }}
+              >
+                Voltar para o Início
+              </button>
+            )}
+          </div>
+        )}
+
       </IonContent>
+
+      <div className="auth-footer">
+        <button
+          className="auth-btn-primary"
+          disabled={!isValido || loading}
+          onClick={handleContinuar}
+        >
+          {loading ? 'Aguarde...' : (hasAgendamento ? 'Enviar Código por WhatsApp' : 'Entrar com WhatsApp')}
+        </button>
+      </div>
     </IonPage>
   );
 };

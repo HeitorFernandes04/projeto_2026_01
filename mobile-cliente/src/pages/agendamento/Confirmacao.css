@@ -1,63 +1,163 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CONFIRMAÇÃO SCREEN — Dark Premium
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --conf-bg: #0F172A;
+  --conf-card: #1E293B;
+  --conf-primary: #38BDF8;
+  --conf-foreground: #F1F5F9;
+  --conf-muted: #94A3B8;
+  --conf-destructive: #EF4444;
+  --conf-radius: 24px;
+}
+
+.confirm-page {
+  --background: var(--conf-bg);
+  background: var(--conf-bg);
+  font-family: 'Inter', sans-serif;
+}
+
+.confirm-header {
+  --background: var(--conf-card);
+  background: var(--conf-card);
+}
+
 .confirm-toolbar {
-  --background: var(--lm-bg);
+  --background: var(--conf-card);
   --border-width: 0;
 }
 
+.confirm-back-button {
+  color: var(--conf-foreground);
+  --color: var(--conf-foreground);
+}
+
 .confirm-title {
-  color: var(--lm-text);
-  font-weight: 800;
-}
-
-.confirm-card {
-  margin-bottom: 16px;
-}
-
-.confirm-card-label {
-  color: var(--lm-text-muted);
-  font-size: 11px;
+  color: var(--conf-foreground);
   font-weight: 700;
+  font-size: 18px;
+  text-align: center;
+}
+
+.confirm-content {
+  --background: transparent;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  --padding-bottom: 120px;
+}
+
+/* ── Cards ── */
+.confirm-card {
+  background: var(--conf-card);
+  border-radius: var(--conf-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.confirm-card-header {
+  color: var(--conf-muted);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin: 0 0 12px 0;
+  letter-spacing: 0.05em;
 }
 
-.confirm-info {
-  color: var(--lm-text);
+.confirm-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--conf-foreground);
   font-size: 15px;
-  margin: 0 0 8px 0;
+  font-weight: 500;
+  margin: 0;
 }
 
+.confirm-icon {
+  font-size: 20px;
+  color: var(--conf-primary);
+}
+
+.confirm-placa {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--conf-foreground);
+  margin-left: auto;
+  text-transform: uppercase;
+}
+
+/* ── Card Total ── */
 .confirm-card-total {
-  border-color: var(--lm-primary);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.1);
+  margin-top: 8px;
 }
 
 .confirm-total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
 }
 
 .confirm-total-label {
-  color: var(--lm-text);
+  color: var(--conf-muted);
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .confirm-total-valor {
-  color: var(--lm-primary);
-  font-size: 26px;
-  font-weight: 800;
+  color: var(--conf-primary);
+  font-size: 28px;
+  font-weight: 700;
 }
 
 .confirm-duracao {
-  color: var(--lm-text-muted);
-  font-size: 13px;
-  margin: 0;
+  color: var(--conf-muted);
+  font-size: 14px;
+  text-align: right;
+  margin: 4px 0 0 0;
 }
 
+/* ── Footer / Botão ── */
 .confirm-footer {
-  padding: 16px 20px 32px;
-  background: var(--lm-bg);
-  border-top: 1px solid var(--lm-border);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 24px 32px;
+  background: var(--conf-bg);
+  z-index: 10;
+}
+
+.confirm-btn-primary {
+  width: 100%;
+  height: 64px;
+  margin: 0;
+  --background: var(--conf-primary);
+  --background-activated: rgba(56, 189, 248, 0.8);
+  --color: #0F172A;
+  --border-radius: var(--conf-radius);
+  --box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3);
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.confirm-btn-primary::part(native) {
+  border-radius: var(--conf-radius);
+}
+
+.confirm-btn-primary:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+  --box-shadow: none;
 }

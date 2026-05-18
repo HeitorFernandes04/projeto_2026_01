@@ -1,44 +1,54 @@
 import React, { useState, useRef } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
+  IonIcon,
+  IonAlert,
+  IonToast,
   useIonViewWillEnter,
   useIonViewWillLeave,
 } from '@ionic/react';
-import { getOrdemAtiva, getAcompanhamento } from '../../services/api';
+import { useHistory } from 'react-router-dom';
+import {
+  timeOutline,
+} from 'ionicons/icons';
+import { getOrdemAtiva, getAcompanhamento, cancelarAgendamento, type OrdemAtiva } from '../../services/api';
 import './Acompanhamento.css';
 
 interface Etapa {
   label: string;
   status: string;
+  desc: string;
 }
 
 const ETAPAS: Etapa[] = [
-  { label: 'NO PÁTIO', status: 'PATIO' },
-  { label: 'EM VISTORIA', status: 'VISTORIA_INICIAL' },
-  { label: 'EM EXECUÇÃO', status: 'EM_EXECUCAO' },
-  { label: 'LIBERAÇÃO', status: 'LIBERACAO' },
-  { label: 'FINALIZADO', status: 'FINALIZADO' },
+  { label: 'NO PÁTIO', status: 'PATIO', desc: 'Veículo chegou e aguarda início' },
+  { label: 'EM VISTORIA', status: 'VISTORIA_INICIAL', desc: 'Inspeção do veículo' },
+  { label: 'EM EXECUÇÃO', status: 'EM_EXECUCAO', desc: 'Lavagem em andamento' },
+  { label: 'EM LIBERAÇÃO', status: 'LIBERACAO', desc: 'Finalização e liberação' },
 ];
 
-const ORDEM_STATUS = ['PATIO', 'VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'FINALIZADO'];
-
-function getStatusIndex(status: string): number {
-  const idx = ORDEM_STATUS.indexOf(status);
-  return idx === -1 ? 0 : idx;
-}
-
 const Acompanhamento: React.FC = () => {
-  const [status, setStatus] = useState('');
-  const [progresso, setProgresso] = useState(0);
-  const [estabelecimento, setEstabelecimento] = useState('');
+  const history = useHistory();
+  const [status, setStatus] = useState('PATIO');
+  const [estabelecimento, setEstabelecimento] = useState('Lava Rápido');
   const [tempoEstimado, setTempoEstimado] = useState<number | null>(null);
   const [finalizado, setFinalizado] = useState(false);
   const [semOS, setSemOS] = useState(false);
+  const [agendamentoFuturo, setAgendamentoFuturo] = useState(false);
+  const [dadosFuturo, setDadosFuturo] = useState<OrdemAtiva | null>(null);
+  const [isIncidente, setIsIncidente] = useState(false);
+  const [slugCancelamento, setSlugCancelamento] = useState<string | null>(null);
+  const [showCancelAlert, setShowCancelAlert] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const getStatusIndex = (statusStr: string) => {
+    if (statusStr === 'BLOQUEADO_INCIDENTE') return 2; // Mapeia para EM EXECUÇÃO
+    return ETAPAS.findIndex(e => e.status === statusStr);
+  };
 
   const pararPolling = () => {
     if (intervalRef.current) {
@@ -50,35 +60,57 @@ const Acompanhamento: React.FC = () => {
   const poll = async (id: number) => {
     try {
       const data = await getAcompanhamento(id);
-      setProgresso(data.etapa_atual);
       setStatus(data.status);
+      setIsIncidente(data.status === 'BLOQUEADO_INCIDENTE');
+      setSlugCancelamento(data.slug_cancelamento || null);
+
       if (data.status === 'FINALIZADO') {
         setFinalizado(true);
         pararPolling();
       }
     } catch {
-      // Falha silenciosa — próxima tentativa no próximo tick
+      // Falha silenciosa e resiliente
     }
   };
 
   useIonViewWillEnter(() => {
+    setSemOS(false);
+    setAgendamentoFuturo(false);
+    setDadosFuturo(null);
+
     getOrdemAtiva()
       .then(ativa => {
         if (!ativa) {
           setSemOS(true);
           return;
         }
+
+        // Validação de data para status PATIO
+        const todayStr = new Date().toISOString().split('T')[0];
+        const dateStr = ativa.data_hora ? ativa.data_hora.split('T')[0] : '';
+
+        if (ativa.status === 'PATIO' && dateStr !== todayStr) {
+          setAgendamentoFuturo(true);
+          setDadosFuturo(ativa);
+          setSlugCancelamento(ativa.slug_cancelamento || null);
+          return;
+        }
+
         setEstabelecimento(ativa.estabelecimento_nome);
         setTempoEstimado(ativa.tempo_estimado_min);
         setStatus(ativa.status);
-        setProgresso(ativa.progresso);
-        setSemOS(false);
+        setIsIncidente(ativa.status === 'BLOQUEADO_INCIDENTE');
         setFinalizado(ativa.status === 'FINALIZADO');
+        setSlugCancelamento(ativa.slug_cancelamento || null);
 
-        poll(ativa.id);
-        intervalRef.current = setInterval(() => poll(ativa.id), 15_000);
+        if (ativa.status !== 'FINALIZADO') {
+          poll(ativa.id);
+          intervalRef.current = setInterval(() => poll(ativa.id), 15_000);
+        }
       })
-      .catch(() => setSemOS(true));
+      .catch(() => {
+        setSemOS(true);
+      });
   });
 
   useIonViewWillLeave(() => {
@@ -86,93 +118,192 @@ const Acompanhamento: React.FC = () => {
   });
 
   const statusIndex = getStatusIndex(status);
-  const isIncidente = status === 'BLOQUEADO_INCIDENTE';
 
-  if (semOS) {
-    return (
-      <IonPage className="lm-page">
-        <IonHeader className="ion-no-border">
-          <IonToolbar className="acomp-toolbar">
-            <IonTitle className="acomp-title">Acompanhamento</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent className="ion-padding">
-          <div className="acomp-sem-os">
-            <p className="acomp-sem-os-emoji">🚗</p>
-            <p className="acomp-sem-os-texto">Nenhum serviço em andamento no momento.</p>
-          </div>
-        </IonContent>
-      </IonPage>
-    );
-  }
+  const executarCancelamento = async () => {
+    if (!slugCancelamento || cancelLoading) return;
+    setCancelLoading(true);
+    try {
+      await cancelarAgendamento(slugCancelamento, 'Cancelado pelo cliente pelo portal Mobile.');
+      setToastMessage('Agendamento cancelado com sucesso!');
+      setShowToast(true);
+      setSemOS(true);
+      setSlugCancelamento(null);
+      setStatus('CANCELADO');
+      setFinalizado(true);
+      pararPolling();
+    } catch (err: any) {
+      console.error(err);
+      setToastMessage('Falha ao cancelar o agendamento. Tente novamente.');
+      setShowToast(true);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="acomp-toolbar">
-          <IonTitle className="acomp-title">Acompanhamento</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <IonPage className="acompanhamento-page">
+      <IonContent className="custom-content" fullscreen>
+        {semOS ? (
+          <div className="empty-state-container">
+            <div className="radar-icon-box">
+              <IonIcon icon={timeOutline} className="radar-icon" />
+            </div>
+            <h1 className="empty-title">Nenhum veículo na esteira</h1>
+            <p className="empty-subtitle">
+              Seu histórico está limpo. Que tal dar aquele brilho e proteção que o seu veículo merece hoje?
+            </p>
+            <button className="lm-btn-primary" onClick={() => history.push('/mapa')}>
+              Agendar Nova Lavagem
+            </button>
+          </div>
+        ) : agendamentoFuturo ? (
+          <div className="empty-state-container">
+            <div className="reserva-card">
+              <span className="reserva-badge">AGENDAMENTO RESERVADO</span>
+              <div className="reserva-details">
+                <h2 className="reserva-estabelecimento">{dadosFuturo?.estabelecimento_nome}</h2>
+                <p className="reserva-servico">{dadosFuturo?.servico_nome}</p>
+                <p className="reserva-data">
+                  {dadosFuturo?.data_hora ? new Date(dadosFuturo.data_hora).toLocaleString('pt-BR') : ''}
+                </p>
+              </div>
+            </div>
+            <p className="reserva-info">
+              O monitoramento da esteira em tempo real será ativado automaticamente assim que o veículo der entrada no pátio do estabelecimento na data agendada.
+            </p>
+          </div>
+        ) : (
+          <div className="content-wrapper">
+            {/* Header Superior */}
+            <div className="header-section">
+              <div className="header-top">
+                <h1 className="title-premium">{estabelecimento}</h1>
+                <span className="badge-status">
+                  {finalizado ? 'CONCLUÍDO' : isIncidente ? 'BLOQUEADO' : 'EM EXECUÇÃO'}
+                </span>
+              </div>
+              <p className="eta-text">Tempo estimado: ~{tempoEstimado ?? '--'} min</p>
+            </div>
 
-      <IonContent className="ion-padding">
-        <div className="acomp-header">
-          <p className="acomp-estabelecimento">{estabelecimento}</p>
-          {tempoEstimado && !finalizado && (
-            <p className="acomp-tempo">Tempo estimado: ~{tempoEstimado} min</p>
-          )}
-          <span className={`lm-badge ${isIncidente ? 'lm-badge-cancelado' : 'lm-badge-andamento'}`}>
-            {isIncidente ? '⚠️ INCIDENTE' : status.replace('_', ' ')}
-          </span>
-        </div>
+            {/* Alerta de Incidente */}
+            {isIncidente && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', padding: '12px', borderRadius: '12px', marginBottom: '16px', textAlign: 'center' }}>
+                Atenção: Houve um pequeno incidente. Nossa equipe já está tratando.
+              </div>
+            )}
 
-        <div className="acomp-carro-container">
-          <span className={`acomp-carro-emoji ${finalizado ? '' : 'acomp-carro-animado'}`}>
-            🚗
-          </span>
-        </div>
+            {/* Box Central de Animação */}
+            <div className="animation-box">
+              <div className="glow-square square-large-2"></div>
+              <div className="glow-square square-large-1"></div>
+              <div className="glow-square square-1"></div>
+              <div className="glow-square square-2"></div>
+              <div className="glow-square square-3"></div>
 
-        {finalizado && (
-          <div className="acomp-finalizado">
-            <span className="acomp-check">✅</span>
-            <p className="acomp-finalizado-texto">Seu veículo está pronto!</p>
+              <div className="car-container">
+                <svg className="abstract-car" viewBox="0 0 100 100" width="100" height="100">
+                  <path d="M 5,60 L 15,60 C 15,50 25,50 25,60 L 65,60 C 65,50 75,50 75,60 L 95,60 C 97,55 97,50 95,45 C 90,35 80,35 75,35 C 70,35 60,15 50,15 L 30,15 C 20,15 15,30 10,40 L 5,50 Z" fill="none" stroke="#38BDF8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="20" cy="60" r="5" fill="none" stroke="#38BDF8" strokeWidth="2" />
+                  <circle cx="70" cy="60" r="5" fill="none" stroke="#38BDF8" strokeWidth="2" />
+                </svg>
+              </div>
+
+              <div className="particle p1"></div>
+              <div className="particle p2"></div>
+              <div className="particle p3"></div>
+              <div className="bubble b1"></div>
+              <div className="bubble b2"></div>
+              <div className="bubble b3"></div>
+              <div className="bubble b4"></div>
+              <div className="bubble b5"></div>
+              <div className="bubble b6"></div>
+              <div className="bubble b7"></div>
+              <div className="bubble b8"></div>
+              <div className="bubble b9"></div>
+              <div className="bubble b10"></div>
+              <div className="vapor v1"></div>
+              <div className="vapor v2"></div>
+            </div>
+
+
+
+            {/* Timeline Cards */}
+            <div className="timeline-cards">
+              {ETAPAS.map((etapa, i) => {
+                const concluida = i < statusIndex || finalizado;
+                const atual = !finalizado && i === statusIndex;
+
+                return (
+                  <div key={etapa.status} className={`timeline-card ${concluida ? 'concluida' : ''} ${atual ? 'atual' : ''}`}>
+                    <div className="card-icon-container">
+                      {concluida ? (
+                        <div className="icon-success">
+                          <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M5 13l4 4L19 7" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="icon-number">{i + 1}</div>
+                      )}
+                    </div>
+                    <div className="card-text">
+                      <h3>{etapa.label}</h3>
+                      <p>{etapa.desc}</p>
+                    </div>
+                    {atual && <div className="pulse-dot"></div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Banner de Sucesso */}
+            {finalizado && (
+              <div style={{ marginTop: '20px', background: 'rgba(52, 211, 153, 0.1)', color: '#34D399', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>Seu veículo está pronto!</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '14px' }}>Pode passar para retirar.</p>
+              </div>
+            )}
+
+            {/* Botão de Cancelamento (Visível apenas em PÁTIO) */}
+            {!finalizado && status === 'PATIO' && slugCancelamento && (
+              <button
+                className="btn-cancelar-agendamento"
+                disabled={cancelLoading}
+                onClick={() => setShowCancelAlert(true)}
+              >
+                {cancelLoading ? 'Cancelando...' : 'Cancelar Agendamento'}
+              </button>
+            )}
           </div>
         )}
-
-        <div className="acomp-progresso-row">
-          <span className="acomp-progresso-label">Progresso geral</span>
-          <span className="acomp-progresso-pct">{progresso}%</span>
-        </div>
-        <div className="acomp-progress-container">
-          <div className="acomp-progress-bar" style={{ width: `${progresso}%` }} />
-        </div>
-
-        <div className="acomp-timeline">
-          {ETAPAS.map((etapa, i) => {
-            const concluida = i < statusIndex || finalizado;
-            const atual = !finalizado && i === statusIndex && !isIncidente;
-            return (
-              <div key={etapa.status} className="acomp-etapa">
-                <div className="acomp-etapa-linha">
-                  <div className={`acomp-etapa-dot ${concluida ? 'dot-concluida' : atual ? 'dot-atual' : 'dot-futura'}`}>
-                    {concluida ? '✅' : atual ? String(i + 1) : '○'}
-                  </div>
-                  {i < ETAPAS.length - 1 && (
-                    <div className={`acomp-etapa-connector ${concluida ? 'connector-concluida' : 'connector-futura'}`} />
-                  )}
-                </div>
-                <div className="acomp-etapa-texto">
-                  <span className={`acomp-etapa-nome ${atual ? 'etapa-atual' : ''}`}>
-                    {etapa.label}
-                  </span>
-                  {isIncidente && i === statusIndex && (
-                    <span className="acomp-incidente-alerta"> ⚠️ Aguardando resolução</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </IonContent>
+
+      <IonAlert
+        isOpen={showCancelAlert}
+        onDidDismiss={() => setShowCancelAlert(false)}
+        header="Cancelar Agendamento"
+        message="Tem certeza que deseja cancelar seu agendamento de lavagem?"
+        buttons={[
+          {
+            text: 'Não, manter',
+            role: 'cancel',
+            cssClass: 'alert-cancel-keep-btn'
+          },
+          {
+            text: 'Sim, cancelar',
+            handler: () => {
+              executarCancelamento();
+            }
+          }
+        ]}
+      />
+
+      <IonToast
+        isOpen={showToast}
+        message={toastMessage}
+        duration={3000}
+        onDidDismiss={() => setShowToast(false)}
+      />
     </IonPage>
   );
 };

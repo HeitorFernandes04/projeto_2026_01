@@ -481,12 +481,15 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
     veiculo_placa = serializers.SerializerMethodField()
     veiculo_modelo = serializers.CharField(source='veiculo.modelo', read_only=True)
     estabelecimento = EstabelecimentoResumoSerializer(read_only=True)
+    estabelecimento_nome = serializers.CharField(source='estabelecimento.nome_fantasia', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    valor = serializers.FloatField(source='servico.preco', read_only=True)
     class Meta:
         model = OrdemServico
         fields = [
             'id', 'data_hora', 'status', 'status_display', 'etapa_atual',
             'servico_nome', 'veiculo_placa', 'veiculo_modelo', 'estabelecimento',
+            'estabelecimento_nome', 'valor', 'observacoes', 'vaga_patio',
         ]
 
     def get_veiculo_placa(self, obj):

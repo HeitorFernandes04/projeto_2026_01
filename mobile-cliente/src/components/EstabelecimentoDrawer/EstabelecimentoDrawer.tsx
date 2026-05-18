@@ -38,12 +38,7 @@ const EstabelecimentoDrawer: React.FC<Props> = ({ estabelecimento, posicaoUsuari
   const handleVerServicos = () => {
     if (!estabelecimento) return;
     onClose();
-    if (token) {
-      history.push(`/servicos/${estabelecimento.slug}`);
-    } else {
-      localStorage.setItem('lm_destino_pos_auth', `/servicos/${estabelecimento.slug}`);
-      history.push('/auth');
-    }
+    history.push(`/servicos/${estabelecimento.slug}`);
   };
 
   const handleComoChegar = () => {

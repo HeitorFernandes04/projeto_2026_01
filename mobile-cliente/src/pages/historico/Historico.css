@@ -1,108 +1,252 @@
-.hist-toolbar {
-  --background: var(--lm-bg);
+/* ═══════════════════════════════════════════════════════════════════
+   HISTORICO SCREEN — Estilo Dark Premium (Fidelidade ao Figma)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --hist-bg: #0F172A;
+  --hist-card: #1E293B;
+  --hist-primary: #38BDF8;
+  --hist-foreground: #F8FAFC;
+  --hist-muted: #64748B;
+  --hist-radius: 24px;
+}
+
+.historico-page {
+  --background: var(--hist-bg) !important;
+  background: var(--hist-bg) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Cabeçalho unificado idêntico ao de veículos */
+.veiculo-header {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+}
+
+.veiculo-toolbar-fluid {
+  --background: #1E293B !important;
+  background: #1E293B !important;
   --border-width: 0;
+  padding-top: 44px !important;   /* Respiro da barra de status móvel */
+  padding-bottom: 20px !important; /* Altura do retângulo cinza do Figma */
 }
 
-.hist-title {
-  color: var(--lm-text);
-  font-weight: 800;
+.header-content-fluid {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
 }
 
-.hist-subtitulo {
-  color: var(--lm-text-muted);
-  font-size: 14px;
-  margin: 0 0 16px 0;
+.veiculo-title-premium {
+  color: #F8FAFC !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 32px !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
 }
 
-.hist-vazio {
+.veiculo-subtitle-premium {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 13px !important;
+  margin: 4px 0 0 0 !important;
+}
+
+.veiculo-content-premium {
+  --background: #0F172A !important;
+}
+
+/* Grid e Espaçamentos dos Cards */
+.historico-main-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 0;
+  padding: 32px 24px 40px 24px; /* Respiro superior e alinhamento lateral */
+  box-sizing: border-box;
+}
+
+.historico-lista-vertical {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.hist-vazio-emoji {
-  font-size: 56px;
-}
-
-.hist-vazio-texto {
-  color: var(--lm-text-muted);
-  font-size: 15px;
-  text-align: center;
-  margin: 0;
-}
-
-.hist-card {
-  margin-bottom: 14px;
-}
-
-.hist-card-header {
+/* Configuração Premium dos Cards */
+.hist-card-interactive {
+  background: var(--hist-card);
+  border-radius: var(--hist-radius);
+  padding: 20px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.hist-servico {
-  color: var(--lm-text);
-  font-size: 15px;
-  font-weight: 700;
-  flex: 1;
+.hist-card-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-.hist-preco {
-  color: var(--lm-primary);
-  font-size: 16px;
-  font-weight: 800;
+/* Quadrados de Ícones do Status correspondentes */
+.hist-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
   flex-shrink: 0;
 }
 
-.hist-info {
-  color: var(--lm-text-muted);
-  font-size: 13px;
-  margin: 0 0 4px 0;
+.hist-icon-box.finalizado {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
 }
 
-.hist-card-footer {
+.hist-icon-box.cancelado {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+}
+
+.hist-icon-box.andamento {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--hist-primary);
+}
+
+.hist-title-block {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+}
+
+.hist-servico-nome {
+  color: var(--hist-foreground);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.hist-servico-preco {
+  color: var(--hist-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Bloco Informativo Central */
+.hist-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 14px;
+}
+
+.hist-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #94A3B8;
+  font-size: 14px;
+}
+
+.hist-info-row ion-icon {
+  font-size: 16px;
+  color: var(--hist-muted);
+}
+
+/* Footer dos Cards */
+.hist-card-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .hist-detalhe-btn {
   background: none;
   border: none;
-  color: var(--lm-primary);
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--hist-primary);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 4px 0;
 }
 
-/* Modal */
+/* Badges Translúcidos */
+.hist-badge {
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hist-badge.finalizado { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+.hist-badge.cancelado  { background: rgba(239, 68, 68, 0.12); color: #EF4444; }
+.hist-badge.andamento  { background: rgba(56, 189, 248, 0.12); color: #38BDF8; }
+
+/* Feedback de Lista Vazia Premium */
+.hist-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 20px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.hist-vazio-icon {
+  font-size: 64px;
+  color: #38BDF8;
+  filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5));
+}
+
+.hist-vazio-texto {
+  color: #94A3B8;
+  font-size: 15px;
+  line-height: 22px;
+  margin: 0;
+  max-width: 280px;
+}
+
+.hist-cta-btn {
+  background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+  color: #0F172A;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+  transition: transform 0.2s;
+}
+
+.hist-cta-btn:active {
+  transform: scale(0.95);
+}
+
+
+/* Modal de Detalhes Internos */
 .hist-modal-content {
-  padding: 8px 4px;
+  padding: 12px 8px;
 }
 
 .hist-modal-titulo {
-  color: var(--lm-text);
-  font-size: 20px;
-  font-weight: 800;
+  color: var(--hist-foreground);
+  font-size: 22px;
+  font-weight: 700;
   margin: 0 0 16px 0;
 }
 
-.hist-modal-info {
-  color: var(--lm-text);
-  font-size: 15px;
-  margin: 0 0 10px 0;
-}
-
 .hist-modal-preco {
-  color: var(--lm-primary);
-  font-size: 28px;
+  color: var(--hist-primary);
+  font-size: 32px;
   font-weight: 800;
-  margin: 16px 0 10px 0;
+  margin: 16px 0;
 }

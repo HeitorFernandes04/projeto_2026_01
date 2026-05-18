@@ -6,9 +6,11 @@ import {
   IonToolbar,
   IonButtons,
   IonBackButton,
+  IonIcon,
 } from '@ionic/react';
+import { warningOutline, refreshOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
-import { verificarOTP, solicitarOTP } from '../../services/api';
+import { verificarOTP, solicitarOTP, getVeiculos } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 
@@ -16,8 +18,9 @@ const TOTAL_DIGITS = 4;
 const COUNTDOWN_INICIAL = 45;
 
 const VerificacaoOTP: React.FC = () => {
-  const location = useLocation<{ telefone?: string }>();
+  const location = useLocation<{ telefone?: string, redirect_to?: string }>();
   const telefone = location.state?.telefone ?? '';
+  const isPerfilFlow = location.state?.redirect_to === '/perfil';
   const history = useHistory();
   const { login } = useAuth();
 
@@ -26,6 +29,7 @@ const VerificacaoOTP: React.FC = () => {
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(COUNTDOWN_INICIAL);
+  
   const ref0 = useRef<HTMLInputElement>(null);
   const ref1 = useRef<HTMLInputElement>(null);
   const ref2 = useRef<HTMLInputElement>(null);
@@ -33,7 +37,10 @@ const VerificacaoOTP: React.FC = () => {
   const refs = [ref0, ref1, ref2, ref3];
 
   useEffect(() => {
-    ref0.current?.focus();
+    // Manter o foco automático na primeira caixa (UX suave)
+    setTimeout(() => {
+      ref0.current?.focus();
+    }, 150);
   }, []);
 
   useEffect(() => {
@@ -42,25 +49,67 @@ const VerificacaoOTP: React.FC = () => {
     return () => clearInterval(timer);
   }, [countdown]);
 
+  // Inteligência Pós-Autenticação (Fricção Zero)
+  const processarRedirecionamento = async () => {
+    if (isPerfilFlow) {
+      history.replace('/perfil');
+      return;
+    }
+    // Verificamos ambas as chaves possíveis para garantir cobertura total
+    const agendamentoStr = localStorage.getItem('lm_agendamento_pendente') || localStorage.getItem('lm_agendamento_temporario');
+    
+    if (agendamentoStr) {
+      try {
+        const agendamentoData = JSON.parse(agendamentoStr);
+        
+        // Verifica se usuário já tem veículos cadastrados
+        try {
+          const veiculos = await getVeiculos();
+          if (veiculos.length > 0) {
+            // Já tem veículo, vai direto para confirmação
+            history.replace('/agendamento/confirmacao', { ...agendamentoData, veiculo: veiculos[0] });
+          } else {
+            // Não tem veículo, vai para cadastro
+            history.replace('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+          }
+        } catch {
+          // Erro ao buscar veículos, vai para cadastro
+          history.replace('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+        }
+      } catch {
+        history.replace('/veiculo/novo');
+      }
+    } else {
+      // Sem agendamento pendente, vai direto para a tela de início (Painel do Cliente)
+      history.replace('/inicio');
+    }
+
+  };
+
   const submitOTP = async (codigo: string) => {
     if (loading) return;
     setLoading(true);
     setErro('');
     try {
-      const { access, refresh, usuario } = await verificarOTP(telefone, codigo);
+      const token = localStorage.getItem('lm_access_token');
+      const { access, refresh, usuario } = await verificarOTP(telefone, codigo, token);
+      // Salva no AuthContext global
       login(
         { id: usuario.id, nome: usuario.nome, telefone: usuario.telefone, membro_desde: usuario.membro_desde },
         access,
         refresh,
       );
-      const destino = localStorage.getItem('lm_destino_pos_auth') ?? '/inicio';
-      localStorage.removeItem('lm_destino_pos_auth');
-      history.replace(destino);
+      await processarRedirecionamento();
     } catch (e) {
+      // Falha na Verificação
       setErro(e instanceof Error ? e.message : 'Código inválido.');
       setDigits(Array(TOTAL_DIGITS).fill(''));
+      
+      // Dispara a animação OTP Shake
       setShake(true);
       setTimeout(() => setShake(false), 450);
+      
+      // Retorna o foco pro input 1
       refs[0].current?.focus();
     } finally {
       setLoading(false);
@@ -74,16 +123,19 @@ const VerificacaoOTP: React.FC = () => {
     setDigits(newDigits);
     setErro('');
 
+    // Avanço automático
     if (digit && index < TOTAL_DIGITS - 1) {
       refs[index + 1].current?.focus();
     }
 
+    // Submissão automática
     if (newDigits.every(d => d !== '')) {
       submitOTP(newDigits.join(''));
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Retrocesso automático com Backspace
     if (e.key === 'Backspace' && !digits[index] && index > 0) {
       refs[index - 1].current?.focus();
     }
@@ -105,52 +157,62 @@ const VerificacaoOTP: React.FC = () => {
   const ss = String(countdown % 60).padStart(2, '0');
 
   return (
-    <IonPage className="lm-page">
-      <IonHeader className="ion-no-border">
+    <IonPage className="auth-page">
+      <IonHeader className="ion-no-border auth-header">
         <IonToolbar className="auth-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/auth/whatsapp" text="Voltar" />
+            <IonBackButton defaultHref="/auth/whatsapp" text="" className="auth-back-button" />
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <div className="auth-container">
-          <h1 className="auth-titulo">Verificação</h1>
-          <p className="auth-descricao">
-            Digite o código enviado para{' '}
-            <strong style={{ color: 'var(--lm-text)' }}>{telefone}</strong>
-          </p>
+      <IonContent className="ion-padding auth-content">
+        <h1 className="auth-title" style={{ marginTop: '32px' }}>Confirmar Código</h1>
+        
+        <p className="auth-subtitle">
+          Enviamos um PIN de {TOTAL_DIGITS} dígitos para o WhatsApp{' '}
+          <span className="auth-phone-highlight">{telefone}</span>. Digite-o abaixo:
+        </p>
 
-          <div className={`otp-boxes ${shake ? 'otp-shake' : ''}`}>
-            {digits.map((d, i) => (
-              <input
-                key={i}
-                ref={refs[i]}
-                type="tel"
-                inputMode="numeric"
-                maxLength={1}
-                value={d}
-                className={`otp-box${erro ? ' otp-erro' : ''}`}
-                onChange={e => handleChange(i, e.target.value)}
-                onKeyDown={e => handleKeyDown(i, e)}
-                disabled={loading}
-              />
-            ))}
-          </div>
-
-          {erro && <p className="auth-erro">{erro}</p>}
-
-          <div className="otp-reenviar">
-            {countdown > 0 ? (
-              <span>Reenviar código ({mm}:{ss})</span>
-            ) : (
-              <button className="otp-reenviar-link" onClick={handleReenviar}>
-                Reenviar código
-              </button>
-            )}
-          </div>
+        {/* Caixas de Código PIN (Grid Horizontal) */}
+        <div className={`auth-otp-container ${shake ? 'otp-shake' : ''}`}>
+          {digits.map((d, i) => (
+            <input
+              key={i}
+              ref={refs[i]}
+              type="tel"
+              inputMode="numeric"
+              maxLength={1}
+              value={d}
+              className={`auth-otp-box ${erro ? 'otp-erro' : ''}`}
+              onChange={e => handleChange(i, e.target.value)}
+              onKeyDown={e => handleKeyDown(i, e)}
+              disabled={loading}
+            />
+          ))}
         </div>
+
+        {/* Alerta Visual de Erro */}
+        {erro && (
+          <div className="auth-alert-card">
+            <p className="auth-alert-text">
+              <IonIcon icon={warningOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              {erro}
+            </p>
+          </div>
+        )}
+
+        {/* Bloco de Reenvio / Timer */}
+        {countdown > 0 ? (
+          <p className="auth-timer-text">
+            Aguarde ({mm}:{ss}) para reenviar código
+          </p>
+        ) : (
+          <button className="auth-reenviar-btn" onClick={handleReenviar}>
+            <IonIcon icon={refreshOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+            Enviar novo código por WhatsApp
+          </button>
+        )}
       </IonContent>
     </IonPage>
   );
