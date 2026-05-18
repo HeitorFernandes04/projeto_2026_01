@@ -11,9 +11,9 @@ Este workflow deve ser acionado para verificar se as rotas, controllers e modelo
 ### Passo 1: Mapeamento de Rotas
 1. Use a ferramenta MCP `mcp_lava-me-context-server_verify_api_endpoints` para auditar a relação entre os endpoints chamados pelo Frontend e o que existe no Backend.
 2. Identifique se as rotas estão prefixadas corretamente:
-   - `/api/b2b/` -> Para operações de Pista/Gestão.
-   - `/api/b2c/` -> Para operações do Cliente Final.
-3. Se houver rotas genéricas como `/api/operacao/` sendo acessadas por ambos os apps, sinalize como **Dívida Técnica de Arquitetura**.
+   - `/api/gestao/` -> Para operações de Pista/Gestão (B2B).
+   - `/api/cliente/` e `/api/publico/` -> Para operações do Cliente Final (B2C).
+3. Se houver rotas genéricas como `/api/operacao/` ou as antigas `/api/b2b/` e `/api/b2c/` sendo acessadas, sinalize como **Dívida Técnica de Arquitetura**.
 
 ### Passo 2: Auditoria de Middlewares e Permissions
 1. Para cada View/Controller identificada no Passo 1:

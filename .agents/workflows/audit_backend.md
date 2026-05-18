@@ -1,4 +1,4 @@
----
+![1778996290608](image/audit_backend/1778996290608.png)---
 description: Auditoria rigorosa de qualidade, testes e estrutura de dados para o Backend na Sprint 4.
 ---
 

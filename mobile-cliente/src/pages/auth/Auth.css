@@ -1,0 +1,138 @@
+.auth-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 20px;
+  padding: 16px;
+}
+
+.auth-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.auth-emoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.auth-titulo {
+  color: var(--lm-text);
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+}
+
+.auth-descricao {
+  color: var(--lm-text-muted);
+  font-size: 15px;
+  text-align: center;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.auth-btn-outline {
+  --border-color: var(--lm-border);
+  --color: var(--lm-text);
+  --border-radius: 20px;
+  height: 64px;
+  font-weight: 800;
+  text-transform: uppercase;
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* LoginWhatsApp */
+.auth-telefone-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.auth-ddi {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.auth-numero {
+  flex: 1;
+}
+
+.auth-erro {
+  color: var(--lm-red);
+  font-size: 14px;
+  margin: 0;
+  text-align: center;
+}
+
+/* VerificacaoOTP */
+.otp-boxes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.otp-box {
+  width: 64px;
+  height: 72px;
+  background: var(--lm-card);
+  border: 2px solid var(--lm-border);
+  border-radius: 16px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--lm-text);
+  outline: none;
+  caret-color: var(--lm-primary);
+  transition: border-color 0.2s;
+}
+
+.otp-box:focus {
+  border-color: var(--lm-primary);
+}
+
+.otp-box.otp-erro {
+  border-color: var(--lm-red);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-6px); }
+  80%       { transform: translateX(6px); }
+}
+
+.otp-shake {
+  animation: shake 0.4s ease;
+}
+
+.otp-reenviar {
+  font-size: 14px;
+  color: var(--lm-text-muted);
+  text-align: center;
+}
+
+.otp-reenviar-link {
+  color: var(--lm-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 0;
+}

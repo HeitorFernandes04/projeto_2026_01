@@ -136,6 +136,8 @@ class GestaoViewSet(viewsets.ViewSet):
                 # RF-21: Logo retornada no GET para o frontend exibir imediatamente
                 'logo_url': request.build_absolute_uri(estabelecimento.logo.url) if estabelecimento.logo else None,
                 'slug': estabelecimento.slug,
+                'latitude': estabelecimento.latitude,
+                'longitude': estabelecimento.longitude,
             }
             return Response(data)
 
@@ -143,7 +145,7 @@ class GestaoViewSet(viewsets.ViewSet):
             # Atualiza dados do estabelecimento (RF-13 + RF-21)
             try:
                 # Validação de campos permitidos (incluindo upload de logo)
-                campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo', 'logo']
+                campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo', 'logo', 'latitude', 'longitude']
                 dados_filtrados = {
                     k: v for k, v in request.data.items()
                     if k in campos_permitidos
@@ -168,6 +170,8 @@ class GestaoViewSet(viewsets.ViewSet):
                     'is_active': estabelecimento.is_active,
                     'logo_url': request.build_absolute_uri(estabelecimento.logo.url) if estabelecimento.logo else None,
                     'slug': estabelecimento.slug,
+                    'latitude': estabelecimento.latitude,
+                    'longitude': estabelecimento.longitude,
                     'message': 'Dados da unidade atualizados com sucesso!'
                 }
                 return Response(data)

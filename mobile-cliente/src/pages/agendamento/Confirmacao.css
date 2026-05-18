@@ -1,0 +1,63 @@
+.confirm-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.confirm-title {
+  color: var(--lm-text);
+  font-weight: 800;
+}
+
+.confirm-card {
+  margin-bottom: 16px;
+}
+
+.confirm-card-label {
+  color: var(--lm-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 12px 0;
+}
+
+.confirm-info {
+  color: var(--lm-text);
+  font-size: 15px;
+  margin: 0 0 8px 0;
+}
+
+.confirm-card-total {
+  border-color: var(--lm-primary);
+}
+
+.confirm-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.confirm-total-label {
+  color: var(--lm-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.confirm-total-valor {
+  color: var(--lm-primary);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.confirm-duracao {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.confirm-footer {
+  padding: 16px 20px 32px;
+  background: var(--lm-bg);
+  border-top: 1px solid var(--lm-border);
+}

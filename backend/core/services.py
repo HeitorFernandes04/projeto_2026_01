@@ -49,7 +49,7 @@ class EstabelecimentoService:
                 raise ValidationError("CNPJ já está em uso por outro estabelecimento.")
         
         # Atualiza apenas os campos permitidos (RF-13 + RF-21)
-        campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo', 'logo']
+        campos_permitidos = ['nome_fantasia', 'cnpj', 'endereco_completo', 'logo', 'latitude', 'longitude']
         for campo, valor in dados_atualizacao.items():
             if campo in campos_permitidos:
                 # Tratamento especial para remoção de logo (string vazia via FormData)

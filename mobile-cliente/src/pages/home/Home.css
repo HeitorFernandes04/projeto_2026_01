@@ -1,0 +1,103 @@
+.leaflet-container {
+  background: var(--lm-bg);
+}
+
+ion-fab {
+  margin-bottom: 32px;
+  margin-right: 16px;
+}
+
+/* Pin customizado */
+.lm-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.lm-pin svg {
+  transform: rotate(45deg);
+  color: #ffffff;
+}
+
+/* Header fixo com os controles de busca — fora do mapa para evitar conflito de touch */
+.mapa-header {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.mapa-toolbar {
+  --background: var(--lm-card);
+  --border-width: 0;
+  --min-height: 0px;
+}
+
+.mapa-header-content {
+  padding: 12px 16px 10px;
+}
+
+/* Content full-height para o mapa preencher o espaço abaixo do header */
+.mapa-content::part(scroll) {
+  height: 100%;
+  overflow: hidden;
+}
+
+.mapa-titulo {
+  color: var(--lm-text);
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+}
+
+.mapa-searchbar {
+  --background: var(--lm-bg);
+  --color: var(--lm-text);
+  --placeholder-color: var(--lm-text-muted);
+  --icon-color: var(--lm-text-muted);
+  --border-radius: 12px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+/* Chips de filtro */
+.mapa-filtros {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.mapa-filtros::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-ativo {
+  --background: var(--lm-primary);
+  --color: #ffffff;
+  font-weight: 700;
+}
+
+.chip-inativo {
+  --background: var(--lm-card);
+  --color: var(--lm-text-muted);
+  border: 1px solid var(--lm-border);
+}
+
+/* Badge contador */
+.mapa-contador {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: var(--lm-bg);
+  border: 1px solid var(--lm-border);
+  border-radius: 20px;
+  color: var(--lm-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}

@@ -1,0 +1,108 @@
+.hist-toolbar {
+  --background: var(--lm-bg);
+  --border-width: 0;
+}
+
+.hist-title {
+  color: var(--lm-text);
+  font-weight: 800;
+}
+
+.hist-subtitulo {
+  color: var(--lm-text-muted);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+}
+
+.hist-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 0;
+  gap: 16px;
+}
+
+.hist-vazio-emoji {
+  font-size: 56px;
+}
+
+.hist-vazio-texto {
+  color: var(--lm-text-muted);
+  font-size: 15px;
+  text-align: center;
+  margin: 0;
+}
+
+.hist-card {
+  margin-bottom: 14px;
+}
+
+.hist-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.hist-servico {
+  color: var(--lm-text);
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.hist-preco {
+  color: var(--lm-primary);
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.hist-info {
+  color: var(--lm-text-muted);
+  font-size: 13px;
+  margin: 0 0 4px 0;
+}
+
+.hist-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.hist-detalhe-btn {
+  background: none;
+  border: none;
+  color: var(--lm-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+/* Modal */
+.hist-modal-content {
+  padding: 8px 4px;
+}
+
+.hist-modal-titulo {
+  color: var(--lm-text);
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 16px 0;
+}
+
+.hist-modal-info {
+  color: var(--lm-text);
+  font-size: 15px;
+  margin: 0 0 10px 0;
+}
+
+.hist-modal-preco {
+  color: var(--lm-primary);
+  font-size: 28px;
+  font-weight: 800;
+  margin: 16px 0 10px 0;
+}

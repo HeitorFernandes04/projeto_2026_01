@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     EstabelecimentoPublicoDetailView,
+    EstabelecimentoListaMapaView,
     DisponibilidadeView,
     CancelamentoView,
     AuthB2CSetupView,
@@ -9,6 +10,12 @@ from .views import (
 )
 
 urlpatterns = [
+    # RF-28: GET /api/publico/estabelecimentos/ — lista para mapa B2C
+    path(
+        'estabelecimentos/',
+        EstabelecimentoListaMapaView.as_view(),
+        name='estabelecimentos-mapa'
+    ),
     # RF-21: GET /api/publico/estabelecimento/{slug}/
     path(
         'estabelecimento/<slug:slug>/',
