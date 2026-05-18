@@ -660,6 +660,11 @@ export class SetupComponent implements OnInit, OnDestroy {
     this.endComplemento = partes.length >= 6 ? partes.slice(2, partes.length - 3).join(', ') : '';
   }
 
+  resetarCoordenadas(): void {
+    this.latitudeMapa = null;
+    this.longitudeMapa = null;
+  }
+
   montarEnderecoCompleto(): string {
     const cepFormatado = this.endCep.replace(/\D/g, '').replace(/^(\d{5})(\d{3})$/, '$1-$2');
     const cidadeUf = [this.endCidade.trim(), this.endEstado.trim()].filter(Boolean).join(' - ');
@@ -682,14 +687,22 @@ export class SetupComponent implements OnInit, OnDestroy {
     }
     this.buscandoNoMapa = true;
     this.erroUnidade = '';
-    let lat = -15.7801;
-    let lng = -47.9292;
+    // Fallback: usa coordenadas já confirmadas; só usa Brasília se nunca houve validação
+    let lat = this.latitudeMapa ?? -15.7801;
+    let lng = this.longitudeMapa ?? -47.9292;
     try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(endereco)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      const data = await res.json() as Array<{ lat: string; lon: string }>;
-      if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
-    } catch { /* geocodificação falhou — usa centro padrão */ }
+      const params = new URLSearchParams({
+        format: 'json', limit: '1', q: endereco,
+        email: 'contato@lavame.com.br', 'accept-language': 'pt-br',
+      });
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json() as Array<{ lat: string; lon: string }>;
+        if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+      }
+    } catch { /* rede indisponível — mantém fallback */ }
     finally { this.buscandoNoMapa = false; this.cdRef.detectChanges(); }
     this.mapaVisivel = true;
     this.cdRef.detectChanges();

@@ -92,7 +92,9 @@ export interface AgendamentoPayload {
 // — Public (sem auth) —
 
 export async function getEstabelecimentos(): Promise<EstabelecimentoMapa[]> {
-  const res = await fetch(`${BASE_URL}/api/publico/estabelecimentos/`);
+  const res = await fetch(`${BASE_URL}/api/publico/estabelecimentos/`, {
+    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+  });
   if (!res.ok) throw new Error('Falha ao carregar estabelecimentos.');
   return res.json();
 }
