@@ -39,7 +39,7 @@ const Agendamento: React.FC = () => {
   useEffect(() => {
     getVeiculos()
       .then(vs => setVeiculo(vs[0] ?? null))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -104,13 +104,12 @@ const Agendamento: React.FC = () => {
               <button
                 key={h.horario}
                 disabled={!h.disponivel}
-                className={`agend-horario-chip ${
-                  h.disponivel
+                className={`agend-horario-chip ${h.disponivel
                     ? horarioSelecionado === h.horario
                       ? 'chip-ativo'
                       : 'chip-disponivel'
                     : 'chip-indisponivel'
-                }`}
+                  }`}
                 onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
               >
                 {h.horario}
@@ -139,7 +138,7 @@ const Agendamento: React.FC = () => {
           disabled={!isFormValido}
           onClick={handleFinalizar}
         >
-          {loading ? 'Aguarde...' : 'Finalizar Agendamento'}
+          Finalizar Agendamento
         </IonButton>
       </div>
 

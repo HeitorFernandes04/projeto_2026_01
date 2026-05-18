@@ -690,20 +690,26 @@ export class SetupComponent implements OnInit, OnDestroy {
     // Fallback: usa coordenadas já confirmadas; só usa Brasília se nunca houve validação
     let lat = this.latitudeMapa ?? -15.7801;
     let lng = this.longitudeMapa ?? -47.9292;
-    try {
-      const params = new URLSearchParams({
-        format: 'json', limit: '1', q: endereco,
-        email: 'contato@lavame.com.br', 'accept-language': 'pt-br',
-      });
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (res.ok) {
-        const data = await res.json() as Array<{ lat: string; lon: string }>;
-        if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
-      }
-    } catch { /* rede indisponível — mantém fallback */ }
-    finally { this.buscandoNoMapa = false; this.cdRef.detectChanges(); }
+    
+    // Só consulta a API externa se as coordenadas foram zeradas (edição de texto) ou nunca salvas
+    if (this.latitudeMapa === null || this.longitudeMapa === null) {
+      try {
+        const params = new URLSearchParams({
+          format: 'json', limit: '1', q: endereco,
+          email: 'contato@lavame.com.br', 'accept-language': 'pt-br',
+        });
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+          headers: { 'Accept': 'application/json' },
+        });
+        if (res.ok) {
+          const data = await res.json() as Array<{ lat: string; lon: string }>;
+          if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+        }
+      } catch { /* rede indisponível — mantém fallback */ }
+    }
+    
+    this.buscandoNoMapa = false;
+    this.cdRef.detectChanges();
     this.mapaVisivel = true;
     this.cdRef.detectChanges();
     setTimeout(() => this.inicializarMapa(lat, lng), 100);

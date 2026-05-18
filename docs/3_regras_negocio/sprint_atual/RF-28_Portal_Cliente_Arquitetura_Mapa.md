@@ -17,6 +17,7 @@
 | **RF-28.2** | Mapa Interativo (Home) | Implementar componente de mapa (Leaflet/Capacitor) que carrega pins com base na geolocalização do backend. |
 | **RF-28.3** | Pins Dinâmicos | Os pins devem ser renderizados apenas para estabelecimentos com `is_active=True`. |
 | **RF-28.4** | Drawer de Resumo (Bottom Sheet) | Ao clicar em um pin, abrir um menu inferior (Drawer) exibindo Foto (Logo), Nome, Endereço e botão "Ver Serviços". |
+| **RF-28.5** | Precisão B2B no Mapa (UX) | No painel B2B, a validação de mapa via Nominatim só deve sobrescrever coordenadas se estas estiverem vazias ou forem apagadas intencionalmente; coordenadas persistidas devem ter prioridade de renderização. |
 
 > [!NOTE]
 > **O que é um Drawer (ou Bottom Sheet)?**
@@ -37,6 +38,7 @@
 | :--- | :--- | :--- |
 | **RNF-01** | Performance do Mapa | O mapa deve carregar e renderizar pins em menos de 1 segundo para até 50 estabelecimentos visíveis. |
 | **RNF-02** | UX (Touch Friendly) | O Drawer de resumo deve ser deslizável (swipe up/down) seguindo o padrão mobile nativo. |
+| **RNF-03** | Bypass de Cache Restrito | Requisições HTTP para obter os pontos de mapa (B2C) devem ser forçadas com `Cache-Control: no-cache` e `Pragma: no-cache` para refletir imediatamente atualizações espaciais, sendo o CORS B2B compatível. |
 
 ### 1.4 Endpoints RESTful e Dependências de Backend
 - **GET** `/api/publico/estabelecimentos/` - Retorna lista com `nome`, `slug`, `latitude`, `longitude` e `logo`.

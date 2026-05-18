@@ -22,8 +22,8 @@ Estas ferramentas conectam a IA ao nosso banco de conhecimento vetorial (ChromaD
 Automações para facilitar o seu trabalho braçal e gerenciamento de processos.
 
 *   **`start_development_environment` / `stop_development_environment`**
-    *   **O que faz:** Liga (ou desliga) o Backend, Web e Mobile em background, sem travar seu terminal.
-    *   **Como pedir:** *"Ligue o ambiente para mim"* ou *"Desligue apenas o frontend mobile."*
+    *   **O que faz:** Liga (ou desliga) o Backend, Web (Gestão), Mobile B2B (Funcionário) e Mobile B2C (Cliente) em background, sem travar seu terminal.
+    *   **Como pedir:** *"Ligue o ambiente para mim"* ou *"Desligue apenas os frontends mobiles."*
 *   **`generate_sprint_release_draft`**
     *   **O que faz:** Puxa via GitHub CLI todas as PRs mergeadas e gera um arquivo Markdown de Release com os créditos (ex: `@WandersonAMello`).
     *   **Como pedir:** *"Gere o draft da Release 3.0.0 com foco em Portal do Cliente."*
@@ -37,7 +37,7 @@ Ferramentas que garantem que o Ecossistema converse o mesmo idioma.
     *   **O que faz:** Rastreador dinâmico! Procura chamadas `fetch/axios` nos projetos Web/Mobile e cruza com as URLs oficiais do Django para ver se alguma rota frontend vai retornar Erro 404.
     *   **Como pedir:** *"Verifique se todos os endpoints chamados no front existem no backend."*
 *   **`sync_typescript_models`**
-    *   **O que faz:** Lê o OpenAPI do Django e transcreve todas as tipagens exatas para as pastas do Angular (`web`) e do Ionic (`mobile`).
+    *   **O que faz:** Lê o OpenAPI do Django e transcreve todas as tipagens exatas para as pastas do Angular (`web`) e dos aplicativos Ionic (`mobile` e `mobile-cliente`).
     *   **Como pedir:** *"Atualize as interfaces do TypeScript baseado no backend atual."*
 
 ---
@@ -64,7 +64,7 @@ Ferramentas para interagir com o Django sem precisar abrir Shell manualmente.
 Mantém o Angular e o Ionic respeitando o "Lava-Me Design System".
 
 *   **`list_web_components` / `list_mobile_components`**
-    *   **O que faz:** Lista os componentes de UI existentes para a IA reutilizar (Botões, Modais, Cards) em vez de recriar do zero com código CSS sujo.
+    *   **O que faz:** Lista os componentes de UI existentes para a IA reutilizar (Botões, Modais, Cards) nos projetos Web, Mobile e Mobile-Cliente em vez de recriar do zero com código CSS sujo.
     *   **Como pedir:** *"Quais componentes de UI eu posso usar na tela X?"*
 *   **`read_web_standard` / `read_mobile_standard`**
     *   **O que faz:** A IA consulta os padrões absolutos de pastas e estado global aprovados pela equipe.
@@ -75,7 +75,7 @@ Mantém o Angular e o Ionic respeitando o "Lava-Me Design System".
 Ferramentas usadas nos fluxos de auditoria e revisão de Pull Requests.
 
 *   **`run_backend_tests` / `run_web_tests` / `run_frontend_tests`**
-    *   **O que faz:** Roda as baterias unitárias em cada módulo.
+    *   **O que faz:** Roda as baterias unitárias em cada módulo. (A ferramenta `run_frontend_tests` agora engloba a execução na pasta `mobile-cliente` também).
 *   **`generate_backend_coverage`**
     *   **O que faz:** Levanta a porcentagem exata de linhas testadas (Coverage) pelo pytest-cov.
     *   **Como pedir:** *"Rode a cobertura de testes do backend para vermos nossa nota de qualidade."*

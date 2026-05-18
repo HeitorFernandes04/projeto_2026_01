@@ -134,7 +134,40 @@ python manage.py runserver 8080
 
 ---
 
-## Gerenciamento de Dependências
+## Frontends (Web e Mobile)
+
+O ecossistema possui três aplicações frontend independentes. É necessário abrir uma nova aba de terminal para cada um deles.
+
+### 1. Painel Web (Angular - Gestor)
+Responsável pela interface administrativa (B2B).
+```bash
+cd web
+npm install
+npm start
+```
+> O painel web estará disponível em: `http://localhost:4200`
+
+### 2. App Mobile (Ionic/React - Funcionário)
+Responsável pela esteira de lavagem (B2B).
+```bash
+cd mobile
+npm install
+npm run dev
+```
+> O app mobile B2B estará disponível em: `http://localhost:5173`
+
+### 3. App Mobile Cliente (Ionic/React - Cliente)
+Responsável pela descoberta e agendamento (B2C).
+```bash
+cd mobile-cliente
+npm install
+npm run dev
+```
+> O app mobile B2C estará disponível em: `http://localhost:5174`
+
+---
+
+## Gerenciamento de Dependências (Backend)
 
 ### Gerar novo `requirements.txt`
 
