@@ -135,7 +135,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-25: Retorna histórico de OSs do cliente autenticado, separando ativos e concluídos. */
+        /** @description RF-25: Retorna OSs do cliente autenticado por titularidade veiculo__cliente. */
         get: operations["cliente_historico_retrieve"];
         put?: never;
         post?: never;
@@ -152,7 +152,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-26: Retorna somente midias publicas da OS finalizada do cliente. */
+        /** @description RF-26: Retorna galeria publica da OS finalizada integrada ao historico RF-25. */
         get: operations["cliente_historico_galeria_retrieve"];
         put?: never;
         post?: never;
@@ -169,6 +169,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description RF-25: Painel B2C filtrado por Veiculo.cliente, com reparo por telefone normalizado. */
         get: operations["cliente_painel_retrieve"];
         put?: never;
         post?: never;
@@ -693,38 +694,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/ordens-servico/tags-peca/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ordens_servico_tags_peca_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/ordens-servico/tags-peca/{id}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ordens_servico_tags_peca_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/publico/agendamento/disponibilidade/": {
         parameters: {
             query?: never;
@@ -825,6 +794,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description RF-25: Painel B2C filtrado por Veiculo.cliente, com reparo por telefone normalizado. */
         get: operations["publico_historico_retrieve"];
         put?: never;
         post?: never;
@@ -2024,47 +1994,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    ordens_servico_tags_peca_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagPeca"][];
-                };
-            };
-        };
-    };
-    ordens_servico_tags_peca_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Um valor inteiro único que identifica este tag peca. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagPeca"];
-                };
             };
         };
     };

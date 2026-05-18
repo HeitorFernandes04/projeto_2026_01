@@ -6,13 +6,12 @@ from .views import (
     OrdemServicoDetailView, CriarOrdemServicoView,
     AvancarEtapaView, FinalizarIndustrialView,
     FotoUploadView, ServicoListView, HorariosLivresView,
-    registrar_incidente, TagPecaViewSet, KanbanAPIView,
+    registrar_incidente, KanbanAPIView,
     HistoricoGestorListView, HistoricoGestorFotosView,
     EntradasRecentesAPIView,
 )
 
 router = DefaultRouter()
-router.register(r'tags-peca', TagPecaViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

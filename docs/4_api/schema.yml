@@ -964,47 +964,6 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/ordens-servico/tags-peca/:
-    get:
-      operationId: ordens_servico_tags_peca_list
-      tags:
-      - ordens-servico
-      security:
-      - jwtAuth: []
-      - cookieAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TagPeca'
-          description: ''
-  /api/ordens-servico/tags-peca/{id}/:
-    get:
-      operationId: ordens_servico_tags_peca_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: Um valor inteiro único que identifica este tag peca.
-        required: true
-      tags:
-      - ordens-servico
-      security:
-      - jwtAuth: []
-      - cookieAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TagPeca'
-          description: ''
   /api/publico/agendamento/disponibilidade/:
     get:
       operationId: publico_agendamento_disponibilidade_retrieve
