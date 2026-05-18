@@ -312,10 +312,67 @@
                  maxlength="18" required>
           <small class="form-hint">Formato: 00.000.000/0000-00</small>
         </div>
+        <!-- Endereço multi-campos com ViaCEP -->
         <div class="form-group">
-          <label for="endereco">Endereço Completo</label>
-          <input type="text" id="endereco" [(ngModel)]="unidade.endereco_completo" placeholder="Rua das Flores, 123 - Centro - São Paulo - SP">
+          <label for="cep">CEP</label>
+          <div class="cep-row">
+            <input type="text" id="cep" [(ngModel)]="endCep" placeholder="00000-000" maxlength="9"
+                   (input)="formatarCEP($event)" (blur)="buscarViaCEP()">
+            <button type="button" class="btn-buscar-cep" (click)="buscarViaCEP()" [disabled]="buscandoCep">
+              {{ buscandoCep ? 'Buscando...' : 'Buscar CEP' }}
+            </button>
+          </div>
+          @if (erroViaCep) { <small class="form-error">{{ erroViaCep }}</small> }
         </div>
+        <div class="form-row-2col">
+          <div class="form-group">
+            <label for="logradouro">Logradouro</label>
+            <input type="text" id="logradouro" [(ngModel)]="endLogradouro" placeholder="Av. das Flores">
+          </div>
+          <div class="form-group form-group--numero">
+            <label for="numero">Número</label>
+            <input type="text" id="numero" [(ngModel)]="endNumero" placeholder="123">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="complemento">Complemento <span class="label-opcional">(opcional)</span></label>
+          <input type="text" id="complemento" [(ngModel)]="endComplemento" placeholder="Sala 2, Galpão B…">
+        </div>
+        <div class="form-row-2col">
+          <div class="form-group">
+            <label for="bairro">Bairro</label>
+            <input type="text" id="bairro" [(ngModel)]="endBairro" placeholder="Centro">
+          </div>
+          <div class="form-group">
+            <label for="cidade">Cidade</label>
+            <input type="text" id="cidade" [(ngModel)]="endCidade" placeholder="São Paulo">
+          </div>
+        </div>
+        <div class="form-group form-group--uf">
+          <label for="estado">UF</label>
+          <input type="text" id="estado" [(ngModel)]="endEstado" placeholder="SP" maxlength="2"
+                 style="text-transform: uppercase">
+        </div>
+
+        <!-- Mapa interativo para confirmar coordenadas -->
+        <div class="mapa-gestor-actions">
+          <button type="button" class="btn-validar-mapa" (click)="validarNoMapa()" [disabled]="buscandoNoMapa">
+            <span class="material-symbols-outlined">map</span>
+            {{ buscandoNoMapa ? 'Localizando...' : 'Validar no Mapa' }}
+          </button>
+          @if (latitudeMapa !== null) {
+            <span class="coordenadas-confirmadas">
+              <span class="material-symbols-outlined">location_on</span>
+              Posição confirmada: {{ latitudeMapa | number:'1.6-6' }}, {{ longitudeMapa | number:'1.6-6' }}
+            </span>
+          }
+        </div>
+        @if (mapaVisivel) {
+          <div class="mapa-gestor-wrapper">
+            <div id="mapa-gestor" class="mapa-gestor-container"></div>
+            <small class="mapa-hint">Arraste o pino para o local exato do lava-jato e confirme.</small>
+          </div>
+        }
         <!-- Logo Management (Side-by-Side Professional Layout) -->
         <div class="form-group">
           <label class="industrial-label">Identidade Visual da Unidade</label>

@@ -468,6 +468,46 @@
         display: flex; flex-direction: column; gap: 10px;
         label { color: #8b949e; font-size: 12px; font-weight: 800; text-transform: uppercase; }
         input { background: #0d1117; border: 1px solid #21262d; border-radius: 16px; padding: 16px 20px; color: #fff; font-size: 14px; font-weight: 600; outline: none; }
+        &--numero { max-width: 140px; }
+        &--uf { max-width: 100px; }
+        .label-opcional { color: #484f58; font-size: 10px; font-weight: 400; text-transform: none; }
+        .form-error { color: #f85149; font-size: 11px; margin-top: 2px; }
+      }
+      .form-row-2col {
+        display: grid; grid-template-columns: 1fr auto; gap: 16px;
+        align-items: start;
+      }
+      .cep-row {
+        display: flex; gap: 12px; align-items: stretch;
+        input { flex: 1; }
+        .btn-buscar-cep {
+          background: #161b22; border: 1px solid #21262d; border-radius: 16px;
+          color: #8b949e; font-size: 12px; font-weight: 800; padding: 0 20px;
+          cursor: pointer; white-space: nowrap;
+          &:hover:not(:disabled) { border-color: #0066ff; color: #0066ff; }
+          &:disabled { opacity: 0.5; cursor: not-allowed; }
+        }
+      }
+      .mapa-gestor-actions {
+        display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        .btn-validar-mapa {
+          display: flex; align-items: center; gap: 8px;
+          background: #161b22; border: 1px solid #21262d; border-radius: 16px;
+          color: #8b949e; font-size: 13px; font-weight: 800; padding: 12px 20px;
+          cursor: pointer;
+          &:hover:not(:disabled) { border-color: #0066ff; color: #0066ff; }
+          &:disabled { opacity: 0.5; cursor: not-allowed; }
+        }
+        .coordenadas-confirmadas {
+          display: flex; align-items: center; gap: 6px;
+          color: #3fb950; font-size: 12px; font-weight: 700;
+          .material-symbols-outlined { font-size: 16px; }
+        }
+      }
+      .mapa-gestor-wrapper {
+        border: 1px solid #21262d; border-radius: 16px; overflow: hidden;
+        .mapa-gestor-container { width: 100%; height: 320px; }
+        .mapa-hint { display: block; padding: 10px 16px; color: #484f58; font-size: 11px; background: #0d1117; }
       }
 
       .booking-link-card {

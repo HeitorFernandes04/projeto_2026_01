@@ -115,7 +115,7 @@ export async function getDisponibilidade(
 }
 
 export async function solicitarOTP(telefone: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/api/publico/auth/solicitar/`, {
+  const res = await fetch(`${BASE_URL}/api/publico/auth/login/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ telefone }),

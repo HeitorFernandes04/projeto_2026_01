@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize, Subscription } from 'rxjs';
+import * as L from 'leaflet';
 import { ServicoService, Servico } from '../../services/servico.service';
 import { EstabelecimentoService, Estabelecimento } from '../../services/estabelecimento.service';
 import { FuncionarioService, Funcionario } from '../../services/funcionario.service';
@@ -47,6 +48,25 @@ export class SetupComponent implements OnInit, OnDestroy {
   logoPreview: string | null = null;
   logoRemovida: boolean = false;
   defaultLogo = '/logo.jpeg';
+
+  // Campos separados de endereço (Opção B — Frontend Adapter)
+  endCep: string = '';
+  endLogradouro: string = '';
+  endNumero: string = '';
+  endComplemento: string = '';
+  endBairro: string = '';
+  endCidade: string = '';
+  endEstado: string = '';
+  buscandoCep: boolean = false;
+  erroViaCep: string = '';
+
+  // Mapa interativo de validação de coordenadas
+  latitudeMapa: number | null = null;
+  longitudeMapa: number | null = null;
+  mapaVisivel: boolean = false;
+  buscandoNoMapa: boolean = false;
+  private mapInstance: L.Map | null = null;
+  private markerInstance: L.Marker | null = null;
 
   // Estado da Unidade (RF-13 - Dados Reais do Banco)
   unidade: Estabelecimento = {
@@ -117,6 +137,10 @@ export class SetupComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.incidentesService.pararMonitoramentoPendentes();
     this.subscriptions.unsubscribe();
+    if (this.mapInstance) {
+      this.mapInstance.remove();
+      this.mapInstance = null;
+    }
   }
 
   private monitorarIncidentesPendentes() {
@@ -184,6 +208,9 @@ export class SetupComponent implements OnInit, OnDestroy {
             ...dados,
             cnpj: this.aplicarMascaraCNPJ(dados.cnpj)
           };
+          this.parsearEnderecoCompleto(dados.endereco_completo ?? '');
+          if (dados.latitude != null) this.latitudeMapa = dados.latitude;
+          if (dados.longitude != null) this.longitudeMapa = dados.longitude;
           this.atualizarLinkAgendamento();
         }
         this.cdRef.detectChanges();
@@ -325,7 +352,7 @@ export class SetupComponent implements OnInit, OnDestroy {
    * Salva dados da unidade (RF-13 + RF-21)
    * Usa FormData para suportar upload de logo junto com os dados cadastrais.
    */
-  async salvarUnidade() {
+  salvarUnidade() {
     this.erroUnidade = '';
     this.sucessoUnidade = '';
 
@@ -342,30 +369,14 @@ export class SetupComponent implements OnInit, OnDestroy {
 
     this.salvandoUnidade = true;
 
-    const endereco = this.unidade.endereco_completo?.trim() ?? '';
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-
-    if (endereco) {
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(endereco)}`;
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        const data: Array<{ lat: string; lon: string }> = await res.json();
-        if (data.length > 0) {
-          latitude = parseFloat(data[0].lat);
-          longitude = parseFloat(data[0].lon);
-        }
-      } catch {
-        // Geocodificação falhou — coordenadas omitidas sem bloquear o save
-      }
-    }
+    const endereco = this.montarEnderecoCompleto();
 
     const formData = new FormData();
     formData.append('nome_fantasia', this.unidade.nome_fantasia.trim());
     formData.append('cnpj', cnpjLimpo);
     formData.append('endereco_completo', endereco);
-    if (latitude !== null) formData.append('latitude', String(latitude));
-    if (longitude !== null) formData.append('longitude', String(longitude));
+    if (this.latitudeMapa !== null) formData.append('latitude', String(this.latitudeMapa));
+    if (this.longitudeMapa !== null) formData.append('longitude', String(this.longitudeMapa));
 
     if (this.logoParaUpload) {
       formData.append('logo', this.logoParaUpload);
@@ -603,6 +614,106 @@ export class SetupComponent implements OnInit, OnDestroy {
     const valorComMascara = this.aplicarMascaraCNPJ(input.value);
     this.unidade.cnpj = valorComMascara;
     input.value = valorComMascara; // Força atualização visual
+  }
+
+  formatarCEP(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let val = input.value.replace(/\D/g, '').slice(0, 8);
+    if (val.length > 5) val = val.slice(0, 5) + '-' + val.slice(5);
+    this.endCep = val;
+    input.value = val;
+  }
+
+  async buscarViaCEP(): Promise<void> {
+    const cepLimpo = this.endCep.replace(/\D/g, '');
+    if (cepLimpo.length !== 8) return;
+    this.buscandoCep = true;
+    this.erroViaCep = '';
+    this.cdRef.detectChanges();
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await res.json() as { erro?: boolean; logradouro: string; bairro: string; localidade: string; uf: string };
+      if (data.erro) { this.erroViaCep = 'CEP não encontrado.'; return; }
+      if (data.logradouro) this.endLogradouro = data.logradouro;
+      if (data.bairro) this.endBairro = data.bairro;
+      if (data.localidade) this.endCidade = data.localidade;
+      if (data.uf) this.endEstado = data.uf;
+    } catch {
+      this.erroViaCep = 'Erro ao consultar ViaCEP.';
+    } finally {
+      this.buscandoCep = false;
+      this.cdRef.detectChanges();
+    }
+  }
+
+  parsearEnderecoCompleto(endereco: string): void {
+    if (!endereco.trim()) return;
+    const partes = endereco.split(', ');
+    if (partes.length < 5) { this.endLogradouro = endereco; return; }
+    this.endCep = partes[partes.length - 1].trim();
+    const cidadeUf = partes[partes.length - 2].split(' - ');
+    this.endCidade = cidadeUf[0]?.trim() ?? '';
+    this.endEstado = cidadeUf[1]?.trim() ?? '';
+    this.endBairro = partes[partes.length - 3].trim();
+    this.endLogradouro = partes[0].trim();
+    this.endNumero = partes[1].trim();
+    this.endComplemento = partes.length >= 6 ? partes.slice(2, partes.length - 3).join(', ') : '';
+  }
+
+  montarEnderecoCompleto(): string {
+    const cepFormatado = this.endCep.replace(/\D/g, '').replace(/^(\d{5})(\d{3})$/, '$1-$2');
+    const cidadeUf = [this.endCidade.trim(), this.endEstado.trim()].filter(Boolean).join(' - ');
+    const partes = [
+      this.endLogradouro.trim(),
+      this.endNumero.trim(),
+      ...(this.endComplemento.trim() ? [this.endComplemento.trim()] : []),
+      this.endBairro.trim(),
+      cidadeUf,
+      cepFormatado,
+    ].filter(Boolean);
+    return partes.join(', ');
+  }
+
+  async validarNoMapa(): Promise<void> {
+    const endereco = this.montarEnderecoCompleto();
+    if (!endereco.trim()) {
+      this.erroUnidade = 'Preencha o endereço antes de validar no mapa.';
+      return;
+    }
+    this.buscandoNoMapa = true;
+    this.erroUnidade = '';
+    let lat = -15.7801;
+    let lng = -47.9292;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(endereco)}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const data = await res.json() as Array<{ lat: string; lon: string }>;
+      if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+    } catch { /* geocodificação falhou — usa centro padrão */ }
+    finally { this.buscandoNoMapa = false; this.cdRef.detectChanges(); }
+    this.mapaVisivel = true;
+    this.cdRef.detectChanges();
+    setTimeout(() => this.inicializarMapa(lat, lng), 100);
+  }
+
+  private inicializarMapa(lat: number, lng: number): void {
+    if (this.mapInstance) { this.mapInstance.remove(); this.mapInstance = null; this.markerInstance = null; }
+    const el = document.getElementById('mapa-gestor');
+    if (!el) return;
+    this.mapInstance = L.map(el).setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(this.mapInstance);
+    this.markerInstance = L.marker([lat, lng], { draggable: true }).addTo(this.mapInstance);
+    this.markerInstance.bindPopup('Arraste para o local exato do lava-jato').openPopup();
+    this.latitudeMapa = lat;
+    this.longitudeMapa = lng;
+    this.markerInstance.on('dragend', () => {
+      const pos = this.markerInstance!.getLatLng();
+      this.latitudeMapa = pos.lat;
+      this.longitudeMapa = pos.lng;
+      this.cdRef.detectChanges();
+    });
   }
 
   aplicarMascaraCNPJ(v: string): string {
