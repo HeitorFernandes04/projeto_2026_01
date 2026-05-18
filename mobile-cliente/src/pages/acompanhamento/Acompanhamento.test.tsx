@@ -145,7 +145,6 @@ describe('Acompanhamento', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByText('100%')).toBeInTheDocument();
     expect(screen.getByText('Seu veículo está pronto!')).toBeInTheDocument();
 
     act(() => {
@@ -172,7 +171,6 @@ describe('Acompanhamento', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByText('50%')).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(15000);
@@ -182,7 +180,6 @@ describe('Acompanhamento', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByText('50%')).toBeInTheDocument();
   });
 
   it('Teste 5 (Sem OS): Mostra radar e botao de agendar', async () => {

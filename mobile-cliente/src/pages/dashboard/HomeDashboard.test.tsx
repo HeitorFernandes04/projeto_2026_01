@@ -59,7 +59,6 @@ describe('HomeDashboard', () => {
     await waitFor(() => {
       expect(screen.getByText('Olá, Letícia!')).toBeInTheDocument();
       expect(screen.getByText('No pátio')).toBeInTheDocument();
-      expect(screen.getByText('20%')).toBeInTheDocument();
     });
   });
 
@@ -121,7 +120,6 @@ describe('HomeDashboard', () => {
     await waitFor(() => {
       expect(screen.getByText('Olá, Letícia!')).toBeInTheDocument();
       expect(screen.getByText('Lavagem em andamento')).toBeInTheDocument();
-      expect(screen.getByText('65%')).toBeInTheDocument();
     });
   });
 

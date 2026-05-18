@@ -45,6 +45,7 @@ export interface OrdemServico {
   estabelecimento_nome: string;
   data_agendamento: string;
   horario: string;
+  data_hora?: string;
   valor: number;
   status: string;
   veiculo_placa: string;
@@ -175,11 +176,68 @@ export const updateVeiculo = (id: number, data: Partial<Omit<Veiculo, 'id'>>) =>
 export const getOrdens = () =>
   http.get<OrdemServico[]>('/api/cliente/ordens/');
 
-export const getOrdemAtiva = () =>
-  http.get<OrdemAtiva | null>('/api/cliente/ordens/ativa/');
+export const getOrdemAtiva = async (): Promise<OrdemAtiva | null> => {
+  const painel = await getPainelCliente();
+  const ativos = painel.ativos ?? [];
+  const todayStr = new Date().toISOString().split('T')[0];
 
-export const getAcompanhamento = (osId: number) =>
-  http.get<AcompanhamentoData>(`/api/operacao/acompanhamento/${osId}/`);
+  if (ativos.length === 0) return null;
+
+  // 1. Prioridade para ordens que já estão em execução
+  const emExecucao = ativos.filter(a => 
+    ['VISTORIA_INICIAL', 'EM_EXECUCAO', 'LIBERACAO', 'BLOQUEADO_INCIDENTE'].includes(a.status)
+  );
+
+  let ativo: any = null;
+
+  if (emExecucao.length > 0) {
+    // Pega a mais antiga (primeira agendada)
+    ativo = emExecucao.sort((a, b) => a.data_hora.localeCompare(b.data_hora))[0];
+  } else {
+    // 2. Se nenhuma está em execução, procura as que estão no PÁTIO hoje
+    const noPatioHoje = ativos.filter(a => {
+      if (a.status !== 'PATIO') return false;
+      const dateStr = a.data_hora.split('T')[0];
+      return dateStr === todayStr;
+    });
+
+    if (noPatioHoje.length > 0) {
+      // Pega a com horário mais próximo/antigo (a primeira do dia)
+      ativo = noPatioHoje.sort((a, b) => a.data_hora.localeCompare(b.data_hora))[0];
+    }
+  }
+
+  if (!ativo) return null;
+
+  return {
+    id: ativo.id,
+    servico_nome: ativo.servico_nome,
+    estabelecimento_nome: ativo.estabelecimento.nome_fantasia,
+    veiculo_placa: ativo.veiculo_placa,
+    veiculo_modelo: ativo.veiculo_modelo,
+    status: ativo.status,
+    progresso: ativo.etapa_atual,
+    tempo_estimado_min: null,
+    data_hora: ativo.data_hora
+  };
+};
+
+export const getAcompanhamento = async (osId: number) => {
+  const res = await getPainelCliente();
+  const ativos = res.ativos;
+  const historico = res.historico ?? [];
+  
+  const ativa = ativos.find(a => a.id === osId) || historico.find(a => a.id === osId);
+  
+  if (!ativa) {
+    throw new Error('Ordem não encontrada no painel.');
+  }
+  
+  return {
+    etapa_atual: ativa.etapa_atual,
+    status: ativa.status
+  } as AcompanhamentoData;
+};
 
 export const getHistorico = async () => {
   const res = await http.get<{ data: { historico: OrdemServico[] } }>('/api/shared/historico/');
@@ -194,8 +252,8 @@ export const createAgendamento = (data: AgendamentoPayload) =>
   http.post<OrdemServico>('/api/cliente/agendamentos/', data);
 
 export interface GaleriaHistorico {
-  entrada: { id: number; momento: string; arquivo: string }[];
-  finalizacao: { id: number; momento: string; arquivo: string }[];
+  entrada: { id: number; momento: string; arquivo_url: string }[];
+  finalizacao: { id: number; momento: string; arquivo_url: string }[];
   laudo_tecnico: {
     servico_realizado: string;
     tempo_execucao_minutos: number | null;

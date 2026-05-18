@@ -68,6 +68,18 @@ const Historico: React.FC = () => {
     return alertCircleOutline;
   };
 
+  const formatarData = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const formatarHora = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <IonPage className="historico-page">
       <IonHeader className="ion-no-border veiculo-header">
@@ -127,7 +139,7 @@ const Historico: React.FC = () => {
                   <div className="hist-details-body">
                     <div className="hist-info-row">
                       <IonIcon icon={calendarOutline} />
-                      <span>{os.data_agendamento} às {os.horario}</span>
+                      <span>{os.data_agendamento || formatarData(os.data_hora)} às {os.horario || formatarHora(os.data_hora)}</span>
                     </div>
                     <div className="hist-info-row">
                       <IonIcon icon={locationOutline} />

@@ -87,9 +87,9 @@ const Detalhes: React.FC<DetalhesProps> = ({ ordem, onClose }) => {
                   <div 
                     key={foto.id} 
                     className="detalhes-image-wrapper interactive-photo"
-                    onClick={() => setFotoAmpliada(foto.arquivo)}
+                    onClick={() => setFotoAmpliada(foto.arquivo_url)}
                   >
-                    <img src={foto.arquivo} alt="Vistoria Inicial" className="detalhes-img-render" />
+                    <img src={foto.arquivo_url} alt="Vistoria Inicial" className="detalhes-img-render" />
                   </div>
                 ))
               )}
@@ -111,9 +111,9 @@ const Detalhes: React.FC<DetalhesProps> = ({ ordem, onClose }) => {
                   <div 
                     key={foto.id} 
                     className="detalhes-image-wrapper interactive-photo"
-                    onClick={() => setFotoAmpliada(foto.arquivo)}
+                    onClick={() => setFotoAmpliada(foto.arquivo_url)}
                   >
-                    <img src={foto.arquivo} alt="Entrega Final" className="detalhes-img-render" />
+                    <img src={foto.arquivo_url} alt="Entrega Final" className="detalhes-img-render" />
                   </div>
                 ))
               )}

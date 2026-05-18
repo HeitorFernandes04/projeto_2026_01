@@ -364,3 +364,28 @@
   font-size: 20px;
   color: #0F172A;
 }
+
+/* ── ANIMAÇÃO DE SUCESSO NO CARD DE AVISO ── */
+.success-animation-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+}
+
+.pulse-circle {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(52, 211, 153, 0.2);
+  animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  70% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(0.8); opacity: 0; }
+}

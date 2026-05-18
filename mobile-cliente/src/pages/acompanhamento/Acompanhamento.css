@@ -483,3 +483,19 @@
   50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(56, 189, 248, 0.4); }
   100% { transform: scale(1); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); }
 }
+
+/* ── ANIMAÇÃO DE ENTRADA ── */
+.fade-in-slide-up {
+  animation: fadeInSlideUp 0.8s ease-out forwards;
+}
+
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

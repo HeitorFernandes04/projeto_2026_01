@@ -9,6 +9,8 @@ import {
 import { useHistory } from 'react-router-dom';
 import {
   timeOutline,
+  carOutline,
+  cubeOutline,
 } from 'ionicons/icons';
 import { getOrdemAtiva, getAcompanhamento } from '../../services/api';
 import './Acompanhamento.css';
@@ -57,7 +59,7 @@ const Acompanhamento: React.FC = () => {
       setProgresso(data.status === 'FINALIZADO' ? 100 : data.etapa_atual);
       setStatus(data.status);
       setIsIncidente(data.status === 'BLOQUEADO_INCIDENTE');
-      
+
       if (data.status === 'FINALIZADO') {
         setFinalizado(true);
         pararPolling();
@@ -71,7 +73,7 @@ const Acompanhamento: React.FC = () => {
     setSemOS(false);
     setAgendamentoFuturo(false);
     setDadosFuturo(null);
-    
+
     getOrdemAtiva()
       .then(ativa => {
         if (!ativa) {
@@ -171,10 +173,10 @@ const Acompanhamento: React.FC = () => {
               <div className="glow-square square-1"></div>
               <div className="glow-square square-2"></div>
               <div className="glow-square square-3"></div>
-              
+
               <div className="car-container">
                 <svg className="abstract-car" viewBox="0 0 100 100" width="100" height="100">
-                  <path d="M 5,60 L 15,60 C 15,50 25,50 25,60 L 65,60 C 65,50 75,50 75,60 L 95,60 C 97,55 97,50 95,45 C 90,35 80,35 75,35 C 70,35 60,15 50,15 L 30,15 C 20,15 15,30 10,40 L 5,50 Z" fill="none" stroke="#38BDF8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M 5,60 L 15,60 C 15,50 25,50 25,60 L 65,60 C 65,50 75,50 75,60 L 95,60 C 97,55 97,50 95,45 C 90,35 80,35 75,35 C 70,35 60,15 50,15 L 30,15 C 20,15 15,30 10,40 L 5,50 Z" fill="none" stroke="#38BDF8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                   <circle cx="20" cy="60" r="5" fill="none" stroke="#38BDF8" strokeWidth="2" />
                   <circle cx="70" cy="60" r="5" fill="none" stroke="#38BDF8" strokeWidth="2" />
                 </svg>
@@ -197,30 +199,21 @@ const Acompanhamento: React.FC = () => {
               <div className="vapor v2"></div>
             </div>
 
-            {/* Barra de Progresso */}
-            <div className="progress-section">
-              <div className="progress-header">
-                <span>Progresso geral</span>
-                <span>{progresso}%</span>
-              </div>
-              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginTop: '8px' }}>
-                <div style={{ width: `${progresso}%`, height: '100%', background: '#38BDF8', borderRadius: '4px', transition: 'width 0.8s ease' }} />
-              </div>
-            </div>
+
 
             {/* Timeline Cards */}
             <div className="timeline-cards">
               {ETAPAS.map((etapa, i) => {
                 const concluida = i < statusIndex || finalizado;
                 const atual = !finalizado && i === statusIndex;
-                
+
                 return (
                   <div key={etapa.status} className={`timeline-card ${concluida ? 'concluida' : ''} ${atual ? 'atual' : ''}`}>
                     <div className="card-icon-container">
                       {concluida ? (
                         <div className="icon-success">
                           <svg viewBox="0 0 24 24" width="16" height="16">
-                            <path d="M5 13l4 4L19 7" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M5 13l4 4L19 7" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </div>
                       ) : (
@@ -236,7 +229,7 @@ const Acompanhamento: React.FC = () => {
                 );
               })}
             </div>
-            
+
             {/* Banner de Sucesso */}
             {finalizado && (
               <div style={{ marginTop: '20px', background: 'rgba(52, 211, 153, 0.1)', color: '#34D399', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
