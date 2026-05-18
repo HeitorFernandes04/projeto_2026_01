@@ -79,6 +79,14 @@ describe('IncidentesService', () => {
     expect(options.headers.get('Authorization')).toBe('Bearer token_web_teste');
   });
 
+  it('deve consultar o endpoint comparativo side-by-side do gestor', () => {
+    service.obterComparativo(11).subscribe();
+
+    const [url, options] = mockHttpClient.get.mock.calls[0];
+    expect(url).toBe('/api/gestao/incidentes/11/comparativo/');
+    expect(options.headers.get('Authorization')).toBe('Bearer token_web_teste');
+  });
+
   it('deve enviar a nota de resolucao para o endpoint de desbloqueio', () => {
     service.resolverIncidente(11, 'Conferido e liberado.').subscribe();
 

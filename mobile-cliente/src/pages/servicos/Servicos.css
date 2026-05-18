@@ -1,0 +1,201 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SERVICOS SCREEN — Fidelidade Visual ao Protótipo Figma
+   Paleta: Dark Premium (Slate/Sky)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --sv-bg: #0F172A;
+  --sv-card: #1E293B;
+  --sv-primary: #38BDF8;
+  --sv-foreground: #F1F5F9;
+  --sv-muted: #94A3B8;
+  --sv-border: rgba(255, 255, 255, 0.1);
+  --sv-radius: 24px;
+}
+
+.sv-page {
+  --background: var(--sv-bg);
+  background: var(--sv-bg);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Header & Toolbar ── */
+.sv-header {
+  --background: var(--sv-card);
+  background: var(--sv-card);
+}
+
+.sv-toolbar {
+  --background: var(--sv-card);
+  --border-width: 0;
+}
+
+.sv-title {
+  color: var(--sv-foreground);
+  font-weight: 700;
+}
+
+.sv-back-button {
+  color: var(--sv-foreground);
+  --color: var(--sv-foreground);
+}
+
+.sv-content {
+  --background: transparent;
+}
+
+.sv-estab {
+  color: var(--sv-muted);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  font-weight: 500;
+  padding: 0 8px;
+}
+
+.sv-carregando {
+  color: var(--sv-muted);
+  text-align: center;
+  padding: 32px 0;
+}
+
+/* ── Cards de Serviço ── */
+.sv-card {
+  background: var(--sv-card);
+  border-radius: var(--sv-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.sv-card-ativo {
+  border-color: var(--sv-primary);
+}
+
+.sv-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sv-nome {
+  color: var(--sv-foreground);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ── Radio / Check button ── */
+.sv-radio {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.sv-radio-ativo {
+  border-color: var(--sv-primary);
+  background: var(--sv-primary);
+}
+
+.sv-check-icon {
+  color: #0F172A;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.sv-descricao {
+  color: var(--sv-muted);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.sv-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sv-preco {
+  color: var(--sv-primary);
+  font-size: 20px; /* text-xl equivalente */
+  font-weight: 800;
+}
+
+.sv-duracao {
+  color: var(--sv-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ── Footer Fixo (Painel de Checkout) ── */
+.sv-checkout {
+  background: var(--sv-card);
+  border-top: 1px solid var(--sv-border);
+  padding: 20px 24px 32px;
+}
+
+.sv-checkout-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sv-checkout-total-label {
+  color: var(--sv-foreground);
+  font-size: 14px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.sv-checkout-total-valor {
+  color: var(--sv-foreground);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.sv-checkout-duracao {
+  color: var(--sv-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ── Botão Continuar ── */
+.sv-btn-continuar {
+  width: 100%;
+  height: 64px;
+  border-radius: var(--sv-radius);
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.sv-btn-continuar:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.sv-btn-continuar:not(:disabled) {
+  background: var(--sv-primary);
+  color: #0F172A;
+  box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3);
+  cursor: pointer;
+}
+
+.sv-btn-continuar:not(:disabled):active {
+  transform: scale(0.98);
+}

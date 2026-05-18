@@ -128,40 +128,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/cliente/historico/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description RF-25: Retorna histórico de OSs do cliente autenticado, separando ativos e concluídos. */
-        get: operations["cliente_historico_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/cliente/historico/{id}/galeria/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description RF-26: Retorna somente midias publicas da OS finalizada do cliente. */
-        get: operations["cliente_historico_galeria_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/cliente/painel/": {
         parameters: {
             query?: never;
@@ -169,6 +135,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description RF-25: Painel B2C filtrado por Veiculo.cliente, com reparo por telefone normalizado. */
         get: operations["cliente_painel_retrieve"];
         put?: never;
         post?: never;
@@ -275,6 +242,23 @@ export interface paths {
          *     RF-19: Dashboard Executivo Básico
          */
         get: operations["gestao_gestor_dashboard_indicadores_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gestao/incidentes/{id}/comparativo/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description RF-31: GET /api/gestao/incidentes/{id}/comparativo/. */
+        get: operations["gestao_incidentes_comparativo_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -540,57 +524,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/ordens-servico/gestor/historico/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description GET /api/ordens-servico/gestor/historico/ */
-        get: operations["ordens_servico_gestor_historico_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/ordens-servico/gestor/historico/{id}/fotos/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description GET /api/ordens-servico/gestor/historico/{id}/fotos/ */
-        get: operations["ordens_servico_gestor_historico_fotos_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/ordens-servico/historico/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description GET /api/ordens-servico/historico/ */
-        get: operations["ordens_servico_historico_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/ordens-servico/hoje/": {
         parameters: {
             query?: never;
@@ -825,7 +758,42 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description RF-25: Painel B2C filtrado por Veiculo.cliente, com reparo por telefone normalizado. */
         get: operations["publico_historico_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/historico/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description RF-31: GET /api/shared/historico/. */
+        get: operations["shared_historico_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/historico/{id}/galeria/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description RF-31: GET /api/shared/historico/{id}/galeria/. */
+        get: operations["shared_historico_galeria_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -841,10 +809,9 @@ export interface components {
         /**
          * @description * `GESTOR` - Gestor
          *     * `LAVADOR` - Lavador
-         *     * `DETALHISTA` - Detalhista
          * @enum {string}
          */
-        CargoEnum: "GESTOR" | "LAVADOR" | "DETALHISTA";
+        CargoEnum: "GESTOR" | "LAVADOR";
         /**
          * @description * `INTERNO` - Interno
          *     * `EXTERNO` - Externo
@@ -875,6 +842,10 @@ export interface components {
             /** Format: uri */
             logo?: string | null;
             readonly logo_url: string;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
         };
         /**
          * @description Exposição pública e segura do Estabelecimento para o Portal de Autoagendamento.
@@ -898,6 +869,10 @@ export interface components {
             /** Format: uri */
             logo?: string | null;
             readonly logo_url: string;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
         };
         Funcionario: {
             readonly id: number;
@@ -951,6 +926,10 @@ export interface components {
             /** Format: uri */
             logo?: string | null;
             readonly logo_url?: string;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
         };
         PatchedIncidentePendente: {
             readonly id?: number;
@@ -1216,44 +1195,6 @@ export interface operations {
             };
         };
     };
-    cliente_historico_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    cliente_historico_galeria_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     cliente_painel_retrieve: {
         parameters: {
             query?: never;
@@ -1387,6 +1328,26 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    gestao_incidentes_comparativo_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1863,62 +1824,6 @@ export interface operations {
             };
         };
     };
-    ordens_servico_gestor_historico_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ordens_servico_gestor_historico_fotos_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ordens_servico_historico_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     ordens_servico_hoje_retrieve: {
         parameters: {
             query?: never;
@@ -2168,6 +2073,44 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    shared_historico_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    shared_historico_galeria_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;

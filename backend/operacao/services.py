@@ -9,6 +9,7 @@ from django.utils import timezone
 from PIL import Image
 from core.models import Servico, Veiculo, TagPeca, VistoriaItem
 from accounts.models import Estabelecimento, Cliente
+from operacao.constants import STATUS_ATIVOS, STATUS_HISTORICO, HISTORICO_CLIENTE_LIMITE
 from operacao.models import OrdemServico, MidiaOrdemServico, IncidenteOS
 
 # Constantes de negócio
@@ -94,7 +95,7 @@ class OrdemServicoService:
     """Serviço responsável pelas operações de criação e transição de Ordens de Serviço."""
 
     @staticmethod
-    def listar_historico_por_periodo(estabelecimento, data_inicial, data_final, status='todos'):
+    def listar_historico_por_periodo(estabelecimento, data_inicial, data_final, status='todos', funcionario=None):
         """RF-10: Lista histórico por estabelecimento (Axioma 5 - Multi-tenancy)."""
         if data_inicial > data_final:
             raise ValidationError("A data inicial não pode ser maior que a data final.")
@@ -106,21 +107,33 @@ class OrdemServicoService:
         }
         if status and status != 'todos':
             filtros['status'] = status
+        if funcionario is not None:
+            filtros['funcionario'] = funcionario
 
         return OrdemServico.objects.filter(**filtros).select_related('veiculo', 'servico', 'funcionario').order_by('-data_hora')
 
     @staticmethod
     def verificar_conflito(estabelecimento, data_hora, duracao):
         """Valida se o slot está disponível e não é retroativo com isolamento SaaS."""
-        if data_hora < timezone.now():
+        # RF-22: Validação de horário retroativo com margem de segurança (Grace Period)
+        # Permite 5 minutos de atraso entre o envio do Mobile e o processamento no Servidor
+        if data_hora < (timezone.now() - datetime.timedelta(minutes=5)):
             raise ValidationError('Não é possível agendar para uma data ou horário retroativo.')
 
         fim = data_hora + duracao
         
         # Trava Rígida (REQUISITOS_RF22_HORARIOS.pdf - 1.2)
-        limite_operacional = data_hora.replace(hour=18, minute=0, second=0, microsecond=0)
+        hora_fechamento = getattr(estabelecimento, 'horario_fechamento', None) or HORARIO_FECHAMENTO
+        limite_operacional = data_hora.replace(
+            hour=hora_fechamento.hour, minute=hora_fechamento.minute,
+            second=0, microsecond=0,
+        )
         if fim > limite_operacional:
-            raise ValidationError(f"O serviço ultrapassa o limite operacional das 18:00 (Término previsto: {fim.strftime('%H:%M')}).")
+            raise ValidationError(
+                f"O serviço ultrapassa o limite operacional das "
+                f"{hora_fechamento.strftime('%H:%M')} "
+                f"(Término previsto: {fim.strftime('%H:%M')})."
+            )
 
         # Isolamento SaaS: verifica conflitos apenas no mesmo estabelecimento
         conflitos = OrdemServico.objects.filter(
@@ -190,26 +203,29 @@ class OrdemServicoService:
                 raise ValueError(f"Ação negada: mínimo de 5 fotos de vistoria exigidas. (Atual: {contagem_fotos})")
 
             os.status = 'VISTORIA_INICIAL'
+            os.etapa_atual = 20
             os.laudo_vistoria = dados.get('laudo_vistoria', '')
             os.save()
 
         # ETAPA 2: VISTORIA_INICIAL → EM_EXECUCAO (operador inicia lavagem)
         elif status_atual == 'VISTORIA_INICIAL':
             os.status = 'EM_EXECUCAO'
+            os.etapa_atual = 50
             os.horario_lavagem = agora
             os.comentario_lavagem = dados.get('comentario_lavagem', '')
             os.save()
 
-        # ETAPA 3: EM_EXECUCAO sub-fase lavagem → acabamento (status permanece EM_EXECUCAO)
-        elif status_atual == 'EM_EXECUCAO' and not os.horario_acabamento:
-            os.horario_acabamento = agora
+        # ETAPA 3: EM_EXECUCAO → LIBERACAO (RF-27/RF-30: etapa de acabamento removida)
+        elif status_atual == 'EM_EXECUCAO':
+            os.status = 'LIBERACAO'
+            os.etapa_atual = 80
             os.save()
 
-        # ETAPA 4: EM_EXECUCAO (acabamento concluído) → LIBERACAO
-        elif status_atual == 'EM_EXECUCAO' and os.horario_acabamento:
-            os.comentario_acabamento = dados.get('comentario_acabamento', '')
-            os.status = 'LIBERACAO'
-            os.save()
+        else:
+            raise ValueError(
+                f"Não é possível avançar a etapa de uma OS com status '{status_atual}'. "
+                "Use finalizar_ordem_servico_industrial para concluir uma OS em LIBERACAO."
+            )
 
         return os
 
@@ -230,6 +246,7 @@ class OrdemServicoService:
             raise ValueError("A vaga de saída é obrigatória.")
 
         os.status = 'FINALIZADO'
+        os.etapa_atual = 100
         os.vaga_patio = dados.get('vaga_patio')
         os.horario_finalizacao = timezone.now()
         os.observacoes = dados.get('observacoes', os.observacoes)
@@ -282,6 +299,40 @@ class OrdemServicoService:
             veiculo.save(update_fields=['cliente'])
 
         # Cria a Ordem de Serviço inicial no Pátio
+        return OrdemServico.objects.create(
+            estabelecimento=estabelecimento,
+            veiculo=veiculo,
+            servico=servico,
+            data_hora=dados['data_hora'],
+            status='PATIO'
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def criar_agendamento_cliente(dados, cliente):
+        """RF-23: Cria agendamento para cliente logado garantindo integridade e atomicidade."""
+        estabelecimento = Estabelecimento.objects.filter(slug=dados['slug'], is_active=True).first()
+        if not estabelecimento:
+            raise ValidationError("Estabelecimento não encontrado")
+        
+        servico = Servico.objects.filter(id=dados['servico_id'], estabelecimento=estabelecimento).first()
+        if not servico:
+            raise ValidationError("Serviço não encontrado")
+
+        veiculo = Veiculo.objects.filter(id=dados['veiculo_id'], cliente=cliente).first()
+        if not veiculo:
+            raise ValidationError("Veículo não encontrado ou não pertence ao cliente.")
+
+        # LOCK PESSIMISTA
+        Estabelecimento.objects.select_for_update().get(id=estabelecimento.id)
+
+        # Validação de disponibilidade
+        OrdemServicoService.verificar_conflito(
+            estabelecimento,
+            dados['data_hora'], 
+            datetime.timedelta(minutes=servico.duracao_estimada_minutos)
+        )
+
         return OrdemServico.objects.create(
             estabelecimento=estabelecimento,
             veiculo=veiculo,
@@ -351,6 +402,86 @@ class HistoricoGestorService:
             'estado_meio':    [m for m in midias if m.momento == 'EXECUCAO'],
             'estado_final':   [m for m in midias if m.momento == 'FINALIZADO'],
         }
+
+
+class HistoricoUnificadoService:
+    """RF-31: ponto unico de consulta de historico por perfil autenticado."""
+
+    PERFIL_CLIENTE = 'CLIENTE'
+    PERFIL_GESTOR = 'GESTOR'
+    PERFIL_FUNCIONARIO = 'FUNCIONARIO'
+
+    @classmethod
+    def identificar_perfil(cls, user):
+        if hasattr(user, 'perfil_cliente'):
+            return cls.PERFIL_CLIENTE
+        if hasattr(user, 'perfil_gestor'):
+            return cls.PERFIL_GESTOR
+        if hasattr(user, 'perfil_funcionario'):
+            return cls.PERFIL_FUNCIONARIO
+        raise PermissionDenied("Usuario sem perfil habilitado para consultar historico.")
+
+    @staticmethod
+    def listar_painel_cliente(user):
+        cliente = user.perfil_cliente
+        base_qs = (
+            OrdemServico.objects
+            .filter(veiculo__cliente=cliente)
+            .select_related('veiculo', 'servico', 'estabelecimento')
+            .order_by('-data_hora')
+        )
+
+        historico_qs = base_qs.filter(status__in=STATUS_HISTORICO)
+        total_historico = historico_qs.count()
+
+        return {
+            'cliente_nome': user.name,
+            'ativos': base_qs.filter(status__in=STATUS_ATIVOS),
+            'historico': historico_qs[:HISTORICO_CLIENTE_LIMITE],
+            'historico_meta': {
+                'total': total_historico,
+                'limit': HISTORICO_CLIENTE_LIMITE,
+                'has_more': total_historico > HISTORICO_CLIENTE_LIMITE,
+            },
+        }
+
+    @staticmethod
+    def listar_historico_gestor(user, filtros):
+        return HistoricoGestorService.listar_historico_gestor(
+            estabelecimento=user.perfil_gestor.estabelecimento,
+            data_inicio=filtros.get('data_inicio'),
+            data_fim=filtros.get('data_fim'),
+            placa=filtros.get('placa'),
+            status=filtros.get('status'),
+            com_incidente_resolvido=filtros.get('com_incidente_resolvido', False),
+        )
+
+    @staticmethod
+    def listar_historico_funcionario(user, filtros):
+        return OrdemServicoService.listar_historico_por_periodo(
+            estabelecimento=user.perfil_funcionario.estabelecimento,
+            data_inicial=filtros['data_inicial'],
+            data_final=filtros['data_final'],
+            status=filtros.get('status', 'todos'),
+        )
+
+    @staticmethod
+    def montar_galeria_por_perfil(ordem_servico_id, user):
+        perfil = HistoricoUnificadoService.identificar_perfil(user)
+
+        if perfil == HistoricoUnificadoService.PERFIL_CLIENTE:
+            return perfil, ClienteGaleriaService.montar_galeria_pos_venda(
+                ordem_servico_id=ordem_servico_id,
+                cliente=user.perfil_cliente,
+            )
+
+        if perfil == HistoricoUnificadoService.PERFIL_GESTOR:
+            return perfil, HistoricoGestorService.montar_galeria_os(
+                ordem_servico_id,
+                user.perfil_gestor.estabelecimento,
+            )
+
+        raise PermissionDenied("A galeria do historico esta disponivel apenas para Cliente ou Gestor.")
 
 
 class ClienteGaleriaService:
@@ -491,6 +622,35 @@ class IncidenteService:
             .first()
         )
         return incidente
+
+    @staticmethod
+    def montar_comparativo(incidente_id, estabelecimento):
+        incidente = get_object_or_404(
+            IncidenteOS.objects.select_related(
+                'ordem_servico__veiculo',
+                'ordem_servico__servico',
+                'tag_peca',
+            ),
+            id=incidente_id,
+        )
+
+        if incidente.ordem_servico.estabelecimento_id != estabelecimento.id:
+            raise PermissionDenied("Este incidente nao pertence ao seu estabelecimento.")
+
+        fotos_entrada = (
+            MidiaOrdemServico.objects
+            .filter(
+                ordem_servico=incidente.ordem_servico,
+                momento__in=('VISTORIA_GERAL', 'AVARIA_PREVIA', 'ENTRADA'),
+            )
+            .order_by('id')[:MAX_FOTOS_POR_MOMENTO]
+        )
+
+        return {
+            'incidente': incidente,
+            'ordem_servico': incidente.ordem_servico,
+            'entrada': list(fotos_entrada),
+        }
 
     @staticmethod
     def resolver_incidente(incidente_id, estabelecimento, gestor_user, observacoes_resolucao):

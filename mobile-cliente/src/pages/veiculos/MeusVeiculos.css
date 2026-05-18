@@ -1,0 +1,230 @@
+/* ═══════════════════════════════════════════════════════════════════
+   VEICULOS SCREEN — Grid de Espaçamentos Calibrados (Fidelidade Figma)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --veic-bg: #0F172A;
+  --veic-card: #1E293B;
+  --veic-primary: #38BDF8;
+  --veic-foreground: #F8FAFC;
+  --veic-muted: #64748B;
+  --veic-radius: 24px;
+}
+
+.veiculo-page {
+  --background: var(--veic-bg) !important;
+  background: var(--veic-bg) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Força o fundo cinza do retângulo superior do Figma no Header do Ionic */
+.veiculo-header {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+}
+
+/* Container do Toolbar com fundo cinza do Figma e respiro do celular */
+.veiculo-toolbar-fluid {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+  --border-width: 0;
+  padding-top: 44px !important;   /* Altura para a barra de status do celular */
+  padding-bottom: 20px !important; /* Espaçamento interno do retângulo cinza */
+}
+
+/* Alinhamento lateral perfeito de 24px igual ao Figma */
+.header-content-fluid {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* Título equilibrado e limpo */
+.veiculo-title-premium {
+  color: #F8FAFC !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 32px !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+
+/* Subtítulo fosco vindo do Figma */
+.veiculo-subtitle-premium {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  margin-top: 4px !important;
+  margin-bottom: 0 !important;
+}
+
+.veiculo-content-premium {
+  --background: #0F172A !important;
+}
+
+/* ── ALTERAÇÃO: Container com mais respiro e margens simétricas ── */
+.veiculos-main-container {
+  display: flex;
+  flex-direction: column;
+  /* AUMENTADO: padding-top foi para 32px para descer a lista de cards com harmonia */
+  padding: 32px 24px 40px 24px;
+  box-sizing: border-box;
+}
+
+.veiculos-lista-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Cards dos veículos cadastrados */
+.veiculo-card-interactive {
+  background: var(--veic-card);
+  border-radius: var(--veic-radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.card-left-box {
+  width: 64px;
+  height: 64px;
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--veic-primary);
+  flex-shrink: 0;
+}
+
+.card-center-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-vehicle-title {
+  color: var(--veic-foreground);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.card-mini-grid {
+  display: flex;
+  gap: 32px;
+}
+
+.grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.column-label {
+  color: var(--veic-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.column-value {
+  color: var(--veic-foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-right-chevron {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── ALTERAÇÃO: Botão de Adição com mais afastamento ── */
+.btn-add-vehicle-premium {
+  width: 100%;
+  background: var(--veic-primary);
+  color: #0F172A;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--veic-radius);
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  /* AUMENTADO: de 8px para 24px para criar um intervalo elegante abaixo dos cards */
+  margin-top: 24px;
+  box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25);
+  cursor: pointer;
+}
+
+.btn-add-vehicle-premium .btn-icon {
+  font-size: 22px;
+}
+
+/* Caixa informativa de rodapé */
+.footer-tip-box-premium {
+  background: var(--veic-card);
+  border-radius: var(--veic-radius);
+  padding: 20px;
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  text-align: center;
+  margin-top: 16px;
+}
+
+.footer-tip-box-premium p {
+  color: var(--veic-muted);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  box-sizing: border-box;
+}
+
+.empty-radar-box {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+}
+
+.empty-radar-icon {
+  font-size: 40px;
+  color: var(--veic-primary);
+}
+
+.empty-title {
+  color: var(--veic-foreground);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.empty-subtitle {
+  color: var(--veic-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 32px;
+  max-width: 300px;
+}

@@ -13,7 +13,7 @@
 * [Sprint 1 — Setup Técnico e Experiência do Operacional](#sprint-1--setup-técnico-e-experiência-do-operacional)
 * [Sprint 2 — Gestão e Controle Operacional](#sprint-2--gestão-e-controle-operacional)
 * [Sprint 3 — Experiência do Cliente](#sprint-3--experiência-do-cliente)
-* [Sprint 4 — Comunicação, Fechamento e Setup Final](#sprint-4--comunicação-fechamento-e-setup-final)
+* [Sprint 4 — Refatoração, Isolamento e Apps Independentes](#sprint-4--refatoração-isolamento-e-apps-independentes)
 
 ---
 
@@ -318,17 +318,17 @@ Responsáveis: ---
 
 ### TRILHA 1: Motor de Agendamento e Conversão (Public Facing)
 
-### RF-21 · Portal de Autoagendamento (Web)
+### RF-21 · Aplicativo Mobile de Agendamento
 
 **Como** cliente final,
-**quero** acessar um link público do lava-jato e visualizar os serviços disponíveis,
-**para** iniciar a minha marcação sem precisar instalar um aplicativo.
+**quero** utilizar um aplicativo dedicado para visualizar os serviços disponíveis,
+**para** iniciar a minha marcação de forma rápida e segura.
 
 **Critérios de Aceitação:**
 
-* [x] Endpoint público (`AllowAny`) que recebe a referência do estabelecimento e retorna dados de contato, logo e serviços ativos.
+* [x] Endpoint que recebe a referência do estabelecimento e retorna dados de contato, logo e serviços ativos.
 * [ ] O endpoint nunca deve expor dados financeiros ou de funcionários do local.
-* [x] Interface mobile-first desenvolvida para rodar diretamente via navegador.
+* [x] Interface mobile-first desenvolvida como base para o aplicativo B2C.
 
 Responsáveis: ---
 
@@ -404,95 +404,105 @@ Responsáveis: ---
 
 Responsáveis: ---
 
-## Sprint 4 — Comunicação, Fechamento e Setup Final
+## Sprint 4 — Refatoração, Isolamento e Apps Independentes
 
-> **Objetivo:** Automatizar a comunicação transacional para reduzir faltas, parametrizar regras de negócio da agenda e implementar o fluxo de checkout financeiro.
+> **Objetivo:** Implementar o desmembramento total do sistema em aplicativos independentes (B2C e B2B), refatorar o núcleo de dados para otimização da esteira de produção e garantir a blindagem de segurança da API.
 
 ---
 
-### TRILHA 1: Automação e Mensageria (Async)
+### TRILHA 1: Infraestrutura e Núcleo de Dados
 
-### RF-27 · Mensageria Transacional (Confirmação e Lembrete)
+### RF-27 · Refatoração do Core e Banco de Dados
 
-**Como** sistema operacional,
-**quero** disparar mensagens automáticas para o cliente final,
-**para** confirmar sua marcação e lembrá-lo do horário do serviço.
-
-**Critérios de Aceitação:**
-
-* [ ] Gatilho imediato de envio de confirmação quando a OS é criada.
-* [ ] Gatilho de lembrete agendado para execução prévia ao horário do atendimento.
-* [ ] Processamento executado obrigatoriamente através de fila assíncrona (ex: Celery) para evitar travamento da API.
-
-Responsáveis: ---
-
-### RF-28 · Gatilho de Pós-Venda (Aviso de Término)
-
-**Como** sistema operacional,
-**quero** notificar o cliente automaticamente quando o veículo estiver pronto,
-**para** avisá-lo sobre a liberação e direcioná-lo para avaliar o resultado.
+**Como** desenvolvedor,
+**quero** ajustar a estrutura de dados para suportar a nova esteira de produção e campos de progresso real-time,
+**para** habilitar as funcionalidades de acompanhamento do cliente e agilidade do operador.
 
 **Critérios de Aceitação:**
+* [ ] Inclusão do campo `etapa_atual` (integer 0-100) na tabela `OrdemServico`.
+* [ ] Migração para remover a obrigatoriedade de campos de `ACABAMENTO` na transição de estados.
+* [ ] Otimização de queries de listagem para reduzir overhead no dashboard gestor.
 
-* [ ] Gatilho disparado na transição de status da Ordem de Serviço para `FINALIZADO`.
-* [ ] Mensagem contendo um link direto ou indicativo para a galeria pública de transparência (RF-26).
+Responsáveis: Maurício Monteiro
 
-Responsáveis: ---
+---
 
-### TRILHA 2: Setup de Agenda e Motor de Reservas
+### TRILHA 2: App Mobile Cliente (B2C)
 
-### RF-29 · Gestão de Horários de Funcionamento
+### RF-28 · App Cliente: Arquitetura e Mapa
+
+**Como** cliente final,
+**quero** um aplicativo mobile dedicado com visualização de estabelecimentos em mapa,
+**para** localizar lava-jatos próximos e iniciar meu agendamento de forma intuitiva.
+
+**Critérios de Aceitação:**
+* [ ] Setup do novo projeto `mobile-cliente` (Ionic/React) com isolamento total de dependências do app B2B.
+* [ ] Implementação de tela de busca com integração Google Maps API.
+* [ ] Listagem de estabelecimentos com filtros de distância e serviços.
+
+Responsáveis: Heitor Fernandes
+
+### RF-29 · App Cliente: Jornada e Checkout
+
+**Como** cliente final,
+**quero** realizar meu agendamento via fluxo mobile com autenticação simplificada (OTP),
+**para** garantir minha reserva e acompanhar o progresso do serviço em tempo real.
+
+**Critérios de Aceitação:**
+* [ ] Implementação do fluxo de Login via WhatsApp (OTP).
+* [ ] Fluxo de agendamento em 3 etapas (Veículo -> Serviço -> Horário).
+* [ ] Tela de acompanhamento com barra de progresso animada consumindo o campo `etapa_atual`.
+
+Responsáveis: Letícia Gomes Lopes
+
+---
+
+### TRILHA 3: App Mobile Operacional (B2B)
+
+### RF-30 · Refatoração UX Operacional B2B
+
+**Como** operador de pista,
+**quero** uma interface de esteira simplificada e o fluxo de "Entrada Rápida",
+**para** agilizar o registro de veículos no pátio e pular etapas burocráticas de acabamento.
+
+**Critérios de Aceitação:**
+* [ ] Implementação do botão "Entrada Rápida" na Home.
+* [ ] Máquina de estados no App pulando automaticamente o status `ACABAMENTO`.
+* [ ] Renomeação de todas as labels "Avulso" para "Entrada Rápida".
+
+Responsáveis: Lucas José
+
+---
+
+### TRILHA 4: Backend e Qualidade
+
+### RF-31 · Unificação de APIs e Segurança
+
+**Como** desenvolvedor,
+**quero** unificar os endpoints de histórico e corrigir vulnerabilidades de segurança,
+**para** reduzir o débito técnico e proteger os dados contra acessos não autorizados.
+
+**Critérios de Aceitação:**
+* [ ] Consolidação de ViewSets de histórico em um endpoint unificado `/api/shared/historico/`.
+* [ ] Correção de vulnerabilidades críticas reportadas pelo `npm audit`.
+* [ ] Implementação de auditoria "Side-by-Side" no Painel Web (fotos de entrada vs incidente).
+
+Responsáveis: Marcos Barbosa
+
+---
+
+### TRILHA 5: Gestão Financeira
+
+### RF-32 · Painel Financeiro Básico (Web)
 
 **Como** gestor,
-**quero** definir os dias e horários em que meu lava-jato está aberto,
-**para** limitar o autoagendamento a blocos úteis e impedir reservas de madrugada.
+**quero** visualizar um resumo simples do faturamento por período,
+**para** acompanhar a saúde financeira do meu negócio sem precisar de planilhas externas.
 
 **Critérios de Aceitação:**
-
-* [ ] Configuração de abertura, fechamento e horário de almoço por dia da semana no Estabelecimento.
-* [ ] Integração com o Motor de Disponibilidade (RF-22) para invalidar horários fora do expediente comercial estabelecido.
+* [ ] Card de totalização exibindo a soma das Ordens de Serviço finalizadas no período.
+* [ ] Tabela de transações detalhando Data, Veículo, Serviço e Valor.
+* [ ] Filtros de data (Inicial/Final) para consulta de períodos específicos.
+* [ ] Botão de exportação para PDF (Relatório de Fechamento).
 
 Responsáveis: ---
-
-### RF-30 · Bloqueio Manual de Agenda (Exceções)
-
-**Como** gestor,
-**quero** bloquear um dia inteiro ou período específico na agenda,
-**para** lidar com feriados locais, falta de água ou manutenções.
-
-**Critérios de Aceitação:**
-
-* [ ] Inserção de bloqueios temporais associados à grade do estabelecimento.
-* [ ] O autoagendamento web passa a reconhecer e devolver ausência de vagas durante o período bloqueado.
-
-Responsáveis: ---
-
-### TRILHA 3: Checkout Operacional (PDV Básico)
-
-### RF-31 · Fechamento de Conta e Checkout da OS
-
-**Como** operador de caixa ou gestor,
-**quero** confirmar o recebimento do pagamento antes de fechar o atendimento,
-**para** garantir o controle do caixa diário.
-
-**Critérios de Aceitação:**
-
-* [ ] Na transição de Liberação para Finalizado, exibir o `valor_cobrado` base vindo do serviço.
-* [ ] Permitir ajuste manual do valor para aplicação de descontos ou cobranças extras.
-* [ ] Registrar o método de pagamento antes de processar a conclusão definitiva da OS.
-
-Responsáveis: ---
-
-### RF-32 · Extrato de Fechamento de Caixa Diário
-
-**Como** gestor,
-**quero** visualizar um resumo financeiro do dia agrupado por método de pagamento,
-**para** realizar a conciliação do caixa físico.
-
-**Critérios de Aceitação:**
-
-* [ ] Consulta ao valor total de todas as Ordens de Serviço finalizadas na data.
-* [ ] Consolidação agrupando os valores conforme o método de pagamento registrado no RF-31.
-* [ ] Funcionalidade de exportação em PDF ou CSV do relatório diário.
-
-Responsáveis: ```

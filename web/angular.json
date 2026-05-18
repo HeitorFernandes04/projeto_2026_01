@@ -32,7 +32,7 @@
               "src/assets",
               "src/favicon.ico"
             ],
-            "styles": ["src/styles.scss"]
+            "styles": ["src/styles.scss", "node_modules/leaflet/dist/leaflet.css"]
           },
           "configurations": {
             "production": {
@@ -44,8 +44,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "16kB",
+                  "maximumError": "32kB"
                 }
               ],
               "outputHashing": "all"

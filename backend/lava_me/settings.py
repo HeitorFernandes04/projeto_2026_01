@@ -76,6 +76,9 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_RATES': {
+        'auth_b2c': '100/min',
+    }
 }
 
 SPECTACULAR_SETTINGS = {
@@ -170,7 +173,14 @@ AUTH_USER_MODEL = 'accounts.User'
 
 LOGIN_URL = '/'
 
+from corsheaders.defaults import default_headers
+
 CORS_ORIGIN_ALLOW_ALL = os.environ.get('CORS_ALLOW_ALL', 'True') == 'True'
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'cache-control',
+    'pragma',
+]
 
 LOGGING = {
     'version': 1,
@@ -204,5 +214,17 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'agendamento_publico': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'django_cache',
+    }
 }

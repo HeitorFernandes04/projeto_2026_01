@@ -1,0 +1,197 @@
+/* ═══════════════════════════════════════════════════════════════════
+   PROFILE SCREEN — Alinhamento Premium Dark Fiel ao Figma (Foto 16)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.perfil-page-premium {
+  --background: #0F172A !important;
+  background: #0F172A !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Header com fundo Slate (#1E293B) conforme o protótipo */
+.perfil-header-premium {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+}
+
+.perfil-toolbar-fluid {
+  --background: #1E293B !important;
+  background: #1E293B !important;
+  --border-width: 0;
+  padding-top: 44px !important;    /* Espaço para a barra de status do celular */
+  padding-bottom: 24px !important;  /* Margem interna para dar robustez */
+}
+
+.perfil-title-premium {
+  color: #FFFFFF !important;
+  font-size: 24px !important;
+  font-weight: 700;
+  margin: 0 0 24px 0 !important;
+  padding: 0 24px;
+  letter-spacing: -0.02em;
+}
+
+/* Row do Perfil com Avatar em Destaque */
+.perfil-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+}
+
+.perfil-avatar-circle {
+  width: 72px;
+  height: 72px;
+  background: #38BDF8 !important;   /* Fundo Azul Celeste do Figma */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.perfil-avatar-circle ion-icon {
+  font-size: 32px;
+  color: #FFFFFF !important;        /* Ícone Branco do Usuário */
+}
+
+.perfil-avatar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.avatar-user-name {
+  color: #FFFFFF !important;
+  font-size: 20px !important;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.avatar-user-date {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 14px;
+  margin: 0;
+}
+
+.perfil-content-premium {
+  --background: #0F172A !important;
+}
+
+/* Container Principal do Formulário */
+.perfil-main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 24px 40px 24px;    /* Margens alinhadas a 24px */
+  box-sizing: border-box;
+}
+
+.perfil-section-block {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Subtítulos de Seção em Caixa Alta Cinza */
+.perfil-section-label {
+  color: #64748B;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px 4px;
+}
+
+/* Cards Premium de Itens em Linha */
+.perfil-item-card {
+  background: #1E293B;
+  border-radius: 24px;             /* Cantos suavizados em 24px */
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.01);
+  cursor: pointer;
+}
+
+.card-item-left-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(56, 189, 248, 0.12); /* Box translúcido Sky Blue */
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #38BDF8;
+  flex-shrink: 0;
+}
+
+.card-item-center-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-label {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.item-value {
+  color: #F8FAFC;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.card-item-right-chevron {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+}
+
+/* Card customizado e translúcido para Sair da Conta */
+.btn-logout-outline {
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  background: rgba(239, 68, 68, 0.02) !important;
+}
+
+.logout-icon-box {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #EF4444 !important;
+}
+
+.item-label-logout {
+  color: #EF4444;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Rodapé Informativo da Versão */
+.perfil-footer-version {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+  margin-top: 16px;
+}
+
+.version-code {
+  color: #64748B;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.version-tagline {
+  color: rgba(100, 116, 139, 0.6);
+  font-size: 12px;
+  margin: 0;
+}

@@ -33,8 +33,8 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.funcionario)
 
-    def test_criar_ordem_servico_avulso_com_sucesso(self):
-        """Valida a criação de um ordem_servico 'na hora' (AVULSO)."""
+    def test_criar_ordem_servico_entrada_rapida_com_sucesso(self):
+        """Valida a criação de um ordem_servico 'na hora' (ENTRADA RÁPIDA)."""
         # Garante horário comercial (08:00-17:00) para evitar falhas intermitentes
         agora = timezone.now()
         if agora.hour < 8:
@@ -180,6 +180,14 @@ class TestOrdemServicoFluxoAPI(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.data,
+            {
+                'data': {'status': 'OS bloqueada por incidente'},
+                'meta': {},
+                'errors': [],
+            },
+        )
 
         os.refresh_from_db()
         incidente = IncidenteOS.objects.get(ordem_servico=os)
@@ -251,7 +259,7 @@ class TestHistoricoAPI(APITestCase):
         self.funcionario = UserFactory(estabelecimento=self.estabelecimento)
         self.client = APIClient()
         self.client.force_authenticate(user=self.funcionario)
-        self.url = reverse('os-historico')
+        self.url = '/api/shared/historico/'
 
     def test_historico_erro_data_inicial_maior_que_final(self):
         """Valida bloqueio de datas invertidas."""

@@ -1,6 +1,8 @@
 import datetime
 import logging
+import random
 import re
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -37,9 +39,16 @@ class AuthB2CService:
     @staticmethod
     def _emitir_tokens(user):
         refresh = RefreshToken.for_user(user)
+        cliente = getattr(user, 'perfil_cliente', None)
         return {
             'access': str(refresh.access_token),
             'refresh': str(refresh),
+            'usuario': {
+                'id': user.id,
+                'nome': user.name or 'Cliente',
+                'telefone': cliente.telefone_whatsapp if cliente else '',
+                'membro_desde': user.date_joined.isoformat() if hasattr(user, 'date_joined') and user.date_joined else '',
+            }
         }
 
     @staticmethod
@@ -122,6 +131,92 @@ class AuthB2CService:
         return AuthB2CService._emitir_tokens(user)
 
     @staticmethod
+    def solicitar_otp(telefone, nome=None):
+
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        if len(telefone_normalizado) < 10:
+            raise ValidationError('Telefone invalido.')
+        
+        # Restrição RF-29: Se não passou o nome, é login direto. Usuário deve estar cadastrado.
+        if not nome:
+            username = AuthB2CService.montar_username(telefone_normalizado)
+            if not User.objects.filter(username=username).exists():
+                raise ValidationError('Usuário não cadastrado. Por favor, cadastre-se primeiro.')
+        
+        # Gerar PIN de 4 dígitos
+        pin = f"{random.randint(0, 9999):04d}"
+        
+        # Armazenar no cache por 5 minutos
+        cache.set(f'otp_{telefone_normalizado}', pin, timeout=300)
+        cache.set(f'otp_nome_{telefone_normalizado}', nome, timeout=300)
+
+        
+        # Logar o PIN (simulando envio de WhatsApp)
+        logger.info(f"RF-29 | OTP gerado para {telefone_normalizado}: {pin}")
+        
+        return {"detail": "PIN enviado com sucesso.", "pin_debug": pin}
+
+    @staticmethod
+    @transaction.atomic
+    def verificar_otp(telefone, pin, current_user=None):
+        telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        cached_pin = cache.get(f'otp_{telefone_normalizado}')
+        
+        if not cached_pin or cached_pin != pin:
+            raise ValidationError('PIN invalido ou expirado.')
+        
+        username = AuthB2CService.montar_username(telefone_normalizado)
+        
+        # Se o usuário já está logado e quer atualizar o telefone
+        if current_user and current_user.is_authenticated:
+            if User.objects.filter(username=username).exclude(id=current_user.id).exists():
+                raise ValidationError('Este número de WhatsApp já está sendo usado por outra conta.')
+                
+            current_user.username = username
+            current_user.email = AuthB2CService.montar_email_fantasma(telefone_normalizado)
+            current_user.save()
+            
+            cliente = current_user.perfil_cliente
+            cliente.telefone_whatsapp = telefone_normalizado
+            cliente.save()
+            
+            # Atualiza o celular_dono dos veículos vinculados para manter a integridade
+            Veiculo.objects.filter(cliente=cliente).update(celular_dono=telefone_normalizado)
+            
+            AuthB2CService._linkar_veiculos_cliente_por_telefone(cliente, telefone_normalizado)
+            
+            cache.delete(f'otp_{telefone_normalizado}')
+            cache.delete(f'otp_nome_{telefone_normalizado}')
+            
+            return AuthB2CService._emitir_tokens(current_user)
+            
+        user = User.objects.filter(username=username).first()
+        
+        if not user:
+            nome = cache.get(f'otp_nome_{telefone_normalizado}') or 'Cliente Lava-Me'
+            user = User.objects.create(
+                email=AuthB2CService.montar_email_fantasma(telefone_normalizado),
+                username=username,
+                name=nome,
+                is_staff=False,
+                is_superuser=False,
+            )
+            user.set_unusable_password()
+            user.save()
+            
+            cliente = Cliente.objects.create(
+                user=user,
+                telefone_whatsapp=telefone_normalizado,
+            )
+            AuthB2CService._linkar_veiculos_cliente_por_telefone(cliente, telefone_normalizado)
+        
+        # Limpar cache
+        cache.delete(f'otp_{telefone_normalizado}')
+        cache.delete(f'otp_nome_{telefone_normalizado}')
+        
+        return AuthB2CService._emitir_tokens(user)
+
+    @staticmethod
     def montar_painel_cliente(user):
         if not hasattr(user, 'perfil_cliente'):
             raise PermissionDenied('Usuario sem perfil de cliente.')
@@ -152,6 +247,7 @@ class AuthB2CService:
                 'status_display': ordem.get_status_display(),
                 'data_hora': ordem.data_hora.isoformat(),
                 'etapa_atual': ordem.etapa_atual if hasattr(ordem, 'etapa_atual') else 0,
+                'tempo_estimado_min': ordem.servico.duracao_estimada_minutos,
                 # RF-24.3: slug exposto apenas para OS em PATIO (canceláveis)
                 'slug_cancelamento': str(ordem.slug_cancelamento) if ordem.status == 'PATIO' and ordem.slug_cancelamento else None,
             }
@@ -175,9 +271,8 @@ class DisponibilidadeService:
             return []
 
         # 2. Definir limites operacionais (RF-22)
-        # Trava rígida de 18:00 conforme REQUISITOS_RF22_HORARIOS.pdf
-        limite_operacional = datetime.time(18, 0)
-        hora_fechamento = min(estabelecimento.horario_fechamento, limite_operacional)
+        # Trava rígida conforme configuração do estabelecimento
+        hora_fechamento = estabelecimento.horario_fechamento
         
         abertura = timezone.make_aware(datetime.datetime.combine(data_alvo, estabelecimento.horario_abertura))
         fechamento = timezone.make_aware(datetime.datetime.combine(data_alvo, hora_fechamento))
@@ -291,3 +386,26 @@ class CancelamentoService:
         )
 
         return os
+
+
+class VeiculoService:
+    CORES_VALIDAS = ['PRETO', 'BRANCO', 'PRATA', 'CINZA', 'VERMELHO', 'AZUL', 'VERDE', 'AMARELO', 'OUTRO']
+    
+    @staticmethod
+    def validar_placa(placa):
+        if not placa:
+            raise ValidationError('A placa é obrigatória.')
+        placa = placa.strip().upper()
+        if not re.match(r'^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$', placa):
+            raise ValidationError('Formato de placa inválido. Use AAA1234 ou AAA1A23.')
+        return placa
+
+    @staticmethod
+    def validar_cor(cor):
+        if not cor:
+            raise ValidationError('A cor é obrigatória.')
+        cor = cor.strip().upper()
+        if cor not in VeiculoService.CORES_VALIDAS:
+            raise ValidationError(f'Cor inválida. Escolha entre: {", ".join(VeiculoService.CORES_VALIDAS)}')
+        return cor
+

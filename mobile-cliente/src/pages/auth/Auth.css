@@ -1,0 +1,311 @@
+/* ═══════════════════════════════════════════════════════════════════
+   AUTH GATE SCREEN — Dark Premium
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --auth-bg: #0F172A;
+  --auth-card: #1E293B;
+  --auth-primary: #38BDF8;
+  --auth-foreground: #F1F5F9;
+  --auth-muted: #94A3B8;
+  --auth-destructive: #EF4444;
+  --auth-radius: 24px;
+}
+
+.auth-page {
+  --background: var(--auth-bg);
+  background: var(--auth-bg);
+  font-family: 'Inter', sans-serif;
+}
+
+.auth-header {
+  --background: var(--auth-card);
+  background: var(--auth-card);
+}
+
+.auth-toolbar {
+  --background: var(--auth-card);
+  --border-width: 0;
+}
+
+.auth-back-button {
+  color: var(--auth-foreground);
+  --color: var(--auth-foreground);
+}
+
+.auth-content {
+  --background: transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 24px;
+  text-align: center;
+  --padding-bottom: 120px;
+}
+
+/* ── Ícone Central (AuthGate) ── */
+.auth-icon-box {
+  width: 96px;
+  height: 96px;
+  background: var(--auth-card);
+  border-radius: var(--auth-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 48px auto 32px;
+  position: relative;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+  animation: pulseGlowAuth 3s ease-in-out infinite;
+}
+
+.auth-icon-box ion-icon {
+  font-size: 48px;
+  color: var(--auth-primary);
+}
+
+/* ── Emoji Superior (LoginWhatsApp) ── */
+.auth-emoji-box {
+  width: 72px;
+  height: 72px;
+  background: var(--auth-card);
+  border-radius: 20px;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px auto 24px;
+  font-size: 32px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+  animation: pulseGlowAuth 3s ease-in-out infinite;
+}
+
+@keyframes pulseGlowAuth {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(56, 189, 248, 0.4);
+  }
+}
+
+/* ── Textos ── */
+.auth-title {
+  color: var(--auth-foreground);
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  line-height: 1.2;
+}
+
+.auth-subtitle {
+  color: var(--auth-muted);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 32px 0;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Formulário (Login WhatsApp) ── */
+.auth-form-group {
+  width: 100%;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.auth-label {
+  display: block;
+  color: var(--auth-muted);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.auth-input-item {
+  --background: var(--auth-card);
+  --border-radius: 16px;
+  --border-width: 1px;
+  --border-color: rgba(56, 189, 248, 0.15);
+  --border-style: solid;
+  --padding-start: 16px;
+  --color: var(--auth-foreground);
+  margin: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.auth-input-item ion-input {
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  font-size: 16px;
+  color: var(--auth-foreground);
+}
+
+.auth-phone-row {
+  display: flex;
+  gap: 12px;
+}
+
+.auth-ddi-box {
+  width: 80px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.auth-phone-box {
+  flex-grow: 1;
+}
+
+/* ── Caixas do OTP (VerificacaoOTP) ── */
+.auth-otp-container {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 32px;
+}
+
+.auth-otp-box {
+  width: 64px;
+  height: 64px;
+  background: var(--auth-card);
+  border: 2px solid rgba(56, 189, 248, 0.15);
+  border-radius: 16px;
+  color: var(--auth-foreground);
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.auth-otp-box:focus {
+  border-color: var(--auth-primary);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.auth-otp-box.otp-erro {
+  border-color: var(--auth-destructive);
+}
+
+.otp-shake {
+  animation: shakeOTP 450ms cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shakeOTP {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+  40%, 60% { transform: translate3d(8px, 0, 0); }
+}
+
+.auth-phone-highlight {
+  color: var(--auth-primary);
+  font-weight: 700;
+}
+
+.auth-timer-text {
+  color: var(--auth-muted);
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.auth-reenviar-btn {
+  background: transparent;
+  border: none;
+  color: var(--auth-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  padding: 8px 16px;
+  transition: opacity 0.2s;
+}
+
+.auth-reenviar-btn:active {
+  opacity: 0.7;
+}
+
+/* ── Alerta Recusa ── */
+.auth-alert-card {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid var(--auth-destructive);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 16px;
+  text-align: left;
+  animation: slideUpFade 0.4s ease-out;
+  width: 100%;
+}
+
+.auth-alert-text {
+  color: var(--auth-destructive);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Footer / Botões ── */
+.auth-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 24px 32px;
+  background: var(--auth-bg);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-btn-primary {
+  width: 100%;
+  height: 64px;
+  border-radius: var(--auth-radius);
+  background: var(--auth-primary);
+  color: #0F172A;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.auth-btn-primary:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.auth-btn-secondary {
+  width: 100%;
+  background: transparent;
+  color: var(--auth-muted);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  padding: 12px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-btn-secondary:active {
+  opacity: 0.7;
+}

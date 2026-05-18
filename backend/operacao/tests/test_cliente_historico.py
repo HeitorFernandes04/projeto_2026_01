@@ -19,6 +19,10 @@ def _auth(client, user):
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(token.access_token)}')
 
 
+def _payload(response):
+    return response.data['data']
+
+
 @pytest.mark.django_db
 class TestClienteHistoricoAPI:
     def setup_method(self):
@@ -31,32 +35,32 @@ class TestClienteHistoricoAPI:
     # --- Acesso e Permissões ---
 
     def test_acesso_sem_autenticacao_retorna_401(self):
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 401
 
-    def test_acesso_como_funcionario_retorna_403(self):
+    def test_acesso_como_funcionario_sem_periodo_retorna_400(self):
         from operacao.tests.factories import UserFactory
         func = UserFactory(estabelecimento=self.est)
         _auth(self.api, func)
-        resp = self.api.get('/api/cliente/historico/')
-        assert resp.status_code == 403
+        resp = self.api.get('/api/shared/historico/')
+        assert resp.status_code == 400
 
     def test_cliente_autenticado_acessa_com_sucesso(self):
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
-        assert 'ativos' in resp.data
-        assert 'historico' in resp.data
-        assert 'cliente_nome' in resp.data
+        assert 'ativos' in _payload(resp)
+        assert 'historico' in _payload(resp)
+        assert 'cliente_nome' in _payload(resp)
 
     # --- Listagem e Filtragem ---
 
     def test_cliente_sem_os_retorna_listas_vazias(self):
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
-        assert resp.data['ativos'] == []
-        assert resp.data['historico'] == []
+        assert _payload(resp)['ativos'] == []
+        assert _payload(resp)['historico'] == []
 
     def test_historico_retorna_apenas_os_do_cliente_autenticado(self):
         OrdemServicoFactory(
@@ -66,11 +70,11 @@ class TestClienteHistoricoAPI:
             status='PATIO',
         )
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
-        assert len(resp.data['ativos']) == 1
+        assert len(_payload(resp)['ativos']) == 1
         # API aplica máscara na placa (TST0004 → TST-0004); comparar sem traço
-        placa_retornada = resp.data['ativos'][0]['veiculo_placa'].replace('-', '')
+        placa_retornada = _payload(resp)['ativos'][0]['veiculo_placa'].replace('-', '')
         assert placa_retornada == self.veiculo.placa
 
     def test_ativos_e_historico_separados_por_status(self):
@@ -96,10 +100,10 @@ class TestClienteHistoricoAPI:
         )
 
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
-        assert len(resp.data['ativos']) == len(status_ativos)
-        assert len(resp.data['historico']) == 2
+        assert len(_payload(resp)['ativos']) == len(status_ativos)
+        assert len(_payload(resp)['historico']) == 2
 
     def test_serializer_contem_campos_esperados(self):
         OrdemServicoFactory(
@@ -109,8 +113,8 @@ class TestClienteHistoricoAPI:
             status='PATIO',
         )
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
-        os_data = resp.data['ativos'][0]
+        resp = self.api.get('/api/shared/historico/')
+        os_data = _payload(resp)['ativos'][0]
         for campo in ['id', 'data_hora', 'status', 'status_display', 'etapa_atual',
                       'servico_nome', 'veiculo_placa', 'veiculo_modelo', 'estabelecimento']:
             assert campo in os_data, f"Campo ausente: {campo}"
@@ -136,11 +140,11 @@ class TestClienteHistoricoAPI:
         )
 
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
         # API aplica máscara (TST0007 → TST-0007); normalizar para comparar
         placas_sem_traco = [p.replace('-', '') for p in
-                            [os['veiculo_placa'] for os in resp.data['ativos']]]
+                            [os['veiculo_placa'] for os in _payload(resp)['ativos']]]
         assert self.veiculo.placa in placas_sem_traco
         assert outro_veiculo.placa not in placas_sem_traco
 
@@ -235,9 +239,9 @@ class TestClienteHistoricoAPI:
             estabelecimento=self.est, veiculo=self.veiculo, servico=self.servico, status='FINALIZADO'
         )
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
-        meta = resp.data['historico_meta']
+        meta = _payload(resp)['historico_meta']
         assert meta['total'] == 1
         assert meta['limit'] == 50
         assert meta['has_more'] is False
@@ -248,14 +252,14 @@ class TestClienteHistoricoAPI:
                 estabelecimento=self.est, veiculo=self.veiculo, servico=self.servico, status='FINALIZADO'
             )
         _auth(self.api, self.cliente.user)
-        with patch('operacao.views.HISTORICO_CLIENTE_LIMITE', 2):
-            resp = self.api.get('/api/cliente/historico/')
+        with patch('operacao.services.HISTORICO_CLIENTE_LIMITE', 2):
+            resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
-        meta = resp.data['historico_meta']
+        meta = _payload(resp)['historico_meta']
         assert meta['total'] == 3
         assert meta['limit'] == 2
         assert meta['has_more'] is True
-        assert len(resp.data['historico']) == 2
+        assert len(_payload(resp)['historico']) == 2
 
     def test_cliente_ve_os_de_multiplos_estabelecimentos(self):
         """RF-25: histórico multicentralizado — OSs de qualquer unidade da rede."""
@@ -269,10 +273,10 @@ class TestClienteHistoricoAPI:
             estabelecimento=outro_est, veiculo=outro_veiculo, servico=outro_servico, status='FINALIZADO'
         )
         _auth(self.api, self.cliente.user)
-        resp = self.api.get('/api/cliente/historico/')
+        resp = self.api.get('/api/shared/historico/')
         assert resp.status_code == 200
-        assert len(resp.data['historico']) == 2
-        slugs = {os['estabelecimento']['slug'] for os in resp.data['historico']}
+        assert len(_payload(resp)['historico']) == 2
+        slugs = {os['estabelecimento']['slug'] for os in _payload(resp)['historico']}
         assert len(slugs) == 2
 
     def test_registro_cliente_rejeita_email_duplicado(self):

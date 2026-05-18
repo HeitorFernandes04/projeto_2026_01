@@ -33,10 +33,12 @@ Para criar a modelagem correta, entenda o terreno atual:
     * **Mobile (Crítico):** Gere os scripts unitários/integração usando `Vitest` + `Ionic/React`. **Proibido iniciar código mobile sem os testes correspondentes (TDD)**.
 
 ### Passo 4: Submissão do Draft
-1. Use `write_to_file` para salvar o seu documento gerado na pasta da Sprint atual (ex: `docs/3_regras_negocio/sprint_3/rfXX_draft.md`). O número do RF deve ser sequencial.
+1. Use `write_to_file` para salvar o seu documento gerado na pasta da Sprint atual (ex: `docs/3_regras_negocio/sprint_atual/rfXX_draft.md`). O número do RF deve ser sequencial.
 2. Apresente ao usuário as principais decisões arquiteturais (quais rotas serão criadas e quais tabelas alteradas).
 3. Aguarde o comando de APROVAÇÃO do usuário.
 
-### Passo 5: Sincronização (Após Aprovação)
-1. Quando o usuário disser "Aprovado", utilize a ferramenta `sync_api_schema` (se aplicável) ou simplesmente comunique que a nova regra agora faz parte do repositório.
-2. Dê sinal verde para iniciar a codificação usando agentes.
+### Passo 5: Sincronização e Preparação TDD (Após Aprovação)
+1. Quando o usuário disser "Aprovado", utilize a ferramenta `sync_api_schema` (se aplicável).
+2. **Mandato TDD Ativo**: Antes de dar o sinal verde para o código, crie o arquivo de teste "esqueleto" (Skeleton Test) baseado nos critérios de aceite definidos no Passo 3.
+   - O arquivo deve conter os nomes das funções de teste e os comentários BDD, mas as asserções devem falhar (`assert False, "Ainda não implementado"`).
+3. Dê sinal verde para iniciar a codificação, instruindo o desenvolvedor a rodar o teste primeiro e vê-lo falhar (Red).

@@ -1,14 +1,23 @@
 from django.urls import path
 from .views import (
     EstabelecimentoPublicoDetailView,
+    EstabelecimentoListaMapaView,
     DisponibilidadeView,
     CancelamentoView,
     AuthB2CSetupView,
     AuthB2CLoginView,
+    AuthB2CWhatsAppView,
+    AuthB2CVerificacaoView,
     PainelClienteView,
 )
 
 urlpatterns = [
+    # RF-28: GET /api/publico/estabelecimentos/ — lista para mapa B2C
+    path(
+        'estabelecimentos/',
+        EstabelecimentoListaMapaView.as_view(),
+        name='estabelecimentos-mapa'
+    ),
     # RF-21: GET /api/publico/estabelecimento/{slug}/
     path(
         'estabelecimento/<slug:slug>/',
@@ -27,9 +36,11 @@ urlpatterns = [
         CancelamentoView.as_view(),
         name='cancelamento-autonomo'
     ),
-    # RF-25: Auth B2C
+    # RF-25/RF-29: Auth B2C
     path('auth/setup/', AuthB2CSetupView.as_view(), name='auth-b2c-setup'),
     path('auth/login/', AuthB2CLoginView.as_view(), name='auth-b2c-login'),
+    path('auth/whatsapp/', AuthB2CWhatsAppView.as_view(), name='auth-b2c-whatsapp'),
+    path('auth/verificacao/', AuthB2CVerificacaoView.as_view(), name='auth-b2c-verificacao'),
     # RF-25: Painel do cliente
     path('historico/', PainelClienteView.as_view(), name='painel-cliente'),
 ]

@@ -1,0 +1,91 @@
+.drawer-content {
+  padding: 12px 20px 32px;
+}
+
+.drawer-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--lm-border);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.drawer-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--lm-border);
+  flex-shrink: 0;
+}
+
+.drawer-header-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawer-nome {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--lm-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.drawer-metricas {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.drawer-metrica {
+  font-size: 13px;
+  color: var(--lm-text-muted);
+  font-weight: 600;
+}
+
+.drawer-endereco {
+  font-size: 14px;
+  color: var(--lm-text-muted);
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.drawer-descricao {
+  font-size: 14px;
+  color: var(--lm-text-muted);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.drawer-acoes {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.drawer-btn-secundario {
+  flex: 1;
+  --border-color: var(--lm-border);
+  --color: var(--lm-text);
+  --border-radius: 20px;
+  height: 56px;
+}
+
+.drawer-btn-primary {
+  flex: 1;
+}

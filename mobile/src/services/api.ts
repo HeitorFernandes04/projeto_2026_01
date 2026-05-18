@@ -5,7 +5,6 @@ const BASE_URL = 'http://127.0.0.1:8000';
 interface DadosAvancoEtapa {
   laudo_vistoria?: string;
   comentario_lavagem?: string;
-  comentario_acabamento?: string;
 }
 
 interface DadosIncidente {
@@ -25,6 +24,20 @@ interface DadosNovaOS {
   data_hora: string;
   observacoes: string;
   iniciar_agora?: boolean;
+}
+
+interface ApiEnvelope<T> {
+  data: T;
+  meta: Record<string, string | number | null | undefined>;
+  errors: Array<{ detail?: string }>;
+}
+
+interface OrdemServicoHistoricoResponse {
+  id: number;
+  veiculo: { placa: string; modelo: string; marca: string };
+  servico: { nome: string; duracao_estimada_minutos: number };
+  horario_finalizacao: string;
+  status: string;
 }
 
 // --- FUNÇÃO BASE DE REQUISIÇÃO ---
@@ -117,14 +130,18 @@ export async function getOrdensServicoHoje() {
 }
 
 /** RF-10 — Lista histórico por período */
-export async function getHistoricoOrdemServico(dataInicial: string, dataFinal: string) {
+export async function getHistoricoOrdemServico(
+  dataInicial: string,
+  dataFinal: string
+): Promise<OrdemServicoHistoricoResponse[]> {
   const params = new URLSearchParams({
     data_inicial: dataInicial,
     data_final: dataFinal,
   });
-  return request(`/api/ordens-servico/historico/?${params.toString()}`, {
+  const response = await request(`/api/shared/historico/?${params.toString()}`, {
     cache: 'no-store',
-  });
+  }) as ApiEnvelope<OrdemServicoHistoricoResponse[]>;
+  return response.data;
 }
 
 /** Busca detalhes de uma OS pelo ID */
@@ -142,12 +159,9 @@ export async function uploadFotos(
   formData.append('momento', momento);
   
   fotoBlobs.forEach((blob, i) => {
-    console.log(`Blob ${i + 1}: tamanho=${blob.size} bytes, tipo=${blob.type}`);
     formData.append('arquivos', blob, `foto_${i + 1}.jpg`);
   });
 
-  console.log(`Enviando FormData para OS ${id}, momento: ${momento}`);
-  console.log('FormData entries:', Array.from(formData.entries()));
 
   return request(`/api/ordens-servico/${id}/fotos/`, {
     method: 'POST',

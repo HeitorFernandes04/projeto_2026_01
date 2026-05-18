@@ -106,11 +106,11 @@ const EstadoLavagem: React.FC<{ ordemServicoId: number; onComplete: () => void; 
       </div>
 
       <div className="el-obs-wrapper">
-        <label className="el-input-label">Observações da Lavagem</label>
+        <label className="el-input-label">Notas de Lavagem e Finalização</label>
         <textarea
           value={observacoes}
           onChange={(e) => setObservacoes(e.target.value)}
-          placeholder="Ex: Utilizado shampoo neutro..."
+          placeholder="Ex: Utilizado shampoo neutro, aplicação de pretinho e revitalizador..."
           className="el-textarea"
         />
       </div>

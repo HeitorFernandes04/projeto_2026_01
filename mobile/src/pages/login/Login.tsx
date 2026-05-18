@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { loginUsuario, getMeuPerfil } from '../../services/api';
 import '../../theme/lava-me.css';
+import logoLavaMe from '../../assets/logo.jpeg';
 
 const Login: React.FC = () => {
   const history = useHistory();
@@ -49,7 +50,7 @@ const Login: React.FC = () => {
           {/* Logo */}
           <div style={styles.logoArea}>
             <div style={styles.logoIconWrap}>
-              <span style={{ fontSize: 40 }}>🚗</span>
+              <img src={logoLavaMe} alt="Lava-Me Logo" style={styles.logoImg} />
             </div>
             <span style={styles.logoText}>Lava-Me</span>
           </div>
@@ -135,12 +136,18 @@ const styles: Record<string, React.CSSProperties> = {
   logoIconWrap: {
     width: 80,
     height: 80,
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #00b4d8, #0096c7)',
+    borderRadius: '16px',
+    overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 0 24px rgba(0,180,216,0.4)',
+    border: '1px solid var(--lm-border)',
+    background: 'var(--lm-card)',
+  },
+  logoImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
   },
   logoText: {
     fontSize: 28,
