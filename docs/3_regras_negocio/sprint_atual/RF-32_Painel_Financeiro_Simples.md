@@ -14,7 +14,7 @@
 | **RF-32.1** | Card de Totalização | Exibir um card em destaque (ex: cor verde) mostrando a soma total em Reais (R$) do faturamento das Ordens de Serviço `FINALIZADAS`. |
 | **RF-32.2** | Listagem de Transações | Tabela simples listando as OS que geraram receita, mostrando: Data de Finalização, Placa/Veículo, Nome do Serviço e Valor Cobrado. Deve incluir uma opção (Toggle/Switch) para ocultar ou exibir os dados do veículo (Placa/Modelo) do relatório em tempo real. |
 | **RF-32.3** | Filtro de Período | Formulário simples com "Data Inicial" (inicializar no 1º dia do mês corrente) e "Data Final" (hoje). Ao alterar as datas, o totalizador e a tabela devem ser atualizados. |
-| **RF-32.4** | Exportação PDF | Botão de "Exportar PDF" que gera um relatório visual de alta qualidade contendo o valor total do período e a tabela de transações usando a biblioteca `jsPDF` no frontend. Se a opção de ocultar veículos estiver ativa, o PDF gerado também não deve exibir os veículos. |
+| **RF-32.4** | Exportação PDF | Botão de "Exportar PDF" que gera um relatório visual de alta qualidade contendo o valor total do período e a tabela de transações usando a biblioteca `jsPDF` no frontend. Se a opção de ocultar veículos estiver ativa, o PDF gerado também não deve exibir os veículos. O PDF deve mostrar o nome do estabelecimento no topo como cabeçalho e o nome do sistema ('Lava-Me') no canto inferior esquerdo do rodapé de cada página, junto à paginação à direita. |
 
 > [!IMPORTANT]
 > **Checklist Técnico - RF-32 (Financeiro Simples):**
@@ -22,7 +22,7 @@
 > - **Cálculo no Banco de Dados (Backend):** A soma total (Faturamento) **NÃO DEVE** ser feita com um `reduce` no Frontend. O backend Django deve usar a função de agregação (`Sum('servico__preco')` ou similar) do ORM para retornar o valor já calculado, garantindo performance.
 > - **Geração de PDF com Alta Qualidade:** Utilizar a biblioteca `jsPDF` no Frontend para construir programaticamente e baixar o relatório.
 > - **Sem Paginação Complexa Inicialmente:** Como o foco é a simplicidade, a tabela pode exibir todas as transações do mês em uma única view, ou adotar a paginação nativa simples do Angular Material/Componente atual.
-> - **Proteção de Rota (Guard Estrito):** A área de gestão administrativa (`/gestao/**`) deve ser de acesso estritamente restrito a usuários com `tipo_perfil === 'GESTOR'`. Qualquer acesso por parte de perfis não autorizados (como funcionários) deve invalidar a sessão (limpar localStorage) e redirecionar imediatamente para a tela de login (`/login`).
+> - **Proteção de Rota (Guard Estrito):** A área de gestão administrativa (`/gestao/**`) deve ser de acesso estritamente restrito a usuários com `tipo_perfil === 'GESTOR'`. Qualquer acesso ou tentativa de login por perfis não autorizados (como funcionários ou clientes) deve invalidar a sessão (limpar localStorage), redirecionar imediatamente para a tela de login (`/login`) e exibir a mensagem: 'Esta área é restrita para gestores.'
 > - **Navegação Fluida:** O acesso à parte financeira é feito por um botão lateral na sidebar do gestor, posicionado abaixo de "Histórico" e acima de "Configurações". A transição deve ser fluida e ocorrer na mesma guia/página através do roteador Single Page Application (SPA) do Angular (sem recarregamento total da página).
 
 ### 1.3 Requisitos Não Funcionais (RNFs)
@@ -33,7 +33,7 @@
 
 ### 1.4 Endpoints RESTful e Dependências de Backend
 - **GET** `/api/gestao/financeiro/resumo/?data_inicio=YYYY-MM-DD&data_fim=YYYY-MM-DD`
-  - **Retorno Esperado:** Payload com chave `total_faturado` e a lista `transacoes`.
+  - **Retorno Esperado:** Payload contendo `total_faturado` (soma total em string), `estabelecimento_nome` (nome do estabelecimento do gestor logado) e a lista `transacoes`.
 - **Dependência:** Nenhuma dependência direta, além do funcionamento do fluxo de conclusão de OS.
 
 ### 1.5 Critérios de Aceitação
@@ -42,8 +42,9 @@
 | **CA-01** | A tela carrega exibindo corretamente a soma dos serviços finalizados a partir do 1º dia do mês corrente. |
 | **CA-02** | Ao mudar o filtro para a data de "Ontem", a tabela e o totalizador são atualizados para refletir apenas aquele dia. |
 | **CA-03** | Ordens de Serviço que estão em status `PATIO` ou `EM_EXECUCAO` não entram na soma financeira, pois ainda não foram pagas/entregues. |
-| **CA-04** | Qualquer usuário sem perfil cadastrado de GESTOR que tentar acessar rotas da área de gestão será desconectado e redirecionado para a tela de login. |
+| **CA-04** | Qualquer usuário sem perfil cadastrado de GESTOR que tentar acessar rotas da área de gestão será desconectado e redirecionado para a tela de login, exibindo a mensagem: "Esta área é restrita para gestores." |
 | **CA-05** | Ao desmarcar a opção "Exibir dados dos veículos no relatório", os dados de placa/modelo desaparecem da tabela e não são impressos no PDF gerado pela biblioteca `jsPDF`. |
+| **CA-06** | A exportação em PDF desenha no topo o nome do estabelecimento (cabeçalho) e o nome do sistema "Lava-Me" no canto inferior esquerdo (rodapé) em todas as páginas do relatório gerado. |
 
 ---
 
