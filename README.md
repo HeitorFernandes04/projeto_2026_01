@@ -276,6 +276,7 @@ ionic serve
 - [x] **Sprint 2** — Gestão e Controle Operacional
 - [x] **Sprint 3** — Experiência do Cliente (Portal Web)
 - [x] **Sprint 4** — Refatoração, Isolamento B2C/B2B e Qualidade
+- [ ] **Fase Final** — Recuperação de Senhas, WhatsApp Real, Polimento UX e Deploy
 - [ ] **Evento Final** — Apresentação pública do produto
 
 ---
