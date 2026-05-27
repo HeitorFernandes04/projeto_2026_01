@@ -1,0 +1,151 @@
+<div class="financeiro-wrapper">
+  
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="title-group">
+      <h1>Painel Financeiro</h1>
+      <p>Gestão de faturamento, transações e relatórios da unidade</p>
+    </div>
+  </div>
+
+  <!-- FILTROS DE DATA -->
+  <div class="search-engine-card">
+    <div class="card-header-inner">
+      <div class="icon-circle">
+        <span class="material-symbols-outlined">calendar_today</span>
+      </div>
+      <div>
+        <h3>Filtro por Período</h3>
+        <p>Defina o intervalo de datas para consolidar o faturamento</p>
+      </div>
+    </div>
+
+    <div class="search-controls-grid">
+      <div class="control-item">
+        <label for="dataInicio">Data de Início</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined pre-icon">date_range</span>
+          <input type="date" id="dataInicio" [(ngModel)]="dataInicio" (change)="buscar()">
+        </div>
+      </div>
+
+      <div class="control-item">
+        <label for="dataFim">Data de Fim</label>
+        <div class="input-box">
+          <span class="material-symbols-outlined pre-icon">date_range</span>
+          <input type="date" id="dataFim" [(ngModel)]="dataFim" (change)="buscar()">
+        </div>
+      </div>
+    </div>
+
+    <div class="search-actions">
+      <button class="btn-limpar" (click)="limpar()">Limpar Filtros</button>
+      <button class="btn-buscar" (click)="buscar()" [disabled]="loading">
+        <span class="material-symbols-outlined">refresh</span>
+        Atualizar
+      </button>
+    </div>
+
+    @if (errorMsg) {
+      <div class="erro-datas">
+        <span class="material-symbols-outlined">error</span>
+        {{ errorMsg }}
+      </div>
+    }
+  </div>
+
+  <!-- LOADING STATE -->
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Carregando dados financeiros...</p>
+    </div>
+  }
+
+  <!-- RESULTADOS FINANCEIROS -->
+  @if (!loading && resumo) {
+    <div>
+      <!-- CARDS DE INDICADORES -->
+      <div class="finance-cards-grid">
+        <div class="f-card primary-card">
+          <div class="card-header">
+            <span class="material-symbols-outlined f-icon">payments</span>
+            <span class="card-label">Total Faturado</span>
+          </div>
+          <div class="card-value">{{ formatBRL(resumo.total_faturado) }}</div>
+        </div>
+
+        <div class="f-card">
+          <div class="card-header">
+            <span class="material-symbols-outlined f-icon">local_car_wash</span>
+            <span class="card-label">Total de Serviços</span>
+          </div>
+          <div class="card-value">{{ totalServicos }}</div>
+        </div>
+
+        <div class="f-card">
+          <div class="card-header">
+            <span class="material-symbols-outlined f-icon">trending_up</span>
+            <span class="card-label">Ticket Médio</span>
+          </div>
+          <div class="card-value">{{ formatBRL(ticketMedio) }}</div>
+        </div>
+      </div>
+
+      <!-- PAINEL DE CONTROLES DA TABELA -->
+      <div class="table-controls-row">
+        <div class="toggle-container">
+          <span class="toggle-label">Mostrar Veículo (Modelo - Placa) no relatório</span>
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="mostrarVeiculos">
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <button class="btn-export" (click)="exportarPDF()" [disabled]="resumo.transacoes.length === 0">
+          <span class="material-symbols-outlined">picture_as_pdf</span>
+          Exportar Relatório PDF
+        </button>
+      </div>
+
+      <!-- LISTAGEM DE TRANSAÇÕES -->
+      <div class="table-meta">
+        <span class="total-label">Detalhamento das Transações Finalizadas</span>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Finalização</th>
+              @if (mostrarVeiculos) {
+                <th>Veículo</th>
+              }
+              <th>Serviço executado</th>
+              <th>Valor cobrado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of resumo.transacoes; track t.id) {
+              <tr>
+                <td class="bold-white">{{ t.horario_finalizacao | date:'dd/MM/yyyy HH:mm' }}</td>
+                @if (mostrarVeiculos) {
+                  <td>{{ t.veiculo }}</td>
+                }
+                <td>{{ t.servico }}</td>
+                <td class="bold-white">{{ formatBRL(t.valor_cobrado) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="mostrarVeiculos ? 4 : 3" class="empty-row">
+                  Nenhuma transação concluída encontrada neste período.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+</div>

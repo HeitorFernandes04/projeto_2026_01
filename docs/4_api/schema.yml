@@ -177,6 +177,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Cliente'
           description: ''
+  /api/cliente/agendamentos/:
+    post:
+      operationId: cliente_agendamentos_create
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/cliente/auth/setup/:
     post:
       operationId: cliente_auth_setup_create
@@ -217,6 +229,178 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/cliente/perfil/:
+    get:
+      operationId: cliente_perfil_retrieve
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: cliente_perfil_partial_update
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/veiculos/:
+    get:
+      operationId: cliente_veiculos_list
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClienteVeiculo'
+          description: ''
+    post:
+      operationId: cliente_veiculos_create
+      tags:
+      - cliente
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteVeiculo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClienteVeiculo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClienteVeiculo'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteVeiculo'
+          description: ''
+  /api/cliente/veiculos/{id}/:
+    get:
+      operationId: cliente_veiculos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteVeiculo'
+          description: ''
+    put:
+      operationId: cliente_veiculos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - cliente
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteVeiculo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClienteVeiculo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClienteVeiculo'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteVeiculo'
+          description: ''
+    patch:
+      operationId: cliente_veiculos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - cliente
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClienteVeiculo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClienteVeiculo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClienteVeiculo'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteVeiculo'
+          description: ''
+    delete:
+      operationId: cliente_veiculos_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/gestao/estabelecimento/:
     get:
       operationId: gestao_estabelecimento_retrieve
@@ -237,6 +421,21 @@ paths:
       description: |-
         GET /api/gestao/estabelecimento/ - Retorna dados do estabelecimento
         PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
+      tags:
+      - gestao
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/gestao/financeiro/resumo/:
+    get:
+      operationId: gestao_financeiro_resumo_retrieve
+      description: |-
+        GET /api/gestao/financeiro/resumo/
+        RF-32: Painel Financeiro Simples
       tags:
       - gestao
       security:
@@ -1016,6 +1215,30 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/publico/auth/verificacao/:
+    post:
+      operationId: publico_auth_verificacao_create
+      tags:
+      - publico
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/publico/auth/whatsapp/:
+    post:
+      operationId: publico_auth_whatsapp_create
+      tags:
+      - publico
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/publico/estabelecimento/{slug}/:
     get:
       operationId: publico_estabelecimento_retrieve
@@ -1156,6 +1379,30 @@ components:
       required:
       - id
       - name
+    ClienteVeiculo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        placa:
+          type: string
+          maxLength: 10
+        marca:
+          type: string
+          maxLength: 50
+        modelo:
+          type: string
+          maxLength: 50
+        cor:
+          type: string
+          maxLength: 30
+      required:
+      - cor
+      - id
+      - marca
+      - modelo
+      - placa
     Estabelecimento:
       type: object
       properties:
@@ -1415,6 +1662,24 @@ components:
       - servico
       - status_ordem_servico
       - tag_peca
+    PatchedClienteVeiculo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        placa:
+          type: string
+          maxLength: 10
+        marca:
+          type: string
+          maxLength: 50
+        modelo:
+          type: string
+          maxLength: 50
+        cor:
+          type: string
+          maxLength: 30
     PatchedEstabelecimentoUpdate:
       type: object
       description: Serializer restrito para atualização de configurações pelo Gestor.

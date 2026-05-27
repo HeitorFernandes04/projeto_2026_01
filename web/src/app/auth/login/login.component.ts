@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -11,14 +11,24 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
 
   email = '';
   password = '';
   erro = '';
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['erro']) {
+        this.erro = params['erro'];
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   acessar(): void {
     this.erro = '';
@@ -40,7 +50,7 @@ export class LoginComponent {
     });
   }
 
-  private mensagemErro(err: any): string {
+  private mensagemErro(err: { status?: number }): string {
     if (err?.status === 400 || err?.status === 401 || err?.status === 403) {
       return 'Senha incorreta. Confira seus dados e tente novamente.';
     }

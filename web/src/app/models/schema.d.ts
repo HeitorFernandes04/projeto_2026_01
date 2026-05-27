@@ -96,6 +96,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cliente/agendamentos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cliente_agendamentos_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cliente/auth/setup/": {
         parameters: {
             query?: never;
@@ -145,6 +161,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cliente/perfil/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cliente_perfil_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["cliente_perfil_partial_update"];
+        trace?: never;
+    };
+    "/api/cliente/veiculos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cliente_veiculos_list"];
+        put?: never;
+        post: operations["cliente_veiculos_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cliente/veiculos/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cliente_veiculos_retrieve"];
+        put: operations["cliente_veiculos_update"];
+        post?: never;
+        delete: operations["cliente_veiculos_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["cliente_veiculos_partial_update"];
+        trace?: never;
+    };
     "/api/gestao/estabelecimento/": {
         parameters: {
             query?: never;
@@ -167,6 +231,26 @@ export interface paths {
          *     PATCH /api/gestao/estabelecimento/ - Atualiza dados do estabelecimento
          */
         patch: operations["gestao_estabelecimento_partial_update"];
+        trace?: never;
+    };
+    "/api/gestao/financeiro/resumo/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /api/gestao/financeiro/resumo/
+         *     RF-32: Painel Financeiro Simples
+         */
+        get: operations["gestao_financeiro_resumo_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/gestao/funcionarios/": {
@@ -731,6 +815,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/publico/auth/verificacao/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publico_auth_verificacao_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/publico/auth/whatsapp/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publico_auth_whatsapp_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/publico/estabelecimento/{slug}/": {
         parameters: {
             query?: never;
@@ -743,6 +859,26 @@ export interface paths {
          *     de um Estabelecimento e seus serviços ativos via slug.
          */
         get: operations["publico_estabelecimento_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/publico/estabelecimentos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-28: GET /api/publico/estabelecimentos/
+         *     Lista pública de estabelecimentos ativos com geolocalização para o mapa B2C.
+         */
+        get: operations["publico_estabelecimentos_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -832,6 +968,13 @@ export interface components {
             telefone_whatsapp?: string;
             endereco_padrao?: string;
         };
+        ClienteVeiculo: {
+            readonly id: number;
+            placa: string;
+            marca: string;
+            modelo: string;
+            cor: string;
+        };
         Estabelecimento: {
             readonly id: number;
             nome_fantasia: string;
@@ -846,6 +989,21 @@ export interface components {
             latitude?: number | null;
             /** Format: double */
             longitude?: number | null;
+        };
+        /**
+         * @description RF-28: Serializer para o mapa B2C. Expõe apenas os campos necessários
+         *     para renderizar os pins e o Drawer de resumo do estabelecimento.
+         */
+        EstabelecimentoMapa: {
+            readonly id: number;
+            nome_fantasia: string;
+            slug?: string | null;
+            /** Format: double */
+            latitude?: number | null;
+            /** Format: double */
+            longitude?: number | null;
+            readonly logo: string;
+            endereco_completo: string;
         };
         /**
          * @description Exposição pública e segura do Estabelecimento para o Portal de Autoagendamento.
@@ -916,6 +1074,13 @@ export interface components {
             readonly foto_url: string;
             /** Format: date-time */
             readonly data_registro: string;
+        };
+        PatchedClienteVeiculo: {
+            readonly id?: number;
+            placa?: string;
+            marca?: string;
+            modelo?: string;
+            cor?: string;
         };
         /** @description Serializer restrito para atualização de configurações pelo Gestor. */
         PatchedEstabelecimentoUpdate: {
@@ -1159,6 +1324,24 @@ export interface operations {
             };
         };
     };
+    cliente_agendamentos_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     cliente_auth_setup_create: {
         parameters: {
             query?: never;
@@ -1213,6 +1396,181 @@ export interface operations {
             };
         };
     };
+    cliente_perfil_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cliente_perfil_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cliente_veiculos_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteVeiculo"][];
+                };
+            };
+        };
+    };
+    cliente_veiculos_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteVeiculo"];
+                "application/x-www-form-urlencoded": components["schemas"]["ClienteVeiculo"];
+                "multipart/form-data": components["schemas"]["ClienteVeiculo"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteVeiculo"];
+                };
+            };
+        };
+    };
+    cliente_veiculos_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteVeiculo"];
+                };
+            };
+        };
+    };
+    cliente_veiculos_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteVeiculo"];
+                "application/x-www-form-urlencoded": components["schemas"]["ClienteVeiculo"];
+                "multipart/form-data": components["schemas"]["ClienteVeiculo"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteVeiculo"];
+                };
+            };
+        };
+    };
+    cliente_veiculos_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cliente_veiculos_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedClienteVeiculo"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedClienteVeiculo"];
+                "multipart/form-data": components["schemas"]["PatchedClienteVeiculo"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteVeiculo"];
+                };
+            };
+        };
+    };
     gestao_estabelecimento_retrieve: {
         parameters: {
             query?: never;
@@ -1232,6 +1590,24 @@ export interface operations {
         };
     };
     gestao_estabelecimento_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    gestao_financeiro_resumo_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2047,6 +2423,42 @@ export interface operations {
             };
         };
     };
+    publico_auth_verificacao_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    publico_auth_whatsapp_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     publico_estabelecimento_retrieve: {
         parameters: {
             query?: never;
@@ -2064,6 +2476,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EstabelecimentoPublico"];
+                };
+            };
+        };
+    };
+    publico_estabelecimentos_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstabelecimentoMapa"][];
                 };
             };
         };
