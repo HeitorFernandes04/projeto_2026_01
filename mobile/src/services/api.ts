@@ -87,6 +87,34 @@ async function request(endpoint: string, options: RequestInit = {}) {
 
 // --- AUTENTICAÇÃO ---
 
+export async function passwordResetRequest(email: string) {
+  const response = await fetch(`${BASE_URL}/api/auth/password-reset/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!response.ok) {
+    const errJson = await response.json().catch(() => ({}));
+    throw new Error(errJson.detail || 'Não foi possível solicitar a redefinição de senha.');
+  }
+  return response.json();
+}
+
+export async function passwordResetConfirm(token: string, password: string) {
+  const response = await fetch(`${BASE_URL}/api/auth/password-reset/confirm/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+  if (!response.ok) {
+    const errJson = await response.json().catch(() => ({}));
+    // Se vier uma lista de erros (ex. password too common), vamos tentar exibir melhor
+    let errMsg = errJson.password ? errJson.password.join(' ') : errJson.detail;
+    throw new Error(errMsg || 'Erro ao redefinir a senha.');
+  }
+  return response.json();
+}
+
 export async function loginUsuario(email: string, password: string) {
   const response = await fetch(`${BASE_URL}/api/auth/login/`, {
     method: 'POST',

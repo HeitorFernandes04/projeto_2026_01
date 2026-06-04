@@ -217,3 +217,12 @@ class GestorSerializer(serializers.ModelSerializer):
 
 
 RegisterSerializer = FuncionarioSerializer
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)

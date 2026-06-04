@@ -1,7 +1,8 @@
-import { IonContent, IonPage, IonSpinner, useIonAlert } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonAlert, IonIcon } from '@ionic/react';
+import { eyeOutline, eyeOffOutline, idCardOutline, mailOutline, lockClosedOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { loginUsuario, getMeuPerfil } from '../../services/api';
+import { loginUsuario, getMeuPerfil, passwordResetRequest } from '../../services/api';
 import '../../theme/lava-me.css';
 import logoLavaMe from '../../assets/logo.jpeg';
 
@@ -10,6 +11,7 @@ const Login: React.FC = () => {
   const [present] = useIonAlert();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -48,47 +50,89 @@ const Login: React.FC = () => {
         <div style={styles.container}>
 
           {/* Logo */}
-          <div style={styles.logoArea}>
-            <div style={styles.logoIconWrap}>
+          <div style={{ ...styles.logoArea, '--delay': '0s' } as React.CSSProperties} className="animate-fade-in">
+            <div style={styles.logoIconWrap} className="btn-pulse">
               <img src={logoLavaMe} alt="Lava-Me Logo" style={styles.logoImg} />
             </div>
             <span style={styles.logoText}>Lava-Me</span>
           </div>
 
           {/* Título portal */}
-          <div style={styles.portalRow}>
-            <span style={{ fontSize: 22, color: '#00b4d8' }}>👥</span>
+          <div style={{ ...styles.portalRow, '--delay': '0.1s' } as React.CSSProperties} className="animate-fade-in-up">
+            <IonIcon icon={idCardOutline} style={{ fontSize: 26, color: '#00b4d8', filter: 'drop-shadow(0 0 6px rgba(0,180,216,0.6))' }} />
             <span style={styles.portalTitulo}>Portal do Funcionário</span>
           </div>
 
           {/* Formulário */}
-          <div style={styles.form}>
+          <div style={{ ...styles.form, '--delay': '0.2s' } as React.CSSProperties} className="animate-fade-in-up">
             <label style={styles.label}>E-mail</label>
-            <input
-              style={styles.input}
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div style={styles.inputWrapper}>
+              <IonIcon icon={mailOutline} style={styles.inputLeftIcon} />
+              <input
+                style={{ ...styles.input, paddingLeft: 44 }}
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
             <label style={styles.label}>Senha</label>
-            <input
-              style={styles.input}
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            />
+            <div style={styles.inputWrapper}>
+              <IonIcon icon={lockClosedOutline} style={styles.inputLeftIcon} />
+              <input
+                style={{ ...styles.input, paddingLeft: 44 }}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
+              <IonIcon 
+                icon={showPassword ? eyeOffOutline : eyeOutline} 
+                style={styles.eyeIcon} 
+                onClick={() => setShowPassword(!showPassword)}
+              />
+            </div>
 
             <div style={styles.forgotPassContainer}>
               <span 
                 style={styles.forgotPass}
                 onClick={() => present({
                   header: 'Esqueci minha senha',
-                  message: 'Por motivos de segurança, entre em contato com o Gestor da sua filial para redefinir sua senha.',
-                  buttons: ['Entendido']
+                  message: 'Digite seu e-mail corporativo para receber as instruções de redefinição.',
+                  inputs: [
+                    {
+                      name: 'email',
+                      type: 'email',
+                      placeholder: 'seu@email.com',
+                    }
+                  ],
+                  buttons: [
+                    {
+                      text: 'Cancelar',
+                      role: 'cancel'
+                    },
+                    {
+                      text: 'Enviar',
+                      handler: async (alertData) => {
+                        if (!alertData.email) return false;
+                        setCarregando(true);
+                        try {
+                          await passwordResetRequest(alertData.email);
+                          present({
+                            header: 'E-mail Enviado',
+                            message: 'Se o e-mail estiver cadastrado, você receberá instruções em instantes.',
+                            buttons: ['OK']
+                          });
+                        } catch (e: any) {
+                          setErro(e.message || 'Ocorreu um erro ao solicitar redefinição.');
+                        } finally {
+                          setCarregando(false);
+                        }
+                      }
+                    }
+                  ]
                 })}
               >
                 Esqueci minha senha
@@ -97,13 +141,16 @@ const Login: React.FC = () => {
 
             {erro && <p style={styles.erro}>{erro}</p>}
 
-            <button
-              style={{ ...styles.btn, opacity: carregando ? 0.7 : 1 }}
-              disabled={carregando}
-              onClick={handleLogin}
-            >
-              {carregando ? <IonSpinner name="crescent" style={{ width: 20, height: 20 }} /> : 'Entrar'}
-            </button>
+                <div style={{ ...styles.btnWrapper, '--delay': '0.3s' } as React.CSSProperties} className="animate-fade-in-up">
+                  <button
+                    style={{ ...styles.btn, opacity: carregando ? 0.7 : 1 }}
+                    className="btn-pulse"
+                    disabled={carregando}
+                    onClick={handleLogin}
+                  >
+                    {carregando ? <IonSpinner name="crescent" style={{ width: 20, height: 20 }} /> : 'Entrar'}
+                  </button>
+                </div>
           </div>
 
           <p style={styles.registerLink}>
@@ -178,20 +225,46 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     marginBottom: 8,
   },
+  inputWrapper: {
+    position: 'relative' as const,
+    width: '100%',
+    marginBottom: 20,
+  },
   input: {
     background: '#1e2535',
     border: '1px solid #1e2d40',
     borderRadius: 14,
-    padding: '14px 18px',
+    padding: '14px 44px 14px 18px',
     color: '#ffffff',
     fontSize: 15,
-    marginBottom: 20,
     outline: 'none',
     width: '100%',
     boxSizing: 'border-box',
   },
-  btn: {
+  inputLeftIcon: {
+    position: 'absolute' as const,
+    left: 16,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#8899aa',
+    fontSize: 20,
+    zIndex: 2,
+  },
+  eyeIcon: {
+    position: 'absolute' as const,
+    right: 16,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#8899aa',
+    fontSize: 22,
+    cursor: 'pointer',
+  },
+  btnWrapper: {
+    width: '100%',
     marginTop: 8,
+  },
+  btn: {
+    width: '100%',
     padding: '16px 0',
     borderRadius: 28,
     border: 'none',
