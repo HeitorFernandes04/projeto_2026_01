@@ -2,11 +2,16 @@
   <div class="login-card">
     <header class="login-header">
       <img src="logo.jpeg" alt="Lava-Me Logo" class="brand-logo">
-      <h2>Acesso ao Gestor</h2>
-      <p>Entre com suas credenciais para gerenciar a unidade</p>
+      <h2 *ngIf="!isForgotPassword">Acesso ao Gestor</h2>
+      <p *ngIf="!isForgotPassword">Entre com suas credenciais para gerenciar a unidade</p>
+      
+      <h2 *ngIf="isForgotPassword">Recuperar Senha</h2>
+      <p *ngIf="isForgotPassword && !sucessoRecuperacao">
+        Informe seu e-mail e enviaremos um link seguro para redefinir sua senha.
+      </p>
     </header>
 
-    <form class="login-form" (submit)="acessar(); $event.preventDefault()">
+    <form *ngIf="!isForgotPassword" class="login-form" (submit)="acessar(); $event.preventDefault()">
       <div class="input-group">
         <label>E-mail ou Usuário</label>
         <div class="input-box">
@@ -31,7 +36,36 @@
       </button>
 
       <div class="form-footer">
-        <a href="javascript:void(0)">Esqueceu sua senha?</a>
+        <a href="javascript:void(0)" (click)="toggleForgotPassword()">Esqueceu sua senha?</a>
+      </div>
+    </form>
+
+    <form *ngIf="isForgotPassword" class="login-form" (submit)="solicitarRecuperacao(); $event.preventDefault()">
+      <div *ngIf="!sucessoRecuperacao" style="display: flex; flex-direction: column; gap: 20px;">
+
+        <div class="input-group">
+          <label>E-mail</label>
+          <div class="input-box">
+            <span class="material-symbols-outlined">mail</span>
+            <input type="email" name="emailRecuperacao" [(ngModel)]="emailRecuperacao" placeholder="exemplo@lavame.com.br" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" [disabled]="!emailRecuperacao || carregando">
+          {{ carregando ? 'Aguarde...' : 'Enviar Link' }}
+        </button>
+      </div>
+
+      <div *ngIf="sucessoRecuperacao" style="text-align: center; padding: 20px 0;">
+        <span class="material-symbols-outlined" style="font-size: 56px; color: #2dd36f; margin-bottom: 16px;">check_circle</span>
+        <h3 style="color: #2dd36f; margin-bottom: 12px; font-size: 20px;">Link enviado!</h3>
+        <p style="color: #e6edf3; font-size: 15px; line-height: 1.5;">
+          Se o e-mail estiver cadastrado, você receberá as instruções em instantes.
+        </p>
+      </div>
+
+      <div class="form-footer" style="margin-top: 16px;">
+        <a href="javascript:void(0)" (click)="toggleForgotPassword()">Voltar para o Login</a>
       </div>
     </form>
   </div>

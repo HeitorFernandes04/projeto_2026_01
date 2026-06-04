@@ -108,15 +108,17 @@ export class KanbanComponent implements OnInit, OnDestroy {
     return this.kanban[chave] ?? [];
   }
 
-  formatarTempo(minutos: number): string {
-    const h = Math.floor(minutos / 60);
-    const m = minutos % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  formatarTempo(segundos: number): string {
+    const m = Math.floor(segundos / 60);
+    const s = segundos % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
 
   calcularProgresso(card: KanbanCard): number {
     if (!card.duracao_estimada_minutos) return 0;
-    return Math.min((card.tempo_decorrido_minutos / card.duracao_estimada_minutos) * 100, 100);
+    const duracaoSegundos = card.duracao_estimada_minutos * 60;
+    const decorridoSegundos = card.tempo_decorrido_segundos ?? (card.tempo_decorrido_minutos * 60);
+    return Math.min((decorridoSegundos / duracaoSegundos) * 100, 100);
   }
 
   irParaIncidentes(): void {

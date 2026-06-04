@@ -97,6 +97,7 @@ export class App implements OnInit, OnDestroy {
     this.exibirSidebar = !(
       url.includes('/login') ||
       url.includes('/agendar/') ||
+      url.includes('/reset-password') ||
       url === ''
     );
   }

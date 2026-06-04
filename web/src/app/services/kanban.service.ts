@@ -9,7 +9,9 @@ export interface KanbanCard {
   servico: string;
   duracao_estimada_minutos: number;
   tempo_decorrido_minutos: number;
+  tempo_decorrido_segundos?: number;
   is_atrasado: boolean;
+  funcionario_nome?: string;
 }
 
 export interface KanbanData {

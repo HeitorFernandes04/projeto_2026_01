@@ -1,10 +1,15 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from accounts.models import User, Estabelecimento, Cliente, Funcionario, Gestor, CargoChoices
-from accounts.serializers import ClienteSerializer, RegisterSerializer, EstabelecimentoSerializer, EstabelecimentoUpdateSerializer
+from accounts.serializers import (
+    ClienteSerializer, RegisterSerializer, EstabelecimentoSerializer, 
+    EstabelecimentoUpdateSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -153,3 +158,47 @@ class EstabelecimentoMeView(generics.RetrieveUpdateAPIView):
         if self.request.method == 'GET':
             return EstabelecimentoSerializer
         return EstabelecimentoUpdateSerializer
+
+
+class PasswordResetRequestAPIView(generics.GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = PasswordResetRequestSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        try:
+            from accounts.services import PasswordResetService
+            PasswordResetService.solicitar_reset(email)
+        except DjangoValidationError as e:
+            raise DRFValidationError(detail=e.messages)
+            
+        return Response(
+            {"message": "Se o e-mail estiver cadastrado, você receberá instruções em instantes."},
+            status=status.HTTP_200_OK
+        )
+
+
+class PasswordResetConfirmAPIView(generics.GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = PasswordResetConfirmSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        token = serializer.validated_data['token']
+        password = serializer.validated_data['password']
+        
+        try:
+            from accounts.services import PasswordResetService
+            PasswordResetService.confirmar_reset(token, password)
+        except DjangoValidationError as e:
+            raise DRFValidationError(detail=e.messages)
+            
+        return Response(
+            {"message": "Senha atualizada com sucesso!"},
+            status=status.HTTP_200_OK
+        )

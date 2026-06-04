@@ -8,15 +8,19 @@ import './EstadoLiberacao.css';
 
 const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void; }> = ({ ordemServicoId, onComplete }) => {
   const history = useHistory();
-  const [ordemServico, setOrdemServico] = useState<{midias?: Array<{arquivo: string; momento: 'VISTORIA_GERAL' | 'AVARIA_PREVIA' | 'EXECUCAO' | 'FINALIZADO'}>} | null>(null);
+  const [ordemServico, setOrdemServico] = useState<any>(null);
   const [vaga, setVaga] = useState('');
+  const [observacoes, setObservacoes] = useState('');
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
 
   const fetchDados = useCallback(async () => {
     try {
-      const data = await getOrdemServico(ordemServicoId);
+      const data = await getOrdemServico(ordemServicoId) as any;
       setOrdemServico(data);
+      if (data.observacoes && observacoes === '') {
+        setObservacoes(data.observacoes);
+      }
     } catch (err) {
       console.error('Erro ao carregar dados de entrega:', err);
     } finally {
@@ -35,7 +39,7 @@ const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void
 
     setEnviando(true);
     try {
-      await finalizarOrdemServico(ordemServicoId, { vaga_patio: vaga });
+      await finalizarOrdemServico(ordemServicoId, { vaga_patio: vaga, observacoes });
       setOrdemServico(null); // Limpa estado local
       onComplete();
       history.push('/ordens-servico/hoje');
@@ -93,6 +97,19 @@ const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void
           onChange={(e) => setVaga(e.target.value)}
           placeholder="Ex: Vaga A1, Frente da Loja..."
           className="elib-input"
+        />
+      </div>
+
+      <div className="elib-vaga-wrapper" style={{ marginTop: '15px' }}>
+        <label className="elib-label">
+          Notas de Finalização (Opcional)
+        </label>
+        <textarea
+          value={observacoes}
+          onChange={(e) => setObservacoes(e.target.value)}
+          placeholder="Ex: Cliente pediu para deixar a chave na recepção..."
+          className="elib-input"
+          style={{ height: '80px', paddingTop: '12px', resize: 'none' }}
         />
       </div>
 

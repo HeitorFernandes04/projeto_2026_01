@@ -37,10 +37,31 @@ export interface MidiaGaleria {
   momento: string;
 }
 
+export interface IncidenteDossie {
+  id: number;
+  descricao: string;
+  observacoes_resolucao: string | null;
+  foto_url: string;
+  data_registro: string;
+  data_resolucao: string | null;
+  resolvido: boolean;
+}
+
 export interface GaleriaOS {
+  incidentes?: IncidenteDossie[];
   estado_inicial: MidiaGaleria[];
   estado_meio: MidiaGaleria[];
   estado_final: MidiaGaleria[];
+  os_data?: {
+    funcionario_nome: string;
+    horario_lavagem: string | null;
+    horario_finalizacao: string | null;
+    total_minutos: number;
+    total_segundos?: number;
+    laudo_vistoria: string | null;
+    comentario_lavagem: string | null;
+    observacoes: string | null;
+  };
 }
 
 interface ApiEnvelope<T> {

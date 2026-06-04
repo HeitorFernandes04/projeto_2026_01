@@ -25,8 +25,11 @@ const EstadoLavagem: React.FC<{ ordemServicoId: number; onComplete: () => void; 
   useEffect(() => {
     const verificarStatus = async () => {
       try {
-        const data = await getOrdemServico(ordemServicoId);
+        const data = await getOrdemServico(ordemServicoId) as any;
         setStatusAtual(data.status);
+        if (data.comentario_lavagem && observacoes === '') {
+          setObservacoes(data.comentario_lavagem);
+        }
       } catch (err) {
         console.error('Erro ao verificar status:', err);
       }

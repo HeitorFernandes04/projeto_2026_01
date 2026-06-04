@@ -186,11 +186,14 @@ class OrdemServicoService:
         )
 
     @staticmethod
-    def avancar_etapa(os_id: int, dados: dict) -> OrdemServico:
+    def avancar_etapa(os_id: int, dados: dict, funcionario=None) -> OrdemServico:
         """Máquina de Estados Industrial: Gere transições e horários."""
         os = get_object_or_404(OrdemServico, id=os_id)
         status_atual = os.status
         agora = timezone.now()
+
+        if funcionario and status_atual in ['PATIO', 'VISTORIA_INICIAL']:
+            os.funcionario = funcionario
 
         # ETAPA 1: PATIO → VISTORIA_INICIAL (valida 5 fotos de vistoria)
         if status_atual == 'PATIO':
@@ -204,7 +207,7 @@ class OrdemServicoService:
 
             os.status = 'VISTORIA_INICIAL'
             os.etapa_atual = 20
-            os.laudo_vistoria = dados.get('laudo_vistoria', '')
+            os.laudo_vistoria = dados.get('laudo_vistoria', os.laudo_vistoria or '')
             os.save()
 
         # ETAPA 2: VISTORIA_INICIAL → EM_EXECUCAO (operador inicia lavagem)
@@ -212,13 +215,15 @@ class OrdemServicoService:
             os.status = 'EM_EXECUCAO'
             os.etapa_atual = 50
             os.horario_lavagem = agora
-            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+            os.laudo_vistoria = dados.get('laudo_vistoria', os.laudo_vistoria or '')
+            os.comentario_lavagem = dados.get('comentario_lavagem', os.comentario_lavagem or '')
             os.save()
 
         # ETAPA 3: EM_EXECUCAO → LIBERACAO (RF-27/RF-30: etapa de acabamento removida)
         elif status_atual == 'EM_EXECUCAO':
             os.status = 'LIBERACAO'
             os.etapa_atual = 80
+            os.comentario_lavagem = dados.get('comentario_lavagem', os.comentario_lavagem or '')
             os.save()
 
         else:
@@ -389,18 +394,36 @@ class HistoricoGestorService:
     @staticmethod
     def montar_galeria_os(os_id, estabelecimento):
         """RF-18: Retorna mídias da OS agrupadas por momento para auditoria visual."""
-        os = get_object_or_404(OrdemServico, id=os_id)
+        os = get_object_or_404(OrdemServico.objects.select_related('funcionario', 'servico'), id=os_id)
 
         if os.estabelecimento_id != estabelecimento.id:
             from django.core.exceptions import PermissionDenied
             raise PermissionDenied("Esta OS não pertence ao seu estabelecimento.")
 
         midias = MidiaOrdemServico.objects.filter(ordem_servico=os).order_by('id')
+        
+        total_minutos = 0
+        total_segundos = 0
+        if os.horario_lavagem and os.horario_finalizacao:
+            delta = os.horario_finalizacao - os.horario_lavagem
+            total_segundos = max(0, int(delta.total_seconds()))
+            total_minutos = max(0, int(delta.total_seconds() // 60))
 
         return {
+            'incidentes': list(os.incidentes.all()),
             'estado_inicial': [m for m in midias if m.momento in ('VISTORIA_GERAL', 'AVARIA_PREVIA')],
             'estado_meio':    [m for m in midias if m.momento == 'EXECUCAO'],
             'estado_final':   [m for m in midias if m.momento == 'FINALIZADO'],
+            'os_data': {
+                'funcionario_nome': os.funcionario.name if os.funcionario else 'Não atribuído',
+                'horario_lavagem': os.horario_lavagem,
+                'horario_finalizacao': os.horario_finalizacao,
+                'total_minutos': total_minutos,
+                'total_segundos': total_segundos,
+                'laudo_vistoria': os.laudo_vistoria,
+                'comentario_lavagem': os.comentario_lavagem,
+                'observacoes': os.observacoes
+            }
         }
 
 
@@ -487,8 +510,8 @@ class HistoricoUnificadoService:
 class ClienteGaleriaService:
     """RF-26: galeria pos-venda visivel ao cliente final."""
 
-    MOMENTOS_ENTRADA = ('VISTORIA_GERAL', 'AVARIA_PREVIA', 'ENTRADA')
-    MOMENTOS_FINALIZACAO = ('FINALIZADO', 'FINALIZACAO')
+    MOMENTOS_ENTRADA = ('VISTORIA_GERAL', 'AVARIA_PREVIA')
+    MOMENTOS_FINALIZACAO = ('FINALIZADO',)
 
     @staticmethod
     def _normalizar_telefone(telefone):

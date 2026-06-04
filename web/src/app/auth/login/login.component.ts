@@ -21,6 +21,12 @@ export class LoginComponent implements OnInit {
   password = '';
   erro = '';
 
+  // Propriedades para Recuperação de Senha
+  isForgotPassword = false;
+  emailRecuperacao = '';
+  sucessoRecuperacao = false;
+  carregando = false;
+
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       if (params['erro']) {
@@ -42,7 +48,7 @@ export class LoginComponent implements OnInit {
         console.log('Login realizado com sucesso. Token armazenado.');
         this.router.navigate(['/gestao/dashboard']);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Falha na autenticacao:', err);
         this.erro = this.mensagemErro(err);
         this.cdr.detectChanges();
@@ -56,5 +62,36 @@ export class LoginComponent implements OnInit {
     }
 
     return 'Nao foi possivel acessar agora. Tente novamente em instantes.';
+  }
+
+  toggleForgotPassword(): void {
+    this.isForgotPassword = !this.isForgotPassword;
+    this.erro = '';
+    this.sucessoRecuperacao = false;
+    this.emailRecuperacao = this.email || '';
+    this.cdr.detectChanges();
+  }
+
+  solicitarRecuperacao(): void {
+    if (!this.emailRecuperacao) return;
+
+    this.carregando = true;
+    this.erro = '';
+    this.sucessoRecuperacao = false;
+
+    this.authService.solicitarRecuperacaoSenha(this.emailRecuperacao).subscribe({
+      next: () => {
+        this.sucessoRecuperacao = true;
+        this.carregando = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Falha ao solicitar recuperacao:', err);
+        // Usamos uma mensagem genérica por segurança (feedback opaco)
+        this.sucessoRecuperacao = true;
+        this.carregando = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 }
