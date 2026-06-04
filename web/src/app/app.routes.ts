@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './auth/login/auth.guard';
+import { gestorGuard } from './auth/login/gestor.guard';
 import { clienteAuthGuard } from './public/painel-cliente/cliente-auth.guard';
 
 export const routes: Routes = [
@@ -10,7 +10,7 @@ export const routes: Routes = [
   },
   {
     path: 'gestao',
-    canActivate: [authGuard], // PROTEÇÃO PARA GESTORES E FUNCIONÁRIOS
+    canActivate: [gestorGuard], // PROTEÇÃO EXCLUSIVA PARA GESTORES
     children: [
       {
         path: 'dashboard',
@@ -31,6 +31,11 @@ export const routes: Routes = [
         path: 'historico',
         loadComponent: () =>
           import('./gestao/historico/historico.component').then(m => m.HistoricoComponent)
+      },
+      {
+        path: 'financeiro',
+        loadComponent: () =>
+          import('./gestao/financeiro/financeiro.component').then(m => m.FinanceiroComponent)
       },
       {
         path: 'dossie/:id',
