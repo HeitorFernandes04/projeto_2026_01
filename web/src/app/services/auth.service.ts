@@ -35,4 +35,12 @@ export class AuthService {
   recarregarPerfil(): void {
     this.obterPerfil().subscribe();
   }
+
+  solicitarRecuperacaoSenha(email: string): Observable<any> {
+    return this.http.post<any>('/api/auth/password-reset/', { email });
+  }
+
+  confirmarRecuperacaoSenha(token: string, password: string): Observable<any> {
+    return this.http.post<any>('/api/auth/password-reset/confirm/', { token, password });
+  }
 }

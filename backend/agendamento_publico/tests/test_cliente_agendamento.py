@@ -27,9 +27,9 @@ class TestClienteAgendamentoAPI:
         _auth(self.api, self.cliente.user)
 
     def test_criar_agendamento_sucesso(self):
-        # Usar uma data no futuro
+        # Usar uma data no futuro, mas com horário fixo às 10:00 para não estourar o limite de 18:00
         amanha = timezone.now() + datetime.timedelta(days=1)
-        data_hora_str = amanha.strftime('%Y-%m-%dT%H:%M:00')
+        data_hora_str = amanha.strftime('%Y-%m-%dT10:00:00')
 
         payload = {
             'slug': self.est.slug,

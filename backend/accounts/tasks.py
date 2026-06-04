@@ -3,12 +3,14 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 @shared_task
-def enviar_email_recuperacao_senha(token_key: str, user_email: str, user_name: str):
+def enviar_email_recuperacao_senha(token_key: str, user_email: str, user_name: str, base_url: str = None):
     """
     Task assíncrona que envia o e-mail de recuperação de senha,
     evitando bloqueio no worker HTTP.
     """
-    base_url = "http://localhost:8100" if settings.DEBUG else "https://lava.me"
+    if not base_url:
+        base_url = settings.FRONTEND_BASE_URL
+
     link = f"{base_url}/reset-password?token={token_key}"
     
     subject = "Recuperação de Senha - Lava-Me"

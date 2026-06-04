@@ -1,7 +1,5 @@
-import os
 from datetime import timedelta
 from django.utils import timezone
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
@@ -28,8 +26,10 @@ class PasswordResetService:
             return None
             
         # Isolamento B2C/B2B: Apenas funcionários e gestores podem recuperar senha
-        is_colaborador = hasattr(user, 'perfil_gestor') or hasattr(user, 'perfil_funcionario')
-        if not is_colaborador:
+        is_gestor = hasattr(user, 'perfil_gestor')
+        is_funcionario = hasattr(user, 'perfil_funcionario')
+        
+        if not (is_gestor or is_funcionario):
             return None
             
         # Rate Limiting: Máximo de 3 solicitações por e-mail a cada 1 hora
@@ -45,9 +45,16 @@ class PasswordResetService:
         # Criação do token seguro via django-rest-passwordreset
         token = ResetPasswordToken.objects.create(user=user)
         
+        # Define a URL base dependendo do perfil
+        from django.conf import settings
+        if is_gestor:
+            base_url = settings.FRONTEND_GESTOR_URL
+        else:
+            base_url = settings.FRONTEND_FUNCIONARIO_URL
+
         # Aciona o envio de e-mail de forma assíncrona via Celery
         from .tasks import enviar_email_recuperacao_senha
-        enviar_email_recuperacao_senha.delay(token.key, user.email, user.name or user.username)
+        enviar_email_recuperacao_senha.delay(token.key, user.email, user.name or user.username, base_url)
         
         return token.key
 

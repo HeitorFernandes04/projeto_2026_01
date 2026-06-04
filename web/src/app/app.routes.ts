@@ -9,6 +9,11 @@ export const routes: Routes = [
       import('./auth/login/login.component').then(m => m.LoginComponent)
   },
   {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./auth/reset-password/reset-password').then(m => m.ResetPassword)
+  },
+  {
     path: 'gestao',
     canActivate: [gestorGuard], // PROTEÇÃO EXCLUSIVA PARA GESTORES
     children: [

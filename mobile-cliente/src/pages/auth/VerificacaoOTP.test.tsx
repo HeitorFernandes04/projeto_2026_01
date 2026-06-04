@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import VerificacaoOTP from './VerificacaoOTP';
@@ -42,22 +42,28 @@ describe('VerificacaoOTP', () => {
     mockLocationState.redirect_to = undefined;
   });
 
-  it('deve avancar o foco automaticamente ao digitar', () => {
-    render(
-      <BrowserRouter>
-        <VerificacaoOTP />
-      </BrowserRouter>
-    );
+  it('deve avancar o foco automaticamente ao digitar', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <VerificacaoOTP />
+        </BrowserRouter>
+      );
+    });
 
     const inputs = screen.getAllByRole('textbox');
     expect(inputs).toHaveLength(4);
 
     // Simula digitação no primeiro input
-    fireEvent.change(inputs[0], { target: { value: '1' } });
+    act(() => {
+      fireEvent.change(inputs[0], { target: { value: '1' } });
+    });
     expect(document.activeElement).toBe(inputs[1]);
 
     // Simula digitação no segundo input
-    fireEvent.change(inputs[1], { target: { value: '2' } });
+    act(() => {
+      fireEvent.change(inputs[1], { target: { value: '2' } });
+    });
     expect(document.activeElement).toBe(inputs[2]);
   });
 

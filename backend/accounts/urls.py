@@ -13,4 +13,4 @@ urlpatterns = [
     path('estabelecimento/me/', EstabelecimentoMeView.as_view(), name='estabelecimento-me'),
     path('password-reset/', PasswordResetRequestAPIView.as_view(), name='password-reset-request'),
     path('password-reset/confirm/', PasswordResetConfirmAPIView.as_view(), name='password-reset-confirm'),
-]
+]

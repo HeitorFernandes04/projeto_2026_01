@@ -24,6 +24,7 @@ from rest_framework.response import Response
 from .permissions import IsFuncionarioDaOS, IsGestor
 from accounts.permissions import IsCliente
 from .serializers import (
+    IncidenteGaleriaSerializer,
     ClienteGaleriaMidiaSerializer,
     KanbanCardSerializer,
     OrdemServicoSerializer,
@@ -180,7 +181,7 @@ class AvancarEtapaView(APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            os = OrdemServicoService.avancar_etapa(pk, serializer.validated_data)
+            os = OrdemServicoService.avancar_etapa(pk, serializer.validated_data, funcionario=request.user)
             return Response(OrdemServicoSerializer(os, context={'request': request}).data)
         except (ValueError, ValidationError) as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -589,9 +590,11 @@ class HistoricoGaleriaUnificadaView(APIView):
             return Response(envelope(data=data, meta={'perfil': perfil}), status=status.HTTP_200_OK)
 
         data = {
+            'incidentes': IncidenteGaleriaSerializer(galeria.get('incidentes', []), many=True, context=ctx).data,
             'estado_inicial': MidiaGaleriaSerializer(galeria['estado_inicial'], many=True, context=ctx).data,
             'estado_meio': MidiaGaleriaSerializer(galeria['estado_meio'], many=True, context=ctx).data,
             'estado_final': MidiaGaleriaSerializer(galeria['estado_final'], many=True, context=ctx).data,
+            'os_data': galeria.get('os_data', {})
         }
         return Response(envelope(data=data, meta={'perfil': perfil}), status=status.HTTP_200_OK)
 

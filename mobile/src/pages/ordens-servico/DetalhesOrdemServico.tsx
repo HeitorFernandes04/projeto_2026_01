@@ -136,6 +136,16 @@ const DetalhesOrdemServico: React.FC = () => {
                   <span style={styles.labelTiny}>Vaga de Saída</span>
                   <p style={styles.vagaText}>{ordemServico.vaga_patio || 'Pátio Geral'}</p>
                 </div>
+
+                {ordemServico.observacoes && (
+                  <div style={styles.statusBox}>
+                    <p style={styles.comentarioText}>
+                      <strong style={{ color: '#fff' }}>Observações Finais:</strong><br/>
+                      {ordemServico.observacoes}
+                    </p>
+                  </div>
+                )}
+
                 <GaleriaFotos 
                   ordemServicoId={ordemServico.id} 
                   momento="FINALIZADO" 

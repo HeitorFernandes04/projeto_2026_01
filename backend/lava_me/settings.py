@@ -33,6 +33,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'chave-insegura-apenas-para-desenvolvi
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://localhost:5173')
+FRONTEND_GESTOR_URL = os.environ.get('FRONTEND_GESTOR_URL', 'http://localhost:4200')
+FRONTEND_FUNCIONARIO_URL = os.environ.get('FRONTEND_FUNCIONARIO_URL', 'http://localhost:8100')
+
 
 
 # Application definition

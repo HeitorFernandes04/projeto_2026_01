@@ -75,44 +75,168 @@ $font: 'Inter', system-ui, -apple-system, sans-serif;
 
     .dossie-header-row {
       display: flex;
-      align-items: flex-start;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
       gap: 16px;
 
       @media (min-width: 768px) { gap: 24px; }
 
-      .btn-back-circle {
-        flex-shrink: 0;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: $bg;
-        border: 1px solid $border;
-        color: #fff;
+      .header-left-group {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        &:hover { border-color: $primary; color: $primary; }
-      }
+        align-items: flex-start;
+        gap: 16px;
 
-      .dossie-title {
-        h2 {
-          font-size: 18px;
-          font-weight: 800;
+        .btn-back-circle {
+          flex-shrink: 0;
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: $bg;
+          border: 1px solid $border;
           color: #fff;
-          margin: 0;
-          @media (min-width: 768px) { font-size: 24px; }
-
-          span { color: $text-muted; font-weight: 400; }
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          &:hover { border-color: $primary; color: $primary; }
         }
 
-        p {
-          color: $text-muted;
-          font-size: 13px;
-          margin-top: 6px;
+        .dossie-title {
+          h2 {
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            margin: 0;
+            @media (min-width: 768px) { font-size: 24px; }
+
+            span { color: $text-muted; font-weight: 400; }
+          }
+
+          p {
+            color: $text-muted;
+            font-size: 13px;
+            margin-top: 6px;
+          }
         }
       }
+
+      .dossie-os-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        .worker-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 16px;
+          height: 44px;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          transition: all 0.2s ease;
+        }
+
+        .worker-badge {
+          background: rgba(0, 102, 255, 0.08);
+          border: 1px solid rgba(0, 102, 255, 0.2);
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(0, 102, 255, 0.05);
+          
+          .material-symbols-outlined {
+            font-size: 18px;
+            color: #58a6ff;
+          }
+
+          &:hover {
+            background: rgba(0, 102, 255, 0.12);
+            border-color: rgba(0, 102, 255, 0.3);
+          }
+        }
+      }
+    }
+    }
+
+    /* BADGE DE TEMPO GLOBAL */
+    .time-badge {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e6edf3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      height: 44px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+      
+      .material-symbols-outlined {
+        font-size: 18px;
+        color: $text-muted;
+      }
+
+      .time-main {
+        font-size: 14px;
+        font-weight: 800;
+        color: #fff;
+      }
+
+      .time-sub {
+        font-size: 11px;
+        color: $text-muted;
+        margin-left: 4px;
+        font-weight: 500;
+      }
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+    }
+
+  /* OBSERVACOES DA ETAPA */
+  .dossie-observation {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid $primary;
+    border-radius: 8px;
+    margin-bottom: 20px;
+
+    .material-symbols-outlined {
+      color: $primary;
+      font-size: 20px;
+      margin-top: 2px;
+    }
+
+    p {
+      color: #fff;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0;
+
+      strong {
+        color: $text-muted;
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+    }
+
+    &.resolucao {
+      border-left-color: $success;
+      .material-symbols-outlined { color: $success; }
     }
   }
 
@@ -131,9 +255,14 @@ $font: 'Inter', system-ui, -apple-system, sans-serif;
 
     @media (min-width: 768px) { padding: 28px; }
 
-    &.incidente {
-      border-color: rgba($danger, 0.3);
-      background: linear-gradient(180deg, rgba($danger, 0.05) 0%, transparent 100%);
+    &.incidente-card {
+      border-color: rgba($danger, 0.4);
+      background: linear-gradient(180deg, rgba($danger, 0.08) 0%, rgba($card, 0.9) 100%);
+      padding: 16px; // Card menor como solicitado
+
+      .incidente-time {
+        margin-left: auto;
+      }
     }
 
     .card-header-inner {
@@ -154,11 +283,33 @@ $font: 'Inter', system-ui, -apple-system, sans-serif;
         &.gold  { background: rgba(255,179,0,.1); span { color: #ffb300; } }
         &.green { background: rgba($success,.1); span { color: $success; } }
         &.red   { background: rgba($danger,.1); span { color: $danger; } }
+        &.blue  { background: rgba($primary,.1); span { color: $primary; } }
       }
 
       .header-text {
         h3 { font-size: 16px; font-weight: 700; color: #fff; margin: 0; }
         p { font-size: 12px; color: $text-muted; margin: 2px 0 0; }
+        
+        .status-badge {
+          display: inline-block;
+          margin-top: 6px;
+          padding: 4px 8px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          
+          &.resolvido {
+            background: rgba($success, 0.1);
+            color: $success;
+            border: 1px solid rgba($success, 0.2);
+          }
+          &.aberto {
+            background: rgba($danger, 0.1);
+            color: $danger;
+            border: 1px solid rgba($danger, 0.2);
+          }
+        }
       }
     }
 

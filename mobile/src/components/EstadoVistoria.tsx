@@ -27,8 +27,11 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
 
   const carregarDados = useCallback(async () => {
     try {
-      const data = await getOrdemServico(ordemServicoId);
+      const data = await getOrdemServico(ordemServicoId) as any;
       setOrdemServico(data as unknown as OrdemServicoVistoria);
+      if (data.laudo_vistoria && observacoes === '') {
+        setObservacoes(data.laudo_vistoria);
+      }
     } catch (err) {
       console.error('Erro ao carregar vistoria:', err);
     } finally {
