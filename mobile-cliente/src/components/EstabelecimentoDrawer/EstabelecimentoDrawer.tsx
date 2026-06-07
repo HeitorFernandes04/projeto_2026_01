@@ -1,7 +1,7 @@
 import React from 'react';
-import { IonModal, IonContent, IonButton } from '@ionic/react';
+import { IonButton, IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { locationOutline, timeOutline, navigateOutline, sparklesOutline, closeOutline } from 'ionicons/icons';
 import type { EstabelecimentoMapa } from '../../services/api';
 import './EstabelecimentoDrawer.css';
 
@@ -32,7 +32,6 @@ interface Props {
 }
 
 const EstabelecimentoDrawer: React.FC<Props> = ({ estabelecimento, posicaoUsuario, onClose }) => {
-  const { token } = useAuth();
   const history = useHistory();
 
   const handleVerServicos = () => {
@@ -50,81 +49,86 @@ const EstabelecimentoDrawer: React.FC<Props> = ({ estabelecimento, posicaoUsuari
     );
   };
 
-  const distancia = estabelecimento && posicaoUsuario && estabelecimento.latitude && estabelecimento.longitude
+  if (!estabelecimento) return null;
+
+  const distancia = posicaoUsuario && estabelecimento.latitude && estabelecimento.longitude
     ? haversine(posicaoUsuario[0], posicaoUsuario[1], estabelecimento.latitude, estabelecimento.longitude)
     : null;
 
-  const aberto = estabelecimento ? isAberto(estabelecimento) : false;
+  const aberto = isAberto(estabelecimento);
 
   return (
-    <IonModal
-      isOpen={!!estabelecimento}
-      onDidDismiss={onClose}
-      breakpoints={[0, 0.5, 0.85]}
-      initialBreakpoint={0.5}
-      backdropBreakpoint={0.5}
-      backdropDismiss
-    >
-      <IonContent className="lm-page">
-        {estabelecimento && (
-          <div className="drawer-content">
-            <div className="drawer-handle" />
+    <div className="floating-card-wrapper">
+      {/* Background invisível para detectar clique fora e fechar */}
+      <div className="floating-card-backdrop" onClick={onClose}></div>
+      
+      <div className="floating-card">
+        {/* Botão de Fechar */}
+        <button className="floating-close-btn" onClick={onClose}>
+          <IonIcon icon={closeOutline} />
+        </button>
 
-            <div className="drawer-header">
-              {estabelecimento.logo && (
-                <img
-                  src={estabelecimento.logo}
-                  alt={`Logo ${estabelecimento.nome_fantasia}`}
-                  className="drawer-logo"
-                  crossOrigin="anonymous"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              )}
-              <div className="drawer-header-info">
-                <h2 className="drawer-nome">{estabelecimento.nome_fantasia}</h2>
-                <span className={`lm-badge ${aberto ? 'lm-badge-finalizado' : 'lm-badge-cancelado'}`}>
-                  {aberto ? 'Aberto' : 'Fechado'}
-                </span>
+        {/* Conteúdo Principal Superior (Textos na Esquerda, Logo na Direita) */}
+        <div className="fc-main-content">
+          <div className="fc-info-column">
+            <div className="fc-title-group">
+              <h2 className="fc-nome">{estabelecimento.nome_fantasia}</h2>
+              <span className={`fc-badge ${aberto ? 'fc-badge-aberto' : 'fc-badge-fechado'}`}>
+                {aberto ? 'ABERTO' : 'FECHADO'}
+              </span>
+            </div>
+
+            {/* Linha 2: Distância e Tempo Lado a Lado */}
+            {distancia != null && (
+              <div className="fc-row-2">
+                <div className="fc-metrica">
+                  <IonIcon icon={locationOutline} className="fc-icon" />
+                  <span>{distancia.toFixed(1)} km</span>
+                </div>
+                <div className="fc-metrica">
+                  <IonIcon icon={timeOutline} className="fc-icon" />
+                  <span>~{Math.max(1, Math.round(distancia * 2))} min</span>
+                </div>
               </div>
-            </div>
-
-            <div className="drawer-metricas">
-              {estabelecimento.avaliacao != null && (
-                <span className="drawer-metrica">⭐ {estabelecimento.avaliacao.toFixed(1)}</span>
-              )}
-              {distancia != null && (
-                <>
-                  <span className="drawer-metrica">📍 {distancia.toFixed(1)} km</span>
-                  <span className="drawer-metrica">⏱ ~{Math.round(distancia * 2)} min</span>
-                </>
-              )}
-            </div>
-
-            <p className="drawer-endereco">{estabelecimento.endereco_completo}</p>
-
-            {estabelecimento.descricao && (
-              <p className="drawer-descricao">{estabelecimento.descricao}</p>
             )}
 
-            <div className="drawer-acoes">
-              <IonButton
-                className="drawer-btn-secundario"
-                fill="outline"
-                onClick={handleComoChegar}
-              >
-                📍 Como chegar
-              </IonButton>
-              <IonButton
-                className="lm-btn-primary drawer-btn-primary"
-                onClick={handleVerServicos}
-              >
-                Ver Serviços
-              </IonButton>
-            </div>
+            {/* Linha 3: Endereço */}
+            <p className="fc-endereco">{estabelecimento.endereco_completo}</p>
           </div>
-        )}
-      </IonContent>
-    </IonModal>
+
+          <div className="fc-logo-container">
+            {estabelecimento.logo && (
+              <img
+                src={estabelecimento.logo}
+                alt={`Logo ${estabelecimento.nome_fantasia}`}
+                className="fc-logo-right"
+                crossOrigin="anonymous"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Linha 4: Botões */}
+        <div className="fc-row-4">
+          <IonButton
+            className="fc-btn-outline"
+            fill="outline"
+            onClick={handleComoChegar}
+          >
+            <IonIcon icon={navigateOutline} slot="start" />
+            COMO CHEGAR
+          </IonButton>
+          <IonButton
+            className="fc-btn-solid"
+            onClick={handleVerServicos}
+          >
+            <IonIcon icon={sparklesOutline} slot="start" />
+            VER SERVIÇOS
+          </IonButton>
+        </div>
+      </div>
+    </div>
   );
 };
 

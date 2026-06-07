@@ -10,12 +10,19 @@ import {
   IonSearchbar,
   IonChip,
   IonLabel,
-  IonSelect,
-  IonSelectOption,
+  IonPopover,
   useIonViewWillEnter,
 } from '@ionic/react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { locateOutline, chevronBackOutline } from 'ionicons/icons';
+import { 
+  locateOutline, 
+  arrowBackOutline,
+  locationOutline,
+  timeOutline,
+  starOutline,
+  star,
+  chevronDownOutline
+} from 'ionicons/icons';
 import L from 'leaflet';
 import { Geolocation } from '@capacitor/geolocation';
 import { getEstabelecimentos, type EstabelecimentoMapa } from '../../services/api';
@@ -33,7 +40,7 @@ L.Icon.Default.mergeOptions({ iconUrl: markerIcon, iconRetinaUrl: markerIcon2x, 
 
 const CENTRO_PADRAO: [number, number] = [-10.184, -48.334];
 
-type Filtro = 'proximos' | 'avaliados' | 'abertos' | null;
+type Filtro = 'proximos' | 'abertos' | null;
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -55,18 +62,26 @@ function isAberto(e: EstabelecimentoMapa): boolean {
   return min >= hA * 60 + mA && min <= hF * 60 + mF;
 }
 
-function criarPin(selecionado: boolean) {
-  const cor = selecionado ? '#ff3b30' : '#0066ff';
+function criarPin(e: EstabelecimentoMapa, selecionado: boolean) {
+  // Define a logo do estabelecimento ou um fallback genérico (usando avatar padrão)
+  const logoUrl = e.logo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(e.nome_fantasia) + '&background=0D8ABC&color=fff';
+  
+  // Classe extra se selecionado (pode ser usado para animação ou destaque no CSS)
+  const pinClass = selecionado ? 'lm-custom-pin pin-selecionado' : 'lm-custom-pin';
+
   return L.divIcon({
     className: '',
-    html: `<div class="lm-pin" style="background:${cor}">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
-      </svg>
-    </div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-    popupAnchor: [0, -36],
+    html: `
+      <div class="${pinClass}">
+        <div class="lm-pin-bubble">
+          <img src="${logoUrl}" alt="Logo" class="lm-pin-logo" />
+        </div>
+        <div class="lm-pin-arrow"></div>
+      </div>
+    `,
+    iconSize: [64, 76], /* Width 64, Height 64 + 12 arrow */
+    iconAnchor: [32, 76], /* Anchor no centro inferior */
+    popupAnchor: [0, -76],
   });
 }
 
@@ -80,6 +95,7 @@ const Home: React.FC = () => {
   const [filtro, setFiltro] = useState<Filtro>(null);
   const [posicaoUsuario, setPosicaoUsuario] = useState<[number, number] | null>(null);
   const [notaMinima, setNotaMinima] = useState<number | undefined>(undefined);
+  const [filtroAvaliacao, setFiltroAvaliacao] = useState<string>('qualquer');
   const centroKey = useRef(0);
 
   const fetchEstabelecimentos = (nota?: number) => {
@@ -95,6 +111,20 @@ const Home: React.FC = () => {
   const handleNotaChange = (val: number | undefined) => {
     setNotaMinima(val);
     fetchEstabelecimentos(val);
+  };
+
+  const onAvaliacaoChange = (val: string) => {
+    setFiltroAvaliacao(val);
+    if (val === 'qualquer') {
+      handleNotaChange(undefined);
+    } else {
+      handleNotaChange(Number(val));
+    }
+  };
+
+  const getAvaliacaoLabel = () => {
+    if (filtroAvaliacao === 'qualquer') return 'Qualquer Nota';
+    return `${filtroAvaliacao}+ Estrelas`;
   };
 
   const centralizarNoUsuario = async () => {
@@ -124,27 +154,28 @@ const Home: React.FC = () => {
         const db = haversine(posicaoUsuario[0], posicaoUsuario[1], b.latitude!, b.longitude!);
         return da - db;
       });
-    } else if (filtro === 'avaliados') {
-      result.sort((a, b) => (b.avaliacao ?? 0) - (a.avaliacao ?? 0));
-    } else if (filtro === 'abertos') {
+    }
+
+    if (filtro === 'abertos') {
       result = result.filter(e => isAberto(e));
     }
 
     return result;
-  }, [estabelecimentos, busca, filtro, posicaoUsuario]);
+  }, [estabelecimentos, busca, filtro, posicaoUsuario, filtroAvaliacao]);
 
   return (
     <IonPage className="lm-page">
-      <IonHeader className="ion-no-border mapa-header">
-        <IonToolbar className="mapa-toolbar">
-          <div className="mapa-header-content">
+      <IonHeader className="ion-no-border mapa-header-floating">
+        <IonToolbar className="mapa-toolbar-floating">
+          <div className="mapa-glass-panel">
             <div className="mapa-title-row">
-              {token && (
-                <button className="mapa-back-btn" onClick={() => history.push('/inicio')}>
-                  <IonIcon icon={chevronBackOutline} />
-                </button>
-              )}
-              <p className="mapa-titulo">Encontre um Lava-Me próximo</p>
+              <button 
+                className="mapa-back-btn" 
+                onClick={() => history.length > 1 ? history.goBack() : history.replace('/')}
+              >
+                <IonIcon icon={arrowBackOutline} />
+              </button>
+              <p className="mapa-titulo">Encontre um Lava-Jet</p>
             </div>
 
             <IonSearchbar
@@ -152,44 +183,72 @@ const Home: React.FC = () => {
               onIonInput={e => setBusca(e.detail.value ?? '')}
               placeholder="Buscar lava-jato..."
               debounce={200}
-              className="mapa-searchbar"
+              className="mapa-searchbar-glass"
             />
 
-            <div className="mapa-filtros">
+            <div className="mapa-filtros-glass">
               <IonChip
-                className={filtro === 'proximos' ? 'chip-ativo' : 'chip-inativo'}
+                className={filtro === 'proximos' ? 'chip-glass-ativo' : 'chip-glass-inativo'}
                 onClick={() => toggleFiltro('proximos')}
               >
-                <IonLabel>📍 Mais próximos</IonLabel>
+                <IonIcon icon={locationOutline} className="chip-icon" />
+                <IonLabel>Mais Próximos</IonLabel>
               </IonChip>
               <IonChip
-                className={filtro === 'avaliados' ? 'chip-ativo' : 'chip-inativo'}
-                onClick={() => toggleFiltro('avaliados')}
-              >
-                <IonLabel>⭐ Melhor avaliados</IonLabel>
-              </IonChip>
-              <IonChip
-                className={filtro === 'abertos' ? 'chip-ativo' : 'chip-inativo'}
+                className={filtro === 'abertos' ? 'chip-glass-ativo' : 'chip-glass-inativo'}
                 onClick={() => toggleFiltro('abertos')}
               >
-                <IonLabel>🟢 Abertos</IonLabel>
+                <IonIcon icon={timeOutline} className="chip-icon" />
+                <IonLabel>Abertos</IonLabel>
               </IonChip>
 
-              <IonSelect
-                value={notaMinima}
-                placeholder="Qualquer nota"
-                onIonChange={e => handleNotaChange(e.detail.value)}
-                interface="popover"
-                className="mapa-nota-select"
-              >
-                <IonSelectOption value={undefined}>Qualquer nota</IonSelectOption>
-                <IonSelectOption value={3}>3+ Estrelas</IonSelectOption>
-                <IonSelectOption value={4}>4+ Estrelas</IonSelectOption>
-                <IonSelectOption value={4.5}>4.5+ Estrelas</IonSelectOption>
-              </IonSelect>
+              <div id="trigger-avaliacao" className={`chip-select-wrapper ${filtroAvaliacao !== 'qualquer' ? 'chip-glass-ativo' : 'chip-glass-inativo'}`}>
+                <IonIcon icon={star} className="chip-icon chip-select-icon" />
+                <span className="chip-select-label">{getAvaliacaoLabel()}</span>
+                <IonIcon icon={chevronDownOutline} className="chip-icon-down" />
+              </div>
+
+              <IonPopover trigger="trigger-avaliacao" dismissOnSelect={true} className="avaliacao-popover">
+                <IonContent>
+                  <div className="avaliacao-menu">
+                    <div 
+                      className="avaliacao-header"
+                      onClick={() => onAvaliacaoChange('qualquer')}
+                    >
+                      Qualquer Nota
+                    </div>
+                    {[
+                      { value: '5.0', stars: 5, label: '5+ estrelas' },
+                      { value: '4.0', stars: 4, label: '4+ estrelas' },
+                      { value: '3.0', stars: 3, label: '3+ estrelas' },
+                      { value: '2.0', stars: 2, label: '2+ estrelas' },
+                      { value: '1.0', stars: 1, label: '1+ estrelas' }
+                    ].map(opt => (
+                      <div 
+                        key={opt.value} 
+                        className={`avaliacao-item ${filtroAvaliacao === opt.value ? 'selected' : ''}`}
+                        onClick={() => onAvaliacaoChange(opt.value)}
+                      >
+                        <div className="avaliacao-stars">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <IonIcon 
+                              key={s} 
+                              icon={star} 
+                              className={s <= opt.stars ? 'star-filled' : 'star-empty'} 
+                            />
+                          ))}
+                        </div>
+                        <span className="avaliacao-label">{opt.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </IonContent>
+              </IonPopover>
             </div>
 
-            <span className="mapa-contador">{filtrados.length} encontrado{filtrados.length !== 1 ? 's' : ''}</span>
+            <span className="mapa-contador-glass">
+              {filtrados.length} encontrado{filtrados.length !== 1 ? 's' : ''}
+            </span>
           </div>
         </IonToolbar>
       </IonHeader>
@@ -198,6 +257,7 @@ const Home: React.FC = () => {
         <MapContainer
           center={centro}
           zoom={13}
+          zoomControl={false}
           style={{ height: '100%', width: '100%' }}
           key={`${centro.join(',')}-${centroKey.current}`}
         >
@@ -207,9 +267,9 @@ const Home: React.FC = () => {
           />
           {filtrados.map(e => (
             <Marker
-              key={e.id}
+              key={`${e.id}-${e.logo}-${selecionado?.id === e.id}`}
               position={[e.latitude as number, e.longitude as number]}
-              icon={criarPin(selecionado?.id === e.id)}
+              icon={criarPin(e, selecionado?.id === e.id)}
               eventHandlers={{ click: () => setSelecionado(e) }}
             />
           ))}

@@ -261,8 +261,12 @@ class ClienteVeiculoViewSet(viewsets.ModelViewSet):
                 raise DRFValidationError({'estabelecimento_slug': 'Nenhum estabelecimento ativo disponível.'})
         else:
             est = get_object_or_404(Estabelecimento, slug=slug)
-        
-        serializer.save(cliente=self.request.user.perfil_cliente, estabelecimento=est)
+        serializer.save(
+            cliente=self.request.user.perfil_cliente, 
+            estabelecimento=est,
+            nome_dono=self.request.user.name,
+            celular_dono=self.request.user.perfil_cliente.telefone_whatsapp
+        )
 
 
 

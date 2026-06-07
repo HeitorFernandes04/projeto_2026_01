@@ -53,6 +53,7 @@ export interface OrdemServico {
   veiculo_cor?: string;
   observacoes?: string;
   vaga_patio?: string;
+  avaliacao_estrelas?: number | null;
 }
 
 export interface OrdemAtiva {

@@ -11,7 +11,7 @@ import {
   IonAlert,
 } from '@ionic/react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { timeOutline, calendarOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
+import { time, calendar, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 import { getDisponibilidade, getVeiculos } from '../../services/api';
 import type { Disponibilidade, Servico, Veiculo } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -171,7 +171,7 @@ const Agendamento: React.FC = () => {
 
         {/* Seção Data (Calendário Grade Mensal) */}
         <h2 className="ag-section-title">
-          <IonIcon icon={calendarOutline} className="ag-section-icon" /> Data
+          <IonIcon icon={calendar} className="ag-section-icon" /> Data
         </h2>
 
         <div className="ag-calendar fade-in">
@@ -220,7 +220,7 @@ const Agendamento: React.FC = () => {
 
         {/* Seção Horário (Grade de Chips) */}
         <h2 className="ag-section-title">
-          <IonIcon icon={timeOutline} className="ag-section-icon" /> Horário
+          <IonIcon icon={time} className="ag-section-icon" /> Horário
         </h2>
 
         {horarios.length === 0 ? (

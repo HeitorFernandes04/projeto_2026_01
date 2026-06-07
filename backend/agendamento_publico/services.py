@@ -23,7 +23,7 @@ B2C_EMAIL_DOMAIN = 'cliente.lava.me'
 class WhatsAppOTPService:
     @staticmethod
     def enviar_mensagem(telefone, mensagem):
-        url = 'http://localhost:8080/message/sendText/sua_instancia'
+        url = 'http://localhost:8080/message/sendText/teste'
         
         # Garante que o DDI 55 seja adicionado apenas se não estiver presente
         numero_destino = telefone if telefone.startswith('55') else f"55{telefone}"
