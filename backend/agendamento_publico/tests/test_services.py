@@ -259,9 +259,9 @@ class TestWhatsAppOTPService:
         mock_post.assert_called_once()
         args, kwargs = mock_post.call_args
         assert kwargs['json']['number'] == '5511999999999'
-        assert kwargs['json']['textMessage']['text'] == 'Seu código é 1234'
+        assert kwargs['json']['text'] == 'Seu código é 1234'
         assert kwargs['headers']['apikey'] == 'sua_chave_secreta_aqui'
-        assert args[0] == 'http://localhost:8080/message/sendText/sua_instancia'
+        assert args[0] == 'http://localhost:8080/message/sendText/teste'
 
     @patch('agendamento_publico.services.requests.post')
     def test_enviar_mensagem_falha_nao_crasha_api(self, mock_post):

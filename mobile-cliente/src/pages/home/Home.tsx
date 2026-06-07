@@ -175,7 +175,7 @@ const Home: React.FC = () => {
               >
                 <IonIcon icon={arrowBackOutline} />
               </button>
-              <p className="mapa-titulo">Encontre um Lava-Jet</p>
+              <p className="mapa-titulo">Encontre um Lava-Me</p>
             </div>
 
             <IonSearchbar
