@@ -161,4 +161,4 @@ backend/.chroma_db/
 backend/logs/
 cypress/screenshots/evolution-api/
 evolution-api/
-\evolution-ap
+\evolution-api

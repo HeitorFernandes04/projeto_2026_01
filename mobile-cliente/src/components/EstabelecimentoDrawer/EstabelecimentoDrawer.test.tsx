@@ -27,6 +27,7 @@ vi.mock('@ionic/react', () => ({
   }) => <button onClick={onClick} data-href={routerLink}>{children}</button>,
   IonChip: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   IonLabel: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  IonIcon: () => null,
 }));
 
 const estabelecimentoMock: EstabelecimentoMapa = {
@@ -48,7 +49,7 @@ describe('EstabelecimentoDrawer', () => {
         onClose={vi.fn()}
       />,
     );
-    expect(screen.queryByTestId('modal')).toBeNull();
+    expect(document.querySelector('.floating-card-wrapper')).toBeNull();
   });
 
   it('renderiza o modal quando um estabelecimento é selecionado', () => {
@@ -59,7 +60,7 @@ describe('EstabelecimentoDrawer', () => {
         onClose={vi.fn()}
       />,
     );
-    expect(screen.getByTestId('modal')).toBeDefined();
+    expect(document.querySelector('.floating-card-wrapper')).not.toBeNull();
     expect(screen.getByText('Lava-Me Centro')).toBeDefined();
     expect(screen.getByText('Av. Palmas, 100')).toBeDefined();
   });
@@ -73,7 +74,8 @@ describe('EstabelecimentoDrawer', () => {
         onClose={onClose}
       />,
     );
-    fireEvent.click(screen.getByTestId('modal'));
+    const backdrop = document.querySelector('.floating-card-backdrop');
+    if (backdrop) fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledOnce();
   });
 
