@@ -1,0 +1,17 @@
+version: '3.7'
+services:
+  db-evolution:
+    image: postgres:15
+    container_name: db-evolution-native
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=evolution_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - projeto_2026_01_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  projeto_2026_01_db_data:

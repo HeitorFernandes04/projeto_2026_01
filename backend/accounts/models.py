@@ -32,6 +32,11 @@ class Estabelecimento(models.Model):
         validators=[MinValueValidator(-180.0), MaxValueValidator(180.0)],
     )
 
+    # RF-Finalização: Nota média de avaliações (1.0 a 5.0) cacheada para mapa e dashboard
+    avaliacao_media = models.DecimalField(
+        max_digits=3, decimal_places=2, default=0.00
+    )
+
     class Meta:
         verbose_name = "Estabelecimento"
         verbose_name_plural = "Estabelecimentos"

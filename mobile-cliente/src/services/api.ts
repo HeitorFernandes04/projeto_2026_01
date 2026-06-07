@@ -66,12 +66,14 @@ export interface OrdemAtiva {
   tempo_estimado_min: number | null;
   slug_cancelamento?: string | null;
   data_hora?: string;
+  avaliacao_estrelas?: number | null;
 }
 
 
 export interface AcompanhamentoData {
   etapa_atual: number;
   status: string;
+  slug_cancelamento?: string | null;
 }
 
 export interface ClientePerfil {
@@ -96,6 +98,7 @@ export interface PainelOrdemInfo {
   data_hora: string;
   etapa_atual: number;
   slug_cancelamento?: string | null;
+  avaliacao_estrelas?: number | null;
 }
 
 export interface PainelClienteResponse {
@@ -119,8 +122,9 @@ export interface AgendamentoPayload {
 
 // — Public (sem auth) —
 
-export async function getEstabelecimentos(): Promise<EstabelecimentoMapa[]> {
-  const res = await fetch(`${BASE_URL}/api/publico/estabelecimentos/`, {
+export async function getEstabelecimentos(nota_minima?: number): Promise<EstabelecimentoMapa[]> {
+  const params = nota_minima ? `?nota_minima=${nota_minima}` : '';
+  const res = await fetch(`${BASE_URL}/api/publico/estabelecimentos/${params}`, {
     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
   });
   if (!res.ok) throw new Error('Falha ao carregar estabelecimentos.');
@@ -221,7 +225,8 @@ export const getOrdemAtiva = async (): Promise<OrdemAtiva | null> => {
     progresso: ativo.etapa_atual,
     tempo_estimado_min: ativo.tempo_estimado_min,
     slug_cancelamento: ativo.slug_cancelamento,
-    data_hora: ativo.data_hora
+    data_hora: ativo.data_hora,
+    avaliacao_estrelas: ativo.avaliacao_estrelas,
   };
 };
 
@@ -238,7 +243,8 @@ export const getAcompanhamento = async (osId: number) => {
   
   return {
     etapa_atual: ativa.etapa_atual,
-    status: ativa.status
+    status: ativa.status,
+    slug_cancelamento: ativa.slug_cancelamento
   } as AcompanhamentoData;
 };
 
@@ -253,6 +259,9 @@ export const getPainelCliente = () =>
 
 export const createAgendamento = (data: AgendamentoPayload) =>
   http.post<OrdemServico>('/api/cliente/agendamentos/', data);
+
+export const avaliarOrdemServico = (id: number, estrelas: number) =>
+  http.post<{ detail: string; estrelas: number }>(`/api/cliente/operacao/${id}/avaliar/`, { estrelas });
 
 export interface GaleriaHistorico {
   entrada: { id: number; momento: string; arquivo_url: string }[];

@@ -8,6 +8,7 @@ export interface Indicadores {
   volume_por_hora: number[];
   receita_semanal: { data: string, valor: number }[];
   incidentesAtivos: number;
+  avaliacao_media?: number;
 }
 
 export interface EficienciaFuncionario {

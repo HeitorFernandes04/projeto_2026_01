@@ -306,7 +306,8 @@ class DashboardAPIView(APIView):
             'receitaTotal': round(receita_total, 2),
             'volume_por_hora': volume_por_hora,
             'receita_semanal': receita_semanal,
-            'incidentesAtivos': incidentes_ativos
+            'incidentesAtivos': incidentes_ativos,
+            'avaliacao_media': gestor.estabelecimento.avaliacao_media
         })
 
 class EficienciaAPIView(APIView):

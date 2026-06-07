@@ -138,3 +138,34 @@ O ambiente produtivo consistirá em 5 containers integrados em rede isolada:
 - Chaves de segurança e senhas carregadas via variáveis de ambiente (`.env` ocultado).
 - Restrição de CORS permitindo conexões apenas dos domínios oficiais e das origens mobile locais (`capacitor://localhost`).
 - Habilitação de cabeçalhos de segurança HTTP (`X-Frame-Options`, `Content-Security-Policy`).
+
+---
+
+## 6. Avaliação do Serviço (NPS / Estrelas)
+Para garantir o controle de qualidade contínuo e oferecer um critério de escolha justo aos clientes no portal (mapa), o sistema contará com um fluxo de avaliação pós-serviço.
+
+### 🌟 Dinâmica de Avaliação
+1. **Momento da Avaliação**: Apenas disponível quando a Ordem de Serviço atingir o status `FINALIZADO`.
+2. **Interface do Cliente (B2C)**: No painel de acompanhamento (ou histórico), o cliente visualizará uma interface para dar uma nota de **1 a 5 estrelas** ao serviço recém-finalizado.
+3. **Média do Estabelecimento**:
+   - Cada avaliação recebida irá compor uma média ponderada na tabela do `Estabelecimento`.
+   - O gestor visualizará a **Média Atual (1.0 a 5.0)** e o total de avaliações diretamente no **Dashboard Web**.
+4. **Filtro Geográfico (Mapa B2C)**:
+   - Na busca de lava-rápidos no mapa, o cliente poderá **filtrar estabelecimentos a partir de uma nota mínima** (ex: "Mostrar apenas 4+ estrelas").
+   - A listagem de estabelecimentos no endpoint do mapa retornará o atributo `avaliacao_media`.
+
+### 🛠️ Especificação Técnica (Backend)
+- **Modelos**: 
+  - Adição de `avaliacao_estrelas` (IntegerField, 1-5, nullable) na `OrdemServico`.
+  - Adição de `avaliacao_media` (DecimalField) no modelo `Estabelecimento` como cache, para otimizar queries espaciais/filtros no mapa.
+- **API**:
+  - `POST /api/operacao/ordens-servico/<id>/avaliar/`: Endpoint restrito ao cliente dono da OS para submeter a nota.
+  - Gatilho (`signal`): Ao receber uma avaliação, recalcula a `avaliacao_media` do estabelecimento com base nas OS finalizadas e avaliadas.
+- **Filtro no Mapa**:
+  - Modificação em `GET /api/accounts/estabelecimentos/mapa/` para aceitar um query param `nota_minima`.
+
+### 🛡️ Regras de Segurança da Avaliação
+1. **Autorização (Ownership)**: Apenas o cliente titular (dono do veículo/agendamento) pode enviar uma avaliação. Funcionários e gestores recebem erro HTTP 403 (Forbidden) se tentarem forjar notas.
+2. **Trava de Status**: O endpoint de avaliação deve rejeitar qualquer submissão caso a OS não possua o status exato de `FINALIZADO` (impedindo avaliações prévias ou em OS canceladas).
+3. **Prevenção contra Fraudes (Rate/Duplicate)**: O sistema garantirá que a avaliação seja submetida (ou sobrescrita) de forma atômica, garantindo que o cálculo da média do estabelecimento nunca contabilize a mesma OS duas vezes.
+4. **Validação Estrita de Dados**: O input da nota (`estrelas`) deve ser estritamente tipado como um número inteiro (1 a 5). Inserções nulas ou notas fora da escala gerarão erro de validação (HTTP 400).

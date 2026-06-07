@@ -10,6 +10,8 @@ import {
   IonSearchbar,
   IonChip,
   IonLabel,
+  IonSelect,
+  IonSelectOption,
   useIonViewWillEnter,
 } from '@ionic/react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -77,13 +79,23 @@ const Home: React.FC = () => {
   const [busca, setBusca] = useState('');
   const [filtro, setFiltro] = useState<Filtro>(null);
   const [posicaoUsuario, setPosicaoUsuario] = useState<[number, number] | null>(null);
+  const [notaMinima, setNotaMinima] = useState<number | undefined>(undefined);
   const centroKey = useRef(0);
 
-  useIonViewWillEnter(() => {
-    getEstabelecimentos()
+  const fetchEstabelecimentos = (nota?: number) => {
+    getEstabelecimentos(nota)
       .then(data => setEstabelecimentos(data.filter(e => e.latitude !== null && e.longitude !== null)))
       .catch(() => {});
+  };
+
+  useIonViewWillEnter(() => {
+    fetchEstabelecimentos(notaMinima);
   });
+
+  const handleNotaChange = (val: number | undefined) => {
+    setNotaMinima(val);
+    fetchEstabelecimentos(val);
+  };
 
   const centralizarNoUsuario = async () => {
     try {
@@ -162,6 +174,19 @@ const Home: React.FC = () => {
               >
                 <IonLabel>🟢 Abertos</IonLabel>
               </IonChip>
+
+              <IonSelect
+                value={notaMinima}
+                placeholder="Qualquer nota"
+                onIonChange={e => handleNotaChange(e.detail.value)}
+                interface="popover"
+                className="mapa-nota-select"
+              >
+                <IonSelectOption value={undefined}>Qualquer nota</IonSelectOption>
+                <IonSelectOption value={3}>3+ Estrelas</IonSelectOption>
+                <IonSelectOption value={4}>4+ Estrelas</IonSelectOption>
+                <IonSelectOption value={4.5}>4.5+ Estrelas</IonSelectOption>
+              </IonSelect>
             </div>
 
             <span className="mapa-contador">{filtrados.length} encontrado{filtrados.length !== 1 ? 's' : ''}</span>

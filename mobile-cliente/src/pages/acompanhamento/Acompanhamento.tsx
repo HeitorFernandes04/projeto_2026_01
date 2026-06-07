@@ -11,8 +11,10 @@ import {
 import { useHistory } from 'react-router-dom';
 import {
   timeOutline,
+  star,
+  starOutline,
 } from 'ionicons/icons';
-import { getOrdemAtiva, getAcompanhamento, cancelarAgendamento, type OrdemAtiva } from '../../services/api';
+import { getOrdemAtiva, getAcompanhamento, cancelarAgendamento, avaliarOrdemServico, type OrdemAtiva } from '../../services/api';
 import './Acompanhamento.css';
 
 interface Etapa {
@@ -43,6 +45,13 @@ const Acompanhamento: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  
+  // Avaliação
+  const [osId, setOsId] = useState<number | null>(null);
+  const [avaliacao, setAvaliacao] = useState<number | null>(null);
+  const [hoverStar, setHoverStar] = useState<number>(0);
+  const [isAvaliado, setIsAvaliado] = useState(false);
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getStatusIndex = (statusStr: string) => {
@@ -102,6 +111,9 @@ const Acompanhamento: React.FC = () => {
         setIsIncidente(ativa.status === 'BLOQUEADO_INCIDENTE');
         setFinalizado(ativa.status === 'FINALIZADO');
         setSlugCancelamento(ativa.slug_cancelamento || null);
+        setOsId(ativa.id);
+        setAvaliacao(ativa.avaliacao_estrelas ?? null);
+        setIsAvaliado(!!ativa.avaliacao_estrelas);
 
         if (ativa.status !== 'FINALIZADO') {
           poll(ativa.id);
@@ -137,6 +149,21 @@ const Acompanhamento: React.FC = () => {
       setShowToast(true);
     } finally {
       setCancelLoading(false);
+    }
+  };
+
+  const handleAvaliar = async (nota: number) => {
+    if (!osId) return;
+    setAvaliacao(nota);
+    try {
+      await avaliarOrdemServico(osId, nota);
+      setIsAvaliado(true);
+      setToastMessage('Avaliação enviada com sucesso!');
+      setShowToast(true);
+    } catch (e) {
+      setToastMessage('Erro ao enviar avaliação.');
+      setShowToast(true);
+      setAvaliacao(null);
     }
   };
 
@@ -261,6 +288,44 @@ const Acompanhamento: React.FC = () => {
               <div style={{ marginTop: '20px', background: 'rgba(52, 211, 153, 0.1)', color: '#34D399', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>Seu veículo está pronto!</h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '14px' }}>Pode passar para retirar.</p>
+              </div>
+            )}
+
+            {/* Avaliação (Apenas se finalizado) */}
+            {finalizado && (
+              <div className="avaliacao-container">
+                {isAvaliado ? (
+                  <div className="avaliacao-success">
+                    <h3 className="avaliacao-title">Avaliação Registrada!</h3>
+                    <div className="stars-display">
+                      {[1,2,3,4,5].map(v => (
+                        <IonIcon 
+                          key={v} 
+                          icon={v <= (avaliacao || 0) ? star : starOutline} 
+                          className="star-icon filled" 
+                        />
+                      ))}
+                    </div>
+                    <p className="avaliacao-subtitle">Agradecemos o seu feedback.</p>
+                  </div>
+                ) : (
+                  <div className="avaliacao-box">
+                    <h3 className="avaliacao-title">Como foi o serviço?</h3>
+                    <p className="avaliacao-subtitle">Sua opinião é importante para o estabelecimento.</p>
+                    <div className="stars-interactive">
+                      {[1,2,3,4,5].map(v => (
+                        <IonIcon 
+                          key={v} 
+                          icon={v <= (hoverStar || avaliacao || 0) ? star : starOutline}
+                          className={`star-icon interactive ${v <= (hoverStar || avaliacao || 0) ? 'filled' : ''}`}
+                          onMouseEnter={() => setHoverStar(v)}
+                          onMouseLeave={() => setHoverStar(0)}
+                          onClick={() => handleAvaliar(v)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -16,11 +16,12 @@ import os
 from dotenv import load_dotenv
 import sys
 
-# Carrega variáveis do arquivo .env (se existir)
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Carrega variáveis do arquivo .env na raiz do projeto
+env_path = BASE_DIR.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 
 # Quick-start development settings - unsuitable for production
