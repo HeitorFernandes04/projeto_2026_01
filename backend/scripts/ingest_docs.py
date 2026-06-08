@@ -24,11 +24,13 @@ def ingest_documents():
     client = chromadb.PersistentClient(path=str(CHROMA_PATH))
     
     # Recria a coleção para remover chunks de documentos deletados/renomeados.
+    # Usamos delete + get_or_create para compatibilidade com o backend Rust do ChromaDB,
+    # que pode perder a referência interna ao usar create_collection diretamente.
     try:
         client.delete_collection(name="regras_projeto")
     except Exception:
         pass
-    collection = client.create_collection(name="regras_projeto")
+    collection = client.get_or_create_collection(name="regras_projeto")
     
     # rglob varre as subpastas em docs/
     md_files = list(DOCS_DIR.rglob("*.md"))
