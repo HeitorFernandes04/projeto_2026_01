@@ -23,6 +23,42 @@ Você precisará de **3 terminais abertos**, todos partindo da raiz do projeto (
 
 ---
 
+### ⚙️ Passo 0 — Clonar o Gateway de Mensageria (apenas na primeira vez)
+
+> **Decisão de Governança:** A pasta `evolution-api/` está listada no `.gitignore` do repositório para não inflar o codebase com código open-source de terceiros. Ela **não vem via `git pull`** e deve ser obtida uma única vez com o clone abaixo.
+
+Execute na **raiz do projeto** (`projeto_2026_01/`):
+
+```powershell
+git clone https://github.com/EvolutionAPI/evolution-api.git
+```
+
+Após o clone, a estrutura esperada é:
+```
+projeto_2026_01/
+├── evolution-api/     ← clonado agora
+├── backend/
+├── web/
+├── mobile/
+└── ...
+```
+
+Em seguida, configure o arquivo `.env` da Evolution API com as credenciais do ambiente local:
+
+```powershell
+cd evolution-api
+copy .env.example .env
+```
+
+Edite o `.env` recém-criado e ajuste a linha `DATABASE_CONNECTION_URI` para:
+```
+DATABASE_CONNECTION_URI='postgresql://postgres:evolution_pass_local@localhost:5433/evolution_prod?schema=evolution_api'
+```
+
+> **Nota para IAs**: Os valores exatos das credenciais do banco da Evolution estão documentados na tabela "Contexto Arquitetural" deste próprio documento e na seção `# --- BANCO DE DADOS DA MENSAGERIA NATIVA ---` do arquivo `.env.example` na raiz do projeto.
+
+---
+
 ### 🖥️ Terminal 1 — Evolution API (Gateway do WhatsApp)
 
 O PostgreSQL já está rodando nativamente na porta `5433`. Basta iniciar a API:
