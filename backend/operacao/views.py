@@ -739,3 +739,31 @@ class ClienteGaleriaView(APIView):
             ).data,
             'laudo_tecnico': galeria['laudo_tecnico'],
         }, status=status.HTTP_200_OK)
+
+
+class OrdemServicoAvaliarView(APIView):
+    """RF-Finalizacao: POST /api/cliente/operacao/{id}/avaliar/"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsCliente]
+
+    def post(self, request, pk):
+        try:
+            estrelas = int(request.data.get('estrelas'))
+            if not (1 <= estrelas <= 5):
+                raise ValueError("Estrelas devem estar entre 1 e 5.")
+        except (TypeError, ValueError):
+            return Response({'detail': 'Avaliação inválida. Deve ser um inteiro de 1 a 5.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ordem_servico = get_object_or_404(OrdemServico, pk=pk)
+        
+        cliente = request.user.perfil_cliente
+        if getattr(ordem_servico.veiculo, 'cliente', None) != cliente:
+            raise DRFPermissionDenied("Apenas o cliente titular pode avaliar esta Ordem de Serviço.")
+            
+        if ordem_servico.status != 'FINALIZADO':
+            return Response({'detail': 'Apenas Ordens de Serviço finalizadas podem ser avaliadas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ordem_servico.avaliacao_estrelas = estrelas
+        ordem_servico.save(update_fields=['avaliacao_estrelas'])
+
+        return Response({'detail': 'Avaliação registrada com sucesso!', 'estrelas': estrelas}, status=status.HTTP_200_OK)

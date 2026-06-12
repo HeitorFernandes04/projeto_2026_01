@@ -19,18 +19,26 @@
 }
 
 .ag-header {
-  --background: var(--ag-bg);
-  background: var(--ag-bg);
+  --background: var(--ag-card);
+  background: var(--ag-card);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  padding: 20px 8px; /* Taller */
+  z-index: 10;
 }
 
 .ag-toolbar {
-  --background: var(--ag-bg);
+  --background: transparent;
   --border-width: 0;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
 }
 
 .ag-title {
-  color: var(--ag-foreground);
-  font-weight: 700;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 24px;
+  text-align: left;
+  padding-left: 4px;
 }
 
 .ag-back-button {
@@ -41,6 +49,7 @@
 .ag-content {
   --background: transparent;
   --padding-bottom: 120px; /* Space for the fixed footer */
+  --padding-top: 48px !important; /* Espaçamento idêntico ao de Serviços */
 }
 
 /* ── Resumo ── */
@@ -105,7 +114,7 @@
 
 .ag-section-icon {
   color: var(--ag-primary);
-  font-size: 18px;
+  font-size: 24px; /* Aumentado para máxima nitidez */
 }
 
 /* ── Calendário ── */

@@ -1,5 +1,5 @@
 import uuid
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -43,6 +43,12 @@ class OrdemServico(models.Model):
     cancelado_em        = models.DateTimeField(null=True, blank=True)
     motivo_cancelamento = models.TextField(blank=True, null=True)
     cancelado_por       = models.CharField(max_length=50, blank=True, null=True)
+
+    # RF-Finalização: Nota de avaliação do cliente (1 a 5 estrelas)
+    avaliacao_estrelas = models.IntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
 
 class MidiaOrdemServico(models.Model):
     MOMENTO_CHOICES = [

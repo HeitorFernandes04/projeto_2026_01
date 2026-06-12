@@ -543,6 +543,7 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
             'id', 'data_hora', 'status', 'status_display', 'etapa_atual',
             'servico_nome', 'veiculo_placa', 'veiculo_modelo', 'estabelecimento',
             'estabelecimento_nome', 'valor', 'observacoes', 'vaga_patio',
+            'avaliacao_estrelas',
         ]
 
     def get_veiculo_placa(self, obj):

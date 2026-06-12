@@ -7,6 +7,8 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
+import requests
+
 from accounts.models import Cliente, User
 from core.models import Veiculo
 from operacao.models import OrdemServico
@@ -17,6 +19,33 @@ logger = logging.getLogger('agendamento_publico')
 
 B2C_USERNAME_PREFIX = 'b2c_'
 B2C_EMAIL_DOMAIN = 'cliente.lava.me'
+
+class WhatsAppOTPService:
+    @staticmethod
+    def enviar_mensagem(telefone, mensagem):
+        url = 'http://localhost:8080/message/sendText/teste'
+        
+        # Garante que o DDI 55 seja adicionado apenas se não estiver presente
+        numero_destino = telefone if telefone.startswith('55') else f"55{telefone}"
+        
+        payload = {
+            "number": numero_destino,
+            "text": mensagem
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "apikey": "sua_chave_secreta_aqui"
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=3)
+            response.raise_for_status()
+            logger.info(f"Mensagem enviada com sucesso via WhatsApp para {telefone}")
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Falha na comunicação com o gateway WhatsApp (Evolution API) para {telefone}: {e}")
+            return False
 
 
 class AuthB2CService:
@@ -154,15 +183,28 @@ class AuthB2CService:
         # Logar o PIN (simulando envio de WhatsApp)
         logger.info(f"RF-29 | OTP gerado para {telefone_normalizado}: {pin}")
         
+        # Disparo Real da Mensagem WhatsApp
+        mensagem = f"Lava-Me: Seu código de acesso é *{pin}*. Nunca compartilhe este código."
+        WhatsAppOTPService.enviar_mensagem(telefone_normalizado, mensagem)
+        
         return {"detail": "PIN enviado com sucesso.", "pin_debug": pin}
 
     @staticmethod
     @transaction.atomic
     def verificar_otp(telefone, pin, current_user=None):
         telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        
+        tentativas = cache.get(f'otp_tentativas_{telefone_normalizado}', 0)
+        if tentativas >= 3:
+            cache.delete(f'otp_{telefone_normalizado}')
+            cache.delete(f'otp_nome_{telefone_normalizado}')
+            cache.delete(f'otp_tentativas_{telefone_normalizado}')
+            raise ValidationError('Muitas tentativas incorretas. Solicite um novo código.')
+
         cached_pin = cache.get(f'otp_{telefone_normalizado}')
         
         if not cached_pin or cached_pin != pin:
+            cache.set(f'otp_tentativas_{telefone_normalizado}', tentativas + 1, timeout=300)
             raise ValidationError('PIN invalido ou expirado.')
         
         username = AuthB2CService.montar_username(telefone_normalizado)
@@ -213,6 +255,7 @@ class AuthB2CService:
         # Limpar cache
         cache.delete(f'otp_{telefone_normalizado}')
         cache.delete(f'otp_nome_{telefone_normalizado}')
+        cache.delete(f'otp_tentativas_{telefone_normalizado}')
         
         return AuthB2CService._emitir_tokens(user)
 

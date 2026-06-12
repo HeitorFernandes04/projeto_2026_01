@@ -1,8 +1,10 @@
+from unittest.mock import patch
+import requests
 import pytest
 from django.core.exceptions import PermissionDenied, ValidationError
 
 from accounts.models import Cliente, User
-from agendamento_publico.services import AuthB2CService
+from agendamento_publico.services import AuthB2CService, WhatsAppOTPService
 from operacao.tests.factories import EstabelecimentoFactory, VeiculoFactory
 
 
@@ -242,3 +244,32 @@ class TestAuthB2CService:
                 pin='0000',
             )
         assert 'PIN invalido ou expirado' in str(exc_info.value)
+
+
+class TestWhatsAppOTPService:
+    @patch('agendamento_publico.services.requests.post')
+    def test_enviar_mensagem_sucesso_retorna_true(self, mock_post):
+        # Configurar mock para sucesso (HTTP 201)
+        mock_response = mock_post.return_value
+        mock_response.status_code = 201
+        
+        result = WhatsAppOTPService.enviar_mensagem('11999999999', 'Seu código é 1234')
+        
+        assert result is True
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        assert kwargs['json']['number'] == '5511999999999'
+        assert kwargs['json']['text'] == 'Seu código é 1234'
+        assert kwargs['headers']['apikey'] == 'sua_chave_secreta_aqui'
+        assert args[0] == 'http://localhost:8080/message/sendText/teste'
+
+    @patch('agendamento_publico.services.requests.post')
+    def test_enviar_mensagem_falha_nao_crasha_api(self, mock_post):
+        # Simular timeout ou exceção de rede (Gateway fora do ar)
+        mock_post.side_effect = requests.exceptions.RequestException("Gateway off")
+        
+        # O método deve lidar graciosamente sem propagar o erro
+        result = WhatsAppOTPService.enviar_mensagem('11999999999', 'Teste')
+        
+        assert result is False
+        mock_post.assert_called_once()

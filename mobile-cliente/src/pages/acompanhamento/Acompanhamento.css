@@ -527,3 +527,59 @@
 .alert-cancel-keep-btn {
   color: #94A3B8 !important;
 }
+
+/* ========================================================================= */
+/*  Avaliação de Estrelas                                                    */
+/* ========================================================================= */
+
+.avaliacao-container {
+  margin-top: 24px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 24px 16px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  animation: slideUpFade 0.5s ease;
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.avaliacao-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.avaliacao-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 20px 0;
+}
+
+.stars-display, .stars-interactive {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.star-icon {
+  font-size: 36px;
+  color: #4b5563; /* cinza escuro para estado vazio */
+  transition: all 0.2s ease;
+}
+
+.star-icon.filled {
+  color: #fbbf24; /* amarelo dourado */
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4));
+}
+
+.star-icon.interactive:active {
+  transform: scale(0.9);
+}
+

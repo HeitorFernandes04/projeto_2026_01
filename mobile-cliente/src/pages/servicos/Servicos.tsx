@@ -44,16 +44,13 @@ const Servicos: React.FC = () => {
       <IonHeader className="ion-no-border sv-header">
         <IonToolbar className="sv-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/mapa" text="Voltar" className="sv-back-button" />
+            <IonBackButton defaultHref="/mapa" text="" className="sv-back-button" />
           </IonButtons>
           <IonTitle className="sv-title">Serviços</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent className="ion-padding sv-content">
-        {estabelecimentoNome && (
-          <p className="sv-estab">{estabelecimentoNome}</p>
-        )}
 
         {loading && <p className="sv-carregando">Carregando serviços...</p>}
 
@@ -82,14 +79,17 @@ const Servicos: React.FC = () => {
 
       <div className="sv-checkout">
         <div className="sv-checkout-info">
-          <div className="sv-checkout-total">
-            <span className="sv-checkout-total-label">Total</span>
-            <span className="sv-checkout-total-valor">
-              R$ {selecionado ? Number(selecionado.preco).toFixed(2) : '0.00'}
+          <div className="sv-checkout-col-left">
+            <span className="sv-checkout-label">Total</span>
+            <span className="sv-checkout-valor">
+              R$ {selecionado ? Number(selecionado.preco).toFixed(2).replace('.00', '') : '0'}
             </span>
           </div>
-          <div className="sv-checkout-duracao">
-            {selecionado ? `${selecionado.duracao_estimada_min} min estimativa` : '--'}
+          <div className="sv-checkout-col-right">
+            <span className="sv-checkout-label">Duração estimada</span>
+            <span className="sv-checkout-duracao-val">
+              {selecionado ? `${selecionado.duracao_estimada_min} min` : '0 min'}
+            </span>
           </div>
         </div>
         <button 

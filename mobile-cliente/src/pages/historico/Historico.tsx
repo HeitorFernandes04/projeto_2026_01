@@ -15,11 +15,13 @@ import {
   checkmarkCircleOutline, 
   closeCircleOutline,
   alertCircleOutline,
-  clipboardOutline
+  clipboardOutline,
+  star,
+  starOutline
 } from 'ionicons/icons';
 import { motion } from 'framer-motion';
 import { useHistory } from 'react-router-dom';
-import { getHistorico, type OrdemServico } from '../../services/api';
+import { getHistorico, avaliarOrdemServico, type OrdemServico } from '../../services/api';
 import Detalhes from './Detalhes';
 import './Historico.css';
 
@@ -47,6 +49,9 @@ const Historico: React.FC = () => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<OrdemServico | null>(null);
+  const [ratingOS, setRatingOS] = useState<OrdemServico | null>(null);
+  const [ratingValue, setRatingValue] = useState<number>(0);
+  const [submittingRating, setSubmittingRating] = useState(false);
   const history = useHistory();
 
   useIonViewWillEnter(() => {
@@ -61,6 +66,23 @@ const Historico: React.FC = () => {
         setLoading(false);
       });
   });
+
+  const handleAvaliar = async () => {
+    if (!ratingOS || ratingValue === 0) return;
+    setSubmittingRating(true);
+    try {
+      await avaliarOrdemServico(ratingOS.id, ratingValue);
+      setOrdens(prev => prev.map(os => 
+        os.id === ratingOS.id ? { ...os, avaliacao_estrelas: ratingValue } : os
+      ));
+      setRatingOS(null);
+      setRatingValue(0);
+    } catch (err) {
+      console.error('Erro ao avaliar', err);
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     if (status === 'FINALIZADO') return checkmarkCircleOutline;
@@ -159,6 +181,44 @@ const Historico: React.FC = () => {
                       Ver detalhes ›
                     </button>
                   </div>
+
+                  {os.status === 'FINALIZADO' && (
+                    <div className="hist-rating-bar">
+                      <div className="hist-rating-divider"></div>
+                      <div 
+                        className="hist-rating-content" 
+                        onClick={() => {
+                          if (!os.avaliacao_estrelas) {
+                            setRatingOS(os);
+                            setRatingValue(0);
+                          }
+                        }}
+                      >
+                        <div className="hist-stars">
+                          {[1, 2, 3, 4, 5].map((starIndex) => (
+                            <IonIcon 
+                              key={starIndex} 
+                              icon={
+                                (os.avaliacao_estrelas && os.avaliacao_estrelas >= starIndex) 
+                                  ? star 
+                                  : starOutline
+                              } 
+                              className={
+                                (os.avaliacao_estrelas && os.avaliacao_estrelas >= starIndex)
+                                  ? 'star-filled'
+                                  : 'star-empty'
+                              }
+                            />
+                          ))}
+                        </div>
+                        <span className={`hist-rate-cta ${os.avaliacao_estrelas ? 'rated' : 'unrated'}`}>
+                          {os.avaliacao_estrelas 
+                            ? `Você avaliou com ${os.avaliacao_estrelas} estrela${os.avaliacao_estrelas > 1 ? 's' : ''}` 
+                            : 'Avalie este serviço ›'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -178,6 +238,40 @@ const Historico: React.FC = () => {
             onClose={() => setDetalhe(null)} 
           />
         )}
+      </IonModal>
+
+      <IonModal
+        isOpen={!!ratingOS}
+        initialBreakpoint={0.4}
+        breakpoints={[0, 0.4]}
+        onDidDismiss={() => setRatingOS(null)}
+        className="rating-bottom-sheet"
+      >
+        <div className="rating-sheet-content">
+          <div className="rating-sheet-header">
+            <h2 className="rating-sheet-title">Avalie o serviço</h2>
+            <p className="rating-sheet-subtitle">{ratingOS?.servico_nome}</p>
+          </div>
+          
+          <div className="rating-sheet-stars">
+            {[1, 2, 3, 4, 5].map((starIndex) => (
+              <IonIcon
+                key={starIndex}
+                icon={ratingValue >= starIndex ? star : starOutline}
+                className={ratingValue >= starIndex ? 'star-filled giant-star' : 'star-empty giant-star'}
+                onClick={() => setRatingValue(starIndex)}
+              />
+            ))}
+          </div>
+
+          <button 
+            className="rating-sheet-btn" 
+            disabled={ratingValue === 0 || submittingRating}
+            onClick={handleAvaliar}
+          >
+            {submittingRating ? 'Enviando...' : 'Confirmar Avaliação'}
+          </button>
+        </div>
       </IonModal>
     </IonPage>
   );

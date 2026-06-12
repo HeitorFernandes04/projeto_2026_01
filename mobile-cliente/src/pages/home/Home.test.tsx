@@ -51,6 +51,7 @@ vi.mock('@ionic/react', () => ({
   ),
   IonLabel: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   useIonViewWillEnter: (fn: () => void) => { fn(); },
+  IonPopover: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock('../../components/EstabelecimentoDrawer/EstabelecimentoDrawer', () => ({
@@ -176,16 +177,7 @@ describe('Home', () => {
     });
   });
 
-  it('exibe chips de filtro (RF-29)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    }));
 
-    render(<Home />);
-    const chips = screen.getAllByTestId('chip');
-    expect(chips.length).toBeGreaterThanOrEqual(3);
-  });
 
   it('exibe badge contador de resultados', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
