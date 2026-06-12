@@ -70,7 +70,7 @@ export class KanbanComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.monitorarIncidentesPendentes();
     this.carregarKanban();
-    this.intervalo = setInterval(() => this.carregarKanban(), 30000);
+    this.intervalo = setInterval(() => this.carregarKanban(), 3000);
     this.tickingInterval = setInterval(() => this.tickSegundos(), 1000);
   }
 
