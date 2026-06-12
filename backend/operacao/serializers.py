@@ -46,6 +46,7 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
     servico = ServicoSerializer(read_only=True)
     midias = MidiaOrdemServicoSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    tempo_decorrido_segundos = serializers.SerializerMethodField()
 
     class Meta:
         model = OrdemServico
@@ -56,6 +57,7 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
             'vaga_patio', 'horario_lavagem',
             'horario_finalizacao', 'observacoes', 'midias',
             'slug_cancelamento',  # RF-24: UUID para cancelamento autônomo pelo cliente portal
+            'tempo_decorrido_segundos',
         ]
         read_only_fields = ['horario_lavagem', 'horario_finalizacao']
 
@@ -63,6 +65,28 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
         if not 0 <= value <= 100:
             raise serializers.ValidationError("etapa_atual deve estar entre 0 e 100.")
         return value
+
+    def get_tempo_decorrido_segundos(self, obj):
+        # RN: PATIO ainda não iniciou execução — tempo zero
+        if obj.status == 'PATIO' or not obj.horario_lavagem:
+            return 0
+        # RN: BLOQUEADO_INCIDENTE — congela no momento do último incidente
+        if obj.status == 'BLOQUEADO_INCIDENTE':
+            incidentes = list(obj.incidentes.all())
+            if incidentes:
+                ultimo = max(incidentes, key=lambda i: i.data_registro)
+                delta = ultimo.data_registro - obj.horario_lavagem
+                return max(0, int(delta.total_seconds()))
+        # RN: LIBERACAO — fluxo direto de EM_EXECUCAO (RF-27/RF-30), conta até finalização
+        if obj.status == 'LIBERACAO' and obj.horario_finalizacao:
+            delta = obj.horario_finalizacao - obj.horario_lavagem
+            return max(0, int(delta.total_seconds()))
+        # RN: FINALIZADO — congela no horário de finalização real
+        if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
+            delta = obj.horario_finalizacao - obj.horario_lavagem
+            return max(0, int(delta.total_seconds()))
+        delta = timezone.now() - obj.horario_lavagem
+        return max(0, int(delta.total_seconds()))
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)

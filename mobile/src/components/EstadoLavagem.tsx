@@ -12,14 +12,40 @@ interface DadosIncidente {
   foto: File | null;
 }
 
-const EstadoLavagem: React.FC<{ ordemServicoId: number; onComplete: () => void; }> = ({ ordemServicoId, onComplete }) => {
+interface EstadoLavagemProps {
+  ordemServicoId: number;
+  onComplete: () => void;
+  tempoDecorridoInicial?: number;
+  comentarioInicial?: string;
+}
+
+const EstadoLavagem: React.FC<EstadoLavagemProps> = ({ 
+  ordemServicoId, 
+  onComplete,
+  tempoDecorridoInicial = 0,
+  comentarioInicial = ''
+}) => {
   const history = useHistory();
-  const [segundos, setSegundos] = useState(0);
+  const [segundos, setSegundos] = useState(tempoDecorridoInicial);
   const [isPausado, setIsPausado] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [observacoes, setObservacoes] = useState('');
+  const [observacoes, setObservacoes] = useState(comentarioInicial);
   const [statusAtual, setStatusAtual] = useState<string>('');
   const [showModalOcorrencia, setShowModalOcorrencia] = useState(false);
+
+  // Sincroniza o cronômetro com o tempo do backend (caso o timer não esteja pausado localmente)
+  useEffect(() => {
+    if (!isPausado) {
+      setSegundos(tempoDecorridoInicial);
+    }
+  }, [tempoDecorridoInicial, isPausado]);
+
+  // Sincroniza o comentário se o prop mudar e o estado local estiver vazio
+  useEffect(() => {
+    if (comentarioInicial && observacoes === '') {
+      setObservacoes(comentarioInicial);
+    }
+  }, [comentarioInicial]);
 
   // Verifica o status real no banco para detectar bloqueios (RN-09/RN-13)
   useEffect(() => {
@@ -29,6 +55,9 @@ const EstadoLavagem: React.FC<{ ordemServicoId: number; onComplete: () => void; 
         setStatusAtual(data.status);
         if (data.comentario_lavagem && observacoes === '') {
           setObservacoes(data.comentario_lavagem);
+        }
+        if (data.tempo_decorrido_segundos !== undefined && segundos === 0) {
+          setSegundos(data.tempo_decorrido_segundos);
         }
       } catch (err) {
         console.error('Erro ao verificar status:', err);

@@ -57,4 +57,25 @@ describe('EstadoLavagem', () => {
     // O cronômetro não deve estar visível (no código atual ele não renderiza se status for INCIDENTE)
     expect(screen.queryByText('00:00:05')).toBeNull();
   });
+
+  it('deve iniciar o cronômetro com o tempo decorrido inicial e atualizar quando a prop mudar', async () => {
+    const { getOrdemServico } = await import('../services/api');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(getOrdemServico).mockResolvedValue({ status: 'EM_EXECUCAO' } as any);
+
+    const { rerender } = render(<EstadoLavagem {...defaultProps} tempoDecorridoInicial={100} />);
+
+    // Deve mostrar o tempo inicial 00:01:40
+    expect(screen.getByText('00:01:40')).toBeDefined();
+
+    // Avança 5 segundos
+    await act(async () => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.getByText('00:01:45')).toBeDefined();
+
+    // Rerender com novo tempo do pai (sincronização)
+    rerender(<EstadoLavagem {...defaultProps} tempoDecorridoInicial={200} />);
+    expect(screen.getByText('00:03:20')).toBeDefined();
+  });
 });
