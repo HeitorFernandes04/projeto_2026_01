@@ -58,8 +58,9 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
             'horario_finalizacao', 'observacoes', 'midias',
             'slug_cancelamento',  # RF-24: UUID para cancelamento autônomo pelo cliente portal
             'tempo_decorrido_segundos',
+            'is_pausado',
         ]
-        read_only_fields = ['horario_lavagem', 'horario_finalizacao']
+        read_only_fields = ['horario_lavagem', 'horario_finalizacao', 'is_pausado']
 
     def validate_etapa_atual(self, value):
         if not 0 <= value <= 100:
@@ -76,17 +77,20 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
             if incidentes:
                 ultimo = max(incidentes, key=lambda i: i.data_registro)
                 delta = ultimo.data_registro - obj.horario_lavagem
-                return max(0, int(delta.total_seconds()))
+                return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+            return obj.tempo_acumulado_segundos
         # RN: LIBERACAO — fluxo direto de EM_EXECUCAO (RF-27/RF-30), conta até finalização
         if obj.status == 'LIBERACAO' and obj.horario_finalizacao:
             delta = obj.horario_finalizacao - obj.horario_lavagem
-            return max(0, int(delta.total_seconds()))
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
         # RN: FINALIZADO — congela no horário de finalização real
         if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
             delta = obj.horario_finalizacao - obj.horario_lavagem
-            return max(0, int(delta.total_seconds()))
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+        if obj.is_pausado:
+            return obj.tempo_acumulado_segundos
         delta = timezone.now() - obj.horario_lavagem
-        return max(0, int(delta.total_seconds()))
+        return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
@@ -216,7 +220,7 @@ class KanbanCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrdemServico
-        fields = ['id', 'placa', 'modelo', 'servico', 'duracao_estimada_minutos', 'tempo_decorrido_minutos', 'tempo_decorrido_segundos', 'is_atrasado', 'funcionario_nome']
+        fields = ['id', 'placa', 'modelo', 'servico', 'duracao_estimada_minutos', 'tempo_decorrido_minutos', 'tempo_decorrido_segundos', 'is_atrasado', 'funcionario_nome', 'is_pausado']
 
     def get_funcionario_nome(self, obj):
         if obj.funcionario and getattr(obj.funcionario, 'name', None):
@@ -237,17 +241,20 @@ class KanbanCardSerializer(serializers.ModelSerializer):
             if incidentes:
                 ultimo = max(incidentes, key=lambda i: i.data_registro)
                 delta = ultimo.data_registro - obj.horario_lavagem
-                return max(0, int(delta.total_seconds()))
+                return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+            return obj.tempo_acumulado_segundos
         # RN: LIBERACAO — fluxo direto de EM_EXECUCAO (RF-27/RF-30), conta até finalização
         if obj.status == 'LIBERACAO' and obj.horario_finalizacao:
             delta = obj.horario_finalizacao - obj.horario_lavagem
-            return max(0, int(delta.total_seconds()))
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
         # RN: FINALIZADO — congela no horário de finalização real
         if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
             delta = obj.horario_finalizacao - obj.horario_lavagem
-            return max(0, int(delta.total_seconds()))
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+        if obj.is_pausado:
+            return obj.tempo_acumulado_segundos
         delta = timezone.now() - obj.horario_lavagem
-        return max(0, int(delta.total_seconds()))
+        return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
 
     def get_is_atrasado(self, obj):
         if obj.status not in ('EM_EXECUCAO', 'LIBERACAO'):

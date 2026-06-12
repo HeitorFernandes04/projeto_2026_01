@@ -12,6 +12,7 @@ export interface KanbanCard {
   tempo_decorrido_segundos?: number;
   is_atrasado: boolean;
   funcionario_nome?: string;
+  is_pausado?: boolean;
 }
 
 export interface KanbanData {

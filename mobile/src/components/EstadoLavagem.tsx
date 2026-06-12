@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Pause, CheckCircle, Home } from 'lucide-react';
 import { IonSpinner } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { avancarEtapa, registrarIncidente, getOrdemServico } from '../services/api';
+import { avancarEtapa, registrarIncidente, getOrdemServico, pausarOrdemServico, retomarOrdemServico } from '../services/api';
 import ModalOcorrencia from './ModalOcorrencia';
 import './EstadoLavagem.css';
 
@@ -17,17 +17,19 @@ interface EstadoLavagemProps {
   onComplete: () => void;
   tempoDecorridoInicial?: number;
   comentarioInicial?: string;
+  isPausadoInicial?: boolean;
 }
 
 const EstadoLavagem: React.FC<EstadoLavagemProps> = ({ 
   ordemServicoId, 
   onComplete,
   tempoDecorridoInicial = 0,
-  comentarioInicial = ''
+  comentarioInicial = '',
+  isPausadoInicial = false
 }) => {
   const history = useHistory();
   const [segundos, setSegundos] = useState(tempoDecorridoInicial);
-  const [isPausado, setIsPausado] = useState(false);
+  const [isPausado, setIsPausado] = useState(isPausadoInicial);
   const [loading, setLoading] = useState(false);
   const [observacoes, setObservacoes] = useState(comentarioInicial);
   const [statusAtual, setStatusAtual] = useState<string>('');
@@ -39,6 +41,13 @@ const EstadoLavagem: React.FC<EstadoLavagemProps> = ({
       setSegundos(tempoDecorridoInicial);
     }
   }, [tempoDecorridoInicial, isPausado]);
+
+  // Sincroniza o estado de pausado do backend
+  useEffect(() => {
+    if (isPausadoInicial !== undefined) {
+      setIsPausado(isPausadoInicial);
+    }
+  }, [isPausadoInicial]);
 
   // Sincroniza o comentário se o prop mudar e o estado local estiver vazio
   useEffect(() => {
@@ -53,6 +62,9 @@ const EstadoLavagem: React.FC<EstadoLavagemProps> = ({
       try {
         const data = await getOrdemServico(ordemServicoId) as any;
         setStatusAtual(data.status);
+        if (data.is_pausado !== undefined) {
+          setIsPausado(data.is_pausado);
+        }
         if (data.comentario_lavagem && observacoes === '') {
           setObservacoes(data.comentario_lavagem);
         }
@@ -111,6 +123,30 @@ const EstadoLavagem: React.FC<EstadoLavagemProps> = ({
     }
   };
 
+  const handleTogglePause = async () => {
+    if (loading || statusAtual === 'BLOQUEADO_INCIDENTE') return;
+    setLoading(true);
+    try {
+      if (isPausado) {
+        const data = await retomarOrdemServico(ordemServicoId) as any;
+        setIsPausado(false);
+        if (data.tempo_decorrido_segundos !== undefined) {
+          setSegundos(data.tempo_decorrido_segundos);
+        }
+      } else {
+        const data = await pausarOrdemServico(ordemServicoId) as any;
+        setIsPausado(true);
+        if (data.tempo_decorrido_segundos !== undefined) {
+          setSegundos(data.tempo_decorrido_segundos);
+        }
+      }
+    } catch (err: any) {
+      alert(err.message || 'Erro ao alterar estado de pausa.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Tela de bloqueio industrial
   if (statusAtual === 'BLOQUEADO_INCIDENTE') {
     return (
@@ -155,7 +191,8 @@ const EstadoLavagem: React.FC<EstadoLavagemProps> = ({
         <button
           type="button"
           className={`el-btn-pause ${isPausado ? 'is-pausado' : 'is-rodando'}`}
-          onClick={() => setIsPausado(!isPausado)}
+          onClick={handleTogglePause}
+          disabled={loading}
         >
           <Pause size={20} /> {isPausado ? 'Retomar' : 'Pausar'}
         </button>
@@ -164,7 +201,7 @@ const EstadoLavagem: React.FC<EstadoLavagemProps> = ({
           type="button"
           className="el-btn-primary btn-pulse"
           onClick={handleFinalizar}
-          disabled={loading}
+          disabled={loading || isPausado}
         >
           {loading ? <IonSpinner name="crescent" /> : <><CheckCircle size={20} /> Finalizar Lavagem</>}
         </button>

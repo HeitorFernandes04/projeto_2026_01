@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
 from accounts.models import Estabelecimento, Cliente, User
-from operacao.models import OrdemServico, Veiculo
+from operacao.models import OrdemServico, Veiculo, Servico
 
 @pytest.fixture
 def api_client():
@@ -14,7 +14,14 @@ def base_data(db):
     cliente = Cliente.objects.create(user=user_cliente, telefone_whatsapp='11999999999')
 
     user_gestor = User.objects.create(username='gestor1', email='g1@test.com')
-    estabelecimento = Estabelecimento.objects.create(nome_fantasia='Lava Bem', user_gestor=user_gestor)
+    estabelecimento = Estabelecimento.objects.create(nome_fantasia='Lava Bem')
+
+    servico = Servico.objects.create(
+        estabelecimento=estabelecimento,
+        nome='Lavagem Simples',
+        duracao_estimada_minutos=30,
+        preco=30.00
+    )
 
     veiculo = Veiculo.objects.create(
         estabelecimento=estabelecimento,
@@ -26,6 +33,7 @@ def base_data(db):
     ordem = OrdemServico.objects.create(
         estabelecimento=estabelecimento,
         veiculo=veiculo,
+        servico=servico,
         status='FINALIZADO'
     )
 
@@ -41,7 +49,7 @@ def base_data(db):
 class TestAvaliacaoAPI:
     def test_cliente_pode_avaliar_ordem_finalizada(self, api_client, base_data):
         api_client.force_authenticate(user=base_data['user_cliente'])
-        url = reverse('cliente-avaliar-os', kwargs={'pk': base_data['ordem'].id})
+        url = reverse('cliente-os-avaliar', kwargs={'pk': base_data['ordem'].id})
         
         response = api_client.post(url, {'estrelas': 5}, format='json')
         
@@ -56,7 +64,7 @@ class TestAvaliacaoAPI:
 
     def test_avaliacao_invalida_retorna_400(self, api_client, base_data):
         api_client.force_authenticate(user=base_data['user_cliente'])
-        url = reverse('cliente-avaliar-os', kwargs={'pk': base_data['ordem'].id})
+        url = reverse('cliente-os-avaliar', kwargs={'pk': base_data['ordem'].id})
         
         response = api_client.post(url, {'estrelas': 6}, format='json')
         assert response.status_code == 400
@@ -69,7 +77,7 @@ class TestAvaliacaoAPI:
         base_data['ordem'].save()
         
         api_client.force_authenticate(user=base_data['user_cliente'])
-        url = reverse('cliente-avaliar-os', kwargs={'pk': base_data['ordem'].id})
+        url = reverse('cliente-os-avaliar', kwargs={'pk': base_data['ordem'].id})
         
         response = api_client.post(url, {'estrelas': 4}, format='json')
         assert response.status_code == 400
@@ -80,7 +88,7 @@ class TestAvaliacaoAPI:
         Cliente.objects.create(user=outro_user, telefone_whatsapp='11888888888')
         
         api_client.force_authenticate(user=outro_user)
-        url = reverse('cliente-avaliar-os', kwargs={'pk': base_data['ordem'].id})
+        url = reverse('cliente-os-avaliar', kwargs={'pk': base_data['ordem'].id})
         
         response = api_client.post(url, {'estrelas': 4}, format='json')
         assert response.status_code == 403

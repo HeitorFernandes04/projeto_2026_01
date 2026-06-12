@@ -34,6 +34,7 @@ export class KanbanComponent implements OnInit, OnDestroy {
   totalIncidentesPendentes = 0;
 
   private intervalo?: ReturnType<typeof setInterval>;
+  private tickingInterval?: ReturnType<typeof setInterval>;
   private readonly subscriptions = new Subscription();
 
   get dataHoje(): string {
@@ -70,12 +71,38 @@ export class KanbanComponent implements OnInit, OnDestroy {
     this.monitorarIncidentesPendentes();
     this.carregarKanban();
     this.intervalo = setInterval(() => this.carregarKanban(), 30000);
+    this.tickingInterval = setInterval(() => this.tickSegundos(), 1000);
   }
 
   ngOnDestroy(): void {
     clearInterval(this.intervalo);
+    clearInterval(this.tickingInterval);
     this.incidentesService.pararMonitoramentoPendentes();
     this.subscriptions.unsubscribe();
+  }
+
+  private tickSegundos(): void {
+    let mudou = false;
+    if (this.kanban.LAVAGEM && this.kanban.LAVAGEM.length > 0) {
+      this.kanban.LAVAGEM.forEach(card => {
+        if (!card.is_pausado) {
+          if (card.tempo_decorrido_segundos !== undefined) {
+            card.tempo_decorrido_segundos++;
+          } else {
+            card.tempo_decorrido_segundos = (card.tempo_decorrido_minutos * 60) + 1;
+          }
+          card.tempo_decorrido_minutos = Math.floor(card.tempo_decorrido_segundos / 60);
+          
+          if (card.tempo_decorrido_minutos > card.duracao_estimada_minutos) {
+            card.is_atrasado = true;
+          }
+          mudou = true;
+        }
+      });
+    }
+    if (mudou) {
+      this.cdr.markForCheck();
+    }
   }
 
   private monitorarIncidentesPendentes(): void {

@@ -23,6 +23,7 @@ interface OrdemServicoData {
   veiculo: { placa: string; modelo: string; marca: string };
   comentario_lavagem?: string;
   tempo_decorrido_segundos?: number;
+  is_pausado?: boolean;
 }
 
 const EsteiraProducao: React.FC = () => {
@@ -175,6 +176,7 @@ const EsteiraProducao: React.FC = () => {
               onComplete={carregarOrdemServico} 
               tempoDecorridoInicial={ordemServico.tempo_decorrido_segundos}
               comentarioInicial={ordemServico.comentario_lavagem}
+              isPausadoInicial={ordemServico.is_pausado}
             />
           )}
           {etapaAtiva >= 3 && <EstadoLiberacao ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}

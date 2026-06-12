@@ -15,6 +15,8 @@ from .views import (
     ServicoListView,
     TagPecaViewSet,
     registrar_incidente,
+    PausarOrdemServicoView,
+    RetomarOrdemServicoView,
 )
 
 
@@ -36,4 +38,6 @@ urlpatterns = [
     path('<int:pk>/avancar-etapa/', AvancarEtapaView.as_view(), name='os-avancar'),
     path('<int:pk>/finalizar/', FinalizarIndustrialView.as_view(), name='os-finalizar'),
     path('<int:pk>/incidente/', registrar_incidente, name='os-incidente'),
+    path('<int:pk>/pausar/', PausarOrdemServicoView.as_view(), name='os-pausar'),
+    path('<int:pk>/retomar/', RetomarOrdemServicoView.as_view(), name='os-retomar'),
 ]

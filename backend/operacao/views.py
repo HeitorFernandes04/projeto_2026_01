@@ -206,6 +206,38 @@ class FinalizarIndustrialView(APIView):
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class PausarOrdemServicoView(APIView):
+    """
+    PATCH /api/ordens-servico/{id}/pausar/
+    Pausa o cronômetro da OS em execução.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
+
+    def patch(self, request, pk):
+        try:
+            os = OrdemServicoService.pausar_ordem_servico(pk)
+            return Response(OrdemServicoSerializer(os, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RetomarOrdemServicoView(APIView):
+    """
+    PATCH /api/ordens-servico/{id}/retomar/
+    Retoma o cronômetro da OS em execução.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
+
+    def patch(self, request, pk):
+        try:
+            os = OrdemServicoService.retomar_ordem_servico(pk)
+            return Response(OrdemServicoSerializer(os, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class FotoUploadView(APIView):
     """POST /api/ordens-servico/{id}/fotos/"""
     authentication_classes = [JWTAuthentication]

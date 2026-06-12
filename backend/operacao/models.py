@@ -31,6 +31,8 @@ class OrdemServico(models.Model):
     vaga_patio = models.CharField(max_length=20, blank=True, null=True)
     horario_finalizacao = models.DateTimeField(null=True, blank=True)
     observacoes = models.TextField(blank=True, null=True)
+    is_pausado = models.BooleanField(default=False)
+    tempo_acumulado_segundos = models.IntegerField(default=0)
 
     # RF-27.2: Progresso percentual para acompanhamento B2C em tempo real
     etapa_atual = models.PositiveSmallIntegerField(

@@ -240,6 +240,18 @@ export async function finalizarOrdemServico(id: number, dados: {
   });
 }
 
+export async function pausarOrdemServico(id: number) {
+  return request(`/api/ordens-servico/${id}/pausar/`, {
+    method: 'PATCH',
+  });
+}
+
+export async function retomarOrdemServico(id: number) {
+  return request(`/api/ordens-servico/${id}/retomar/`, {
+    method: 'PATCH',
+  });
+}
+
 // --- INCIDENTES ---
 
 export async function getTagsPeca() {
