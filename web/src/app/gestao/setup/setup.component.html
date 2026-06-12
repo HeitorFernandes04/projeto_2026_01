@@ -289,7 +289,7 @@
           <div class="icon-box-blue"><span class="material-symbols-outlined">domain</span></div>
           <div>
             <h3>Configurações da Unidade</h3>
-            <p>Gerencie os dados cadastrais da unidade e link de autoagendamento</p>
+            <p>Gerencie os dados cadastrais da unidade</p>
           </div>
         </div>
       </div>
@@ -419,21 +419,7 @@
           </div>
         </div>
 
-        <div class="booking-link-card">
-          <div class="link-header">
-            <div class="icon-wrap"><span class="material-symbols-outlined">link</span></div>
-            <div class="link-text">
-              <h4>Link de Autoagendamento Público</h4>
-              <p>Compartilhe para permitir que clientes agendem serviços online</p>
-            </div>
-          </div>
-          <div class="link-action-row">
-            <div class="link-display">{{ linkAgendamento }}</div>
-            <button class="btn-copy" (click)="copiarLink()">
-              <span class="material-symbols-outlined">content_copy</span>Copiar Link
-            </button>
-          </div>
-        </div>
+
         <div class="form-actions-footer">
           <button class="btn-save-large" (click)="salvarUnidade()" [disabled]="salvandoUnidade">
             {{ salvandoUnidade ? 'Salvando...' : 'Salvar Alterações na Unidade' }}
