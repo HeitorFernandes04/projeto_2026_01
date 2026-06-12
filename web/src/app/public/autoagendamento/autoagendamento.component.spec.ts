@@ -241,8 +241,8 @@ describe('AutoagendamentoComponent — RF-23 Checkout', () => {
     // Teste placa Mercosul
     mockEvent.target.value = 'ABC1D23';
     component.onInputPlaca(mockEvent);
-    expect(component.dadosAgendamento.placa).toBe('ABC-1D23');
-    expect(mockEvent.target.value).toBe('ABC-1D23');
+    expect(component.dadosAgendamento.placa).toBe('ABC1D23');
+    expect(mockEvent.target.value).toBe('ABC1D23');
 
     // Teste limite de caracteres
     mockEvent.target.value = 'ABC1234567890';

@@ -113,11 +113,18 @@ export class AutoagendamentoComponent implements OnInit {
   // --- MÁSCARAS DE INPUT[cite: 8] ---
   onInputPlaca(event: any): void {
     const input = event.target as HTMLInputElement;
-    let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (v.length > 7) v = v.substring(0, 7);
-    if (v.length > 3) v = v.substring(0, 3) + '-' + v.substring(3);
-    this.dadosAgendamento.placa = v;
-    input.value = v;
+    let clean = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (clean.length > 7) clean = clean.slice(0, 7);
+    
+    let formatted = clean;
+    if (clean.length > 3) {
+      const isMercosul = clean.length >= 5 && isNaN(Number(clean[4]));
+      if (!isMercosul && !isNaN(Number(clean[3]))) {
+        formatted = clean.slice(0, 3) + '-' + clean.slice(3);
+      }
+    }
+    this.dadosAgendamento.placa = formatted;
+    input.value = formatted;
   }
 
   onInputWhatsApp(event: any): void {

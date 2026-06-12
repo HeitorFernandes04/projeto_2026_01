@@ -293,6 +293,7 @@ class AuthB2CService:
                 'tempo_estimado_min': ordem.servico.duracao_estimada_minutos,
                 # RF-24.3: slug exposto apenas para OS em PATIO (canceláveis)
                 'slug_cancelamento': str(ordem.slug_cancelamento) if ordem.status == 'PATIO' and ordem.slug_cancelamento else None,
+                'vaga_patio': ordem.vaga_patio,
             }
             if ordem.status in ('FINALIZADO', 'CANCELADO'):
                 historico.append(item)

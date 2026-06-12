@@ -206,18 +206,11 @@ const Acompanhamento: React.FC = () => {
               <div className="header-top">
                 <h1 className="title-premium">{estabelecimento}</h1>
                 <span className="badge-status">
-                  {finalizado ? 'CONCLUÍDO' : isIncidente ? 'BLOQUEADO' : 'EM EXECUÇÃO'}
+                  {finalizado ? 'CONCLUÍDO' : 'EM EXECUÇÃO'}
                 </span>
               </div>
               <p className="eta-text">Tempo estimado: ~{tempoEstimado ?? '--'} min</p>
             </div>
-
-            {/* Alerta de Incidente */}
-            {isIncidente && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', padding: '12px', borderRadius: '12px', marginBottom: '16px', textAlign: 'center' }}>
-                Atenção: Houve um pequeno incidente. Nossa equipe já está tratando.
-              </div>
-            )}
 
             {/* Box Central de Animação */}
             <div className="animation-box">

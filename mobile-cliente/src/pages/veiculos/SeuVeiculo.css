@@ -108,6 +108,10 @@
   --placeholder-color: rgba(255, 255, 255, 0.3) !important;
 }
 
+.veiculo-reg-placa-input {
+  text-transform: uppercase !important;
+}
+
 .veiculo-reg-input-item ion-select {
   color: #FFFFFF !important;
   font-size: 16px !important;
