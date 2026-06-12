@@ -336,8 +336,8 @@ class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
     modelo = serializers.CharField(source='veiculo.modelo', read_only=True)
     marca = serializers.CharField(source='veiculo.marca', read_only=True)
     cor = serializers.CharField(source='veiculo.cor', read_only=True)
-    nome_dono = serializers.CharField(source='veiculo.nome_dono', read_only=True)
-    celular_dono = serializers.CharField(source='veiculo.celular_dono', read_only=True)
+    nome_dono = serializers.SerializerMethodField()
+    celular_dono = serializers.SerializerMethodField()
     servico = serializers.CharField(source='servico.nome', read_only=True)
     funcionario_responsavel_nome = serializers.SerializerMethodField()
 
@@ -357,6 +357,16 @@ class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
             'horario_lavagem',
             'horario_finalizacao',
         ]
+
+    def get_nome_dono(self, obj):
+        if obj.veiculo.cliente and obj.veiculo.cliente.user and obj.veiculo.cliente.user.name:
+            return obj.veiculo.cliente.user.name
+        return obj.veiculo.nome_dono or None
+
+    def get_celular_dono(self, obj):
+        if obj.veiculo.cliente and obj.veiculo.cliente.telefone_whatsapp:
+            return obj.veiculo.cliente.telefone_whatsapp
+        return obj.veiculo.celular_dono or None
 
     def get_funcionario_responsavel_nome(self, obj):
         if obj.funcionario and getattr(obj.funcionario, 'name', None):
