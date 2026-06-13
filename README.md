@@ -3,7 +3,7 @@
 > **Plataforma inteligente de gestão e agendamento para lava-jatos e estéticas automotivas**
 
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
-![Versão](https://img.shields.io/badge/versão-4.0.0-blue)
+![Versão](https://img.shields.io/badge/versão-5.0.0-blue)
 ![Licença](https://img.shields.io/badge/licença-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![Django](https://img.shields.io/badge/Django-5.x-green?logo=django)
