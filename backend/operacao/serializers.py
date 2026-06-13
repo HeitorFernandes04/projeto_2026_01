@@ -577,7 +577,7 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
     estabelecimento = EstabelecimentoResumoSerializer(read_only=True)
     estabelecimento_nome = serializers.CharField(source='estabelecimento.nome_fantasia', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    valor = serializers.FloatField(source='servico.preco', read_only=True)
+    valor = serializers.SerializerMethodField()
     class Meta:
         model = OrdemServico
         fields = [
@@ -589,3 +589,8 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
 
     def get_veiculo_placa(self, obj):
         return formatar_placa(obj.veiculo.placa)
+
+    def get_valor(self, obj):
+        if obj.valor_cobrado is not None:
+            return float(obj.valor_cobrado)
+        return float(obj.servico.preco) if obj.servico else 0.0

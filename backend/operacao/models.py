@@ -24,6 +24,17 @@ class OrdemServico(models.Model):
     status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='PATIO')
     data_hora = models.DateTimeField(default=timezone.now)
     
+    # Snapshot do preço do serviço no momento da criação da OS.
+    # Garante que alterações futuras no catálogo de serviços não afetem
+    # o histórico financeiro e os relatórios de OS já finalizadas.
+    valor_cobrado = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,       # null=True para compatibilidade com OS antigas (migração retroativa preenche)
+        blank=True,
+        help_text="Preço congelado do serviço no momento da criação da OS",
+    )
+    
     # Campos adicionais para controle do fluxo industrial
     laudo_vistoria = models.TextField(blank=True, null=True)
     horario_lavagem = models.DateTimeField(null=True, blank=True)

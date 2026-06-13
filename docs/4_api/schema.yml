@@ -116,6 +116,64 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/auth/password-reset/:
+    post:
+      operationId: auth_password_reset_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetRequest'
+          description: ''
+  /api/auth/password-reset/confirm/:
+    post:
+      operationId: auth_password_reset_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetConfirm'
+          description: ''
   /api/auth/register/:
     post:
       operationId: auth_register_create
@@ -212,6 +270,23 @@ paths:
       - cookieAuth: []
       - basicAuth: []
       - {}
+      responses:
+        '200':
+          description: No response body
+  /api/cliente/operacao/{id}/avaliar/:
+    post:
+      operationId: cliente_operacao_avaliar_create
+      description: 'RF-Finalizacao: POST /api/cliente/operacao/{id}/avaliar/'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cliente
+      security:
+      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -1027,6 +1102,44 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/ordens-servico/{id}/pausar/:
+    patch:
+      operationId: ordens_servico_pausar_partial_update
+      description: |-
+        PATCH /api/ordens-servico/{id}/pausar/
+        Pausa o cronômetro da OS em execução.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ordens-servico/{id}/retomar/:
+    patch:
+      operationId: ordens_servico_retomar_partial_update
+      description: |-
+        PATCH /api/ordens-servico/{id}/retomar/
+        Retoma o cronômetro da OS em execução.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/ordens-servico/entradas-recentes/:
     get:
       operationId: ordens_servico_entradas_recentes_retrieve
@@ -1485,6 +1598,16 @@ components:
         endereco_completo:
           type: string
           maxLength: 255
+        avaliacao_media:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+        horario_abertura:
+          type: string
+          format: time
+        horario_fechamento:
+          type: string
+          format: time
       required:
       - endereco_completo
       - id
@@ -1662,6 +1785,25 @@ components:
       - servico
       - status_ordem_servico
       - tag_peca
+    PasswordResetConfirm:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - token
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
     PatchedClienteVeiculo:
       type: object
       properties:

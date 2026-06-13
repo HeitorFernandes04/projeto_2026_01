@@ -284,12 +284,14 @@ class DashboardAPIView(APIView):
                 
                 # Montando array de Receita Semanal
                 if data_str in receita_semanal_dict:
-                    receita_semanal_dict[data_str] += float(os.servico.preco)
+                    preco = float(os.valor_cobrado) if os.valor_cobrado is not None else float(os.servico.preco)
+                    receita_semanal_dict[data_str] += preco
                 
                 # Apuração EXATA do dia atual (data_filtro)
                 if os_local.date() == data_filtro:
                     total_os += 1
-                    receita_total += float(os.servico.preco)
+                    preco_dia = float(os.valor_cobrado) if os.valor_cobrado is not None else float(os.servico.preco)
+                    receita_total += preco_dia
                     volume_por_hora[os_local.hour] += 1
                     
         receita_semanal = [{'data': k, 'valor': round(v, 2)} for k, v in receita_semanal_dict.items()]
@@ -411,9 +413,13 @@ class FinanceiroResumoAPIView(APIView):
             horario_finalizacao__date__lte=data_fim
         ).select_related('servico', 'veiculo').order_by('-horario_finalizacao')
 
-        # Agregação usando Sum do Django ORM
-        total_faturado_query = ordens.aggregate(total=Sum('servico__preco'))
-        total_faturado = total_faturado_query['total'] or Decimal('0.00')
+        # Agregação: usa valor_cobrado (com fallback para servico__preco via Python)
+        total_faturado = Decimal('0.00')
+        for os_item in ordens:
+            if os_item.valor_cobrado is not None:
+                total_faturado += os_item.valor_cobrado
+            elif os_item.servico:
+                total_faturado += os_item.servico.preco
 
         # Constrói a lista de transações
         transacoes = []
@@ -436,7 +442,7 @@ class FinanceiroResumoAPIView(APIView):
                 'horario_finalizacao': os.horario_finalizacao,
                 'veiculo': veiculo_str,
                 'servico': os.servico.nome if os.servico else "Sem Serviço",
-                'valor_cobrado': str(os.servico.preco) if os.servico else "0.00"
+                'valor_cobrado': str(os.valor_cobrado) if os.valor_cobrado is not None else (str(os.servico.preco) if os.servico else "0.00")
             })
 
         return Response({

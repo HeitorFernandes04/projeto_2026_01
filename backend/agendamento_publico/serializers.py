@@ -109,7 +109,7 @@ class EstabelecimentoMapaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Estabelecimento
-        fields = ['id', 'nome_fantasia', 'slug', 'latitude', 'longitude', 'logo', 'endereco_completo', 'avaliacao_media']
+        fields = ['id', 'nome_fantasia', 'slug', 'latitude', 'longitude', 'logo', 'endereco_completo', 'avaliacao_media', 'horario_abertura', 'horario_fechamento']
 
     def get_logo(self, obj):
         request = self.context.get('request')

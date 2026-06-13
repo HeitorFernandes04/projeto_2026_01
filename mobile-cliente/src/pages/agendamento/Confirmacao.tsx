@@ -12,12 +12,26 @@ import {
   IonBackButton,
   IonIcon,
 } from '@ionic/react';
-import { locationOutline, constructOutline, calendarOutline, carOutline, checkmarkCircleOutline, cashOutline, chevronDownOutline, checkmarkOutline } from 'ionicons/icons';
+import {
+  locationOutline,
+  constructOutline,
+  calendarOutline,
+  carOutline,
+  checkmarkCircleOutline,
+  cashOutline,
+  chevronDownOutline,
+  checkmarkOutline,
+  calendar,
+  time,
+  chevronBackOutline,
+  chevronForwardOutline,
+} from 'ionicons/icons';
 import { motion } from 'framer-motion';
 import { useHistory, useLocation } from 'react-router-dom';
-import { createAgendamento, getVeiculos } from '../../services/api';
-import type { Servico, Veiculo } from '../../services/api';
+import { createAgendamento, getVeiculos, getDisponibilidade } from '../../services/api';
+import type { Servico, Veiculo, Disponibilidade } from '../../services/api';
 import './Confirmacao.css';
+import '../agendamento/Agendamento.css';
 
 interface LocationState {
   slug: string;
@@ -48,6 +62,10 @@ function formatarPlaca(placa: string): string {
   return p;
 }
 
+function dataHojeStr(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
 const Confirmacao: React.FC = () => {
   const location = useLocation<LocationState>();
   const history = useHistory();
@@ -63,6 +81,55 @@ const Confirmacao: React.FC = () => {
   const [sucesso, setSucesso] = useState(false);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
 
+  // Estados do Agendamento (Movido para cá)
+  const [data, setData] = useState(() => {
+    return location.state?.data || dataHojeStr();
+  });
+  const [horarios, setHorarios] = useState<Disponibilidade[]>([]);
+  const [horarioSelecionado, setHorarioSelecionado] = useState(location.state?.horario || '');
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  useEffect(() => {
+    if (!stateData) return;
+    const { slug, servico } = stateData;
+    if (!slug || !servico) return;
+    setHorarioSelecionado('');
+    getDisponibilidade(slug, servico.id, data)
+      .then(setHorarios)
+      .catch(() => setHorarios([]));
+  }, [stateData, data]);
+
+  // Lógica do Calendário
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = new Date(year, month, 1).getDay();
+
+  const prevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+
+  const formatMonthYear = (d: Date) => {
+    const m = d.toLocaleString('pt-BR', { month: 'long' });
+    return m.charAt(0).toUpperCase() + m.slice(1) + ' ' + d.getFullYear();
+  };
+
+  const isDayDisabled = (day: number) => {
+    const d = new Date(year, month, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+  };
+
+  const formatDateStr = (y: number, m: number, d: number) => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${y}-${pad(m + 1)}-${pad(d)}`;
+  };
+
   React.useEffect(() => {
     getVeiculos()
       .then(list => {
@@ -73,6 +140,8 @@ const Confirmacao: React.FC = () => {
             const agendamentoData = JSON.parse(pending);
             if (list.length > 0) {
               setStateData({ ...agendamentoData, veiculo: list[0] });
+              if (agendamentoData.data) setData(agendamentoData.data);
+              if (agendamentoData.horario) setHorarioSelecionado(agendamentoData.horario);
             } else {
               history.replace('/veiculo/novo');
             }
@@ -110,10 +179,10 @@ const Confirmacao: React.FC = () => {
     return null;
   }
 
-  const { slug, servico, estabelecimento_nome, data, horario, veiculo } = stateData;
+  const { slug, servico, estabelecimento_nome, veiculo } = stateData;
 
   const handleConfirmar = async () => {
-    if (loading) return;
+    if (loading || !horarioSelecionado) return;
     setLoading(true);
 
     try {
@@ -121,7 +190,7 @@ const Confirmacao: React.FC = () => {
         slug,
         servico_id: servico.id,
         veiculo_id: veiculo.id,
-        data_hora: `${data}T${horario}:00`, // Combina "YYYY-MM-DD" e "HH:MM" para formato ISO válido
+        data_hora: `${data}T${horarioSelecionado}:00`, // Combina "YYYY-MM-DD" e "HH:MM" para formato ISO válido
       });
 
       localStorage.removeItem('lm_agendamento_temporario');
@@ -227,7 +296,7 @@ const Confirmacao: React.FC = () => {
       <IonHeader className="ion-no-border confirm-header">
         <IonToolbar className="confirm-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/agendamento" text="" className="confirm-back-button" />
+            <IonBackButton defaultHref={`/estabelecimento/${slug}`} text="" className="confirm-back-button" />
           </IonButtons>
           <IonTitle className="confirm-title">Confirmação</IonTitle>
         </IonToolbar>
@@ -246,7 +315,7 @@ const Confirmacao: React.FC = () => {
               <span className="confirm-icon"><IonIcon icon={constructOutline} /></span> {servico.nome}
             </p>
             <p className="confirm-info-row">
-              <span className="confirm-icon"><IonIcon icon={calendarOutline} /></span> {formatarData(data)} às {horario}
+              <span className="confirm-icon"><IonIcon icon={calendarOutline} /></span> {horarioSelecionado ? `${formatarData(data)} às ${horarioSelecionado}` : 'Selecione data e horário abaixo'}
             </p>
           </div>
         </div>
@@ -263,7 +332,7 @@ const Confirmacao: React.FC = () => {
                   servico,
                   estabelecimento_nome,
                   data,
-                  horario
+                  horario: horarioSelecionado
                 };
                 localStorage.setItem('lm_agendamento_temporario', JSON.stringify(agendamentoData));
                 history.push('/veiculo/novo');
@@ -326,6 +395,75 @@ const Confirmacao: React.FC = () => {
           )}
         </div>
 
+        {/* Bloco de Seleção de Data e Horário (Requisitos RF-23/Confirmacao) */}
+        <div className="confirm-card">
+          <p className="confirm-card-header">Escolha a Data</p>
+          <div className="ag-calendar" style={{ margin: 0, padding: '12px' }}>
+            <div className="ag-cal-header">
+              <button type="button" className="ag-cal-nav-btn" onClick={prevMonth}>
+                <IonIcon icon={chevronBackOutline} />
+              </button>
+              <span className="ag-cal-month">{formatMonthYear(currentMonth)}</span>
+              <button type="button" className="ag-cal-nav-btn" onClick={nextMonth}>
+                <IonIcon icon={chevronForwardOutline} />
+              </button>
+            </div>
+
+            <div className="ag-cal-weekdays">
+              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+                <span key={i} className="ag-cal-weekday">{d}</span>
+              ))}
+            </div>
+
+            <div className="ag-cal-days">
+              {Array.from({ length: startDay }).map((_, i) => (
+                <div key={`empty-${i}`} className="ag-cal-day empty" />
+              ))}
+
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const dateStr = formatDateStr(year, month, day);
+                const disabled = isDayDisabled(day);
+                const selected = data === dateStr;
+
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    disabled={disabled}
+                    className={`ag-cal-day ${disabled ? 'disabled' : ''} ${selected ? 'selected' : ''}`}
+                    onClick={() => setData(dateStr)}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="confirm-card-header" style={{ marginTop: '16px' }}>Escolha o Horário</p>
+          {horarios.length === 0 ? (
+            <p className="ag-sem-horarios">Nenhum horário disponível para esta data.</p>
+          ) : (
+            <div className="ag-horarios-grid" style={{ margin: 0 }}>
+              {horarios.map(h => {
+                const isSelected = horarioSelecionado === h.horario;
+                return (
+                  <button
+                    key={h.horario}
+                    type="button"
+                    disabled={!h.disponivel}
+                    className={`ag-chip ${isSelected ? 'active' : ''}`}
+                    onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
+                  >
+                    {h.horario}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Bloco 3: Total e Tempo */}
         <div className="confirm-card">
           <div className="confirm-total-row" style={{ alignItems: 'center' }}>
@@ -346,7 +484,7 @@ const Confirmacao: React.FC = () => {
         <IonButton
           className="confirm-btn-primary"
           expand="block"
-          disabled={loading}
+          disabled={loading || !horarioSelecionado}
           onClick={handleConfirmar}
         >
           {loading ? 'Confirmando...' : 'Confirmar Agendamento'}

@@ -181,6 +181,7 @@ class OrdemServicoService:
             veiculo=veiculo, servico=servico, funcionario=funcionario,
             estabelecimento=servico.estabelecimento,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='VISTORIA_INICIAL' if iniciar_agora else 'PATIO',
             observacoes=dados.get('observacoes', ''),
         )
@@ -343,6 +344,7 @@ class OrdemServicoService:
             veiculo=veiculo,
             servico=servico,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='PATIO'
         )
 
@@ -377,6 +379,7 @@ class OrdemServicoService:
             veiculo=veiculo,
             servico=servico,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='PATIO'
         )
 

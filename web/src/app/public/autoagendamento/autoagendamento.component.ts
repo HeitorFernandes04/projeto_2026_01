@@ -187,7 +187,7 @@ export class AutoagendamentoComponent implements OnInit {
 
   get podeFinalizar(): boolean {
     const d = this.dadosAgendamento;
-    return !!(d.placa.length >= 8 && d.modelo && d.cor && d.nome && d.whatsapp.length >= 14);
+    return !!(d.placa.length >= 8 && d.modelo && d.cor && d.nome && d.whatsapp.length >= 14 && this.horarioSelecionado);
   }
 
   // --- CALENDÁRIO E DATA[cite: 1] ---
@@ -286,7 +286,7 @@ export class AutoagendamentoComponent implements OnInit {
   }
 
   avancar(): void {
-    if (this.passo === 1 && this.horarioSelecionado) {
+    if (this.passo === 1 && this.servicoSelecionado) {
       this.passo = 2;
       window.scrollTo(0, 0);
       this.cdr.markForCheck();

@@ -60,6 +60,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/password-reset/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_password_reset_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/password-reset/confirm/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_password_reset_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register/": {
         parameters: {
             query?: never;
@@ -138,6 +170,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["cliente_auth_token_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cliente/operacao/{id}/avaliar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description RF-Finalizacao: POST /api/cliente/operacao/{id}/avaliar/ */
+        post: operations["cliente_operacao_avaliar_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -591,6 +640,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ordens-servico/{id}/pausar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description PATCH /api/ordens-servico/{id}/pausar/
+         *     Pausa o cronômetro da OS em execução.
+         */
+        patch: operations["ordens_servico_pausar_partial_update"];
+        trace?: never;
+    };
+    "/api/ordens-servico/{id}/retomar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description PATCH /api/ordens-servico/{id}/retomar/
+         *     Retoma o cronômetro da OS em execução.
+         */
+        patch: operations["ordens_servico_retomar_partial_update"];
+        trace?: never;
+    };
     "/api/ordens-servico/entradas-recentes/": {
         parameters: {
             query?: never;
@@ -1004,6 +1093,12 @@ export interface components {
             longitude?: number | null;
             readonly logo: string;
             endereco_completo: string;
+            /** Format: decimal */
+            avaliacao_media?: string;
+            /** Format: time */
+            horario_abertura?: string;
+            /** Format: time */
+            horario_fechamento?: string;
         };
         /**
          * @description Exposição pública e segura do Estabelecimento para o Portal de Autoagendamento.
@@ -1074,6 +1169,14 @@ export interface components {
             readonly foto_url: string;
             /** Format: date-time */
             readonly data_registro: string;
+        };
+        PasswordResetConfirm: {
+            token: string;
+            password: string;
+        };
+        PasswordResetRequest: {
+            /** Format: email */
+            email: string;
         };
         PatchedClienteVeiculo: {
             readonly id?: number;
@@ -1274,6 +1377,56 @@ export interface operations {
             };
         };
     };
+    auth_password_reset_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PasswordResetRequest"];
+                "multipart/form-data": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetRequest"];
+                };
+            };
+        };
+    };
+    auth_password_reset_confirm_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirm"];
+                "application/x-www-form-urlencoded": components["schemas"]["PasswordResetConfirm"];
+                "multipart/form-data": components["schemas"]["PasswordResetConfirm"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetConfirm"];
+                };
+            };
+        };
+    };
     auth_register_create: {
         parameters: {
             query?: never;
@@ -1365,6 +1518,26 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cliente_operacao_avaliar_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -2163,6 +2336,46 @@ export interface operations {
         };
     };
     ordens_servico_incidente_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ordens_servico_pausar_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ordens_servico_retomar_partial_update: {
         parameters: {
             query?: never;
             header?: never;

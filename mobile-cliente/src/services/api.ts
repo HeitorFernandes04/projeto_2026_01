@@ -100,6 +100,7 @@ export interface PainelOrdemInfo {
   etapa_atual: number;
   slug_cancelamento?: string | null;
   avaliacao_estrelas?: number | null;
+  vaga_patio?: string | null;
 }
 
 export interface PainelClienteResponse {
