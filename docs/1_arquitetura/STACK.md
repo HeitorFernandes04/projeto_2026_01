@@ -6,6 +6,8 @@
 - **Banco de Dados:** SQLite (Dev) / PostgreSQL (Prod Ready)
 - **AI/RAG:** ChromaDB 1.5.5 + MCP (Model Context Protocol) 1.27.0
 - **Segurança:** SimpleJWT (Autenticação Unificada)
+- **Mensageria WhatsApp:** Evolution API v2 (Docker)
+- **Mensageria Email:** Django SMTP Backend (Gmail)
 
 ## Frontend Web (Portal Administrativo & B2C)
 - **Framework:** Angular 21.2.0
