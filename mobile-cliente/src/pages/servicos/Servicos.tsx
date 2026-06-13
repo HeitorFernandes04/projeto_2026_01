@@ -13,11 +13,13 @@ import { useParams, useHistory } from 'react-router-dom';
 import { checkmarkOutline } from 'ionicons/icons';
 import { getEstabelecimento, getVeiculos } from '../../services/api';
 import type { Servico } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './Servicos.css';
 
 const Servicos: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const history = useHistory();
+  const { token } = useAuth();
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [selecionado, setSelecionado] = useState<Servico | null>(null);
   const [estabelecimentoNome, setEstabelecimentoNome] = useState('');
@@ -33,9 +35,32 @@ const Servicos: React.FC = () => {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const handleContinuar = () => {
+  const handleContinuar = async () => {
     if (!selecionado) return;
-    history.push('/agendamento', { slug, servico: selecionado, estabelecimento_nome: estabelecimentoNome });
+
+    const agendamentoData = {
+      slug,
+      servico: selecionado,
+      estabelecimento_nome: estabelecimentoNome,
+    };
+
+    // Fricção Zero: Se não logado, salva state e vai pro login via whatsapp
+    if (!token || token === 'null' || token === 'undefined') {
+      localStorage.setItem('lm_agendamento_pendente', JSON.stringify(agendamentoData));
+      history.push('/auth');
+      return;
+    }
+
+    try {
+      const vs = await getVeiculos();
+      if (vs.length === 0) {
+        history.push('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+      } else {
+        history.push('/agendamento/confirmacao', { ...agendamentoData, veiculo: vs[0] });
+      }
+    } catch {
+      history.push('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+    }
   };
 
 

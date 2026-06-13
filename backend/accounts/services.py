@@ -1,14 +1,43 @@
+import threading
 from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
+from django.core.mail import send_mail
 from django_rest_passwordreset.models import ResetPasswordToken
 
 User = get_user_model()
 
 class PasswordResetService:
     
+    @staticmethod
+    def _enviar_email_thread(token_key: str, user_email: str, user_name: str, base_url: str):
+        """Task que envia o e-mail em background."""
+        link = f"{base_url}/reset-password?token={token_key}"
+        subject = "Recuperação de Senha - Lava-Me"
+        message = (
+            f"Olá {user_name},\n\n"
+            f"Você solicitou a redefinição de sua senha na plataforma Lava-Me.\n"
+            f"Clique no link a seguir para definir uma nova senha (este link é válido por 15 minutos):\n\n"
+            f"{link}\n\n"
+            f"Se você não solicitou essa alteração, ignore este e-mail.\n"
+            f"Atenciosamente,\nEquipe Lava-Me"
+        )
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=None,
+                recipient_list=[user_email],
+                fail_silently=False
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('accounts')
+            logger.error(f"Erro ao enviar email de recuperacao para {user_email}: {e}")
+
+
     @staticmethod
     def solicitar_reset(email: str) -> str | None:
         """
@@ -52,9 +81,16 @@ class PasswordResetService:
         else:
             base_url = settings.FRONTEND_FUNCIONARIO_URL
 
-        # Aciona o envio de e-mail de forma assíncrona via Celery
-        from .tasks import enviar_email_recuperacao_senha
-        enviar_email_recuperacao_senha.delay(token.key, user.email, user.name or user.username, base_url)
+        # Aciona o envio de e-mail de forma assíncrona via Thread nativa (ou síncrona nos testes)
+        import sys
+        if 'pytest' in sys.modules:
+            PasswordResetService._enviar_email_thread(token.key, user.email, user.name or user.username, base_url)
+        else:
+            thread = threading.Thread(
+                target=PasswordResetService._enviar_email_thread,
+                args=(token.key, user.email, user.name or user.username, base_url)
+            )
+            thread.start()
         
         return token.key
 

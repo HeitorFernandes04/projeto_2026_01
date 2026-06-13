@@ -59,9 +59,6 @@ const EstabelecimentoDrawer: React.FC<Props> = ({ estabelecimento, posicaoUsuari
 
   return (
     <div className="floating-card-wrapper">
-      {/* Background invisível para detectar clique fora e fechar */}
-      <div className="floating-card-backdrop" onClick={onClose}></div>
-      
       <div className="floating-card">
         {/* Botão de Fechar */}
         <button className="floating-close-btn" onClick={onClose}>

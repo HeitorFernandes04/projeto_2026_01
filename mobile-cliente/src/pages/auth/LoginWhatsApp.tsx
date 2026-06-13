@@ -39,14 +39,16 @@ const LoginWhatsApp: React.FC = () => {
   const location = useLocation<{ redirect_to?: string, nome?: string }>();
   const isPerfilFlow = location.state?.redirect_to === '/perfil';
 
-  // Verifica se o usuário vem de um fluxo de agendamento (novo cadastro) ou login direto
+  const [precisaNome, setPrecisaNome] = useState(false);
+
+  // Verifica se o usuário vem de um fluxo de agendamento
   const hasAgendamento = !!(localStorage.getItem('lm_agendamento_temporario') || localStorage.getItem('lm_agendamento_pendente'));
 
   const telefoneLimpo = telefoneFormatado.replace(/\D/g, '');
   
-  // Validação estrita: se for agendamento precisa de nome > 2. Se for login direto, apenas telefone.
+  // Validação: se precisar do nome (novo usuário), exige 3 caracteres. Senão, só valida o telefone.
   const isTelefoneValido = telefoneLimpo.length === 10 || telefoneLimpo.length === 11;
-  const isValido = hasAgendamento 
+  const isValido = precisaNome 
     ? isTelefoneValido && nome.trim().length >= 3 
     : isTelefoneValido;
 
@@ -61,7 +63,9 @@ const LoginWhatsApp: React.FC = () => {
     setLoading(true);
     setErro('');
     
-    const nomeParaEnvio = isPerfilFlow ? (location.state?.nome || user?.nome) : (hasAgendamento ? nome.trim() : undefined);
+    const nomeParaEnvio = isPerfilFlow 
+      ? (location.state?.nome || user?.nome) 
+      : (precisaNome ? nome.trim() : undefined);
     
     try {
       const res = await solicitarOTP(`+55${telefoneLimpo}`, nomeParaEnvio);
@@ -72,8 +76,15 @@ const LoginWhatsApp: React.FC = () => {
         nome_cliente: nomeParaEnvio,
         redirect_to: isPerfilFlow ? '/perfil' : undefined
       });
-    } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Falha na comunicação. Verifique sua conexão e tente novamente.');
+    } catch (e: any) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      // Se o backend avisar que não tem cadastro, exibe o campo de nome
+      if (errorMsg.includes('Usuário não cadastrado')) {
+        setPrecisaNome(true);
+        setErro('Parece que é seu primeiro acesso! Por favor, informe seu nome para continuarmos.');
+      } else {
+        setErro(errorMsg || 'Falha na comunicação. Verifique sua conexão e tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -103,9 +114,9 @@ const LoginWhatsApp: React.FC = () => {
               : "Insira seu número de WhatsApp para acessar sua conta."}
         </p>
 
-        {/* Renderização Condicional do Nome */}
-        {hasAgendamento && (
-          <div className="auth-form-group">
+        {/* Renderização Condicional do Nome (Apenas se precisar cadastrar) */}
+        {precisaNome && (
+          <div className="auth-form-group fade-in">
             <label className="auth-label">Seu Nome completo</label>
             <IonItem className="auth-input-item" lines="none">
               <IonInput
@@ -141,20 +152,11 @@ const LoginWhatsApp: React.FC = () => {
         </div>
 
         {erro && (
-          <div className="auth-alert-card">
+          <div className="auth-alert-card fade-in">
             <p className="auth-alert-text">
               <IonIcon icon={warningOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
               {erro}
             </p>
-            {erro.includes('Usuário não cadastrado') && (
-              <button 
-                onClick={() => history.push('/welcome')} 
-                className="auth-btn-secondary"
-                style={{ marginTop: '12px', color: 'var(--auth-primary)', textDecoration: 'underline' }}
-              >
-                Voltar para o Início
-              </button>
-            )}
           </div>
         )}
 

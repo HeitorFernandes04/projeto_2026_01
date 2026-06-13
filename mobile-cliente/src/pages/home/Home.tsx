@@ -13,7 +13,7 @@ import {
   IonPopover,
   useIonViewWillEnter,
 } from '@ionic/react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { 
   locateOutline, 
   arrowBackOutline,
@@ -39,6 +39,7 @@ delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIcon
 L.Icon.Default.mergeOptions({ iconUrl: markerIcon, iconRetinaUrl: markerIcon2x, shadowUrl: markerShadow });
 
 const CENTRO_PADRAO: [number, number] = [-10.184, -48.334];
+const RAIO_PROXIMOS_KM = 15; // Raio em km para o filtro "Mais Próximos"
 
 type Filtro = 'proximos' | 'abertos' | null;
 
@@ -85,6 +86,15 @@ function criarPin(e: EstabelecimentoMapa, selecionado: boolean) {
   });
 }
 
+const MapEvents: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+  useMapEvents({
+    click: () => {
+      onClick();
+    },
+  });
+  return null;
+};
+
 const Home: React.FC = () => {
   const { token } = useAuth();
   const history = useHistory();
@@ -127,19 +137,50 @@ const Home: React.FC = () => {
     return `${filtroAvaliacao}+ Estrelas`;
   };
 
-  const centralizarNoUsuario = async () => {
+  // Helper: obtém a posição do usuário via Geolocation API
+  const obterPosicaoUsuario = async (): Promise<[number, number] | null> => {
     try {
       const pos = await Geolocation.getCurrentPosition();
       const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
       setPosicaoUsuario(coords);
-      setCentro(coords);
-      centroKey.current += 1;
+      return coords;
     } catch {
-      // Permissão negada — mantém o centro atual
+      return null;
     }
   };
 
-  const toggleFiltro = (f: Filtro) => setFiltro(prev => (prev === f ? null : f));
+  const centralizarNoUsuario = async () => {
+    const coords = await obterPosicaoUsuario();
+    if (coords) {
+      setCentro(coords);
+      centroKey.current += 1;
+    }
+  };
+
+  const toggleFiltro = async (f: Filtro) => {
+    if (filtro === f) {
+      // Desativa o filtro
+      setFiltro(null);
+      return;
+    }
+
+    if (f === 'proximos') {
+      // Solicita geolocalização automaticamente se ainda não tiver
+      let coords = posicaoUsuario;
+      if (!coords) {
+        coords = await obterPosicaoUsuario();
+      }
+      if (!coords) {
+        // Não conseguiu obter localização — não ativa o filtro
+        return;
+      }
+      // Centraliza o mapa no usuário ao ativar "Mais Próximos"
+      setCentro(coords);
+      centroKey.current += 1;
+    }
+
+    setFiltro(f);
+  };
 
   const filtrados = useMemo(() => {
     let result = busca.trim() === ''
@@ -149,11 +190,14 @@ const Home: React.FC = () => {
         );
 
     if (filtro === 'proximos' && posicaoUsuario) {
-      result.sort((a, b) => {
-        const da = haversine(posicaoUsuario[0], posicaoUsuario[1], a.latitude!, a.longitude!);
-        const db = haversine(posicaoUsuario[0], posicaoUsuario[1], b.latitude!, b.longitude!);
-        return da - db;
-      });
+      // Filtra por raio E ordena por distância crescente
+      result = result
+        .map(e => ({
+          ...e,
+          _dist: haversine(posicaoUsuario[0], posicaoUsuario[1], e.latitude!, e.longitude!),
+        }))
+        .filter(e => e._dist <= RAIO_PROXIMOS_KM)
+        .sort((a, b) => a._dist - b._dist);
     }
 
     if (filtro === 'abertos') {
@@ -202,11 +246,11 @@ const Home: React.FC = () => {
                 <IonLabel>Abertos</IonLabel>
               </IonChip>
 
-              <div id="trigger-avaliacao" className={`chip-select-wrapper ${filtroAvaliacao !== 'qualquer' ? 'chip-glass-ativo' : 'chip-glass-inativo'}`}>
-                <IonIcon icon={star} className="chip-icon chip-select-icon" />
-                <span className="chip-select-label">{getAvaliacaoLabel()}</span>
+              <IonChip id="trigger-avaliacao" className={filtroAvaliacao !== 'qualquer' ? 'chip-glass-ativo' : 'chip-glass-inativo'}>
+                <IonIcon icon={star} className="chip-icon" />
+                <IonLabel>{getAvaliacaoLabel()}</IonLabel>
                 <IonIcon icon={chevronDownOutline} className="chip-icon-down" />
-              </div>
+              </IonChip>
 
               <IonPopover trigger="trigger-avaliacao" dismissOnSelect={true} className="avaliacao-popover">
                 <IonContent>
@@ -265,6 +309,7 @@ const Home: React.FC = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
+          <MapEvents onClick={() => setSelecionado(null)} />
           {filtrados.map(e => (
             <Marker
               key={`${e.id}-${e.logo}-${selecionado?.id === e.id}`}

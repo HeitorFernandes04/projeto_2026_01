@@ -8,7 +8,7 @@ function inlineAngularComponentResources() {
     name: 'inline-angular-component-resources',
     enforce: 'pre' as const,
     transform(code: string, id: string) {
-      if (!id.endsWith('.component.ts')) {
+      if (!id.endsWith('.component.ts') && !id.endsWith('reset-password.ts')) {
         return null;
       }
 

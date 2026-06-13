@@ -134,6 +134,19 @@ python manage.py runserver 8080
 
 ---
 
+### 8. Evolution API (WhatsApp) e E-mails (SMTP)
+
+O Lava-Me utiliza serviços de mensageria para OTP e Notificações:
+- **E-mails (SMTP):** Configurados via arquivo `.env`. Utilizamos o padrão SMTP do Gmail em produção e desenvolvimento. Certifique-se de que `EMAIL_HOST_USER` e as senhas de app do Google estão preenchidas.
+- **WhatsApp (Evolution API):** É necessário rodar o gateway de mensageria localmente utilizando o Docker:
+  ```bash
+  cd evolution-api
+  sudo docker-compose up -d
+  ```
+  Acesse `http://localhost:3000`, configure sua Global API Key e crie a instância oficial com o nome definido na variável `EVOLUTION_INSTANCE_NAME` do seu `.env` (ex: `lavame-bot`). Em seguida, faça a leitura do QR Code com o WhatsApp.
+
+---
+
 ## Frontends (Web e Mobile)
 
 O ecossistema possui três aplicações frontend independentes. É necessário abrir uma nova aba de terminal para cada um deles.

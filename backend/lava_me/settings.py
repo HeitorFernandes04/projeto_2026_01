@@ -19,9 +19,9 @@ import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Carrega variáveis do arquivo .env na raiz do projeto
-env_path = BASE_DIR.parent / '.env'
-load_dotenv(dotenv_path=env_path)
+# Carrega variáveis do arquivo .env na raiz do backend
+env_path = BASE_DIR / '.env'
+load_dotenv(dotenv_path=env_path, override=True)
 
 
 # Quick-start development settings - unsuitable for production
@@ -245,12 +245,8 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Lava-Me <no-reply@lava.me>')
 
-# Configurações do Celery
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-
-# Se for ambiente de testes (TDD) ou se estiver forçado no .env (para testar local sem Redis)
-if 'pytest' in sys.modules or os.environ.get('CELERY_TASK_ALWAYS_EAGER', 'False') == 'True':
-    CELERY_TASK_ALWAYS_EAGER = True
+# Configurações da Evolution API (WhatsApp)
+EVOLUTION_API_URL = os.environ.get('EVOLUTION_API_URL', 'http://localhost:8080')
+EVOLUTION_INSTANCE_NAME = os.environ.get('EVOLUTION_INSTANCE_NAME', 'teste')
+EVOLUTION_API_KEY = os.environ.get('EVOLUTION_API_KEY', 'sua_chave_secreta_aqui')
 

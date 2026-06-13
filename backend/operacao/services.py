@@ -181,6 +181,7 @@ class OrdemServicoService:
             veiculo=veiculo, servico=servico, funcionario=funcionario,
             estabelecimento=servico.estabelecimento,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='VISTORIA_INICIAL' if iniciar_agora else 'PATIO',
             observacoes=dados.get('observacoes', ''),
         )
@@ -221,6 +222,8 @@ class OrdemServicoService:
 
         # ETAPA 3: EM_EXECUCAO → LIBERACAO (RF-27/RF-30: etapa de acabamento removida)
         elif status_atual == 'EM_EXECUCAO':
+            if os.is_pausado:
+                raise ValidationError("Não é possível finalizar a lavagem com a ordem de serviço pausada.")
             os.status = 'LIBERACAO'
             os.etapa_atual = 80
             os.comentario_lavagem = dados.get('comentario_lavagem', os.comentario_lavagem or '')
@@ -258,7 +261,39 @@ class OrdemServicoService:
         os.save()
 
         return os
-    
+
+    @staticmethod
+    def pausar_ordem_servico(os_id: int) -> OrdemServico:
+        """Pausa o cronômetro da OS (apenas em execução) acumulando os segundos passados."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+        if os.status != 'EM_EXECUCAO':
+            raise ValidationError("Apenas ordens de serviço em execução podem ser pausadas.")
+        
+        if os.is_pausado:
+            return os
+
+        if os.horario_lavagem:
+            delta = timezone.now() - os.horario_lavagem
+            os.tempo_acumulado_segundos += max(0, int(delta.total_seconds()))
+            
+        os.is_pausado = True
+        os.save(update_fields=['is_pausado', 'tempo_acumulado_segundos'])
+        return os
+
+    @staticmethod
+    def retomar_ordem_servico(os_id: int) -> OrdemServico:
+        """Retoma o cronômetro da OS atualizando o horário de referência (horario_lavagem)."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+        if os.status != 'EM_EXECUCAO':
+            raise ValidationError("Apenas ordens de serviço em execução podem ser retomadas.")
+        
+        if not os.is_pausado:
+            return os
+
+        os.horario_lavagem = timezone.now()
+        os.is_pausado = False
+        os.save(update_fields=['is_pausado', 'horario_lavagem'])
+        return os
 
 
     @staticmethod
@@ -309,6 +344,7 @@ class OrdemServicoService:
             veiculo=veiculo,
             servico=servico,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='PATIO'
         )
 
@@ -343,6 +379,7 @@ class OrdemServicoService:
             veiculo=veiculo,
             servico=servico,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='PATIO'
         )
 
@@ -710,7 +747,9 @@ class IncidenteService:
 
             ordem_servico = incidente.ordem_servico
             ordem_servico.status = incidente.status_anterior_os
-            ordem_servico.save(update_fields=['status'])
+            if ordem_servico.status == 'EM_EXECUCAO' and not ordem_servico.is_pausado:
+                ordem_servico.horario_lavagem = timezone.now()
+            ordem_servico.save(update_fields=['status', 'horario_lavagem'])
 
         incidente.refresh_from_db()
         return incidente
@@ -734,7 +773,12 @@ class IncidenteService:
                 resolvido=False,
             )
 
+            # Acumula o tempo se estava rodando e bloqueou por incidente
+            if status_anterior_os == 'EM_EXECUCAO' and not os.is_pausado and os.horario_lavagem:
+                delta = timezone.now() - os.horario_lavagem
+                os.tempo_acumulado_segundos += max(0, int(delta.total_seconds()))
+
             os.status = 'BLOQUEADO_INCIDENTE'
-            os.save(update_fields=['status'])
+            os.save(update_fields=['status', 'tempo_acumulado_segundos'])
 
         return incidente

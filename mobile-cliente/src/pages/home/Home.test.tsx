@@ -22,6 +22,7 @@ vi.mock('react-leaflet', () => ({
     </div>
   ),
   Popup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  useMapEvents: () => null,
 }));
 
 vi.mock('@ionic/react', () => ({

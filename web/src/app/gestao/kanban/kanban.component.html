@@ -82,10 +82,13 @@
                       <span class="service-label">Serviço</span>
                       <p>{{ card.servico }}</p>
                     </div>
-                    <div class="timer-row">
-                      <span class="material-symbols-outlined">schedule</span>
+                    <div class="timer-row" [class.paused-timer]="card.is_pausado">
+                      <span class="material-symbols-outlined">{{ card.is_pausado ? 'pause_circle' : 'schedule' }}</span>
                       <strong>{{ formatarTempo(card.tempo_decorrido_segundos ?? (card.tempo_decorrido_minutos * 60)) }}</strong>
                       <small>/ {{ formatarTempo(card.duracao_estimada_minutos * 60) }}</small>
+                      @if (card.is_pausado) {
+                        <span class="paused-badge">PAUSADO</span>
+                      }
                     </div>
                     <div class="progress-container">
                       <div

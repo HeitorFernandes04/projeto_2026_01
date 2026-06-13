@@ -2,10 +2,12 @@ import datetime
 import logging
 import random
 import re
+import threading
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 import requests
 
@@ -22,8 +24,8 @@ B2C_EMAIL_DOMAIN = 'cliente.lava.me'
 
 class WhatsAppOTPService:
     @staticmethod
-    def enviar_mensagem(telefone, mensagem):
-        url = 'http://localhost:8080/message/sendText/teste'
+    def _enviar_http_thread(telefone, mensagem):
+        url = f"{settings.EVOLUTION_API_URL.rstrip('/')}/message/sendText/{settings.EVOLUTION_INSTANCE_NAME}"
         
         # Garante que o DDI 55 seja adicionado apenas se não estiver presente
         numero_destino = telefone if telefone.startswith('55') else f"55{telefone}"
@@ -35,7 +37,7 @@ class WhatsAppOTPService:
         
         headers = {
             "Content-Type": "application/json",
-            "apikey": "sua_chave_secreta_aqui"
+            "apikey": settings.EVOLUTION_API_KEY
         }
         
         try:
@@ -46,6 +48,20 @@ class WhatsAppOTPService:
         except requests.exceptions.RequestException as e:
             logger.error(f"Falha na comunicação com o gateway WhatsApp (Evolution API) para {telefone}: {e}")
             return False
+
+    @staticmethod
+    def enviar_mensagem(telefone, mensagem):
+        import sys
+        if 'pytest' in sys.modules:
+            return WhatsAppOTPService._enviar_http_thread(telefone, mensagem)
+        else:
+            # Dispara o envio do WhatsApp de forma assíncrona para não bloquear a resposta do OTP
+            thread = threading.Thread(
+                target=WhatsAppOTPService._enviar_http_thread,
+                args=(telefone, mensagem)
+            )
+            thread.start()
+        return True
 
 
 class AuthB2CService:
@@ -293,6 +309,7 @@ class AuthB2CService:
                 'tempo_estimado_min': ordem.servico.duracao_estimada_minutos,
                 # RF-24.3: slug exposto apenas para OS em PATIO (canceláveis)
                 'slug_cancelamento': str(ordem.slug_cancelamento) if ordem.status == 'PATIO' and ordem.slug_cancelamento else None,
+                'vaga_patio': ordem.vaga_patio,
             }
             if ordem.status in ('FINALIZADO', 'CANCELADO'):
                 historico.append(item)

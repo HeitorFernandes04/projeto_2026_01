@@ -260,8 +260,10 @@ class TestWhatsAppOTPService:
         args, kwargs = mock_post.call_args
         assert kwargs['json']['number'] == '5511999999999'
         assert kwargs['json']['text'] == 'Seu código é 1234'
-        assert kwargs['headers']['apikey'] == 'sua_chave_secreta_aqui'
-        assert args[0] == 'http://localhost:8080/message/sendText/teste'
+        from django.conf import settings
+        assert kwargs['headers']['apikey'] == settings.EVOLUTION_API_KEY
+        url_esperada = f"{settings.EVOLUTION_API_URL.rstrip('/')}/message/sendText/{settings.EVOLUTION_INSTANCE_NAME}"
+        assert args[0] == url_esperada
 
     @patch('agendamento_publico.services.requests.post')
     def test_enviar_mensagem_falha_nao_crasha_api(self, mock_post):
