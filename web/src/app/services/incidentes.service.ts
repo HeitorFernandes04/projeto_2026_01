@@ -125,7 +125,7 @@ export class IncidentesService {
     return this.pendentesSubject.value;
   }
 
-  iniciarMonitoramentoPendentes(intervaloMs = 30000): void {
+  iniciarMonitoramentoPendentes(intervaloMs = 3000): void {
     this.monitoramentosAtivos += 1;
 
     if (this.pollingHandle) {

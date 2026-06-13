@@ -34,6 +34,7 @@ export class DossieComponent implements OnInit {
   carregarGaleria(): void {
     this.historicoService.buscarGaleria(this.osId!).subscribe({
       next: (data) => {
+        console.log('Dados da galeria:', data);
         this.galeria    = data;
         this.carregando = false;
         this.cdr.markForCheck();
@@ -58,6 +59,21 @@ export class DossieComponent implements OnInit {
 
   totalFotos(galeria: GaleriaOS): number {
     return galeria.estado_inicial.length + galeria.estado_meio.length + galeria.estado_final.length;
+  }
+
+  formatarTempo(segundos: number | undefined): string {
+    if (segundos === undefined) return '';
+    const m = Math.floor(segundos / 60);
+    const s = segundos % 60;
+    return `${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+  }
+
+  calcularTempoIncidente(inicio: string, fim: string | null): string {
+    if (!fim) return 'Em andamento';
+    const start = new Date(inicio).getTime();
+    const end = new Date(fim).getTime();
+    const diffEmSegundos = Math.floor((end - start) / 1000);
+    return this.formatarTempo(diffEmSegundos);
   }
 
   voltar(): void {

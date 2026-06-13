@@ -21,6 +21,9 @@ interface OrdemServicoData {
   etapa_atual: number;
   status: string;
   veiculo: { placa: string; modelo: string; marca: string };
+  comentario_lavagem?: string;
+  tempo_decorrido_segundos?: number;
+  is_pausado?: boolean;
 }
 
 const EsteiraProducao: React.FC = () => {
@@ -167,7 +170,15 @@ const EsteiraProducao: React.FC = () => {
 
         <div style={{ padding: '0 20px 120px' }}>
           {etapaAtiva === 1 && <EstadoVistoria ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
-          {etapaAtiva === 2 && <EstadoLavagem ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
+          {etapaAtiva === 2 && (
+            <EstadoLavagem 
+              ordemServicoId={ordemServico.id} 
+              onComplete={carregarOrdemServico} 
+              tempoDecorridoInicial={ordemServico.tempo_decorrido_segundos}
+              comentarioInicial={ordemServico.comentario_lavagem}
+              isPausadoInicial={ordemServico.is_pausado}
+            />
+          )}
           {etapaAtiva >= 3 && <EstadoLiberacao ordemServicoId={ordemServico.id} onComplete={carregarOrdemServico} />}
         </div>
         <TabBar activeTab="pátio" />

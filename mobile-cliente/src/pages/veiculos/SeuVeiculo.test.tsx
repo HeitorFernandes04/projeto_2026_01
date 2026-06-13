@@ -38,36 +38,48 @@ describe('SeuVeiculo', () => {
     vi.clearAllMocks();
   });
 
-  it('deve validar placa tradicional corretamente', () => {
-    render(
-      <MemoryRouter initialEntries={['/veiculo/novo']}>
-        <Route path="/veiculo/:id">
-          <SeuVeiculo />
-        </Route>
-      </MemoryRouter>
-    );
+  it('deve validar placa tradicional corretamente', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/veiculo/novo']}>
+          <Route path="/veiculo/:id">
+            <SeuVeiculo />
+          </Route>
+        </MemoryRouter>
+      );
+    });
 
-    const input = screen.getByPlaceholderText('ABC-1234');
+    const inputs = screen.getAllByPlaceholderText('ABC-1234');
+    const input = inputs[0];
     
-    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC-1234' } }));
+    act(() => {
+      fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC-1234' } }));
+    });
     expect(screen.queryByText('Placa inválida. Ex: ABC-1234 ou ABC1A23')).toBeNull();
 
-    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC-123' } }));
+    act(() => {
+      fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC-123' } }));
+    });
     expect(screen.getByText('Placa inválida. Ex: ABC-1234 ou ABC1A23')).toBeInTheDocument();
   });
 
-  it('deve validar placa Mercosul corretamente', () => {
-    render(
-      <MemoryRouter initialEntries={['/veiculo/novo']}>
-        <Route path="/veiculo/:id">
-          <SeuVeiculo />
-        </Route>
-      </MemoryRouter>
-    );
+  it('deve validar placa Mercosul corretamente', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/veiculo/novo']}>
+          <Route path="/veiculo/:id">
+            <SeuVeiculo />
+          </Route>
+        </MemoryRouter>
+      );
+    });
 
-    const input = screen.getByPlaceholderText('ABC-1234');
+    const inputs = screen.getAllByPlaceholderText('ABC-1234');
+    const input = inputs[0];
     
-    fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC1A23' } }));
+    act(() => {
+      fireEvent(input, new CustomEvent('ionInput', { detail: { value: 'ABC1A23' } }));
+    });
     expect(screen.queryByText('Placa inválida. Ex: ABC-1234 ou ABC1A23')).toBeNull();
   });
 

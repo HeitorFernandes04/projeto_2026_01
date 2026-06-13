@@ -156,3 +156,33 @@ class TestIncidentesAuditoriaAPI:
         response = self._client(gestor.user).get(f'/api/incidentes-os/{incidente.id}/auditoria/')
 
         assert response.status_code == 403
+
+    def test_gestor_consulta_auditoria_fallback_dados_cliente(self):
+        from accounts.models import Cliente
+        gestor = GestorFactory()
+        os = OrdemServicoFactory(
+            estabelecimento=gestor.estabelecimento,
+            status='BLOQUEADO_INCIDENTE',
+        )
+        # Associa um Cliente ao veículo da OS
+        cliente_user = UserFactory(name='Cliente Relacionado')
+        cliente = Cliente.objects.create(user=cliente_user, telefone_whatsapp='5563999998888')
+        os.veiculo.cliente = cliente
+        os.veiculo.nome_dono = None
+        os.veiculo.celular_dono = None
+        os.veiculo.save(update_fields=['cliente', 'nome_dono', 'celular_dono'])
+
+        incidente = IncidenteOSFactory(
+            ordem_servico=os,
+            status_anterior_os='EM_EXECUCAO',
+        )
+        VistoriaItemFactory(
+            ordem_servico=os,
+            tag_peca=incidente.tag_peca,
+        )
+
+        response = self._client(gestor.user).get(f'/api/incidentes-os/{incidente.id}/auditoria/')
+        assert response.status_code == 200
+        data = response.json()
+        assert data['ordem_servico']['nome_dono'] == 'Cliente Relacionado'
+        assert data['ordem_servico']['celular_dono'] == '5563999998888'

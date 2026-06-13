@@ -1,3 +1,7 @@
+ion-content.permissao-content {
+  --background: #0F172A !important;
+}
+
 .permissao-container {
   display: flex;
   flex-direction: column;
@@ -8,19 +12,62 @@
   padding: 32px 16px;
 }
 
-.permissao-icon {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
+/* Novo container do Ícone Animado */
+.permissao-icon-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  margin-bottom: 12px;
+}
+
+/* O círculo interno fixo com o ícone */
+.permissao-icon-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(41, 182, 246, 0.15); /* Fundo azul claro translúcido */
+  border: 1px solid rgba(41, 182, 246, 0.3); /* Borda fina */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  position: relative;
 }
 
 .permissao-emoji {
-  font-size: 40px;
+  font-size: 42px;
+  color: #29B6F6; /* Cor azul claro cyan */
   line-height: 1;
+}
+
+/* Anel pulsante ao redor (Pulse Animation) */
+.permissao-pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 90px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background-color: rgba(41, 182, 246, 0.4);
+  z-index: 1;
+  animation: locationPulse 2s infinite ease-out;
+}
+
+@keyframes locationPulse {
+  0% {
+    width: 90px;
+    height: 90px;
+    opacity: 1;
+  }
+  100% {
+    width: 140px;
+    height: 140px;
+    opacity: 0;
+  }
 }
 
 .permissao-titulo {
@@ -47,4 +94,20 @@
   cursor: pointer;
   font-size: 16px;
   padding: 8px;
+}
+
+/* Botão Customizado (Permitir) */
+.permissao-btn-custom {
+  --background: #29B6F6;
+  --background-hover: #039BE5;
+  --border-radius: 28px;
+  --color: #111827; /* Texto escuro/preto conforme o design */
+  --box-shadow: 0 8px 16px -4px rgba(41, 182, 246, 0.4);
+  margin-top: 24px;
+  margin-bottom: 8px;
+  width: 100%;
+  text-transform: none; /* Mantém a caixa das letras natural (Permitir localização) */
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 52px;
 }

@@ -43,62 +43,9 @@
             </div>
           </div>
         </section>
-
-        <!-- Motor de Disponibilidade (Aparece ao selecionar serviço) -->
-        <div class="agendamento-flex-container" *ngIf="servicoSelecionado">
-          <section class="section-data">
-            <h2 class="section-label">Escolha a Data</h2>
-            <div class="calendar-card">
-              <header class="calendar-header">
-                <span class="calendar-month">{{ mesAtualNome }}</span>
-                <div class="calendar-nav">
-                  <button class="nav-btn" (click)="mudarMes(-1)">‹</button>
-                  <button class="nav-btn" (click)="mudarMes(1)">›</button>
-                </div>
-              </header>
-              <div class="calendar-grid">
-                <div class="calendar-weekdays">
-                  <div *ngFor="let dia of nomesDias" class="weekday">{{ dia }}</div>
-                </div>
-                <div class="calendar-days">
-                  <div *ngFor="let dia of diasDoMes" 
-                       class="calendar-day"
-                       [class.today]="dia?.hoje"
-                       [class.selected]="dia?.selecionado"
-                       [class.past]="dia?.passado"
-                       [class.disabled]="!dia || dia.passado"
-                       (click)="selecionarData(dia)">
-                    <span *ngIf="dia">{{ dia.dia }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="section-horario">
-            <h2 class="section-label">Escolha o Horário</h2>
-            <div class="horarios-card">
-              <div *ngIf="carregandoHorarios" class="loading-horarios">
-                <div class="loading-spinner"></div>
-                <span>Carregando horários...</span>
-              </div>
-              <div *ngIf="!carregandoHorarios && horariosDisponiveis.length === 0" class="no-horarios">
-                <span>Nenhum horário disponível para esta data</span>
-              </div>
-              <div *ngIf="!carregandoHorarios && horariosDisponiveis.length > 0" class="horarios-grid">
-                <div *ngFor="let horario of horariosDisponiveis" 
-                     class="horario-chip"
-                     [class.selected]="horarioSelecionado === horario.inicio"
-                     (click)="horarioSelecionado = horario.inicio">
-                  {{ horario.inicio }}
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
       </ng-container>
 
-      <!-- PASSO 2 (Checkout): Dados do Cliente e Veículo -->
+      <!-- PASSO 2 (Checkout): Dados do Cliente e Veículo + Escolha de Data e Horário -->
       <section class="section-checkout" *ngIf="passo === 2">
         <h2 class="section-label">Dados para o Check-in</h2>
 
@@ -137,15 +84,69 @@
           </div>
         </div>
 
+        <!-- Motor de Disponibilidade (Movido para Passo 2) -->
+        <div class="agendamento-flex-container" style="margin-top: 30px;">
+          <section class="section-data" style="padding: 0;">
+            <h2 class="section-label">Escolha a Data</h2>
+            <div class="calendar-card">
+              <header class="calendar-header">
+                <span class="calendar-month">{{ mesAtualNome }}</span>
+                <div class="calendar-nav">
+                  <button class="nav-btn" (click)="mudarMes(-1)">‹</button>
+                  <button class="nav-btn" (click)="mudarMes(1)">›</button>
+                </div>
+              </header>
+              <div class="calendar-grid">
+                <div class="calendar-weekdays">
+                  <div *ngFor="let dia of nomesDias" class="weekday">{{ dia }}</div>
+                </div>
+                <div class="calendar-days">
+                  <div *ngFor="let dia of diasDoMes" 
+                       class="calendar-day"
+                       [class.today]="dia?.hoje"
+                       [class.selected]="dia?.selecionado"
+                       [class.past]="dia?.passado"
+                       [class.disabled]="!dia || dia.passado"
+                       (click)="selecionarData(dia)">
+                    <span *ngIf="dia">{{ dia.dia }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-horario" style="padding: 0;">
+            <h2 class="section-label">Escolha o Horário</h2>
+            <div class="horarios-card">
+              <div *ngIf="carregandoHorarios" class="loading-horarios">
+                <div class="loading-spinner"></div>
+                <span>Carregando horários...</span>
+              </div>
+              <div *ngIf="!carregandoHorarios && horariosDisponiveis.length === 0" class="no-horarios">
+                <span>Nenhum horário disponível para esta data</span>
+              </div>
+              <div *ngIf="!carregandoHorarios && horariosDisponiveis.length > 0" class="horarios-grid">
+                <div *ngFor="let horario of horariosDisponiveis" 
+                     class="horario-chip"
+                     [class.selected]="horarioSelecionado === horario.inicio"
+                     (click)="horarioSelecionado = horario.inicio">
+                  {{ horario.inicio }}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
         <!-- Resumo do Pedido -->
-        <div class="resumo-pedido-card">
+        <div class="resumo-pedido-card" style="margin-top: 30px;">
           <div class="resumo-row">
             <span class="label">Serviço:</span>
             <span class="valor-bold">{{ servicoSelecionado?.nome }}</span>
           </div>
           <div class="resumo-row">
             <span class="label">Data:</span>
-            <span class="valor-bold">{{ dataSelecionada.objeto | date:"dd/MM" }} às {{ horarioSelecionado }}</span>
+            <span class="valor-bold" *ngIf="dataSelecionada && horarioSelecionado">{{ dataSelecionada.objeto | date:"dd/MM" }} às {{ horarioSelecionado }}</span>
+            <span class="valor-bold text-danger" *ngIf="!horarioSelecionado" style="color: #EF4444; font-weight: bold;">Selecione data e horário acima</span>
           </div>
         </div>
       </section>
@@ -155,8 +156,8 @@
         <button class="btn-voltar-outline" (click)="voltar()" *ngIf="passo > 1">Voltar</button>
 
         <!-- Botão para avançar do Passo 1 para o 2 -->
-        <button class="btn-primary-huge" *ngIf="passo === 1" [disabled]="!horarioSelecionado" (click)="avancar()">
-          Continuar para Dados
+        <button class="btn-primary-huge" *ngIf="passo === 1" [disabled]="!servicoSelecionado" (click)="avancar()">
+          Continuar para Confirmação
         </button>
 
         <!-- Botão final de checkout no Passo 2 -->

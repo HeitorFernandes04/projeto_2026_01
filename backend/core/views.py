@@ -284,12 +284,14 @@ class DashboardAPIView(APIView):
                 
                 # Montando array de Receita Semanal
                 if data_str in receita_semanal_dict:
-                    receita_semanal_dict[data_str] += float(os.servico.preco)
+                    preco = float(os.valor_cobrado) if os.valor_cobrado is not None else float(os.servico.preco)
+                    receita_semanal_dict[data_str] += preco
                 
                 # Apuração EXATA do dia atual (data_filtro)
                 if os_local.date() == data_filtro:
                     total_os += 1
-                    receita_total += float(os.servico.preco)
+                    preco_dia = float(os.valor_cobrado) if os.valor_cobrado is not None else float(os.servico.preco)
+                    receita_total += preco_dia
                     volume_por_hora[os_local.hour] += 1
                     
         receita_semanal = [{'data': k, 'valor': round(v, 2)} for k, v in receita_semanal_dict.items()]
@@ -306,7 +308,8 @@ class DashboardAPIView(APIView):
             'receitaTotal': round(receita_total, 2),
             'volume_por_hora': volume_por_hora,
             'receita_semanal': receita_semanal,
-            'incidentesAtivos': incidentes_ativos
+            'incidentesAtivos': incidentes_ativos,
+            'avaliacao_media': gestor.estabelecimento.avaliacao_media
         })
 
 class EficienciaAPIView(APIView):
@@ -370,3 +373,80 @@ class EficienciaAPIView(APIView):
             resultados.append(item)
             
         return Response(resultados)
+
+
+class FinanceiroResumoAPIView(APIView):
+    """
+    GET /api/gestao/financeiro/resumo/
+    RF-32: Painel Financeiro Simples
+    """
+    permission_classes = [IsAuthenticated, IsGestorOnly]
+
+    def get(self, request):
+        from operacao.models import OrdemServico
+        from django.db.models import Sum
+        from decimal import Decimal
+
+        # Filtros de data
+        data_inicio_str = request.query_params.get('data_inicio')
+        data_fim_str = request.query_params.get('data_fim')
+        
+        # Obter estabelecimento do gestor logado
+        gestor = request.user.perfil_gestor
+        estabelecimento = gestor.estabelecimento
+
+        # Datas default: primeiro dia do mês corrente e hoje
+        hoje = timezone.localtime().date()
+        primeiro_dia_mes = hoje.replace(day=1)
+        
+        data_inicio = parse_date(data_inicio_str) if data_inicio_str else primeiro_dia_mes
+        data_fim = parse_date(data_fim_str) if data_fim_str else hoje
+
+        if not data_inicio or not data_fim:
+            return Response({'error': 'Datas fornecidas inválidas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filtra as Ordens de Serviço finalizadas do estabelecimento no período
+        ordens = OrdemServico.objects.filter(
+            estabelecimento=estabelecimento,
+            status='FINALIZADO',
+            horario_finalizacao__date__gte=data_inicio,
+            horario_finalizacao__date__lte=data_fim
+        ).select_related('servico', 'veiculo').order_by('-horario_finalizacao')
+
+        # Agregação: usa valor_cobrado (com fallback para servico__preco via Python)
+        total_faturado = Decimal('0.00')
+        for os_item in ordens:
+            if os_item.valor_cobrado is not None:
+                total_faturado += os_item.valor_cobrado
+            elif os_item.servico:
+                total_faturado += os_item.servico.preco
+
+        # Constrói a lista de transações
+        transacoes = []
+        for os in ordens:
+            veiculo_str = ""
+            if os.veiculo:
+                modelo = os.veiculo.modelo or ""
+                placa = os.veiculo.placa or ""
+                if modelo and placa:
+                    veiculo_str = f"{modelo} - {placa}"
+                elif placa:
+                    veiculo_str = placa
+                else:
+                    veiculo_str = modelo
+            else:
+                veiculo_str = "Sem Veículo"
+
+            transacoes.append({
+                'id': os.id,
+                'horario_finalizacao': os.horario_finalizacao,
+                'veiculo': veiculo_str,
+                'servico': os.servico.nome if os.servico else "Sem Serviço",
+                'valor_cobrado': str(os.valor_cobrado) if os.valor_cobrado is not None else (str(os.servico.preco) if os.servico else "0.00")
+            })
+
+        return Response({
+            'estabelecimento_nome': estabelecimento.nome_fantasia,
+            'total_faturado': str(total_faturado),
+            'transacoes': transacoes
+        })

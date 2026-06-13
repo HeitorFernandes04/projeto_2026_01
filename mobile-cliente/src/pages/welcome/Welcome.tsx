@@ -58,7 +58,8 @@ const Welcome: React.FC = () => {
                   Bem-vindo ao <span className="wc-highlight">Lava-Me</span>
                 </h1>
                 <p className="wc-subtitle">
-                  Lavagem profissional sem sair do carro. Agende, acompanhe e relaxe.
+                  Agendamento inteligente para seu veículo.<br/>
+                  Mais brilho pro carro, mais tempo pra você.
                 </p>
               </div>
             )}

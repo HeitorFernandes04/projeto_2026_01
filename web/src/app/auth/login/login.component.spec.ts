@@ -1,12 +1,12 @@
 import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { AuthService } from '../../services/auth.service';
 import { LoginComponent } from './login.component';
 
-async function criarComponente() {
+async function criarComponente(queryParams: Record<string, string> = {}) {
   const authServiceSpy = {
     login: vi.fn(),
   };
@@ -15,17 +15,22 @@ async function criarComponente() {
     navigate: vi.fn(),
   };
 
+  const routeSpy = {
+    queryParams: of(queryParams)
+  };
+
   await TestBed.configureTestingModule({
     imports: [LoginComponent],
     providers: [
       { provide: AuthService, useValue: authServiceSpy },
       { provide: Router, useValue: routerSpy },
+      { provide: ActivatedRoute, useValue: routeSpy },
     ],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(LoginComponent);
   const component = fixture.componentInstance;
-  const cdrSpy = vi.spyOn((component as any).cdr, 'detectChanges');
+  const cdrSpy = vi.spyOn((component as unknown as { cdr: { detectChanges: () => void } }).cdr, 'detectChanges');
 
   return { fixture, component, authServiceSpy, routerSpy, cdrSpy };
 }
@@ -54,6 +59,12 @@ describe('LoginComponent - Fluxo de Autenticacao Unificado', () => {
     expect(component.email).toBe('');
     expect(component.password).toBe('');
     expect(component.erro).toBe('');
+  });
+
+  it('deve carregar mensagem de erro inicial a partir dos queryParams se fornecido', async () => {
+    const { component } = await criarComponente({ erro: 'Esta área é restrita para gestores.' });
+    component.ngOnInit();
+    expect(component.erro).toBe('Esta área é restrita para gestores.');
   });
 
   it('deve chamar AuthService e navegar para dashboard em login bem-sucedido', async () => {

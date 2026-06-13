@@ -16,13 +16,28 @@
   <!-- CARD PRINCIPAL -->
   <section class="dossie-main-card">
     <div class="dossie-header-row">
-      <button class="btn-back-circle" (click)="voltar()">
-        <span class="material-symbols-outlined">arrow_back</span>
-      </button>
-      <div class="dossie-title">
-        <h2>Dossiê Completo — <span>OS #{{ osId }}</span></h2>
-        <p>Auditoria visual e registro de qualidade da Ordem de Serviço</p>
+      <div class="header-left-group">
+        <button class="btn-back-circle" (click)="voltar()">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div class="dossie-title">
+          <h2>Dossiê Completo — <span>OS #{{ osId }}</span></h2>
+          <p>Auditoria visual e registro de qualidade da Ordem de Serviço</p>
+        </div>
       </div>
+      @if (galeria.os_data) {
+        <div class="dossie-os-info">
+          <div class="worker-badge">
+            <span class="material-symbols-outlined">engineering</span>
+            <span class="worker-name">{{ galeria.os_data.funcionario_nome }}</span>
+          </div>
+          <div class="time-badge" *ngIf="galeria.os_data.total_segundos !== undefined && galeria.os_data.total_segundos >= 0 && galeria.os_data.horario_lavagem && galeria.os_data.horario_finalizacao">
+            <span class="material-symbols-outlined">schedule</span>
+            <span class="time-main">{{ formatarTempo(galeria.os_data.total_segundos) }}</span>
+            <span class="time-sub">({{ galeria.os_data.horario_lavagem | date:'HH:mm' }} - {{ galeria.os_data.horario_finalizacao | date:'HH:mm' }})</span>
+          </div>
+        </div>
+      }
     </div>
   </section>
 
@@ -59,6 +74,15 @@
           </div>
         </div>
 
+        @if (galeria.os_data?.laudo_vistoria) {
+          <div class="dossie-observation">
+            <span class="material-symbols-outlined">notes</span>
+            <p><strong>Observações da Vistoria:</strong> {{ galeria.os_data?.laudo_vistoria }}</p>
+          </div>
+        }
+
+
+
         @if (galeria.estado_inicial.length === 0) {
           <p class="sem-fotos">Nenhuma foto registrada nesta etapa.</p>
         } @else {
@@ -73,27 +97,92 @@
         }
       </section>
 
-      <!-- ESTADO MEIO (incidentes — só exibe se existir) -->
-      @if (galeria.estado_meio.length > 0) {
-        <section class="galeria-card incidente">
+      <!-- ESTADO MEIO (lavagem/execução — só exibe se existir fotos ou comentário) -->
+      @if (galeria.estado_meio.length > 0 || galeria.os_data?.comentario_lavagem) {
+        <section class="galeria-card">
           <div class="card-header-inner">
-            <div class="icon-circle red">
-              <span class="material-symbols-outlined">warning</span>
+            <div class="icon-circle blue">
+              <span class="material-symbols-outlined">water_drop</span>
             </div>
             <div class="header-text">
-              <h3>Registro de Execução / Incidentes</h3>
-              <p>Fotos registradas durante o processo ({{ galeria.estado_meio.length }} foto(s))</p>
+              <h3>Registro de Execução / Lavagem</h3>
+              @if (galeria.estado_meio.length > 0) {
+                <p>Fotos registradas durante o processo ({{ galeria.estado_meio.length }} foto(s))</p>
+              }
             </div>
           </div>
-          <div class="fotos-grid">
-            @for (foto of galeria.estado_meio; track foto.id) {
-              <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
-                <img [src]="foto.arquivo_url" [alt]="foto.momento" loading="lazy">
-                <span class="foto-label">{{ foto.momento }}</span>
-              </button>
-            }
-          </div>
+          
+          @if (galeria.os_data?.comentario_lavagem) {
+            <div class="dossie-observation">
+              <span class="material-symbols-outlined">notes</span>
+              <p><strong>Observações da Execução:</strong> {{ galeria.os_data?.comentario_lavagem }}</p>
+            </div>
+          }
+
+          @if (galeria.estado_meio.length > 0) {
+            <div class="fotos-grid">
+              @for (foto of galeria.estado_meio; track foto.id) {
+                <button class="foto-item" (click)="ampliarFoto(foto.arquivo_url)">
+                  <img [src]="foto.arquivo_url" [alt]="foto.momento" loading="lazy">
+                  <span class="foto-label">{{ foto.momento }}</span>
+                </button>
+              }
+            </div>
+          }
         </section>
+      }
+
+      <!-- ETAPA DE INCIDENTES (oculto se não houver incidentes) -->
+      @if (galeria.incidentes && galeria.incidentes.length > 0) {
+        @for (incidente of galeria.incidentes; track incidente.id) {
+          <section class="galeria-card incidente-card">
+            <div class="card-header-inner">
+              <div class="icon-circle" [ngClass]="incidente.resolvido ? 'green' : 'red'">
+                <span class="material-symbols-outlined">warning</span>
+              </div>
+              <div class="header-text">
+                <h3>Registro de Incidente</h3>
+                <span class="status-badge" [ngClass]="incidente.resolvido ? 'resolvido' : 'aberto'">
+                  {{ incidente.resolvido ? 'Incidente Resolvido' : 'Em Aberto' }}
+                </span>
+              </div>
+              @if (incidente.resolvido) {
+                <div class="time-badge incidente-time">
+                  <span class="material-symbols-outlined">schedule</span>
+                  <span class="time-main">{{ calcularTempoIncidente(incidente.data_registro, incidente.data_resolucao) }}</span>
+                  <span class="time-sub">({{ incidente.data_registro | date:'HH:mm' }} - {{ incidente.data_resolucao | date:'HH:mm' }})</span>
+                </div>
+              } @else {
+                <div class="time-badge incidente-time">
+                  <span class="material-symbols-outlined">schedule</span>
+                  <span class="time-main">Pendente</span>
+                  <span class="time-sub">Desde as {{ incidente.data_registro | date:'HH:mm' }}</span>
+                </div>
+              }
+            </div>
+
+            <div class="dossie-observation">
+              <span class="material-symbols-outlined">notes</span>
+              <p><strong>Descrição do Funcionário:</strong> {{ incidente.descricao }}</p>
+            </div>
+
+            @if (incidente.resolvido && incidente.observacoes_resolucao) {
+              <div class="dossie-observation resolucao">
+                <span class="material-symbols-outlined">verified</span>
+                <p><strong>Resolução do Gestor:</strong> {{ incidente.observacoes_resolucao }}</p>
+              </div>
+            }
+
+            @if (incidente.foto_url) {
+              <div class="fotos-grid">
+                <button class="foto-item" (click)="ampliarFoto(incidente.foto_url)">
+                  <img [src]="incidente.foto_url" alt="Foto do Incidente" loading="lazy">
+                  <span class="foto-label">Foto do Incidente</span>
+                </button>
+              </div>
+            }
+          </section>
+        }
       }
 
       <!-- ESTADO FINAL -->
@@ -107,6 +196,14 @@
             <p>Fotos de entrega e conferência de qualidade ({{ galeria.estado_final.length }} foto(s))</p>
           </div>
         </div>
+
+        @if (galeria.os_data?.observacoes) {
+          <div class="dossie-observation">
+            <span class="material-symbols-outlined">notes</span>
+            <p><strong>Observações Finais:</strong> {{ galeria.os_data?.observacoes }}</p>
+          </div>
+        }
+
 
         @if (galeria.estado_final.length === 0) {
           <p class="sem-fotos">Nenhuma foto registrada nesta etapa.</p>

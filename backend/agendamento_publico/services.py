@@ -2,11 +2,15 @@ import datetime
 import logging
 import random
 import re
+import threading
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
+import requests
+
 from accounts.models import Cliente, User
 from core.models import Veiculo
 from operacao.models import OrdemServico
@@ -17,6 +21,47 @@ logger = logging.getLogger('agendamento_publico')
 
 B2C_USERNAME_PREFIX = 'b2c_'
 B2C_EMAIL_DOMAIN = 'cliente.lava.me'
+
+class WhatsAppOTPService:
+    @staticmethod
+    def _enviar_http_thread(telefone, mensagem):
+        url = f"{settings.EVOLUTION_API_URL.rstrip('/')}/message/sendText/{settings.EVOLUTION_INSTANCE_NAME}"
+        
+        # Garante que o DDI 55 seja adicionado apenas se não estiver presente
+        numero_destino = telefone if telefone.startswith('55') else f"55{telefone}"
+        
+        payload = {
+            "number": numero_destino,
+            "text": mensagem
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "apikey": settings.EVOLUTION_API_KEY
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=3)
+            response.raise_for_status()
+            logger.info(f"Mensagem enviada com sucesso via WhatsApp para {telefone}")
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Falha na comunicação com o gateway WhatsApp (Evolution API) para {telefone}: {e}")
+            return False
+
+    @staticmethod
+    def enviar_mensagem(telefone, mensagem):
+        import sys
+        if 'pytest' in sys.modules:
+            return WhatsAppOTPService._enviar_http_thread(telefone, mensagem)
+        else:
+            # Dispara o envio do WhatsApp de forma assíncrona para não bloquear a resposta do OTP
+            thread = threading.Thread(
+                target=WhatsAppOTPService._enviar_http_thread,
+                args=(telefone, mensagem)
+            )
+            thread.start()
+        return True
 
 
 class AuthB2CService:
@@ -154,15 +199,28 @@ class AuthB2CService:
         # Logar o PIN (simulando envio de WhatsApp)
         logger.info(f"RF-29 | OTP gerado para {telefone_normalizado}: {pin}")
         
+        # Disparo Real da Mensagem WhatsApp
+        mensagem = f"Lava-Me: Seu código de acesso é *{pin}*. Nunca compartilhe este código."
+        WhatsAppOTPService.enviar_mensagem(telefone_normalizado, mensagem)
+        
         return {"detail": "PIN enviado com sucesso.", "pin_debug": pin}
 
     @staticmethod
     @transaction.atomic
     def verificar_otp(telefone, pin, current_user=None):
         telefone_normalizado = AuthB2CService.normalizar_telefone(telefone)
+        
+        tentativas = cache.get(f'otp_tentativas_{telefone_normalizado}', 0)
+        if tentativas >= 3:
+            cache.delete(f'otp_{telefone_normalizado}')
+            cache.delete(f'otp_nome_{telefone_normalizado}')
+            cache.delete(f'otp_tentativas_{telefone_normalizado}')
+            raise ValidationError('Muitas tentativas incorretas. Solicite um novo código.')
+
         cached_pin = cache.get(f'otp_{telefone_normalizado}')
         
         if not cached_pin or cached_pin != pin:
+            cache.set(f'otp_tentativas_{telefone_normalizado}', tentativas + 1, timeout=300)
             raise ValidationError('PIN invalido ou expirado.')
         
         username = AuthB2CService.montar_username(telefone_normalizado)
@@ -213,6 +271,7 @@ class AuthB2CService:
         # Limpar cache
         cache.delete(f'otp_{telefone_normalizado}')
         cache.delete(f'otp_nome_{telefone_normalizado}')
+        cache.delete(f'otp_tentativas_{telefone_normalizado}')
         
         return AuthB2CService._emitir_tokens(user)
 
@@ -250,6 +309,7 @@ class AuthB2CService:
                 'tempo_estimado_min': ordem.servico.duracao_estimada_minutos,
                 # RF-24.3: slug exposto apenas para OS em PATIO (canceláveis)
                 'slug_cancelamento': str(ordem.slug_cancelamento) if ordem.status == 'PATIO' and ordem.slug_cancelamento else None,
+                'vaga_patio': ordem.vaga_patio,
             }
             if ordem.status in ('FINALIZADO', 'CANCELADO'):
                 historico.append(item)

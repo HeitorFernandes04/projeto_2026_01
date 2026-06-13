@@ -24,11 +24,14 @@ const PermissaoLocalizacao: React.FC = () => {
   };
 
   return (
-    <IonPage className="lm-page">
-      <IonContent className="ion-padding">
+    <IonPage className="lm-page permissao-page">
+      <IonContent className="ion-padding permissao-content">
         <div className="permissao-container">
-          <div className="permissao-icon lm-card">
-            <span className="permissao-emoji"><IonIcon icon={locationOutline} /></span>
+          <div className="permissao-icon-container">
+            <div className="permissao-pulse-ring"></div>
+            <div className="permissao-icon-circle">
+              <span className="permissao-emoji"><IonIcon icon={locationOutline} /></span>
+            </div>
           </div>
 
           <h1 className="permissao-titulo">
@@ -36,12 +39,12 @@ const PermissaoLocalizacao: React.FC = () => {
           </h1>
 
           <p className="permissao-descricao">
-            Precisamos da sua localização para mostrar os estabelecimentos
-            mais próximos de você.
+            Precisamos da sua localização para mostrar os melhores 
+            estabelecimentos perto de você.
           </p>
 
           <IonButton
-            className="lm-btn-primary"
+            className="permissao-btn-custom"
             expand="block"
             onClick={handlePermitir}
           >

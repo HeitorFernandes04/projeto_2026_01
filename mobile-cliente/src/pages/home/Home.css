@@ -7,7 +7,68 @@ ion-fab {
   margin-right: 16px;
 }
 
+ion-fab-button {
+  --background: #2196F3;
+  --color: white;
+}
+
 /* Pin customizado */
+/* Novo Pin Customizado (Dark Mode + Logo) */
+.lm-custom-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease-in-out;
+}
+
+.lm-custom-pin:hover {
+  transform: scale(1.1);
+  z-index: 1000 !important;
+}
+
+.lm-pin-bubble {
+  width: 64px;
+  height: 64px;
+  background-color: #2196F3;
+  border-radius: 50%;
+  border: 3px solid #ffffff; /* Reduzi a borda para ganhar espaço interno */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 2;
+}
+
+.lm-pin-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.lm-pin-arrow {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 12px solid #2196F3;
+  margin-top: -2px; /* Pulls it up slightly under the circle to avoid gaps */
+  z-index: 1;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+}
+
+.pin-selecionado .lm-pin-bubble {
+  border-color: #2196F3; /* Borda azul para o pin selecionado */
+  transform: scale(1.15);
+  transition: transform 0.2s ease;
+}
+
+.pin-selecionado .lm-pin-arrow {
+  border-top-color: #2196F3;
+}
+
 .lm-pin {
   width: 36px;
   height: 36px;
@@ -25,103 +86,247 @@ ion-fab {
   color: #ffffff;
 }
 
-/* Header fixo com os controles de busca — fora do mapa para evitar conflito de touch */
-.mapa-header {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+/* =========================================
+   HEADER GRADIENTE AZUL (LAVA-JET)
+   ========================================= */
+
+.mapa-header-floating {
+  position: relative;
+  width: 100%;
+  z-index: 999;
+  background: linear-gradient(to bottom, #1565C0, #42A5F5) !important;
 }
 
-.mapa-toolbar {
-  --background: var(--lm-card);
+.mapa-toolbar-floating {
+  --background: transparent;
   --border-width: 0;
   --min-height: 0px;
+  padding: 44px 0 0 0; /* Espaço para status bar */
 }
 
-.mapa-header-content {
-  padding: 12px 16px 10px;
+.mapa-glass-panel {
+  background: transparent;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Content full-height para o mapa preencher o espaço abaixo do header */
+/* Content full-height para o mapa */
 .mapa-content::part(scroll) {
   height: 100%;
   overflow: hidden;
-}
-
-.mapa-titulo {
-  color: var(--lm-text);
-  font-size: 16px;
-  font-weight: 800;
-  margin: 0 0 8px 0;
-}
-
-.mapa-searchbar {
-  --background: var(--lm-bg);
-  --color: var(--lm-text);
-  --placeholder-color: var(--lm-text-muted);
-  --icon-color: var(--lm-text-muted);
-  --border-radius: 12px;
-  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  padding: 0;
-  margin-bottom: 8px;
-}
-
-/* Chips de filtro */
-.mapa-filtros {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.mapa-filtros::-webkit-scrollbar {
-  display: none;
-}
-
-.chip-ativo {
-  --background: var(--lm-primary);
-  --color: #ffffff;
-  font-weight: 700;
-}
-
-.chip-inativo {
-  --background: var(--lm-card);
-  --color: var(--lm-text-muted);
-  border: 1px solid var(--lm-border);
-}
-
-/* Badge contador */
-.mapa-contador {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 4px 12px;
-  background: var(--lm-bg);
-  border: 1px solid var(--lm-border);
-  border-radius: 20px;
-  color: var(--lm-text-muted);
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .mapa-title-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+}
+
+.mapa-titulo {
+  color: #FFFFFF;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
 }
 
 .mapa-back-btn {
-  background: none;
+  background: transparent;
   border: none;
-  color: var(--lm-text);
-  padding: 0;
+  color: #FFFFFF;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
   outline: none;
+  border-radius: 50%;
+  transition: background-color 0.2s;
 }
 
-.mapa-back-btn:active {
-  opacity: 0.6;
+.mapa-back-btn:hover, .mapa-back-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mapa-searchbar-glass {
+  --background: rgba(255, 255, 255, 0.2);
+  --color: #FFFFFF;
+  --placeholder-color: rgba(255, 255, 255, 0.7);
+  --icon-color: rgba(255, 255, 255, 0.7);
+  --border-radius: 8px;
+  --box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.mapa-searchbar-glass.searchbar-has-focus {
+  --background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Chips de filtro / Badges */
+.mapa-filtros-glass {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between; /* Distribui o espaço entre os botões */
+  align-items: center;
+  width: 100%;
+}
+
+.chip-glass-ativo, .chip-glass-inativo {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 9999px;
+  padding: 6px 4px; /* Padding menor horizontal pois vamos esticar com flex 1 */
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background-color 0.2s ease;
+  height: auto;
+  min-height: 28px;
+  flex: 1; /* Estica igualmente os botões */
+}
+
+.chip-glass-ativo {
+  background: rgba(255, 255, 255, 0.35); /* Mais opaco para estado ativo */
+}
+
+.chip-glass-inativo:hover, .chip-glass-inativo:active {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.chip-icon {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Seletor disfarçado de Chip */
+.chip-select-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 9999px;
+  padding: 6px 4px;
+  gap: 4px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  flex: 1; /* Estica o último botão igualmente */
+}
+
+.chip-select-wrapper.chip-glass-ativo,
+.chip-select-wrapper:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.chip-select-icon {
+  font-size: 14px;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.chip-select-label {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap; /* Evita que o texto da opção corte ou quebre na mesma pílula */
+}
+
+.chip-icon-down {
+  font-size: 12px;
+  color: #FFFFFF;
+  margin-left: 2px;
+}
+
+/* Dropdown da Avaliação Customizado */
+.avaliacao-popover {
+  --width: 220px;
+  --background: #FFFFFF;
+  --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.avaliacao-menu {
+  background: #FFFFFF;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.avaliacao-header {
+  padding: 8px 16px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.avaliacao-header:hover {
+  background: #f3f4f6;
+}
+
+.avaliacao-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.avaliacao-item:hover {
+  background: #f3f4f6;
+}
+
+.avaliacao-item.selected {
+  background: #eff6ff; /* blue-50 */
+  border-radius: 8px;
+  margin: 0 8px;
+  padding: 8px 8px;
+}
+
+.avaliacao-item.selected .avaliacao-label {
+  color: #1d4ed8; /* blue-700 */
+}
+
+.avaliacao-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.avaliacao-stars ion-icon {
+  font-size: 14px;
+}
+
+.avaliacao-stars .star-filled {
+  color: #facc15; /* yellow-400 */
+}
+
+.avaliacao-stars .star-empty {
+  color: #d1d5db; /* gray-300 */
+}
+
+.avaliacao-label {
+  color: #374151;
+  font-size: 12px;
+}
+
+/* Badge contador */
+.mapa-contador-glass {
+  display: block;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 400;
 }

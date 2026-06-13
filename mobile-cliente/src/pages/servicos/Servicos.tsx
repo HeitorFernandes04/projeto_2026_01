@@ -13,11 +13,13 @@ import { useParams, useHistory } from 'react-router-dom';
 import { checkmarkOutline } from 'ionicons/icons';
 import { getEstabelecimento, getVeiculos } from '../../services/api';
 import type { Servico } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './Servicos.css';
 
 const Servicos: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const history = useHistory();
+  const { token } = useAuth();
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [selecionado, setSelecionado] = useState<Servico | null>(null);
   const [estabelecimentoNome, setEstabelecimentoNome] = useState('');
@@ -33,9 +35,32 @@ const Servicos: React.FC = () => {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const handleContinuar = () => {
+  const handleContinuar = async () => {
     if (!selecionado) return;
-    history.push('/agendamento', { slug, servico: selecionado, estabelecimento_nome: estabelecimentoNome });
+
+    const agendamentoData = {
+      slug,
+      servico: selecionado,
+      estabelecimento_nome: estabelecimentoNome,
+    };
+
+    // Fricção Zero: Se não logado, salva state e vai pro login via whatsapp
+    if (!token || token === 'null' || token === 'undefined') {
+      localStorage.setItem('lm_agendamento_pendente', JSON.stringify(agendamentoData));
+      history.push('/auth');
+      return;
+    }
+
+    try {
+      const vs = await getVeiculos();
+      if (vs.length === 0) {
+        history.push('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+      } else {
+        history.push('/agendamento/confirmacao', { ...agendamentoData, veiculo: vs[0] });
+      }
+    } catch {
+      history.push('/veiculo/novo', { next: 'agendamento', ...agendamentoData });
+    }
   };
 
 
@@ -44,16 +69,13 @@ const Servicos: React.FC = () => {
       <IonHeader className="ion-no-border sv-header">
         <IonToolbar className="sv-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/mapa" text="Voltar" className="sv-back-button" />
+            <IonBackButton defaultHref="/mapa" text="" className="sv-back-button" />
           </IonButtons>
           <IonTitle className="sv-title">Serviços</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent className="ion-padding sv-content">
-        {estabelecimentoNome && (
-          <p className="sv-estab">{estabelecimentoNome}</p>
-        )}
 
         {loading && <p className="sv-carregando">Carregando serviços...</p>}
 
@@ -82,14 +104,17 @@ const Servicos: React.FC = () => {
 
       <div className="sv-checkout">
         <div className="sv-checkout-info">
-          <div className="sv-checkout-total">
-            <span className="sv-checkout-total-label">Total</span>
-            <span className="sv-checkout-total-valor">
-              R$ {selecionado ? Number(selecionado.preco).toFixed(2) : '0.00'}
+          <div className="sv-checkout-col-left">
+            <span className="sv-checkout-label">Total</span>
+            <span className="sv-checkout-valor">
+              R$ {selecionado ? Number(selecionado.preco).toFixed(2).replace('.00', '') : '0'}
             </span>
           </div>
-          <div className="sv-checkout-duracao">
-            {selecionado ? `${selecionado.duracao_estimada_min} min estimativa` : '--'}
+          <div className="sv-checkout-col-right">
+            <span className="sv-checkout-label">Duração estimada</span>
+            <span className="sv-checkout-duracao-val">
+              {selecionado ? `${selecionado.duracao_estimada_min} min` : '0 min'}
+            </span>
           </div>
         </div>
         <button 

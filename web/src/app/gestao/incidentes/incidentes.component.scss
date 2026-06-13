@@ -528,6 +528,8 @@
 
       textarea {
         width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         min-height: 140px;
         border-radius: 18px;
         border: 1px solid var(--lm-border);

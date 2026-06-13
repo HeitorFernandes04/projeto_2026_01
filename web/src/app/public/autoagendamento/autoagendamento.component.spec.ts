@@ -199,13 +199,13 @@ describe('AutoagendamentoComponent — RF-23 Checkout', () => {
     // Setup para passo 2
     const servico = mockEstabelecimentoComServicos.servicos[0];
     component.selecionarServico(servico);
-    component.horarioSelecionado = '14:00';
     component.dataSelecionada = {
       objeto: new Date(2026, 4, 6),
       dia: 6,
       mes: 'mai',
       semana: 'qua'
     };
+    component.horarioSelecionado = '14:00';
     
     // Forçar passo 2 para testes de checkout
     component.passo = 2;
@@ -241,8 +241,8 @@ describe('AutoagendamentoComponent — RF-23 Checkout', () => {
     // Teste placa Mercosul
     mockEvent.target.value = 'ABC1D23';
     component.onInputPlaca(mockEvent);
-    expect(component.dadosAgendamento.placa).toBe('ABC-1D23');
-    expect(mockEvent.target.value).toBe('ABC-1D23');
+    expect(component.dadosAgendamento.placa).toBe('ABC1D23');
+    expect(mockEvent.target.value).toBe('ABC1D23');
 
     // Teste limite de caracteres
     mockEvent.target.value = 'ABC1234567890';

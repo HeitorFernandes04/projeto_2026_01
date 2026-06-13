@@ -59,8 +59,8 @@
               <div class="cards-list">
 
                 @for (card of cardsDeColuna(coluna.chave); track card.id) {
-                  <div class="vehicle-card" [class.has-incident]="card.is_atrasado">
-                    @if (card.is_atrasado) {
+                  <div class="vehicle-card" [class.has-incident]="card.is_atrasado || coluna.chave === 'INCIDENTES'">
+                    @if (card.is_atrasado || coluna.chave === 'INCIDENTES') {
                       <span class="material-symbols-outlined alert-icon">warning</span>
                     }
                     <div class="card-row">
@@ -72,14 +72,23 @@
                         <span class="model">{{ card.modelo }}</span>
                       </div>
                     </div>
+                    @if (coluna.chave !== 'PATIO' && card.funcionario_nome) {
+                      <div class="worker-info">
+                        <span class="material-symbols-outlined worker-icon">engineering</span>
+                        <span class="worker-name">{{ card.funcionario_nome }}</span>
+                      </div>
+                    }
                     <div class="service-info">
                       <span class="service-label">Serviço</span>
                       <p>{{ card.servico }}</p>
                     </div>
-                    <div class="timer-row">
-                      <span class="material-symbols-outlined">schedule</span>
-                      <strong>{{ formatarTempo(card.tempo_decorrido_minutos) }}</strong>
-                      <small>/ {{ formatarTempo(card.duracao_estimada_minutos) }}</small>
+                    <div class="timer-row" [class.paused-timer]="card.is_pausado">
+                      <span class="material-symbols-outlined">{{ card.is_pausado ? 'pause_circle' : 'schedule' }}</span>
+                      <strong>{{ formatarTempo(card.tempo_decorrido_segundos ?? (card.tempo_decorrido_minutos * 60)) }}</strong>
+                      <small>/ {{ formatarTempo(card.duracao_estimada_minutos * 60) }}</small>
+                      @if (card.is_pausado) {
+                        <span class="paused-badge">PAUSADO</span>
+                      }
                     </div>
                     <div class="progress-container">
                       <div

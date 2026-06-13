@@ -14,6 +14,7 @@
 * [Sprint 2 — Gestão e Controle Operacional](#sprint-2--gestão-e-controle-operacional)
 * [Sprint 3 — Experiência do Cliente](#sprint-3--experiência-do-cliente)
 * [Sprint 4 — Refatoração, Isolamento e Apps Independentes](#sprint-4--refatoração-isolamento-e-apps-independentes)
+* [Fase Final — Ajustes de Usabilidade, Segurança Avançada e Deploy](#fase-final--ajustes-de-usabilidade-segurança-avançada-e-deploy)
 
 ---
 
@@ -419,9 +420,9 @@ Responsáveis: ---
 **para** habilitar as funcionalidades de acompanhamento do cliente e agilidade do operador.
 
 **Critérios de Aceitação:**
-* [ ] Inclusão do campo `etapa_atual` (integer 0-100) na tabela `OrdemServico`.
-* [ ] Migração para remover a obrigatoriedade de campos de `ACABAMENTO` na transição de estados.
-* [ ] Otimização de queries de listagem para reduzir overhead no dashboard gestor.
+* [x] Inclusão do campo `etapa_atual` (integer 0-100) na tabela `OrdemServico`.
+* [x] Migração para remover a obrigatoriedade de campos de `ACABAMENTO` na transição de estados.
+* [x] Otimização de queries de listagem para reduzir overhead no dashboard gestor.
 
 Responsáveis: Maurício Monteiro
 
@@ -436,9 +437,9 @@ Responsáveis: Maurício Monteiro
 **para** localizar lava-jatos próximos e iniciar meu agendamento de forma intuitiva.
 
 **Critérios de Aceitação:**
-* [ ] Setup do novo projeto `mobile-cliente` (Ionic/React) com isolamento total de dependências do app B2B.
-* [ ] Implementação de tela de busca com integração Google Maps API.
-* [ ] Listagem de estabelecimentos com filtros de distância e serviços.
+* [x] Setup do novo projeto `mobile-cliente` (Ionic/React) com isolamento total de dependências do app B2B.
+* [x] Implementação de tela de busca com integração Google Maps API.
+* [x] Listagem de estabelecimentos com filtros de distância e serviços.
 
 Responsáveis: Heitor Fernandes
 
@@ -449,9 +450,9 @@ Responsáveis: Heitor Fernandes
 **para** garantir minha reserva e acompanhar o progresso do serviço em tempo real.
 
 **Critérios de Aceitação:**
-* [ ] Implementação do fluxo de Login via WhatsApp (OTP).
-* [ ] Fluxo de agendamento em 3 etapas (Veículo -> Serviço -> Horário).
-* [ ] Tela de acompanhamento com barra de progresso animada consumindo o campo `etapa_atual`.
+* [x] Implementação do fluxo de Login via WhatsApp (OTP).
+* [x] Fluxo de agendamento em 3 etapas (Veículo -> Serviço -> Horário).
+* [x] Tela de acompanhamento com barra de progresso animada consumindo o campo `etapa_atual`.
 
 Responsáveis: Letícia Gomes Lopes
 
@@ -466,9 +467,9 @@ Responsáveis: Letícia Gomes Lopes
 **para** agilizar o registro de veículos no pátio e pular etapas burocráticas de acabamento.
 
 **Critérios de Aceitação:**
-* [ ] Implementação do botão "Entrada Rápida" na Home.
-* [ ] Máquina de estados no App pulando automaticamente o status `ACABAMENTO`.
-* [ ] Renomeação de todas as labels "Avulso" para "Entrada Rápida".
+* [x] Implementação do botão "Entrada Rápida" na Home.
+* [x] Máquina de estados no App pulando automaticamente o status `ACABAMENTO`.
+* [x] Renomeação de todas as labels "Avulso" para "Entrada Rápida".
 
 Responsáveis: Lucas José
 
@@ -483,9 +484,9 @@ Responsáveis: Lucas José
 **para** reduzir o débito técnico e proteger os dados contra acessos não autorizados.
 
 **Critérios de Aceitação:**
-* [ ] Consolidação de ViewSets de histórico em um endpoint unificado `/api/shared/historico/`.
-* [ ] Correção de vulnerabilidades críticas reportadas pelo `npm audit`.
-* [ ] Implementação de auditoria "Side-by-Side" no Painel Web (fotos de entrada vs incidente).
+* [x] Consolidação de ViewSets de histórico em um endpoint unificado `/api/shared/historico/`.
+* [x] Correção de vulnerabilidades críticas reportadas pelo `npm audit`.
+* [x] Implementação de auditoria "Side-by-Side" no Painel Web (fotos de entrada vs incidente).
 
 Responsáveis: Marcos Barbosa
 
@@ -500,9 +501,64 @@ Responsáveis: Marcos Barbosa
 **para** acompanhar a saúde financeira do meu negócio sem precisar de planilhas externas.
 
 **Critérios de Aceitação:**
-* [ ] Card de totalização exibindo a soma das Ordens de Serviço finalizadas no período.
-* [ ] Tabela de transações detalhando Data, Veículo, Serviço e Valor.
-* [ ] Filtros de data (Inicial/Final) para consulta de períodos específicos.
-* [ ] Botão de exportação para PDF (Relatório de Fechamento).
+* [x] Card de totalização exibindo a soma das Ordens de Serviço finalizadas no período.
+* [x] Tabela de transações detalhando Data, Veículo, Serviço e Valor.
+* [x] Filtros de data (Inicial/Final) para consulta de períodos específicos.
+* [x] Botão de exportação para PDF (Relatório de Fechamento).
 
-Responsáveis: ---
+Responsáveis: Wanderson Mello
+
+---
+
+## Fase Final — Ajustes de Usabilidade, Segurança Avançada e Deploy
+
+> **Objetivo:** Polir a experiência visual e usabilidade cross-platform, implementar os sistemas de comunicação externa realistas (SMS/WhatsApp e e-mails de recuperação de senha), consolidar a segurança do sistema e estruturar o deploy em produção com geração dos APKs móveis finais.
+
+---
+
+### RF-33 · Recuperação de Senha (Gestores e Funcionários)
+**Como** colaborador (gestor ou funcionário),
+**quero** poder solicitar a recuperação de senha via e-mail,
+**para** recuperar o acesso à minha conta caso a esqueça.
+
+**Critérios de Aceitação:**
+* [ ] Tela de "Esqueci minha senha" com input de e-mail.
+* [ ] Envio de e-mail transacional contendo token seguro temporário ou link de redefinição.
+* [ ] Tela de definição de nova senha validando segurança mínima da senha.
+* [ ] Proteção contra enumeração de usuários (não expor se o e-mail existe ou não).
+
+---
+
+### RF-34 · Autenticação OTP via WhatsApp Integrado (Cliente)
+**Como** cliente final,
+**quero** receber o código de login por WhatsApp real,
+**para** efetuar o login de maneira simples, sem depender de e-mail ou senhas complexas.
+
+**Critérios de Aceitação:**
+* [ ] Integração do backend com gateway externo (ex: Twilio, Z-API ou Evolution API) para envio de mensagens transacionais de WhatsApp.
+* [ ] Fallback seguro em caso de indisponibilidade do gateway de envio.
+* [ ] Prevenção de abusos de envio através de Rate Limiting por número de telefone.
+
+---
+
+### RF-35 · Polimento Visual e UX Premium Cross-Platform
+**Como** usuário do sistema (Cliente, Funcionário ou Gestor),
+**quero** que as interfaces tenham transições fluidas, micro-animações, contrastes adequados e carregamento dinâmico (skeletons),
+**para** que a experiência de uso seja profissional e de altíssima qualidade.
+
+**Critérios de Aceitação:**
+* [ ] Implementação de skeletons nas tabelas e listas durante o loading de dados.
+* [ ] Padronização das paletas de cores, botões e tipografia entre Web, Mobile B2B e B2C.
+* [ ] Ajustes finais e revisão geral de usabilidade (UI/UX) baseados nos feedbacks da auditoria.
+
+---
+
+### RF-36 · Empacotamento de APKs e Deploy de Produção
+**Como** administrador do sistema,
+**quero** que o deploy do backend (PostgreSQL) e frontend esteja configurado e as APKs prontas para instalação direta,
+**para** que a plataforma possa ser homologada e apresentada no evento final.
+
+**Critérios de Aceitação:**
+* [ ] Configuração do ambiente de produção (Docker/Docker Compose, Nginx, HTTPS, banco PostgreSQL).
+* [ ] Build e geração dos arquivos `.apk` assinados para os aplicativos B2B (Staff) e B2C (Cliente) usando Cordova/Capacitor.
+* [ ] Homologação de ponta a ponta em ambiente cloud simulado/real.

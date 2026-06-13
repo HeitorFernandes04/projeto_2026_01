@@ -14,12 +14,14 @@ from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
-
-# Carrega variáveis do arquivo .env (se existir)
-load_dotenv()
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Carrega variáveis do arquivo .env na raiz do backend
+env_path = BASE_DIR / '.env'
+load_dotenv(dotenv_path=env_path, override=True)
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,6 +34,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'chave-insegura-apenas-para-desenvolvi
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://localhost:5173')
+FRONTEND_GESTOR_URL = os.environ.get('FRONTEND_GESTOR_URL', 'http://localhost:4200')
+FRONTEND_FUNCIONARIO_URL = os.environ.get('FRONTEND_FUNCIONARIO_URL', 'http://localhost:8100')
+
 
 
 # Application definition
@@ -51,6 +57,7 @@ INSTALLED_APPS = [
     'operacao',
     'agendamento_publico',
     'drf_spectacular',
+    'django_rest_passwordreset',
 ]
 
 MIDDLEWARE = [
@@ -228,3 +235,18 @@ CACHES = {
         'LOCATION': BASE_DIR / 'django_cache',
     }
 }
+
+# Configuração de E-mail
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.resend.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Lava-Me <no-reply@lava.me>')
+
+# Configurações da Evolution API (WhatsApp)
+EVOLUTION_API_URL = os.environ.get('EVOLUTION_API_URL', 'http://localhost:8080')
+EVOLUTION_INSTANCE_NAME = os.environ.get('EVOLUTION_INSTANCE_NAME', 'teste')
+EVOLUTION_API_KEY = os.environ.get('EVOLUTION_API_KEY', 'sua_chave_secreta_aqui')
+

@@ -1,91 +1,196 @@
-.drawer-content {
-  padding: 12px 20px 32px;
-}
-
-.drawer-handle {
-  width: 40px;
-  height: 4px;
-  background: var(--lm-border);
-  border-radius: 2px;
-  margin: 0 auto 20px;
-}
-
-.drawer-header {
+/* Floating Card Wrapper (ocupa a tela toda, invisível, só para conter e interceptar cliques) */
+.floating-card-wrapper {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000; /* Sobre o mapa (Leaflet z-index é 400) */
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 12px;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none; /* Deixa o mapa interativo a menos que o clique seja na backdrop ou no card */
 }
 
-.drawer-logo {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 14px;
-  border: 1px solid var(--lm-border);
-  flex-shrink: 0;
+/* Fundo transparente (pode escurecer sutilmente se quiser) */
+.floating-card-backdrop {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: transparent;
+  pointer-events: auto; /* Intercepta cliques para fechar */
 }
 
-.drawer-header-info {
-  flex: 1;
+/* O Card em Si */
+.floating-card {
+  position: relative;
+  width: calc(100% - 32px); /* Margin 16px nas laterais */
+  max-width: 500px;
+  background: #111827; /* Azul escuro/grafite */
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px; /* Flutuando da borda inferior */
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
-.drawer-nome {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--lm-text);
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Botão de Fechar */
+.floating-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 24px;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.floating-close-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Layout Principal - Row Superior (Textos na esquerda, Logo na direita) */
+.fc-main-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Duas metades exatas: esquerda (texto) e direita (logo) */
+  width: 100%;
+  padding-top: 16px; /* Desloca para baixo, fugindo do botão X */
+  gap: 12px;
+}
+
+/* Coluna de Textos na Esquerda */
+.fc-info-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+/* Container da Logo (Metade Direita) */
+.fc-logo-container {
+  display: flex;
+  justify-content: center; /* Centraliza a logo no meio da metade direita (acima do VER SERVIÇOS) */
+  align-items: center; /* Centraliza verticalmente em relação à coluna de textos */
+}
+
+.fc-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px; /* Distância entre título e badge */
+}
+
+.fc-nome {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
   margin: 0;
   line-height: 1.2;
 }
 
-.drawer-metricas {
+.fc-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+.fc-badge-aberto { background-color: #10b981; }
+.fc-badge-fechado { background-color: #ef4444; }
+
+/* Linha 2 */
+.fc-row-2 {
   display: flex;
   gap: 16px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
-.drawer-metrica {
-  font-size: 13px;
-  color: var(--lm-text-muted);
-  font-weight: 600;
-}
-
-.drawer-endereco {
+.fc-metrica {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 14px;
-  color: var(--lm-text-muted);
-  margin: 0 0 10px 0;
-  line-height: 1.5;
+  color: #d1d5db;
+  font-weight: 500;
+}
+.fc-icon {
+  font-size: 16px;
+  color: #2196F3;
 }
 
-.drawer-descricao {
+/* Linha 3 */
+.fc-endereco {
   font-size: 14px;
-  color: var(--lm-text-muted);
-  margin: 0 0 16px 0;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.4;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.drawer-acoes {
+/* Logo Destacada à Direita */
+.fc-logo-right {
+  width: 130px; /* Aumentado para o limite máximo prático */
+  height: 130px; /* Aumentado para o limite máximo prático */
+  object-fit: cover;
+  border-radius: 12px;
+  background-color: #1f2937;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Contorno sutil imitando um campo */
+  padding: 4px; /* Moldura interna imitando um campo */
+  flex-shrink: 0;
+  box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Linha 4 */
+.fc-row-4 {
   display: flex;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
-.drawer-btn-secundario {
+.fc-btn-outline {
   flex: 1;
-  --border-color: var(--lm-border);
-  --color: var(--lm-text);
-  --border-radius: 20px;
-  height: 56px;
+  --background: transparent;
+  --background-hover: rgba(236, 72, 153, 0.1);
+  --border-color: #ec4899;
+  --border-width: 1px;
+  --border-style: solid;
+  --border-radius: 8px;
+  --color: #ec4899;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  height: 48px;
 }
 
-.drawer-btn-primary {
+.fc-btn-solid {
   flex: 1;
+  --background: #2196F3;
+  --background-hover: #1976D2;
+  --border-radius: 8px;
+  --color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  height: 48px;
 }

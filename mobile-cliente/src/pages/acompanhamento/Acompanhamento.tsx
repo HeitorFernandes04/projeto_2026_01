@@ -11,8 +11,10 @@ import {
 import { useHistory } from 'react-router-dom';
 import {
   timeOutline,
+  star,
+  starOutline,
 } from 'ionicons/icons';
-import { getOrdemAtiva, getAcompanhamento, cancelarAgendamento, type OrdemAtiva } from '../../services/api';
+import { getOrdemAtiva, getAcompanhamento, cancelarAgendamento, avaliarOrdemServico, type OrdemAtiva } from '../../services/api';
 import './Acompanhamento.css';
 
 interface Etapa {
@@ -43,6 +45,13 @@ const Acompanhamento: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  
+  // Avaliação
+  const [osId, setOsId] = useState<number | null>(null);
+  const [avaliacao, setAvaliacao] = useState<number | null>(null);
+  const [hoverStar, setHoverStar] = useState<number>(0);
+  const [isAvaliado, setIsAvaliado] = useState(false);
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getStatusIndex = (statusStr: string) => {
@@ -102,6 +111,9 @@ const Acompanhamento: React.FC = () => {
         setIsIncidente(ativa.status === 'BLOQUEADO_INCIDENTE');
         setFinalizado(ativa.status === 'FINALIZADO');
         setSlugCancelamento(ativa.slug_cancelamento || null);
+        setOsId(ativa.id);
+        setAvaliacao(ativa.avaliacao_estrelas ?? null);
+        setIsAvaliado(!!ativa.avaliacao_estrelas);
 
         if (ativa.status !== 'FINALIZADO') {
           poll(ativa.id);
@@ -137,6 +149,21 @@ const Acompanhamento: React.FC = () => {
       setShowToast(true);
     } finally {
       setCancelLoading(false);
+    }
+  };
+
+  const handleAvaliar = async (nota: number) => {
+    if (!osId) return;
+    setAvaliacao(nota);
+    try {
+      await avaliarOrdemServico(osId, nota);
+      setIsAvaliado(true);
+      setToastMessage('Avaliação enviada com sucesso!');
+      setShowToast(true);
+    } catch (e) {
+      setToastMessage('Erro ao enviar avaliação.');
+      setShowToast(true);
+      setAvaliacao(null);
     }
   };
 
@@ -179,18 +206,11 @@ const Acompanhamento: React.FC = () => {
               <div className="header-top">
                 <h1 className="title-premium">{estabelecimento}</h1>
                 <span className="badge-status">
-                  {finalizado ? 'CONCLUÍDO' : isIncidente ? 'BLOQUEADO' : 'EM EXECUÇÃO'}
+                  {finalizado ? 'CONCLUÍDO' : 'EM EXECUÇÃO'}
                 </span>
               </div>
               <p className="eta-text">Tempo estimado: ~{tempoEstimado ?? '--'} min</p>
             </div>
-
-            {/* Alerta de Incidente */}
-            {isIncidente && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', padding: '12px', borderRadius: '12px', marginBottom: '16px', textAlign: 'center' }}>
-                Atenção: Houve um pequeno incidente. Nossa equipe já está tratando.
-              </div>
-            )}
 
             {/* Box Central de Animação */}
             <div className="animation-box">
@@ -264,39 +284,50 @@ const Acompanhamento: React.FC = () => {
               </div>
             )}
 
-            {/* Botão de Cancelamento (Visível apenas em PÁTIO) */}
-            {!finalizado && status === 'PATIO' && slugCancelamento && (
-              <button
-                className="btn-cancelar-agendamento"
-                disabled={cancelLoading}
-                onClick={() => setShowCancelAlert(true)}
-              >
-                {cancelLoading ? 'Cancelando...' : 'Cancelar Agendamento'}
-              </button>
+            {/* Avaliação (Apenas se finalizado) */}
+            {finalizado && (
+              <div className="avaliacao-container">
+                {isAvaliado ? (
+                  <div className="avaliacao-success">
+                    <h3 className="avaliacao-title">Avaliação Registrada!</h3>
+                    <div className="stars-display">
+                      {[1,2,3,4,5].map(v => (
+                        <IonIcon 
+                          key={v} 
+                          icon={v <= (avaliacao || 0) ? star : starOutline} 
+                          className="star-icon filled" 
+                        />
+                      ))}
+                    </div>
+                    <p className="avaliacao-subtitle">Agradecemos o seu feedback.</p>
+                  </div>
+                ) : (
+                  <div className="avaliacao-box">
+                    <h3 className="avaliacao-title">Como foi o serviço?</h3>
+                    <p className="avaliacao-subtitle">Sua opinião é importante para o estabelecimento.</p>
+                    <div className="stars-interactive">
+                      {[1,2,3,4,5].map(v => (
+                        <IonIcon 
+                          key={v} 
+                          icon={v <= (hoverStar || avaliacao || 0) ? star : starOutline}
+                          className={`star-icon interactive ${v <= (hoverStar || avaliacao || 0) ? 'filled' : ''}`}
+                          onMouseEnter={() => setHoverStar(v)}
+                          onMouseLeave={() => setHoverStar(0)}
+                          onClick={() => handleAvaliar(v)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
+
+
           </div>
         )}
       </IonContent>
 
-      <IonAlert
-        isOpen={showCancelAlert}
-        onDidDismiss={() => setShowCancelAlert(false)}
-        header="Cancelar Agendamento"
-        message="Tem certeza que deseja cancelar seu agendamento de lavagem?"
-        buttons={[
-          {
-            text: 'Não, manter',
-            role: 'cancel',
-            cssClass: 'alert-cancel-keep-btn'
-          },
-          {
-            text: 'Sim, cancelar',
-            handler: () => {
-              executarCancelamento();
-            }
-          }
-        ]}
-      />
+
 
       <IonToast
         isOpen={showToast}

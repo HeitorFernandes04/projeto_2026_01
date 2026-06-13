@@ -250,3 +250,125 @@
   font-weight: 800;
   margin: 16px 0;
 }
+/* -------------------------------------------------------------------
+   AVALIAÇÃO DE SERVIÇO (RATING)
+   ------------------------------------------------------------------- */
+
+.hist-rating-bar {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+.hist-rating-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 12px;
+}
+
+.hist-rating-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.hist-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.hist-stars ion-icon {
+  font-size: 20px;
+}
+
+.star-filled {
+  color: #FBBF24; /* Amarelo ouro */
+}
+
+.star-empty {
+  color: #475569; /* Cinza slate */
+}
+
+.hist-rate-cta {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hist-rate-cta.unrated {
+  color: var(--hist-primary);
+}
+
+.hist-rate-cta.rated {
+  color: #94A3B8;
+  font-size: 12px;
+}
+
+/* Modal Bottom Sheet de Avaliação */
+.rating-bottom-sheet {
+  --border-radius: 24px 24px 0 0;
+  --background: #1E293B;
+}
+
+.rating-sheet-content {
+  padding: 32px 24px 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #1E293B;
+  height: 100%;
+}
+
+.rating-sheet-header {
+  margin-bottom: 32px;
+}
+
+.rating-sheet-title {
+  color: #F8FAFC;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.rating-sheet-subtitle {
+  color: #94A3B8;
+  font-size: 15px;
+  margin: 0;
+}
+
+.rating-sheet-stars {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.giant-star {
+  font-size: 48px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+
+.giant-star:active {
+  transform: scale(0.85);
+}
+
+.rating-sheet-btn {
+  background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+  color: #0F172A;
+  border: none;
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+  transition: opacity 0.2s;
+}
+
+.rating-sheet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

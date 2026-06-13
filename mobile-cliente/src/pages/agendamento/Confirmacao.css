@@ -21,11 +21,16 @@
 .confirm-header {
   --background: var(--conf-card);
   background: var(--conf-card);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  padding: 20px 8px;
+  z-index: 10;
 }
 
 .confirm-toolbar {
-  --background: var(--conf-card);
+  --background: transparent;
   --border-width: 0;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
 }
 
 .confirm-back-button {
@@ -34,17 +39,19 @@
 }
 
 .confirm-title {
-  color: var(--conf-foreground);
-  font-weight: 700;
-  font-size: 18px;
-  text-align: center;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 24px;
+  text-align: left;
+  padding-left: 4px;
 }
 
 .confirm-content {
   --background: transparent;
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 24px 32px; /* Aumentado padding lateral para os cards não tocarem as bordas extremas */
+  --padding-top: 48px !important;
   --padding-bottom: 120px;
 }
 
@@ -53,33 +60,31 @@
   background: var(--conf-card);
   border-radius: var(--conf-radius);
   padding: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .confirm-card-header {
   color: var(--conf-muted);
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 700;
-  margin: 0 0 4px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin: 0 0 6px 0;
 }
 
 .confirm-info-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   color: var(--conf-foreground);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   margin: 0;
 }
 
 .confirm-icon {
-  font-size: 20px;
+  font-size: 24px;
   color: var(--conf-primary);
 }
 
@@ -95,10 +100,19 @@
   text-transform: uppercase;
 }
 
+/* ── Container Interno com Borda (Unifica Serviço, Veículo e Total) ── */
+.confirm-inner-box {
+  background: transparent;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 /* ── Card Total ── */
 .confirm-card-total {
-  border: 1px solid rgba(56, 189, 248, 0.15);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.1);
   margin-top: 8px;
 }
 
@@ -109,22 +123,22 @@
 }
 
 .confirm-total-label {
-  color: var(--conf-muted);
-  font-size: 16px;
+  color: #FFFFFF;
+  font-size: 18px;
   font-weight: 600;
 }
 
 .confirm-total-valor {
   color: var(--conf-primary);
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 800;
 }
 
 .confirm-duracao {
   color: var(--conf-muted);
-  font-size: 14px;
+  font-size: 15px;
   text-align: right;
-  margin: 4px 0 0 0;
+  margin: 8px 0 0 0;
 }
 
 /* ── Footer / Botão ── */
@@ -160,4 +174,73 @@
   opacity: 0.7;
   pointer-events: none;
   --box-shadow: none;
+}
+
+/* ── Novo Dropdown de Veículo Premium ── */
+.confirm-veiculo-select-container {
+  position: relative;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.confirm-veiculo-select-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: 1px solid rgba(56, 189, 248, 0.4); /* Contorno azul primário sutil */
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.confirm-veiculo-select-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin: 0 12px;
+}
+
+.confirm-veiculo-name {
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: capitalize;
+  margin-bottom: 2px;
+}
+
+.confirm-veiculo-placa {
+  color: var(--conf-muted);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.confirm-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: var(--conf-card);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  margin-top: 4px;
+  z-index: 50;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.confirm-dropdown-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.confirm-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.confirm-dropdown-item:active {
+  background: rgba(255, 255, 255, 0.05);
 }

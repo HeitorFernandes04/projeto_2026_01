@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Historico from './Historico';
 import Detalhes from './Detalhes';
@@ -34,26 +34,25 @@ describe('Historico & Detalhes', () => {
   it('Teste 1 (Empty State): Simule resposta vazia [] e valide se o layout de incentivo ao agendamento e o botão CTA aparecem perfeitamente.', async () => {
     vi.mocked(getHistorico).mockResolvedValueOnce([]);
 
-    render(
-      <IonReactRouter>
-        <Historico />
-      </IonReactRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(/Sua folha de serviços está limpa/i)).toBeInTheDocument();
+    await act(async () => {
+      render(
+        <IonReactRouter>
+          <Historico />
+        </IonReactRouter>
+      );
     });
 
+    expect(screen.getByText(/Sua folha de serviços está limpa/i)).toBeInTheDocument();
     expect(screen.getByText('Encontrar um Lava-Me')).toBeInTheDocument();
   });
 
   it('Teste 2 (Separação de Mídias): Injete mídias mistas na resposta da galeria e valide se o componente separou corretamente o carrossel do "Antes" e do "Depois".', async () => {
     const mockGaleria = {
       entrada: [
-        { id: 1, momento: 'VISTORIA_GERAL', arquivo: 'foto1.jpg' },
+        { id: 1, momento: 'VISTORIA_GERAL', arquivo_url: 'foto1.jpg' },
       ],
       finalizacao: [
-        { id: 2, momento: 'FINALIZADO', arquivo: 'foto2.jpg' },
+        { id: 2, momento: 'FINALIZADO', arquivo_url: 'foto2.jpg' },
       ],
       laudo_tecnico: {
         servico_realizado: 'Lavagem',
@@ -95,10 +94,10 @@ describe('Historico & Detalhes', () => {
   it('Teste 3 (Sanitização de Incidentes): Garanta que imagens com o marcador de incidentes internos não são injetadas no DOM da tela do cliente.', async () => {
     const mockGaleria = {
       entrada: [
-        { id: 1, momento: 'VISTORIA_GERAL', arquivo: 'foto_entrada.jpg' },
+        { id: 1, momento: 'VISTORIA_GERAL', arquivo_url: 'foto_entrada.jpg' },
       ],
       finalizacao: [
-        { id: 2, momento: 'FINALIZADO', arquivo: 'foto_final.jpg' },
+        { id: 2, momento: 'FINALIZADO', arquivo_url: 'foto_final.jpg' },
       ],
       laudo_tecnico: {
         servico_realizado: 'Lavagem',

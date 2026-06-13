@@ -12,6 +12,7 @@ import {
   carOutline,
   calendarOutline,
   cubeOutline,
+  closeOutline,
 } from 'ionicons/icons';
 import logoImg from '../welcome/logo.jpeg';
 import { getPainelCliente, PainelClienteResponse } from '../../services/api';
@@ -21,6 +22,7 @@ const HomeDashboard: React.FC = () => {
   const history = useHistory();
   const [painelData, setPainelData] = useState<PainelClienteResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [avisoDismissed, setAvisoDismissed] = useState(false);
 
   useIonViewWillEnter(() => {
     setLoading(true);
@@ -83,6 +85,7 @@ const HomeDashboard: React.FC = () => {
 
   // Busca serviço finalizado (removi o limite de 2h para fins de teste)
   const finalizadoRecente = [...ativos, ...(painelData?.historico ?? [])].find(a => a.status === 'FINALIZADO');
+  const showAviso = finalizadoRecente && !avisoDismissed;
 
   return (
     <IonPage className="home-page">
@@ -109,8 +112,31 @@ const HomeDashboard: React.FC = () => {
         <div className="home-main-container">
           
           {/* COMPONENTE: AVISO DE VEÍCULO PRONTO */}
-          {finalizadoRecente && (
-            <div className="home-card-ativo" style={{ background: '#1E293B', borderColor: '#34D399', borderStyle: 'solid', borderWidth: '1px' }}>
+          {showAviso && (
+            <div className="home-card-ativo" style={{ background: '#1E293B', borderColor: '#34D399', borderStyle: 'solid', borderWidth: '1px', position: 'relative' }}>
+              
+              {/* Botão de Fechar no Canto Superior Direito */}
+              <button 
+                onClick={() => setAvisoDismissed(true)}
+                style={{ 
+                  position: 'absolute', 
+                  top: '12px', 
+                  right: '12px', 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#94A3B8', 
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 10
+                }}
+                aria-label="Fechar"
+              >
+                <IonIcon icon={closeOutline} style={{ fontSize: '20px' }} />
+              </button>
+
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px', textAlign: 'center', gap: '12px' }}>
                 
                 <div className="success-animation-box">
@@ -137,6 +163,11 @@ const HomeDashboard: React.FC = () => {
                   <p style={{ color: '#94A3B8', fontSize: '11px', margin: '2px 0 0 0' }}>
                     {finalizadoRecente.estabelecimento.nome_fantasia}
                   </p>
+                  {finalizadoRecente.vaga_patio && (
+                    <p style={{ color: '#FFF', fontSize: '13px', fontWeight: 'bold', margin: '8px 0 0 0' }}>
+                      Devolvido na vaga: <span style={{ color: '#34D399' }}>{finalizadoRecente.vaga_patio}</span>
+                    </p>
+                  )}
                 </div>
 
               </div>

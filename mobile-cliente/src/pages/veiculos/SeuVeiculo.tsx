@@ -168,6 +168,7 @@ const SeuVeiculo: React.FC = () => {
             <label className="veiculo-reg-label">Placa</label>
             <IonItem className="veiculo-reg-input-item" lines="none">
               <IonInput
+                className="veiculo-reg-placa-input"
                 value={placa}
                 placeholder="ABC-1234"
                 maxlength={8}

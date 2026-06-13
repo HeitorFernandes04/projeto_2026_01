@@ -3,7 +3,7 @@
 > **Plataforma inteligente de gestão e agendamento para lava-jatos e estéticas automotivas**
 
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
-![Versão](https://img.shields.io/badge/versão-4.0.0-blue)
+![Versão](https://img.shields.io/badge/versão-5.0.0-blue)
 ![Licença](https://img.shields.io/badge/licença-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![Django](https://img.shields.io/badge/Django-5.x-green?logo=django)
@@ -129,7 +129,9 @@ O sistema segue uma arquitetura de **três camadas** com separação clara entre
 - **Django REST Framework** — Construção da API REST
 - **PostgreSQL** — Banco de dados relacional
 - **JWT (SimpleJWT)** — Autenticação
- - **SQlite3** - Bando de dados relacional (desenvolvimento)
+- **SQlite3** - Banco de dados relacional (desenvolvimento)
+- **Evolution API** - Gateway de mensageria oficial WhatsApp B2C
+- **SMTP (Gmail)** - Disparo de e-mails transacionais e recuperação de senhas
 
 ### Frontend Web
 - **Angular 21** — Framework principal e interface do painel de gestão
@@ -276,6 +278,8 @@ ionic serve
 - [x] **Sprint 2** — Gestão e Controle Operacional
 - [x] **Sprint 3** — Experiência do Cliente (Portal Web)
 - [x] **Sprint 4** — Refatoração, Isolamento B2C/B2B e Qualidade
+- [x] **Fase Final (Mensageria)** — Recuperação de Senhas e Gateway do WhatsApp Real
+- [ ] **Fase Final (Deploy)** — Polimento UX e Deploy em Produção
 - [ ] **Evento Final** — Apresentação pública do produto
 
 ---

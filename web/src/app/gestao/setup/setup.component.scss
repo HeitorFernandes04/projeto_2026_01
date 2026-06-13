@@ -118,6 +118,41 @@
             text-transform: uppercase; 
           }
           
+          .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+
+            input {
+              width: 100%;
+              padding-right: 48px;
+            }
+
+            .btn-toggle-pass {
+              position: absolute;
+              right: 12px;
+              background: transparent;
+              border: none;
+              color: #8b949e;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 4px;
+              border-radius: 50%;
+              transition: all 0.2s ease;
+
+              &:hover {
+                color: #fff;
+                background: rgba(255, 255, 255, 0.1);
+              }
+
+              .material-symbols-outlined {
+                font-size: 20px;
+              }
+            }
+          }
+          
           input {
             background: #0d1117;
             border: 1px solid #30363d;

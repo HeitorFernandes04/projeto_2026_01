@@ -181,16 +181,20 @@ class OrdemServicoService:
             veiculo=veiculo, servico=servico, funcionario=funcionario,
             estabelecimento=servico.estabelecimento,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='VISTORIA_INICIAL' if iniciar_agora else 'PATIO',
             observacoes=dados.get('observacoes', ''),
         )
 
     @staticmethod
-    def avancar_etapa(os_id: int, dados: dict) -> OrdemServico:
+    def avancar_etapa(os_id: int, dados: dict, funcionario=None) -> OrdemServico:
         """Máquina de Estados Industrial: Gere transições e horários."""
         os = get_object_or_404(OrdemServico, id=os_id)
         status_atual = os.status
         agora = timezone.now()
+
+        if funcionario and status_atual in ['PATIO', 'VISTORIA_INICIAL']:
+            os.funcionario = funcionario
 
         # ETAPA 1: PATIO → VISTORIA_INICIAL (valida 5 fotos de vistoria)
         if status_atual == 'PATIO':
@@ -204,7 +208,7 @@ class OrdemServicoService:
 
             os.status = 'VISTORIA_INICIAL'
             os.etapa_atual = 20
-            os.laudo_vistoria = dados.get('laudo_vistoria', '')
+            os.laudo_vistoria = dados.get('laudo_vistoria', os.laudo_vistoria or '')
             os.save()
 
         # ETAPA 2: VISTORIA_INICIAL → EM_EXECUCAO (operador inicia lavagem)
@@ -212,13 +216,17 @@ class OrdemServicoService:
             os.status = 'EM_EXECUCAO'
             os.etapa_atual = 50
             os.horario_lavagem = agora
-            os.comentario_lavagem = dados.get('comentario_lavagem', '')
+            os.laudo_vistoria = dados.get('laudo_vistoria', os.laudo_vistoria or '')
+            os.comentario_lavagem = dados.get('comentario_lavagem', os.comentario_lavagem or '')
             os.save()
 
         # ETAPA 3: EM_EXECUCAO → LIBERACAO (RF-27/RF-30: etapa de acabamento removida)
         elif status_atual == 'EM_EXECUCAO':
+            if os.is_pausado:
+                raise ValidationError("Não é possível finalizar a lavagem com a ordem de serviço pausada.")
             os.status = 'LIBERACAO'
             os.etapa_atual = 80
+            os.comentario_lavagem = dados.get('comentario_lavagem', os.comentario_lavagem or '')
             os.save()
 
         else:
@@ -253,7 +261,39 @@ class OrdemServicoService:
         os.save()
 
         return os
-    
+
+    @staticmethod
+    def pausar_ordem_servico(os_id: int) -> OrdemServico:
+        """Pausa o cronômetro da OS (apenas em execução) acumulando os segundos passados."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+        if os.status != 'EM_EXECUCAO':
+            raise ValidationError("Apenas ordens de serviço em execução podem ser pausadas.")
+        
+        if os.is_pausado:
+            return os
+
+        if os.horario_lavagem:
+            delta = timezone.now() - os.horario_lavagem
+            os.tempo_acumulado_segundos += max(0, int(delta.total_seconds()))
+            
+        os.is_pausado = True
+        os.save(update_fields=['is_pausado', 'tempo_acumulado_segundos'])
+        return os
+
+    @staticmethod
+    def retomar_ordem_servico(os_id: int) -> OrdemServico:
+        """Retoma o cronômetro da OS atualizando o horário de referência (horario_lavagem)."""
+        os = get_object_or_404(OrdemServico, id=os_id)
+        if os.status != 'EM_EXECUCAO':
+            raise ValidationError("Apenas ordens de serviço em execução podem ser retomadas.")
+        
+        if not os.is_pausado:
+            return os
+
+        os.horario_lavagem = timezone.now()
+        os.is_pausado = False
+        os.save(update_fields=['is_pausado', 'horario_lavagem'])
+        return os
 
 
     @staticmethod
@@ -304,6 +344,7 @@ class OrdemServicoService:
             veiculo=veiculo,
             servico=servico,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='PATIO'
         )
 
@@ -338,6 +379,7 @@ class OrdemServicoService:
             veiculo=veiculo,
             servico=servico,
             data_hora=dados['data_hora'],
+            valor_cobrado=servico.preco,  # Snapshot do preço no momento da criação
             status='PATIO'
         )
 
@@ -389,18 +431,36 @@ class HistoricoGestorService:
     @staticmethod
     def montar_galeria_os(os_id, estabelecimento):
         """RF-18: Retorna mídias da OS agrupadas por momento para auditoria visual."""
-        os = get_object_or_404(OrdemServico, id=os_id)
+        os = get_object_or_404(OrdemServico.objects.select_related('funcionario', 'servico'), id=os_id)
 
         if os.estabelecimento_id != estabelecimento.id:
             from django.core.exceptions import PermissionDenied
             raise PermissionDenied("Esta OS não pertence ao seu estabelecimento.")
 
         midias = MidiaOrdemServico.objects.filter(ordem_servico=os).order_by('id')
+        
+        total_minutos = 0
+        total_segundos = 0
+        if os.horario_lavagem and os.horario_finalizacao:
+            delta = os.horario_finalizacao - os.horario_lavagem
+            total_segundos = max(0, int(delta.total_seconds()))
+            total_minutos = max(0, int(delta.total_seconds() // 60))
 
         return {
+            'incidentes': list(os.incidentes.all()),
             'estado_inicial': [m for m in midias if m.momento in ('VISTORIA_GERAL', 'AVARIA_PREVIA')],
             'estado_meio':    [m for m in midias if m.momento == 'EXECUCAO'],
             'estado_final':   [m for m in midias if m.momento == 'FINALIZADO'],
+            'os_data': {
+                'funcionario_nome': os.funcionario.name if os.funcionario else 'Não atribuído',
+                'horario_lavagem': os.horario_lavagem,
+                'horario_finalizacao': os.horario_finalizacao,
+                'total_minutos': total_minutos,
+                'total_segundos': total_segundos,
+                'laudo_vistoria': os.laudo_vistoria,
+                'comentario_lavagem': os.comentario_lavagem,
+                'observacoes': os.observacoes
+            }
         }
 
 
@@ -487,8 +547,8 @@ class HistoricoUnificadoService:
 class ClienteGaleriaService:
     """RF-26: galeria pos-venda visivel ao cliente final."""
 
-    MOMENTOS_ENTRADA = ('VISTORIA_GERAL', 'AVARIA_PREVIA', 'ENTRADA')
-    MOMENTOS_FINALIZACAO = ('FINALIZADO', 'FINALIZACAO')
+    MOMENTOS_ENTRADA = ('VISTORIA_GERAL', 'AVARIA_PREVIA')
+    MOMENTOS_FINALIZACAO = ('FINALIZADO',)
 
     @staticmethod
     def _normalizar_telefone(telefone):
@@ -687,7 +747,9 @@ class IncidenteService:
 
             ordem_servico = incidente.ordem_servico
             ordem_servico.status = incidente.status_anterior_os
-            ordem_servico.save(update_fields=['status'])
+            if ordem_servico.status == 'EM_EXECUCAO' and not ordem_servico.is_pausado:
+                ordem_servico.horario_lavagem = timezone.now()
+            ordem_servico.save(update_fields=['status', 'horario_lavagem'])
 
         incidente.refresh_from_db()
         return incidente
@@ -711,7 +773,12 @@ class IncidenteService:
                 resolvido=False,
             )
 
+            # Acumula o tempo se estava rodando e bloqueou por incidente
+            if status_anterior_os == 'EM_EXECUCAO' and not os.is_pausado and os.horario_lavagem:
+                delta = timezone.now() - os.horario_lavagem
+                os.tempo_acumulado_segundos += max(0, int(delta.total_seconds()))
+
             os.status = 'BLOQUEADO_INCIDENTE'
-            os.save(update_fields=['status'])
+            os.save(update_fields=['status', 'tempo_acumulado_segundos'])
 
         return incidente

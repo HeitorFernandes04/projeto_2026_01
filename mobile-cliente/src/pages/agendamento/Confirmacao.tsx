@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -12,11 +12,26 @@ import {
   IonBackButton,
   IonIcon,
 } from '@ionic/react';
-import { locationOutline, constructOutline, calendarOutline, carOutline, checkmarkCircleOutline } from 'ionicons/icons';
+import {
+  locationOutline,
+  constructOutline,
+  calendarOutline,
+  carOutline,
+  checkmarkCircleOutline,
+  cashOutline,
+  chevronDownOutline,
+  checkmarkOutline,
+  calendar,
+  time,
+  chevronBackOutline,
+  chevronForwardOutline,
+} from 'ionicons/icons';
+import { motion } from 'framer-motion';
 import { useHistory, useLocation } from 'react-router-dom';
-import { createAgendamento, getVeiculos } from '../../services/api';
-import type { Servico, Veiculo } from '../../services/api';
+import { createAgendamento, getVeiculos, getDisponibilidade } from '../../services/api';
+import type { Servico, Veiculo, Disponibilidade } from '../../services/api';
 import './Confirmacao.css';
+import '../agendamento/Agendamento.css';
 
 interface LocationState {
   slug: string;
@@ -33,12 +48,31 @@ function formatarData(data: string): string {
   return `${dia} de ${meses[Number(mes) - 1]}, ${ano}`;
 }
 
+function formatarCor(cor: string): string {
+  if (!cor) return '';
+  return cor.charAt(0).toUpperCase() + cor.slice(1).toLowerCase();
+}
+
+function formatarPlaca(placa: string): string {
+  if (!placa) return '';
+  const p = placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  if (p.length === 7) {
+    return `${p.substring(0, 3)}-${p.substring(3)}`;
+  }
+  return p;
+}
+
+function dataHojeStr(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
 const Confirmacao: React.FC = () => {
   const location = useLocation<LocationState>();
   const history = useHistory();
   
   const [stateData, setStateData] = useState<LocationState | null>(location.state);
   const [loadingData, setLoadingData] = useState(!location.state);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [showAlerta, setShowAlerta] = useState(false);
@@ -46,6 +80,55 @@ const Confirmacao: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
+
+  // Estados do Agendamento (Movido para cá)
+  const [data, setData] = useState(() => {
+    return location.state?.data || dataHojeStr();
+  });
+  const [horarios, setHorarios] = useState<Disponibilidade[]>([]);
+  const [horarioSelecionado, setHorarioSelecionado] = useState(location.state?.horario || '');
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  useEffect(() => {
+    if (!stateData) return;
+    const { slug, servico } = stateData;
+    if (!slug || !servico) return;
+    setHorarioSelecionado('');
+    getDisponibilidade(slug, servico.id, data)
+      .then(setHorarios)
+      .catch(() => setHorarios([]));
+  }, [stateData, data]);
+
+  // Lógica do Calendário
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = new Date(year, month, 1).getDay();
+
+  const prevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+
+  const formatMonthYear = (d: Date) => {
+    const m = d.toLocaleString('pt-BR', { month: 'long' });
+    return m.charAt(0).toUpperCase() + m.slice(1) + ' ' + d.getFullYear();
+  };
+
+  const isDayDisabled = (day: number) => {
+    const d = new Date(year, month, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+  };
+
+  const formatDateStr = (y: number, m: number, d: number) => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${y}-${pad(m + 1)}-${pad(d)}`;
+  };
 
   React.useEffect(() => {
     getVeiculos()
@@ -57,6 +140,8 @@ const Confirmacao: React.FC = () => {
             const agendamentoData = JSON.parse(pending);
             if (list.length > 0) {
               setStateData({ ...agendamentoData, veiculo: list[0] });
+              if (agendamentoData.data) setData(agendamentoData.data);
+              if (agendamentoData.horario) setHorarioSelecionado(agendamentoData.horario);
             } else {
               history.replace('/veiculo/novo');
             }
@@ -94,10 +179,10 @@ const Confirmacao: React.FC = () => {
     return null;
   }
 
-  const { slug, servico, estabelecimento_nome, data, horario, veiculo } = stateData;
+  const { slug, servico, estabelecimento_nome, veiculo } = stateData;
 
   const handleConfirmar = async () => {
-    if (loading) return;
+    if (loading || !horarioSelecionado) return;
     setLoading(true);
 
     try {
@@ -105,7 +190,7 @@ const Confirmacao: React.FC = () => {
         slug,
         servico_id: servico.id,
         veiculo_id: veiculo.id,
-        data_hora: `${data}T${horario}:00`, // Combina "YYYY-MM-DD" e "HH:MM" para formato ISO válido
+        data_hora: `${data}T${horarioSelecionado}:00`, // Combina "YYYY-MM-DD" e "HH:MM" para formato ISO válido
       });
 
       localStorage.removeItem('lm_agendamento_temporario');
@@ -120,35 +205,86 @@ const Confirmacao: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (sucesso) {
+      const timer = setTimeout(() => {
+        history.replace('/inicio');
+      }, 3500); // Tempo aumentado para o usuário apreciar mais a animação
+      return () => clearTimeout(timer);
+    }
+  }, [sucesso, history]);
+
   if (sucesso) {
     return (
       <IonPage className="confirm-page">
         <IonContent className="ion-padding confirm-content success-view">
-          <div className="success-container" style={{ textAlign: 'center', marginTop: '60px' }}>
-            <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: '80px', color: 'var(--ion-color-success)' }} />
-            <h1 style={{ color: 'white', marginTop: '20px' }}>Agendamento Confirmado!</h1>
-            <p style={{ color: 'var(--ion-color-medium)', marginBottom: '40px' }}>
-              Seu agendamento foi realizado com sucesso.
-            </p>
+          <div className="success-container" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            
+            {/* Box relativo para empilhar as animações (Ondas + Ícone) */}
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '40px', width: '100px', height: '100px' }}>
+              
+              {/* Efeito Ripple (3 Ondas concêntricas) */}
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  initial={{ scale: 1, opacity: 0.6 }}
+                  animate={{ scale: 1.8, opacity: 0 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: i * 0.6,
+                    ease: "easeOut"
+                  }}
+                  style={{
+                    position: 'absolute',
+                    width: '90px',
+                    height: '90px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)'
+                  }}
+                />
+              ))}
 
-            <div className="confirm-card">
-              <p className="confirm-card-header">Resumo</p>
-              <p className="confirm-info-row">
-                <span className="confirm-icon"><IonIcon icon={locationOutline} /></span> {estabelecimento_nome}
-              </p>
-              <p className="confirm-info-row">
-                <span className="confirm-icon"><IonIcon icon={calendarOutline} /></span> {formatarData(data)} às {horario}
-              </p>
+              {/* Círculo Principal com Pulsação e Glow Effect Neon */}
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                style={{
+                  position: 'relative',
+                  zIndex: 10,
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  boxShadow: '0 0 30px rgba(56, 189, 248, 0.4)'
+                }}
+              >
+                <IonIcon icon={checkmarkOutline} style={{ fontSize: '50px', color: '#38BDF8' }} />
+              </motion.div>
             </div>
 
-            <IonButton
-              className="confirm-btn-primary"
-              expand="block"
-              style={{ marginTop: '40px' }}
-              onClick={() => history.replace('/inicio')}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.8,
+                delay: 0.4,
+                ease: "easeOut"
+              }}
             >
-              Ir para o Painel
-            </IonButton>
+              <h1 style={{ color: 'white', marginTop: 0, fontSize: '24px', fontWeight: 'bold' }}>Agendamento Confirmado!</h1>
+              <p style={{ color: 'var(--conf-muted)', marginBottom: '40px', fontSize: '15px' }}>
+                Redirecionando para o acompanhamento...
+              </p>
+            </motion.div>
+
           </div>
         </IonContent>
       </IonPage>
@@ -160,7 +296,7 @@ const Confirmacao: React.FC = () => {
       <IonHeader className="ion-no-border confirm-header">
         <IonToolbar className="confirm-toolbar">
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/agendamento" text="" className="confirm-back-button" />
+            <IonBackButton defaultHref={`/estabelecimento/${slug}`} text="" className="confirm-back-button" />
           </IonButtons>
           <IonTitle className="confirm-title">Confirmação</IonTitle>
         </IonToolbar>
@@ -170,16 +306,18 @@ const Confirmacao: React.FC = () => {
         
         {/* Bloco 1: Serviço (Estabelecimento, Nome, Data, Hora) */}
         <div className="confirm-card">
-          <p className="confirm-card-header">Detalhes do Serviço</p>
-          <p className="confirm-info-row">
-            <span className="confirm-icon"><IonIcon icon={locationOutline} /></span> {estabelecimento_nome}
-          </p>
-          <p className="confirm-info-row">
-            <span className="confirm-icon"><IonIcon icon={constructOutline} /></span> {servico.nome}
-          </p>
-          <p className="confirm-info-row">
-            <span className="confirm-icon"><IonIcon icon={calendarOutline} /></span> {formatarData(data)} às {horario}
-          </p>
+          <p className="confirm-card-header">Serviço</p>
+          <div className="confirm-inner-box">
+            <p className="confirm-info-row">
+              <span className="confirm-icon"><IonIcon icon={locationOutline} /></span> {estabelecimento_nome}
+            </p>
+            <p className="confirm-info-row">
+              <span className="confirm-icon"><IonIcon icon={constructOutline} /></span> {servico.nome}
+            </p>
+            <p className="confirm-info-row">
+              <span className="confirm-icon"><IonIcon icon={calendarOutline} /></span> {horarioSelecionado ? `${formatarData(data)} às ${horarioSelecionado}` : 'Selecione data e horário abaixo'}
+            </p>
+          </div>
         </div>
 
         {/* Bloco 2: Veículo (Marca, Modelo, Cor e Placa em caixa alta) */}
@@ -194,47 +332,59 @@ const Confirmacao: React.FC = () => {
                   servico,
                   estabelecimento_nome,
                   data,
-                  horario
+                  horario: horarioSelecionado
                 };
                 localStorage.setItem('lm_agendamento_temporario', JSON.stringify(agendamentoData));
                 history.push('/veiculo/novo');
               }}
-              style={{ background: 'none', border: 'none', color: '#38BDF8', fontWeight: 700, fontSize: '13px', cursor: 'pointer', padding: 0 }}
+              style={{ background: 'none', border: 'none', color: '#38BDF8', fontWeight: 700, fontSize: '15px', cursor: 'pointer', padding: 0 }}
             >
               + Adicionar Novo
             </button>
           </div>
           
-          {veiculos.length > 1 ? (
-            <div className="confirm-info-row" style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: '8px' }}>
-              <span className="confirm-icon" style={{ marginRight: '8px', display: 'flex', alignItems: 'center' }}><IonIcon icon={carOutline} /></span> 
-              <select
-                value={veiculo.id}
-                onChange={e => {
-                  const selectedId = Number(e.target.value);
-                  const found = veiculos.find(v => v.id === selectedId);
-                  if (found) {
-                    setStateData(prev => prev ? { ...prev, veiculo: found } : null);
-                  }
-                }}
-                style={{
-                  background: 'rgba(30, 41, 59, 0.6)',
-                  border: '1px solid var(--lm-border)',
-                  color: 'white',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  fontSize: '14px',
-                  width: '100%',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
+          {veiculos.length > 0 ? (
+            <div className="confirm-veiculo-select-container">
+              <div 
+                className="confirm-veiculo-select-display"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                {veiculos.map(v => (
-                  <option key={v.id} value={v.id} style={{ background: '#1E293B', color: 'white' }}>
-                    {v.marca} {v.modelo} ({v.cor}) - {v.placa}
-                  </option>
-                ))}
-              </select>
+                <span className="confirm-icon" style={{ fontSize: '28px' }}>
+                  <IonIcon icon={carOutline} />
+                </span>
+                
+                <div className="confirm-veiculo-select-text">
+                  <span className="confirm-veiculo-name">{veiculo.marca} {veiculo.modelo} - {formatarCor(veiculo.cor)}</span>
+                  <span className="confirm-veiculo-placa">{formatarPlaca(veiculo.placa)}</span>
+                </div>
+
+                <span className="confirm-icon" style={{ color: 'var(--conf-primary)', fontSize: '22px', transform: isDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>
+                  <IonIcon icon={chevronDownOutline} />
+                </span>
+              </div>
+              
+              {isDropdownOpen && (
+                <div className="confirm-dropdown-menu">
+                  {veiculos.map(v => (
+                    <div 
+                      key={v.id} 
+                      className="confirm-dropdown-item"
+                      onClick={() => {
+                        setStateData(prev => prev ? { ...prev, veiculo: v } : null);
+                        setIsDropdownOpen(false);
+                      }}
+                    >
+                      <span className="confirm-icon" style={{ fontSize: '24px', color: veiculo.id === v.id ? 'var(--conf-primary)' : 'var(--conf-muted)' }}>
+                        <IonIcon icon={carOutline} />
+                      </span>
+                      <div className="confirm-veiculo-select-text">
+                        <span className="confirm-veiculo-name">{v.marca} {v.modelo} - {formatarCor(v.cor)}</span>
+                        <span className="confirm-veiculo-placa">{formatarPlaca(v.placa)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="confirm-info-row">
@@ -245,11 +395,85 @@ const Confirmacao: React.FC = () => {
           )}
         </div>
 
+        {/* Bloco de Seleção de Data e Horário (Requisitos RF-23/Confirmacao) */}
+        <div className="confirm-card">
+          <p className="confirm-card-header">Escolha a Data</p>
+          <div className="ag-calendar" style={{ margin: 0, padding: '12px' }}>
+            <div className="ag-cal-header">
+              <button type="button" className="ag-cal-nav-btn" onClick={prevMonth}>
+                <IonIcon icon={chevronBackOutline} />
+              </button>
+              <span className="ag-cal-month">{formatMonthYear(currentMonth)}</span>
+              <button type="button" className="ag-cal-nav-btn" onClick={nextMonth}>
+                <IonIcon icon={chevronForwardOutline} />
+              </button>
+            </div>
+
+            <div className="ag-cal-weekdays">
+              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+                <span key={i} className="ag-cal-weekday">{d}</span>
+              ))}
+            </div>
+
+            <div className="ag-cal-days">
+              {Array.from({ length: startDay }).map((_, i) => (
+                <div key={`empty-${i}`} className="ag-cal-day empty" />
+              ))}
+
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const dateStr = formatDateStr(year, month, day);
+                const disabled = isDayDisabled(day);
+                const selected = data === dateStr;
+
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    disabled={disabled}
+                    className={`ag-cal-day ${disabled ? 'disabled' : ''} ${selected ? 'selected' : ''}`}
+                    onClick={() => setData(dateStr)}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="confirm-card-header" style={{ marginTop: '16px' }}>Escolha o Horário</p>
+          {horarios.length === 0 ? (
+            <p className="ag-sem-horarios">Nenhum horário disponível para esta data.</p>
+          ) : (
+            <div className="ag-horarios-grid" style={{ margin: 0 }}>
+              {horarios.map(h => {
+                const isSelected = horarioSelecionado === h.horario;
+                return (
+                  <button
+                    key={h.horario}
+                    type="button"
+                    disabled={!h.disponivel}
+                    className={`ag-chip ${isSelected ? 'active' : ''}`}
+                    onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
+                  >
+                    {h.horario}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Bloco 3: Total e Tempo */}
-        <div className="confirm-card confirm-card-total">
-          <div className="confirm-total-row">
-            <span className="confirm-total-label">Total</span>
-            <span className="confirm-total-valor">R$ {Number(servico.preco).toFixed(2).replace('.', ',')}</span>
+        <div className="confirm-card">
+          <div className="confirm-total-row" style={{ alignItems: 'center' }}>
+            <span className="confirm-total-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="confirm-icon" style={{ fontWeight: '500', fontSize: '24px', display: 'flex', alignItems: 'center' }}>$</span>
+              Total:
+            </span>
+            <span className="confirm-total-valor" style={{ border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '12px', padding: '8px 16px' }}>
+              R$ {Number(servico.preco).toFixed(2).replace('.', ',')}
+            </span>
           </div>
           <p className="confirm-duracao">Duração estimada: {servico.duracao_estimada_min} min</p>
         </div>
@@ -260,7 +484,7 @@ const Confirmacao: React.FC = () => {
         <IonButton
           className="confirm-btn-primary"
           expand="block"
-          disabled={loading}
+          disabled={loading || !horarioSelecionado}
           onClick={handleConfirmar}
         >
           {loading ? 'Confirmando...' : 'Confirmar Agendamento'}

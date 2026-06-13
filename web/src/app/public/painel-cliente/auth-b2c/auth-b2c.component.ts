@@ -86,10 +86,18 @@ export class AuthB2CComponent implements OnInit {
 
   onInputPlaca(event: Event): void {
     const input = event.target as HTMLInputElement;
-    let valor = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
-    if (valor.length > 3) valor = `${valor.slice(0, 3)}-${valor.slice(3)}`;
-    this.placa = valor;
-    input.value = valor;
+    let clean = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (clean.length > 7) clean = clean.slice(0, 7);
+    
+    let formatted = clean;
+    if (clean.length > 3) {
+      const isMercosul = clean.length >= 5 && isNaN(Number(clean[4]));
+      if (!isMercosul && !isNaN(Number(clean[3]))) {
+        formatted = clean.slice(0, 3) + '-' + clean.slice(3);
+      }
+    }
+    this.placa = formatted;
+    input.value = formatted;
   }
 
   get formularioValido(): boolean {

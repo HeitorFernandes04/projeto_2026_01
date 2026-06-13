@@ -25,6 +25,7 @@ export class DashboardAPIView implements OnInit, OnDestroy, AfterViewInit {
   veiculosHoje: number = 0;
   tempoMedio: number = 0;
   incidentesAtivos: number = 0;
+  avaliacaoMedia: number = 0;
 
   rankingEficiencia: EficienciaFuncionario[] = [];
   entradasRecentes: EntradaRecente[] = [];
@@ -60,6 +61,7 @@ export class DashboardAPIView implements OnInit, OnDestroy, AfterViewInit {
         this.receitaHoje = res.receitaTotal || 0;
         this.veiculosHoje = res.totalOsFinalizadas || 0;
         this.incidentesAtivos = res.incidentesAtivos || 0;
+        this.avaliacaoMedia = res.avaliacao_media || 0;
         
         // Força o Angular a renderizar o DOM imediatamente
         this.cdr.detectChanges();

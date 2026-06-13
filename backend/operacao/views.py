@@ -24,6 +24,7 @@ from rest_framework.response import Response
 from .permissions import IsFuncionarioDaOS, IsGestor
 from accounts.permissions import IsCliente
 from .serializers import (
+    IncidenteGaleriaSerializer,
     ClienteGaleriaMidiaSerializer,
     KanbanCardSerializer,
     OrdemServicoSerializer,
@@ -180,7 +181,7 @@ class AvancarEtapaView(APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            os = OrdemServicoService.avancar_etapa(pk, serializer.validated_data)
+            os = OrdemServicoService.avancar_etapa(pk, serializer.validated_data, funcionario=request.user)
             return Response(OrdemServicoSerializer(os, context={'request': request}).data)
         except (ValueError, ValidationError) as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -200,6 +201,38 @@ class FinalizarIndustrialView(APIView):
 
         try:
             os = OrdemServicoService.finalizar_ordem_servico_industrial(pk, serializer.validated_data)
+            return Response(OrdemServicoSerializer(os, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PausarOrdemServicoView(APIView):
+    """
+    PATCH /api/ordens-servico/{id}/pausar/
+    Pausa o cronômetro da OS em execução.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
+
+    def patch(self, request, pk):
+        try:
+            os = OrdemServicoService.pausar_ordem_servico(pk)
+            return Response(OrdemServicoSerializer(os, context={'request': request}).data)
+        except (ValueError, ValidationError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RetomarOrdemServicoView(APIView):
+    """
+    PATCH /api/ordens-servico/{id}/retomar/
+    Retoma o cronômetro da OS em execução.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsFuncionarioDaOS]
+
+    def patch(self, request, pk):
+        try:
+            os = OrdemServicoService.retomar_ordem_servico(pk)
             return Response(OrdemServicoSerializer(os, context={'request': request}).data)
         except (ValueError, ValidationError) as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -589,9 +622,11 @@ class HistoricoGaleriaUnificadaView(APIView):
             return Response(envelope(data=data, meta={'perfil': perfil}), status=status.HTTP_200_OK)
 
         data = {
+            'incidentes': IncidenteGaleriaSerializer(galeria.get('incidentes', []), many=True, context=ctx).data,
             'estado_inicial': MidiaGaleriaSerializer(galeria['estado_inicial'], many=True, context=ctx).data,
             'estado_meio': MidiaGaleriaSerializer(galeria['estado_meio'], many=True, context=ctx).data,
             'estado_final': MidiaGaleriaSerializer(galeria['estado_final'], many=True, context=ctx).data,
+            'os_data': galeria.get('os_data', {})
         }
         return Response(envelope(data=data, meta={'perfil': perfil}), status=status.HTTP_200_OK)
 
@@ -736,3 +771,31 @@ class ClienteGaleriaView(APIView):
             ).data,
             'laudo_tecnico': galeria['laudo_tecnico'],
         }, status=status.HTTP_200_OK)
+
+
+class OrdemServicoAvaliarView(APIView):
+    """RF-Finalizacao: POST /api/cliente/operacao/{id}/avaliar/"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsCliente]
+
+    def post(self, request, pk):
+        try:
+            estrelas = int(request.data.get('estrelas'))
+            if not (1 <= estrelas <= 5):
+                raise ValueError("Estrelas devem estar entre 1 e 5.")
+        except (TypeError, ValueError):
+            return Response({'detail': 'Avaliação inválida. Deve ser um inteiro de 1 a 5.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ordem_servico = get_object_or_404(OrdemServico, pk=pk)
+        
+        cliente = request.user.perfil_cliente
+        if getattr(ordem_servico.veiculo, 'cliente', None) != cliente:
+            raise DRFPermissionDenied("Apenas o cliente titular pode avaliar esta Ordem de Serviço.")
+            
+        if ordem_servico.status != 'FINALIZADO':
+            return Response({'detail': 'Apenas Ordens de Serviço finalizadas podem ser avaliadas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ordem_servico.avaliacao_estrelas = estrelas
+        ordem_servico.save(update_fields=['avaliacao_estrelas'])
+
+        return Response({'detail': 'Avaliação registrada com sucesso!', 'estrelas': estrelas}, status=status.HTTP_200_OK)

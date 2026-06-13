@@ -3,6 +3,7 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 
 import Login from './pages/login/Login';
+import ResetPassword from './pages/login/ResetPassword';
 import Register from './pages/register/Register';
 import OrdensServicoHoje from './pages/ordens-servico/OrdensServicoHoje';
 import DetalhesOrdemServico from './pages/ordens-servico/DetalhesOrdemServico';
@@ -49,6 +50,7 @@ const App: React.FC = () => (
         
         {/* Rotas de Autenticação */}
         <Route path="/login" component={Login} exact />
+        <Route path="/reset-password" component={ResetPassword} exact />
         <Route path="/register" component={Register} exact />
         
         {/* Pátio Principal (Ordens de Serviço Ativas) */}

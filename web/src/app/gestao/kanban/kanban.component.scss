@@ -62,7 +62,7 @@
   }
 
   .kanban-columns { display: flex; gap: 24px; }
-  .kanban-column { width: 320px; flex-shrink: 0; }
+  .kanban-column { flex: 1; min-width: 250px; }
 
   /* COLUNAS E LEGENDAS */
   .column-header {
@@ -74,10 +74,26 @@
     }
     .column-status-line {
       height: 2px; border-radius: 2px;
-      &.gray { background: #484f58; }
-      &.purple { background: #a371f7; box-shadow: 0 0 10px rgba(163, 113, 247, 0.4); }
-      &.blue { background: #0066ff; box-shadow: 0 0 10px rgba(0, 102, 255, 0.4); }
-      &.cyan { background: #58a6ff; box-shadow: 0 0 10px rgba(88, 166, 255, 0.4); }
+      background: #30363d;
+      position: relative;
+      overflow: hidden;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -50%;
+        width: 50%;
+        height: 100%;
+        animation: led-run 2.5s infinite ease-in-out;
+      }
+
+      &.gray::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent); box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
+      &.purple::after { background: linear-gradient(90deg, transparent, #a371f7, transparent); box-shadow: 0 0 10px rgba(163, 113, 247, 0.4); }
+      &.blue::after { background: linear-gradient(90deg, transparent, #0066ff, transparent); box-shadow: 0 0 10px rgba(0, 102, 255, 0.4); }
+      &.cyan::after { background: linear-gradient(90deg, transparent, #58a6ff, transparent); box-shadow: 0 0 10px rgba(88, 166, 255, 0.4); }
+      &.green::after { background: linear-gradient(90deg, transparent, #2dd36f, transparent); box-shadow: 0 0 10px rgba(45, 211, 111, 0.4); }
+      &.red::after { background: linear-gradient(90deg, transparent, #ff3b30, transparent); box-shadow: 0 0 10px rgba(255, 59, 48, 0.4); }
     }
   }
 
@@ -104,7 +120,30 @@
       .vehicle-info { .plate { color: #fff; font-weight: 800; font-size: 16px; display: block; } .model { color: #8b949e; font-size: 11px; } }
     }
     .service-info { margin-bottom: 16px; .service-label { color: #484f58; font-size: 10px; font-weight: 700; text-transform: uppercase; display: block; } p { color: #fff; font-size: 14px; font-weight: 700; margin: 2px 0 0; } }
-    .timer-row { display: flex; align-items: center; gap: 6px; color: #fff; font-size: 16px; margin-bottom: 12px; strong { font-weight: 900; } }
+    .timer-row {
+      display: flex; align-items: center; gap: 6px; color: #fff; font-size: 16px; margin-bottom: 12px; strong { font-weight: 900; }
+      
+      &.paused-timer {
+        color: #58a6ff;
+        .material-symbols-outlined { color: #58a6ff; }
+      }
+
+      .paused-badge {
+        font-size: 10px;
+        font-weight: 800;
+        color: #0b0e11;
+        background: #58a6ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: auto;
+      }
+    }
+    .worker-info {
+      display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px;
+      padding: 6px 10px; background: rgba(0, 102, 255, 0.05); border: 1px solid rgba(0, 102, 255, 0.2); border-radius: 8px; width: fit-content;
+      .worker-icon { font-size: 16px; color: #58a6ff; }
+      .worker-name { color: #e6edf3; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+    }
     .progress-container { height: 4px; background: #161b22; border-radius: 2px; overflow: hidden; .progress-bar { height: 100%; background: #0066ff; box-shadow: 0 0 10px rgba(0, 102, 255, 0.4); &.warning { background: #ff3b30; } } }
   }
 
@@ -185,4 +224,9 @@
   0% { box-shadow: 0 0 0 0 rgba(210, 153, 34, 0.5); }
   50% { box-shadow: 0 0 15px 4px rgba(210, 153, 34, 0.25); }
   100% { box-shadow: 0 0 0 0 rgba(210, 153, 34, 0.5); }
+}
+
+@keyframes led-run {
+  0% { left: -50%; }
+  100% { left: 100%; }
 }

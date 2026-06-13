@@ -94,6 +94,11 @@ export class SetupComponent implements OnInit, OnDestroy {
   cargosDisponiveis = ['LAVADOR'];
   exibirInativos: boolean = false;
   funcionarioEmEdicao: Funcionario | null = null;
+  mostrarSenhaInicial: boolean = false;
+
+  toggleSenhaInicial() {
+    this.mostrarSenhaInicial = !this.mostrarSenhaInicial;
+  }
 
   // Tags de Peças (RF-21.5)
   tags: TagPeca[] = [];

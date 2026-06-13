@@ -43,6 +43,11 @@ class AuthB2CRateThrottle(AnonRateThrottle):
     rate = '100/min'
 
 
+class OTPRequestRateThrottle(AnonRateThrottle):
+    scope = 'otp_request'
+    rate = '10/min'
+
+
 class AuthB2CSetupView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [AuthB2CRateThrottle]
@@ -82,7 +87,7 @@ class AuthB2CLoginView(APIView):
 
 class AuthB2CWhatsAppView(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [AuthB2CRateThrottle]
+    throttle_classes = [OTPRequestRateThrottle]
 
     def post(self, request):
         import logging
@@ -148,7 +153,17 @@ class EstabelecimentoListaMapaView(generics.ListAPIView):
     serializer_class = EstabelecimentoMapaSerializer
     permission_classes = [AllowAny]
     throttle_classes = [EstabelecimentoPublicoRateThrottle]
-    queryset = Estabelecimento.objects.filter(is_active=True)
+    
+    def get_queryset(self):
+        qs = Estabelecimento.objects.filter(is_active=True)
+        nota_minima = self.request.query_params.get('nota_minima')
+        if nota_minima:
+            try:
+                valor = float(nota_minima)
+                qs = qs.filter(avaliacao_media__gte=valor)
+            except ValueError:
+                pass
+        return qs
 
 
 class EstabelecimentoPublicoDetailView(RetrieveAPIView):
@@ -246,8 +261,12 @@ class ClienteVeiculoViewSet(viewsets.ModelViewSet):
                 raise DRFValidationError({'estabelecimento_slug': 'Nenhum estabelecimento ativo disponível.'})
         else:
             est = get_object_or_404(Estabelecimento, slug=slug)
-        
-        serializer.save(cliente=self.request.user.perfil_cliente, estabelecimento=est)
+        serializer.save(
+            cliente=self.request.user.perfil_cliente, 
+            estabelecimento=est,
+            nome_dono=self.request.user.name,
+            celular_dono=self.request.user.perfil_cliente.telefone_whatsapp
+        )
 
 
 

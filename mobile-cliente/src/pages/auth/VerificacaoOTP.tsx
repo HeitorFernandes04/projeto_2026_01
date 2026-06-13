@@ -18,8 +18,9 @@ const TOTAL_DIGITS = 4;
 const COUNTDOWN_INICIAL = 45;
 
 const VerificacaoOTP: React.FC = () => {
-  const location = useLocation<{ telefone?: string, redirect_to?: string }>();
+  const location = useLocation<{ telefone?: string, redirect_to?: string, nome_cliente?: string }>();
   const telefone = location.state?.telefone ?? '';
+  const nomeCliente = location.state?.nome_cliente;
   const isPerfilFlow = location.state?.redirect_to === '/perfil';
   const history = useHistory();
   const { login } = useAuth();
@@ -143,7 +144,7 @@ const VerificacaoOTP: React.FC = () => {
 
   const handleReenviar = async () => {
     try {
-      await solicitarOTP(telefone);
+      await solicitarOTP(telefone, nomeCliente);
       setCountdown(COUNTDOWN_INICIAL);
       setDigits(Array(TOTAL_DIGITS).fill(''));
       setErro('');

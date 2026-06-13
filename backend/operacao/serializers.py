@@ -46,6 +46,7 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
     servico = ServicoSerializer(read_only=True)
     midias = MidiaOrdemServicoSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    tempo_decorrido_segundos = serializers.SerializerMethodField()
 
     class Meta:
         model = OrdemServico
@@ -56,13 +57,53 @@ class OrdemServicoSerializer(serializers.ModelSerializer):
             'vaga_patio', 'horario_lavagem',
             'horario_finalizacao', 'observacoes', 'midias',
             'slug_cancelamento',  # RF-24: UUID para cancelamento autônomo pelo cliente portal
+            'tempo_decorrido_segundos',
+            'is_pausado',
         ]
-        read_only_fields = ['horario_lavagem', 'horario_finalizacao']
+        read_only_fields = ['horario_lavagem', 'horario_finalizacao', 'is_pausado']
 
     def validate_etapa_atual(self, value):
         if not 0 <= value <= 100:
             raise serializers.ValidationError("etapa_atual deve estar entre 0 e 100.")
         return value
+
+    def get_tempo_decorrido_segundos(self, obj):
+        # RN: PATIO ainda não iniciou execução — tempo zero
+        if obj.status == 'PATIO' or not obj.horario_lavagem:
+            return 0
+        # RN: BLOQUEADO_INCIDENTE — congela no momento do último incidente
+        if obj.status == 'BLOQUEADO_INCIDENTE':
+            incidentes = list(obj.incidentes.all())
+            if incidentes:
+                ultimo = max(incidentes, key=lambda i: i.data_registro)
+                delta = ultimo.data_registro - obj.horario_lavagem
+                return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+            return obj.tempo_acumulado_segundos
+        # RN: LIBERACAO — fluxo direto de EM_EXECUCAO (RF-27/RF-30), conta até finalização
+        if obj.status == 'LIBERACAO' and obj.horario_finalizacao:
+            delta = obj.horario_finalizacao - obj.horario_lavagem
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+        # RN: FINALIZADO — congela no horário de finalização real
+        if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
+            delta = obj.horario_finalizacao - obj.horario_lavagem
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+        if obj.is_pausado:
+            return obj.tempo_acumulado_segundos
+        delta = timezone.now() - obj.horario_lavagem
+        return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # RF: Garantir que não retornem nulos (null ou "null") que quebram o frontend B2B/B2C
+        ret['laudo_vistoria'] = ret.get('laudo_vistoria') or ''
+        ret['comentario_lavagem'] = ret.get('comentario_lavagem') or ''
+        ret['observacoes'] = ret.get('observacoes') or ''
+        
+        # Limpar texto "null" em caso de bug anterior
+        if ret['laudo_vistoria'].lower() == 'null': ret['laudo_vistoria'] = ''
+        if ret['comentario_lavagem'].lower() == 'null': ret['comentario_lavagem'] = ''
+        if ret['observacoes'].lower() == 'null': ret['observacoes'] = ''
+        return ret
 
 
 # ---------------------------------------------------------------------------
@@ -173,13 +214,24 @@ class KanbanCardSerializer(serializers.ModelSerializer):
     servico = serializers.CharField(source='servico.nome')
     duracao_estimada_minutos = serializers.IntegerField(source='servico.duracao_estimada_minutos')
     tempo_decorrido_minutos = serializers.SerializerMethodField()
+    tempo_decorrido_segundos = serializers.SerializerMethodField()
     is_atrasado = serializers.SerializerMethodField()
+    funcionario_nome = serializers.SerializerMethodField()
 
     class Meta:
         model = OrdemServico
-        fields = ['id', 'placa', 'modelo', 'servico', 'duracao_estimada_minutos', 'tempo_decorrido_minutos', 'is_atrasado']
+        fields = ['id', 'placa', 'modelo', 'servico', 'duracao_estimada_minutos', 'tempo_decorrido_minutos', 'tempo_decorrido_segundos', 'is_atrasado', 'funcionario_nome', 'is_pausado']
+
+    def get_funcionario_nome(self, obj):
+        if obj.funcionario and getattr(obj.funcionario, 'name', None):
+            return obj.funcionario.name
+        return None
 
     def get_tempo_decorrido_minutos(self, obj):
+        # Mantém a compatibilidade, mas baseado no total_seconds
+        return int(self.get_tempo_decorrido_segundos(obj) / 60)
+
+    def get_tempo_decorrido_segundos(self, obj):
         # RN: PATIO ainda não iniciou execução — tempo zero
         if obj.status == 'PATIO' or not obj.horario_lavagem:
             return 0
@@ -189,17 +241,20 @@ class KanbanCardSerializer(serializers.ModelSerializer):
             if incidentes:
                 ultimo = max(incidentes, key=lambda i: i.data_registro)
                 delta = ultimo.data_registro - obj.horario_lavagem
-                return max(0, int(delta.total_seconds() / 60))
+                return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+            return obj.tempo_acumulado_segundos
         # RN: LIBERACAO — fluxo direto de EM_EXECUCAO (RF-27/RF-30), conta até finalização
         if obj.status == 'LIBERACAO' and obj.horario_finalizacao:
             delta = obj.horario_finalizacao - obj.horario_lavagem
-            return max(0, int(delta.total_seconds() / 60))
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
         # RN: FINALIZADO — congela no horário de finalização real
         if obj.status == 'FINALIZADO' and obj.horario_finalizacao:
             delta = obj.horario_finalizacao - obj.horario_lavagem
-            return max(0, int(delta.total_seconds() / 60))
+            return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
+        if obj.is_pausado:
+            return obj.tempo_acumulado_segundos
         delta = timezone.now() - obj.horario_lavagem
-        return int(delta.total_seconds() / 60)
+        return max(0, obj.tempo_acumulado_segundos + int(delta.total_seconds()))
 
     def get_is_atrasado(self, obj):
         if obj.status not in ('EM_EXECUCAO', 'LIBERACAO'):
@@ -254,13 +309,35 @@ class IncidentePendenteSerializer(serializers.ModelSerializer):
         return ret
 
 
+class IncidenteGaleriaSerializer(serializers.ModelSerializer):
+    foto_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = IncidenteOS
+        fields = [
+            'id',
+            'descricao',
+            'observacoes_resolucao',
+            'foto_url',
+            'data_registro',
+            'data_resolucao',
+            'resolvido'
+        ]
+
+    def get_foto_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.foto_url:
+            return request.build_absolute_uri(obj.foto_url.url)
+        return None
+
+
 class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
     placa = serializers.CharField(source='veiculo.placa', read_only=True)
     modelo = serializers.CharField(source='veiculo.modelo', read_only=True)
     marca = serializers.CharField(source='veiculo.marca', read_only=True)
     cor = serializers.CharField(source='veiculo.cor', read_only=True)
-    nome_dono = serializers.CharField(source='veiculo.nome_dono', read_only=True)
-    celular_dono = serializers.CharField(source='veiculo.celular_dono', read_only=True)
+    nome_dono = serializers.SerializerMethodField()
+    celular_dono = serializers.SerializerMethodField()
     servico = serializers.CharField(source='servico.nome', read_only=True)
     funcionario_responsavel_nome = serializers.SerializerMethodField()
 
@@ -280,6 +357,16 @@ class IncidenteAuditoriaOrdemServicoSerializer(serializers.ModelSerializer):
             'horario_lavagem',
             'horario_finalizacao',
         ]
+
+    def get_nome_dono(self, obj):
+        if obj.veiculo.cliente and obj.veiculo.cliente.user and obj.veiculo.cliente.user.name:
+            return obj.veiculo.cliente.user.name
+        return obj.veiculo.nome_dono or None
+
+    def get_celular_dono(self, obj):
+        if obj.veiculo.cliente and obj.veiculo.cliente.telefone_whatsapp:
+            return obj.veiculo.cliente.telefone_whatsapp
+        return obj.veiculo.celular_dono or None
 
     def get_funcionario_responsavel_nome(self, obj):
         if obj.funcionario and getattr(obj.funcionario, 'name', None):
@@ -413,6 +500,7 @@ class HistoricoGestorItemSerializer(serializers.ModelSerializer):
             'id', 'placa', 'modelo', 'servico_nome', 'funcionario_nome',
             'status', 'data_hora',
             'horario_lavagem', 'horario_finalizacao',
+            'comentario_lavagem', 'observacoes', 'laudo_vistoria'
         ]
 
     def get_funcionario_nome(self, obj):
@@ -438,10 +526,16 @@ class MidiaGaleriaSerializer(serializers.ModelSerializer):
         fields = ['id', 'arquivo_url', 'momento']
 
     def get_arquivo_url(self, obj):
+        if not obj.arquivo:
+            return None
+        
         request = self.context.get('request')
-        if request and obj.arquivo:
+        if request:
             return request.build_absolute_uri(obj.arquivo.url)
-        return None
+            
+        # Fallback de segurança para garantir URL absoluta se o serializer for chamado sem request
+        from django.conf import settings
+        return f"{getattr(settings, 'BACKEND_URL', 'http://127.0.0.1:8000')}{obj.arquivo.url}"
 
 
 ClienteGaleriaMidiaSerializer = MidiaGaleriaSerializer
@@ -483,14 +577,20 @@ class OrdemServicoClienteSerializer(serializers.ModelSerializer):
     estabelecimento = EstabelecimentoResumoSerializer(read_only=True)
     estabelecimento_nome = serializers.CharField(source='estabelecimento.nome_fantasia', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    valor = serializers.FloatField(source='servico.preco', read_only=True)
+    valor = serializers.SerializerMethodField()
     class Meta:
         model = OrdemServico
         fields = [
             'id', 'data_hora', 'status', 'status_display', 'etapa_atual',
             'servico_nome', 'veiculo_placa', 'veiculo_modelo', 'estabelecimento',
             'estabelecimento_nome', 'valor', 'observacoes', 'vaga_patio',
+            'avaliacao_estrelas',
         ]
 
     def get_veiculo_placa(self, obj):
         return formatar_placa(obj.veiculo.placa)
+
+    def get_valor(self, obj):
+        if obj.valor_cobrado is not None:
+            return float(obj.valor_cobrado)
+        return float(obj.servico.preco) if obj.servico else 0.0

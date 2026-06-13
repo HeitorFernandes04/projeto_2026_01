@@ -8,6 +8,12 @@ $text: #e6edf3;
 $text-muted: #8b949e;
 $font: 'Inter', system-ui, -apple-system, sans-serif;
 
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 10px rgba(0, 102, 255, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(0, 102, 255, 0.6); }
+  100% { box-shadow: 0 0 10px rgba(0, 102, 255, 0.3); }
+}
+
 .login-wrapper {
   position: fixed;
   top: 0; left: 0;
@@ -48,6 +54,7 @@ $font: 'Inter', system-ui, -apple-system, sans-serif;
         border: 1px solid $border;
         padding: 4px;
         background: $bg;
+        animation: pulse-glow 2.5s infinite;
       }
 
       h2 { 
@@ -77,11 +84,11 @@ $font: 'Inter', system-ui, -apple-system, sans-serif;
         gap: 8px;
 
         label { 
-          color: $text-muted; 
-          font-size: 11px; 
-          font-weight: 800; 
-          text-transform: uppercase; 
-          letter-spacing: 0.05em;
+          color: #c9d1d9; 
+          font-size: 13px; 
+          font-weight: 600; 
+          letter-spacing: 0.01em;
+          margin-left: 2px;
         }
 
         .input-box {
@@ -133,6 +140,7 @@ $font: 'Inter', system-ui, -apple-system, sans-serif;
         align-items: center; 
         justify-content: center; 
         gap: 12px;
+        width: 100%;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         margin-top: 8px;
 

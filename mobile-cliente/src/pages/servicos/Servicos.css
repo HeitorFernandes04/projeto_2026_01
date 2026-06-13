@@ -19,20 +19,28 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* ── Header & Toolbar ── */
+/* ── Header & Toolbar (Simetria Top/Bottom) ── */
 .sv-header {
   --background: var(--sv-card);
   background: var(--sv-card);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  padding: 20px 8px; /* Altura aumentada a pedido */
+  z-index: 10;
 }
 
 .sv-toolbar {
-  --background: var(--sv-card);
+  --background: transparent;
   --border-width: 0;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
 }
 
 .sv-title {
-  color: var(--sv-foreground);
-  font-weight: 700;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 24px;
+  text-align: left;
+  padding-left: 4px;
 }
 
 .sv-back-button {
@@ -42,6 +50,7 @@
 
 .sv-content {
   --background: transparent;
+  --padding-top: 48px !important; /* Espaçamento interno forçado duplo/triplo */
 }
 
 .sv-estab {
@@ -61,16 +70,20 @@
 /* ── Cards de Serviço ── */
 .sv-card {
   background: var(--sv-card);
-  border-radius: var(--sv-radius);
-  padding: 20px;
+  border-radius: 16px;
+  padding: 16px 20px;
   margin-bottom: 16px;
   border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
 
+.sv-card:first-of-type {
+  margin-top: 16px; /* Garante que o primeiro card desça mais ainda */
+}
+
 .sv-card-ativo {
-  border-color: var(--sv-primary);
+  border-color: rgba(56, 189, 248, 0.4);
 }
 
 .sv-card-header {
@@ -126,56 +139,68 @@
 .sv-preco {
   color: var(--sv-primary);
   font-size: 20px; /* text-xl equivalente */
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .sv-duracao {
   color: var(--sv-muted);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
-/* ── Footer Fixo (Painel de Checkout) ── */
+/* ── Footer Fixo (Painel de Checkout Flutuante) ── */
 .sv-checkout {
   background: var(--sv-card);
-  border-top: 1px solid var(--sv-border);
-  padding: 20px 24px 32px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-top: none;
+  padding: 24px 24px 40px;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
 }
 
 .sv-checkout-info {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
 }
 
-.sv-checkout-total-label {
-  color: var(--sv-foreground);
-  font-size: 14px;
-  font-weight: 600;
-  display: block;
+.sv-checkout-col-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.sv-checkout-col-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.sv-checkout-label {
+  color: var(--sv-muted);
+  font-size: 13px;
   margin-bottom: 4px;
 }
 
-.sv-checkout-total-valor {
-  color: var(--sv-foreground);
-  font-size: 24px;
-  font-weight: 800;
+.sv-checkout-valor {
+  color: #FFFFFF;
+  font-size: 28px;
+  font-weight: 700;
 }
 
-.sv-checkout-duracao {
-  color: var(--sv-muted);
-  font-size: 14px;
+.sv-checkout-duracao-val {
+  color: #FFFFFF;
+  font-size: 16px;
   font-weight: 500;
 }
 
 /* ── Botão Continuar ── */
 .sv-btn-continuar {
   width: 100%;
-  height: 64px;
-  border-radius: var(--sv-radius);
+  height: 56px;
+  border-radius: 9999px; /* Pill / Stadium shape */
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   border: none;
   display: flex;
   align-items: center;

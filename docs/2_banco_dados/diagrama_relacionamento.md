@@ -1,6 +1,7 @@
-# Diagrama Entidade-Relacionamento (ERD)\n\n*Gerado automaticamente pelo Agente MCP.*\n\n```mermaid\n19 objects imported automatically (use -v 2 for details).
+# Diagrama Entidade-Relacionamento (ERD)\n\n*Gerado automaticamente pelo Agente MCP.*\n\n```mermaid\n20 objects imported automatically (use -v 2 for details).
 
 erDiagram
+  ResetPasswordToken }|--|| User : user
   IncidenteOS }|--|| User : gestor_resolucao
   IncidenteOS }|--|| TagPeca : tag_peca
   IncidenteOS }|--|| OrdemServico : ordem_servico
@@ -30,6 +31,7 @@ erDiagram
   Cliente }|--|| Veiculo : veiculos
   User }|--|| Permission : user_permissions
   User }|--|| Group : groups
+  User }|--|| ResetPasswordToken : password_reset_tokens
   User }|--|| IncidenteOS : incidentes_resolvidos
   User }|--|| OrdemServico : ordemservico
   User }|--|| Gestor : perfil_gestor
@@ -99,6 +101,9 @@ erDiagram
     ImageField logo
     TimeField horario_abertura
     TimeField horario_fechamento
+    FloatField latitude
+    FloatField longitude
+    DecimalField avaliacao_media
   }
   User {
     BigAutoField id
@@ -156,18 +161,21 @@ erDiagram
     BigAutoField id
     CharField status
     DateTimeField data_hora
+    DecimalField valor_cobrado
     TextField laudo_vistoria
     DateTimeField horario_lavagem
-    DateTimeField horario_acabamento
     TextField comentario_lavagem
-    TextField comentario_acabamento
     CharField vaga_patio
     DateTimeField horario_finalizacao
     TextField observacoes
+    BooleanField is_pausado
+    IntegerField tempo_acumulado_segundos
+    PositiveSmallIntegerField etapa_atual
     UUIDField slug_cancelamento
     DateTimeField cancelado_em
     TextField motivo_cancelamento
     CharField cancelado_por
+    IntegerField avaliacao_estrelas
   }
   MidiaOrdemServico {
     BigAutoField id
@@ -183,5 +191,12 @@ erDiagram
     DateTimeField data_registro
     DateTimeField data_resolucao
     TextField observacoes_resolucao
+  }
+  ResetPasswordToken {
+    AutoField id
+    DateTimeField created_at
+    CharField key
+    GenericIPAddressField ip_address
+    CharField user_agent
   }
 \n```
