@@ -74,8 +74,8 @@ describe('EstabelecimentoDrawer', () => {
         onClose={onClose}
       />,
     );
-    const backdrop = document.querySelector('.floating-card-backdrop');
-    if (backdrop) fireEvent.click(backdrop);
+    const closeBtn = document.querySelector('.floating-close-btn');
+    if (closeBtn) fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledOnce();
   });
 
