@@ -45,7 +45,7 @@ class AuthB2CRateThrottle(AnonRateThrottle):
 
 class OTPRequestRateThrottle(AnonRateThrottle):
     scope = 'otp_request'
-    rate = '1/min'
+    rate = '10/min'
 
 
 class AuthB2CSetupView(APIView):

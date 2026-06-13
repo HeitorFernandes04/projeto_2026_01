@@ -162,3 +162,5 @@ backend/logs/
 cypress/screenshots/evolution-api/
 evolution-api/
 \evolution-api
+conectar_whatsapp.py
+QRCODE_WHATSAPP.png

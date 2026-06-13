@@ -24,19 +24,34 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('lm_user');
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem('lm_access_token') || null;
+  });
 
   useEffect(() => {
+    // Apenas para limpeza se o formato for invalido no load inicial
     const savedToken = localStorage.getItem('lm_access_token');
     const savedUser = localStorage.getItem('lm_user');
     if (savedToken && savedUser) {
       try {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
+        JSON.parse(savedUser);
       } catch {
         localStorage.removeItem('lm_access_token');
         localStorage.removeItem('lm_user');
+        setToken(null);
+        setUser(null);
       }
     }
   }, []);
