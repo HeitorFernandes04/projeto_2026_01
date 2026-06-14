@@ -259,3 +259,9 @@ EVOLUTION_API_URL = os.environ.get('EVOLUTION_API_URL', 'http://localhost:8080')
 EVOLUTION_INSTANCE_NAME = os.environ.get('EVOLUTION_INSTANCE_NAME', 'teste')
 EVOLUTION_API_KEY = os.environ.get('EVOLUTION_API_KEY', 'sua_chave_secreta_aqui')
 
+# Configurações de Proxy e CSRF para rodar atrás do Nginx + Cloudflare Tunnel
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = [
+    'https://lavame.sansocrates.online',
+]
+
