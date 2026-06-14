@@ -17,14 +17,14 @@ def run():
 
     # 1. Estabelecimento
     est, created = Estabelecimento.objects.get_or_create(
-        nome="Lava Rápido Premium",
         cnpj="12345678000199",
         defaults={
-            "telefone": "11999999999",
-            "endereco": "Av. Principal, 1000 - Centro",
-            "horario_funcionamento": "Seg-Sáb, 08h-18h",
-            "ativo": True,
-            "slug_autoagendamento": "lavarapidopremium"
+            "nome_fantasia": "Lava Rápido Premium",
+            "endereco_completo": "Av. Principal, 1000 - Centro",
+            "horario_abertura": "08:00",
+            "horario_fechamento": "18:00",
+            "is_active": True,
+            "slug": "lavarapidopremium"
         }
     )
 
@@ -34,13 +34,11 @@ def run():
         username="gestor",
         defaults={
             "email": "gestor@lavame.com.br",
-            "first_name": "Carlos",
-            "last_name": "Gestor",
-            "is_staff": True,
-            "tipo": "GESTOR"
+            "name": "Carlos Gestor"
         }
     )
     user_gestor.set_password("Banca@2026")
+    user_gestor.is_staff = True
     user_gestor.save()
     Gestor.objects.get_or_create(user=user_gestor, estabelecimento=est)
 
@@ -49,18 +47,16 @@ def run():
         username="funcionario",
         defaults={
             "email": "funcionario@lavame.com.br",
-            "first_name": "João",
-            "last_name": "Lavador",
-            "is_staff": True,
-            "tipo": "FUNCIONARIO"
+            "name": "João Lavador"
         }
     )
     user_func.set_password("Banca@2026")
+    user_func.is_staff = True
     user_func.save()
     Funcionario.objects.get_or_create(
         user=user_func, 
         estabelecimento=est,
-        cargo="LAVADOR"
+        defaults={"cargo": "LAVADOR"}
     )
 
     # Cliente
@@ -68,25 +64,24 @@ def run():
         username="cliente",
         defaults={
             "email": "cliente@lavame.com.br",
-            "first_name": "Maria",
-            "last_name": "Silva",
-            "tipo": "CLIENTE",
-            "whatsapp": "11988887777"
+            "name": "Maria Silva"
         }
     )
     user_cliente.set_password("Banca@2026")
     user_cliente.save()
-    cliente, _ = Cliente.objects.get_or_create(user=user_cliente, defaults={"telefone": "11988887777"})
+    cliente, _ = Cliente.objects.get_or_create(
+        user=user_cliente, 
+        defaults={"telefone_whatsapp": "11988887777"}
+    )
 
     # 3. Serviços
     s1, _ = Servico.objects.get_or_create(
         nome="Ducha Simples",
         estabelecimento=est,
         defaults={
-            "descricao": "Lavagem externa rápida com shampoo automotivo.",
             "preco": 35.00,
-            "duracao_estimada": 30,
-            "ativo": True
+            "duracao_estimada_minutos": 30,
+            "is_active": True
         }
     )
     
@@ -94,10 +89,9 @@ def run():
         nome="Lavagem Completa",
         estabelecimento=est,
         defaults={
-            "descricao": "Lavagem externa e limpeza interna detalhada com aspiração.",
             "preco": 70.00,
-            "duracao_estimada": 60,
-            "ativo": True
+            "duracao_estimada_minutos": 60,
+            "is_active": True
         }
     )
 
@@ -105,10 +99,9 @@ def run():
         nome="Polimento Cristalizado",
         estabelecimento=est,
         defaults={
-            "descricao": "Polimento técnico com aplicação de cera cristalizadora de alta durabilidade.",
             "preco": 250.00,
-            "duracao_estimada": 180,
-            "ativo": True
+            "duracao_estimada_minutos": 180,
+            "is_active": True
         }
     )
 
@@ -120,7 +113,9 @@ def run():
             "modelo": "Corolla",
             "cor": "Prata",
             "cliente": cliente,
-            "tipo": "SEDAN"
+            "estabelecimento": est,
+            "nome_dono": "Maria Silva",
+            "celular_dono": "11988887777"
         }
     )
 
@@ -129,42 +124,39 @@ def run():
     
     # OS 1 - Finalizada (Para mostrar histórico)
     OrdemServico.objects.get_or_create(
-        data_agendamento=agora - timedelta(days=2),
         veiculo=veiculo,
         estabelecimento=est,
+        servico=s2,
+        status="FINALIZADO",
         defaults={
-            "cliente": cliente,
-            "servico": s2,
-            "status": "FINALIZADA",
-            "valor_total": 70.00,
+            "data_hora": agora - timedelta(days=2),
+            "valor_cobrado": 70.00,
             "observacoes": "Cliente muito satisfeito com o serviço."
         }
     )
 
     # OS 2 - Em Andamento (Para mostrar painel B2B hoje)
     OrdemServico.objects.get_or_create(
-        data_agendamento=agora,
         veiculo=veiculo,
         estabelecimento=est,
+        servico=s1,
+        status="EM_EXECUCAO",
         defaults={
-            "cliente": cliente,
-            "servico": s1,
-            "status": "EM_ANDAMENTO",
-            "valor_total": 35.00,
+            "data_hora": agora,
+            "valor_cobrado": 35.00,
             "observacoes": "Lavagem rápida, focar nos vidros."
         }
     )
 
     # OS 3 - Agendada (Para mostrar próximos agendamentos)
     OrdemServico.objects.get_or_create(
-        data_agendamento=agora + timedelta(days=1),
         veiculo=veiculo,
         estabelecimento=est,
+        servico=s3,
+        status="PATIO",
         defaults={
-            "cliente": cliente,
-            "servico": s3,
-            "status": "AGENDADA",
-            "valor_total": 250.00,
+            "data_hora": agora + timedelta(days=1),
+            "valor_cobrado": 250.00,
             "observacoes": "Cliente solicitou cuidado extra na pintura."
         }
     )
