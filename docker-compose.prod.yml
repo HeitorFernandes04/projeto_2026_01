@@ -43,6 +43,7 @@ services:
       - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://evolution-api:8080}
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-'senha_evolution'}
     volumes:
+      - ./.env:/app/.env:ro
       - static_volume:/app/static
       - media_volume:/app/media
     depends_on:
