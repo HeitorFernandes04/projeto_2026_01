@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://lavame.sansocrates.online/api/$1"
+    },
+    {
+      "source": "/media/(.*)",
+      "destination": "https://lavame.sansocrates.online/media/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

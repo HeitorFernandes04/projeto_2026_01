@@ -100,3 +100,4 @@ pytest==9.0.3
 pytest-django==4.12.0
 pytest-cov==7.0.0
 django-rest-passwordreset==1.5.0
+dj-database-url==2.1.0

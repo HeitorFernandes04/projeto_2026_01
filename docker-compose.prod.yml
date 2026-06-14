@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: lava_me_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-banca2026}
+      POSTGRES_DB: ${POSTGRES_DB:-lava_me_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - lava_network
+
+  redis:
+    image: redis:alpine
+    container_name: lava_me_redis
+    restart: always
+    networks:
+      - lava_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lava_me_backend
+    restart: always
+    # Comando de inicialização que aguarda o banco, cria a extensão pgvector, migra o banco e sobe o gunicorn
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py migrate && 
+             gunicorn lava_me.wsgi:application --bind 0.0.0.0:8000 --workers 1"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:-'coloque_uma_chave_segura_no_seu_servidor'}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-'*'}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-banca2026}@db:5432/${POSTGRES_DB:-lava_me_db}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      # Informações que a Evolution API usará para notificar o backend
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL}
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://evolution-api:8080}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-'senha_evolution'}
+    volumes:
+      - ./.env:/app/.env:ro
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      - db
+      - redis
+    networks:
+      - lava_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: lava_me_gateway
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      - backend
+    networks:
+      - lava_network
+
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    container_name: lava_me_evolution
+    restart: always
+    environment:
+      - SERVER_URL=${EVOLUTION_SERVER_URL:-http://localhost:8080}
+      - AUTH_TYPE=apikey
+      - AUTH_API_KEY=${EVOLUTION_API_KEY:-'senha_evolution'}
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-banca2026}@db:5432/${POSTGRES_DB:-lava_me_db}
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://redis:6379/0
+      # Demais envs podem ficar no .env do servidor
+    ports:
+      - "8080:8080"
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      - db
+      - redis
+    networks:
+      - lava_network
+
+networks:
+  lava_network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  static_volume:
+  media_volume:
+  evolution_instances:
