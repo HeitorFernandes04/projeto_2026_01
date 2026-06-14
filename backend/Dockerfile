@@ -21,6 +21,9 @@ RUN pip install gunicorn psycopg2-binary django-redis
 # Copiar o restante do código
 COPY . /app/
 
+# Criar a pasta de logs (o Git ignora pastas vazias, o que causa erro no FileHandler do Django)
+RUN mkdir -p /app/logs
+
 # Expor a porta 8000
 EXPOSE 8000
 
