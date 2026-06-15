@@ -167,7 +167,8 @@ const GaleriaFotos = React.forwardRef<{ enviarFotosStaged: () => void }, Galeria
                     // Tenta adicionar o domínio se for URL relativa
                     const img = e.target as HTMLImageElement;
                     if (srcPreview && !srcPreview.startsWith('http') && !srcPreview.startsWith('data:')) {
-                      const urlCompleta = `http://127.0.0.1:8000${srcPreview}`;
+                      const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000';
+                      const urlCompleta = `${baseUrl}${srcPreview}`;
                       img.src = urlCompleta;
                     } else {
                       // Se já falhou com URL completa, mostra placeholder

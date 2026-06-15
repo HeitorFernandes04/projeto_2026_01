@@ -63,10 +63,11 @@ const EstadoVistoria: React.FC<{ ordemServicoId: number; onComplete: () => void;
       // Verificação crítica: testar se cada imagem realmente existe (não 404)
       
       const verificarImagem = async (foto: Midia): Promise<{url: string, ok: boolean, status?: number, error?: string}> => {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000';
         const urlsParaTestar = [
           foto.arquivo, // URL original (absoluta)
-          foto.arquivo.replace('http://127.0.0.1:8000', ''), // URL relativa
-          `http://127.0.0.1:8000${foto.arquivo}`, // Forçar domínio se for relativa
+          foto.arquivo.replace(baseUrl, ''), // URL relativa
+          `${baseUrl}${foto.arquivo}`, // Forçar domínio se for relativa
         ];
         
         for (const url of urlsParaTestar) {
