@@ -15,7 +15,7 @@ services:
       - lava_network
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: lava_me_redis
     restart: always
     networks:

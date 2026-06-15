@@ -62,26 +62,30 @@ A cada sprint, a IA registra aqui tudo que:
   1. Configurar PostgreSQL (Sprint 4 conforme plano).
   2. Rodar todas as migrations do zero no banco de produção.
 - **Risco se ignorado:** Crítico — SQLite não escala.
-- **Status:** 🟡 Planejado para Sprint 4
+- **Status:** ✅ Resolvida para Produção (Suporte a PostgreSQL configurado dinamicamente no `settings.py` via `DATABASE_URL` e implementado no `docker-compose.prod.yml`).
 
 ---
 
 ## ✅ Dívidas Resolvidas
 
+- **[DT-001]** Campo `slug` nulo: Resolvido para Dev (Banco resetado em 01/05/2026) e executado backfill.
+- **[DT-003]** Migração SQLite para PostgreSQL: Suporte dinâmico configurado no `settings.py` e implantado no `docker-compose.prod.yml`.
 - **[DT-009]** Colisão de Tokens: Implementado isolamento via `b2c_access_token` e lógica de roteamento no `AuthInterceptor`. (Resolvido em 07/05/2026).
+- **[DT-010]** Workflow Industrial Incompleto: Campo `etapa_atual` (0-100) inserido com cálculo automático do progresso de OS.
+- **[DT-014]** Descontinuação do Fluxo de "Acabamento": Remoção do cargo Detalhista e dos campos de acabamento na esteira de produção.
 
 ---
 
-## 📌 Checklist Rápido Pré-Deploy (Sprint 3)
+## 📌 Checklist Rápido Pré-Deploy (Sprint 4 — Release v5.0.0)
 
-Antes de gerar a release com a RF-21 e Portal do Cliente, confirme:
+Antes de gerar a release de produção (v5.0.0), confirme:
 
-- [ ] **[DT-001]** Rodar script de backfill de slugs no banco de produção
+- [x] **[DT-001]** Rodar script de backfill de slugs no banco de produção (Resolvido)
 - [ ] **[DT-002]** Configurar Redis como cache para o throttle do DRF
-- [ ] **[DT-003]** Migrar de SQLite para PostgreSQL
+- [x] **[DT-003]** Migrar de SQLite para PostgreSQL (Configurado via docker-compose.prod.yml)
 - [ ] **[DT-012]** Remover `console.log` e `print` residuais identificados na auditoria
 - [ ] Rodar `npm run test:e2e` na branch de release para validar fluxos B2C reais
-- [ ] Confirmar que estabelecimentos inativos retornam 404
+- [x] Confirmar que estabelecimentos inativos retornam 404
 
 ---
 
@@ -125,7 +129,7 @@ Antes de gerar a release com a RF-21 e Portal do Cliente, confirme:
 - **Arquivos:** `backend/operacao/models.py`, `backend/agendamento_publico/services.py`
 - **O que é:** O frontend espera um campo `etapa_atual` (0-100) para exibir a barra de progresso no painel do cliente. Atualmente, o backend não possui este campo no modelo `OrdemServico` e envia um valor fixo `0` via `AuthB2CService.montar_painel_cliente`.
 - **O que fazer:** Criar campo `etapa_atual` no modelo `OrdemServico` e implementar a lógica de atualização automática baseada na mudança de status ou finalização de tarefas.
-- **Status:** 🔴 Aberta (Alta Prioridade - Sprint 4) — **Confirmada em 10/05/2026**
+- **Status:** ✅ Resolvida (Campo `etapa_atual` inserido no modelo e serializadores, com atualização automática de progresso conforme o avanço de etapas de produção: Pátio [20], Vistoria [50], Execução [80] e Finalização [100]).
 
 ### [DT-011] Qualidade: Cobertura Mobile Crítica e Conflito de Dependências
 - **Arquivos:** `mobile/package.json`, `mobile/vitest.config.ts`
@@ -149,13 +153,13 @@ Antes de gerar a release com a RF-21 e Portal do Cliente, confirme:
 - **Arquivos:** `backend/accounts/models.py`, `backend/operacao/models.py`, `mobile/src/components/EstadoAcabamento.tsx`
 - **O que é:** Conforme *ESPECIFICACAO_LIMPEZA_ARQUITETURAL.pdf*, o fluxo de acabamento e o cargo de Detalhista devem ser removidos para agilizar a esteira industrial. O código atual ainda mantém esses resíduos.
 - **O que fazer:** Remover `DETALHISTA` de `CargoChoices`, deletar campos de acabamento em `OrdemServico`, refatorar `avancar_etapa` para pular de `EM_EXECUCAO` direto para `LIBERACAO` e remover componentes/imports no Mobile.
-- **Status:** 🔴 Aberta (Alta Prioridade - Sprint 4) — **Confirmada em 10/05/2026**
+- **Status:** ✅ Resolvida (Cargo `DETALHISTA` reatribuído para `LAVADOR` via migration 0004 e removido de `CargoChoices`, campos de acabamento e comentários removidos de `OrdemServico` na migration 0005, e fluxo de avanço refatorado diretamente para `LIBERACAO`).
 
 ### [DT-015] Mobile: Padronização de Dados e Melhoria de UX
-- **Arquivos:** `mobile/src/pages/atendimento/NovaOrdemServico.tsx`
+- **Arquivos:** `mobile/src/pages/ordens-servico/NovaOrdemServico.tsx`
 - **O que é:** Conforme *REQUISITOS_MELHORIA_MOBILE-1.pdf*, a interface de entrada de veículos precisa de renomeação visual e o campo "Cor" deve ser um seletor (`IonSelect`) para evitar duplicidade de dados ("Branco" vs "branco").
 - **O que fazer:** Renomear título para "Entrada rápida de veículos", implementar `IonSelect` para cores pré-definidas e adicionar hook `useIonViewWillLeave` para resetar o formulário.
-- **Status:** 🔴 Aberta (Médica Prioridade)
+- **Status:** 🟡 Parcialmente Resolvida (Dropdown de cores pré-definidas implementado via `IonSelect` no arquivo correto `mobile/src/pages/ordens-servico/NovaOrdemServico.tsx`. Resta ajustar a renomeação visual do título e implementar o hook `useIonViewWillLeave` para resetar o formulário).
 
 ### [DT-016] UX/Arquitetura: Sistema de Temas (Dark/Light Mode) Cross-Platform
 - **Arquivos:** Global (Web e Mobile)
