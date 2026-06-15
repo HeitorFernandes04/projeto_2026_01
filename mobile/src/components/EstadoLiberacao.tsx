@@ -30,7 +30,7 @@ const EstadoLiberacao: React.FC<{ ordemServicoId: number; onComplete: () => void
 
   useEffect(() => { fetchDados(); }, [fetchDados]);
 
-  const fotosDepois = ordemServico?.midias?.filter((m) => m.momento === 'FINALIZADO') || [];
+  const fotosDepois = ordemServico?.midias?.filter((m: any) => m.momento === 'FINALIZADO') || [];
   const podeLiberar = fotosDepois.length >= 5 && vaga.trim().length > 0;
 
   const handleFinalizarGeral = async (e?: React.MouseEvent) => {
