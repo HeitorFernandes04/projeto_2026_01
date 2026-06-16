@@ -9,6 +9,7 @@ import {
   IonInput,
   IonItem,
   IonIcon,
+  useIonViewWillEnter,
 } from '@ionic/react';
 import { sparklesOutline, warningOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -43,6 +44,12 @@ const LoginWhatsApp: React.FC = () => {
 
   // Verifica se o usuário vem de um fluxo de agendamento
   const hasAgendamento = !!(localStorage.getItem('lm_agendamento_temporario') || localStorage.getItem('lm_agendamento_pendente'));
+
+  useIonViewWillEnter(() => {
+    if (localStorage.getItem('access') && !isPerfilFlow) {
+      history.replace('/inicio');
+    }
+  });
 
   const telefoneLimpo = telefoneFormatado.replace(/\D/g, '');
   
