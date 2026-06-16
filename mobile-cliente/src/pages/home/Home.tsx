@@ -12,6 +12,7 @@ import {
   IonLabel,
   IonPopover,
   useIonViewWillEnter,
+  useIonViewDidEnter,
 } from '@ionic/react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { 
@@ -116,6 +117,13 @@ const Home: React.FC = () => {
 
   useIonViewWillEnter(() => {
     fetchEstabelecimentos(notaMinima);
+  });
+
+  useIonViewDidEnter(() => {
+    // Força o Leaflet a recalcular as dimensões da tela após a animação de entrada do Ionic terminar
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 200);
   });
 
   const handleNotaChange = (val: number | undefined) => {
