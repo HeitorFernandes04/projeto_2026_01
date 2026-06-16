@@ -1,5 +1,11 @@
 .leaflet-container {
   background: var(--lm-bg);
+  height: 100% !important;
+  width: 100% !important;
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  z-index: 0;
 }
 
 ion-fab {

@@ -728,7 +728,25 @@ export class SetupComponent implements OnInit, OnDestroy {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(this.mapInstance);
-    this.markerInstance = L.marker([lat, lng], { draggable: true }).addTo(this.mapInstance);
+    const customPin = L.divIcon({
+      className: '',
+      html: `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+          <div style="width: 36px; height: 36px; background-color: #2196F3; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid white; z-index: 2;">
+            <svg style="width: 20px; height: 20px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+          <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #2196F3; margin-top: -2px; z-index: 1;"></div>
+        </div>
+      `,
+      iconSize: [36, 44],
+      iconAnchor: [18, 44],
+      popupAnchor: [0, -44],
+    });
+
+    this.markerInstance = L.marker([lat, lng], { draggable: true, icon: customPin }).addTo(this.mapInstance);
     this.markerInstance.bindPopup('Arraste para o local exato do lava-jato').openPopup();
     this.latitudeMapa = lat;
     this.longitudeMapa = lng;

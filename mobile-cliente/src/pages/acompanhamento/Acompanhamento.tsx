@@ -322,12 +322,40 @@ const Acompanhamento: React.FC = () => {
               </div>
             )}
 
+            {/* Botão de Cancelamento (Visível apenas em PÁTIO) */}
+            {!finalizado && status === 'PATIO' && slugCancelamento && (
+              <button
+                className="btn-cancelar-agendamento"
+                disabled={cancelLoading}
+                onClick={() => setShowCancelAlert(true)}
+              >
+                {cancelLoading ? 'Cancelando...' : 'Cancelar Agendamento'}
+              </button>
+            )}
 
           </div>
         )}
       </IonContent>
 
-
+      <IonAlert
+        isOpen={showCancelAlert}
+        onDidDismiss={() => setShowCancelAlert(false)}
+        header="Cancelar Agendamento"
+        message="Tem certeza que deseja cancelar seu agendamento de lavagem?"
+        buttons={[
+          {
+            text: 'Não, manter',
+            role: 'cancel',
+            cssClass: 'alert-cancel-keep-btn'
+          },
+          {
+            text: 'Sim, cancelar',
+            handler: () => {
+              executarCancelamento();
+            }
+          }
+        ]}
+      />
 
       <IonToast
         isOpen={showToast}

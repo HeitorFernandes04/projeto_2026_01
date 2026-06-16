@@ -9,6 +9,8 @@ import {
   IonInput,
   IonItem,
   IonIcon,
+  IonFooter,
+  useIonViewWillEnter,
 } from '@ionic/react';
 import { sparklesOutline, warningOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -43,6 +45,12 @@ const LoginWhatsApp: React.FC = () => {
 
   // Verifica se o usuário vem de um fluxo de agendamento
   const hasAgendamento = !!(localStorage.getItem('lm_agendamento_temporario') || localStorage.getItem('lm_agendamento_pendente'));
+
+  useIonViewWillEnter(() => {
+    if (localStorage.getItem('access') && !isPerfilFlow) {
+      history.replace('/inicio');
+    }
+  });
 
   const telefoneLimpo = telefoneFormatado.replace(/\D/g, '');
   
@@ -162,15 +170,17 @@ const LoginWhatsApp: React.FC = () => {
 
       </IonContent>
 
-      <div className="auth-footer">
-        <button
-          className="auth-btn-primary"
-          disabled={!isValido || loading}
-          onClick={handleContinuar}
-        >
-          {loading ? 'Aguarde...' : (hasAgendamento ? 'Enviar Código por WhatsApp' : 'Entrar com WhatsApp')}
-        </button>
-      </div>
+      <IonFooter className="ion-no-border" style={{ background: 'var(--auth-bg)' }}>
+        <div style={{ padding: '16px 24px 32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <button
+            className="auth-btn-primary"
+            disabled={!isValido || loading}
+            onClick={handleContinuar}
+          >
+            {loading ? 'Aguarde...' : (hasAgendamento ? 'Enviar Código por WhatsApp' : 'Entrar com WhatsApp')}
+          </button>
+        </div>
+      </IonFooter>
     </IonPage>
   );
 };

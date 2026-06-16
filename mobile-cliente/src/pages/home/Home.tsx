@@ -12,6 +12,7 @@ import {
   IonLabel,
   IonPopover,
   useIonViewWillEnter,
+  useIonViewDidEnter,
 } from '@ionic/react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { 
@@ -86,6 +87,13 @@ function criarPin(e: EstabelecimentoMapa, selecionado: boolean) {
   });
 }
 
+const iconeUsuario = L.divIcon({
+  className: '',
+  html: `<div style="width: 18px; height: 18px; background-color: #3B82F6; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9]
+});
+
 const MapEvents: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   useMapEvents({
     click: () => {
@@ -116,6 +124,15 @@ const Home: React.FC = () => {
 
   useIonViewWillEnter(() => {
     fetchEstabelecimentos(notaMinima);
+    // Busca silenciosa da localização para já exibir a bolinha azul no mapa
+    obterPosicaoUsuario();
+  });
+
+  useIonViewDidEnter(() => {
+    // Força o Leaflet a recalcular as dimensões da tela após a animação de entrada do Ionic terminar
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 200);
   });
 
   const handleNotaChange = (val: number | undefined) => {
@@ -310,6 +327,9 @@ const Home: React.FC = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
           <MapEvents onClick={() => setSelecionado(null)} />
+          {posicaoUsuario && (
+            <Marker position={posicaoUsuario} icon={iconeUsuario} />
+          )}
           {filtrados.map(e => (
             <Marker
               key={`${e.id}-${e.logo}-${selecionado?.id === e.id}`}

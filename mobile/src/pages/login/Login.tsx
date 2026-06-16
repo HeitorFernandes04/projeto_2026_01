@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonSpinner, useIonAlert, IonIcon } from '@ionic/react';
+import { IonContent, IonPage, IonSpinner, useIonAlert, IonIcon, useIonViewWillEnter } from '@ionic/react';
 import { eyeOutline, eyeOffOutline, idCardOutline, mailOutline, lockClosedOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -14,6 +14,12 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
+
+  useIonViewWillEnter(() => {
+    if (localStorage.getItem('access')) {
+      history.replace('/ordens-servico/hoje');
+    }
+  });
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -35,7 +41,7 @@ const Login: React.FC = () => {
         return;
       }
 
-      history.push('/ordens-servico/hoje');
+      history.replace('/ordens-servico/hoje');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Não foi possível conectar ao servidor.';
       setErro(msg);

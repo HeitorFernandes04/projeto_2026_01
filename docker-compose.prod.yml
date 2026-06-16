@@ -15,7 +15,7 @@ services:
       - lava_network
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: lava_me_redis
     restart: always
     networks:
@@ -79,8 +79,9 @@ services:
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-banca2026}@db:5432/${POSTGRES_DB:-lava_me_db}
-      - REDIS_ENABLED=true
-      - REDIS_URI=redis://redis:6379/0
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/0
+      - CACHE_REDIS_PREFIX_KEY=evolution
       # Demais envs podem ficar no .env do servidor
     ports:
       - "8080:8080"
