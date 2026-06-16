@@ -9,6 +9,7 @@ import {
   IonInput,
   IonItem,
   IonIcon,
+  IonFooter,
   useIonViewWillEnter,
 } from '@ionic/react';
 import { sparklesOutline, warningOutline } from 'ionicons/icons';
@@ -169,15 +170,17 @@ const LoginWhatsApp: React.FC = () => {
 
       </IonContent>
 
-      <div className="auth-footer">
-        <button
-          className="auth-btn-primary"
-          disabled={!isValido || loading}
-          onClick={handleContinuar}
-        >
-          {loading ? 'Aguarde...' : (hasAgendamento ? 'Enviar Código por WhatsApp' : 'Entrar com WhatsApp')}
-        </button>
-      </div>
+      <IonFooter className="ion-no-border" style={{ background: 'var(--auth-bg)' }}>
+        <div style={{ padding: '16px 24px 32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <button
+            className="auth-btn-primary"
+            disabled={!isValido || loading}
+            onClick={handleContinuar}
+          >
+            {loading ? 'Aguarde...' : (hasAgendamento ? 'Enviar Código por WhatsApp' : 'Entrar com WhatsApp')}
+          </button>
+        </div>
+      </IonFooter>
     </IonPage>
   );
 };

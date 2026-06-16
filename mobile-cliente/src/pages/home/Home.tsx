@@ -14,7 +14,7 @@ import {
   useIonViewWillEnter,
   useIonViewDidEnter,
 } from '@ionic/react';
-import { MapContainer, TileLayer, Marker, useMapEvents, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { 
   locateOutline, 
   arrowBackOutline,
@@ -86,6 +86,13 @@ function criarPin(e: EstabelecimentoMapa, selecionado: boolean) {
     popupAnchor: [0, -76],
   });
 }
+
+const iconeUsuario = L.divIcon({
+  className: '',
+  html: `<div style="width: 18px; height: 18px; background-color: #3B82F6; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9]
+});
 
 const MapEvents: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   useMapEvents({
@@ -321,11 +328,7 @@ const Home: React.FC = () => {
           />
           <MapEvents onClick={() => setSelecionado(null)} />
           {posicaoUsuario && (
-            <CircleMarker
-              center={posicaoUsuario}
-              radius={8}
-              pathOptions={{ fillColor: '#3B82F6', color: '#FFFFFF', weight: 3, fillOpacity: 1 }}
-            />
+            <Marker position={posicaoUsuario} icon={iconeUsuario} />
           )}
           {filtrados.map(e => (
             <Marker
