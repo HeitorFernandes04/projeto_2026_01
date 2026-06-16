@@ -14,7 +14,7 @@ import {
   useIonViewWillEnter,
   useIonViewDidEnter,
 } from '@ionic/react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, CircleMarker } from 'react-leaflet';
 import { 
   locateOutline, 
   arrowBackOutline,
@@ -318,6 +318,13 @@ const Home: React.FC = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
           <MapEvents onClick={() => setSelecionado(null)} />
+          {posicaoUsuario && (
+            <CircleMarker
+              center={posicaoUsuario}
+              radius={8}
+              pathOptions={{ fillColor: '#3B82F6', color: '#FFFFFF', weight: 3, fillOpacity: 1 }}
+            />
+          )}
           {filtrados.map(e => (
             <Marker
               key={`${e.id}-${e.logo}-${selecionado?.id === e.id}`}
