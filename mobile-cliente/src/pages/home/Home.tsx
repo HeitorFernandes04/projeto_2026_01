@@ -117,6 +117,8 @@ const Home: React.FC = () => {
 
   useIonViewWillEnter(() => {
     fetchEstabelecimentos(notaMinima);
+    // Busca silenciosa da localização para já exibir a bolinha azul no mapa
+    obterPosicaoUsuario();
   });
 
   useIonViewDidEnter(() => {
